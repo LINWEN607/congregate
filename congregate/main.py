@@ -197,23 +197,23 @@ if __name__ == '__main__':
         import sys
         sys.path.append(os.path.dirname(
             os.path.dirname(os.path.abspath(__file__))))
+    from gitlab_ps_utils.logger import myLogger
+    from gitlab_ps_utils.misc_utils import strip_netloc
+    from gitlab_ps_utils.dict_utils import dig
+    from gitlab_ps_utils.string_utils import obfuscate, deobfuscate
     from congregate.helpers import conf
-    from congregate.helpers.logger import myLogger
     from congregate.helpers.utils import get_congregate_path, rotate_logs, stitch_json_results
-    from congregate.helpers.misc_utils import strip_netloc
-    from congregate.helpers.dict_utils import dig
-    from congregate.helpers.string_utils import obfuscate, deobfuscate
     from congregate.helpers.ui_utils import spin_up_ui
 else:
     import sys
     sys.path.append(os.path.dirname(
         os.path.dirname(os.path.abspath(__file__))))
+    from gitlab_ps_utils.logger import myLogger
+    from gitlab_ps_utils.misc_utils import strip_netloc
+    from gitlab_ps_utils.dict_utils import dig
+    from gitlab_ps_utils.string_utils import obfuscate, deobfuscate
     from congregate.helpers import conf
-    from congregate.helpers.logger import myLogger
     from congregate.helpers.utils import get_congregate_path, rotate_logs, stitch_json_results
-    from congregate.helpers.misc_utils import strip_netloc
-    from congregate.helpers.dict_utils import dig
-    from congregate.helpers.string_utils import obfuscate, deobfuscate
     from congregate.helpers.ui_utils import spin_up_ui
 
 app_path = get_congregate_path()
@@ -265,6 +265,7 @@ def main():
         if arguments["configure"]:
             generate_config()
         else:
+            from gitlab_ps_utils.string_utils import convert_to_underscores
             from congregate.migration.gitlab.users import UsersClient
             from congregate.migration.gitlab.groups import GroupsClient
             from congregate.migration.gitlab.projects import ProjectsClient
@@ -284,7 +285,6 @@ def main():
             from congregate.migration.github.diff.repodiff import RepoDiffClient
             from congregate.helpers.user_util import map_users, map_and_stage_users_by_email_match
             from congregate.helpers.mdbc import MongoConnector
-            from congregate.helpers.string_utils import convert_to_underscores
             from congregate.migration.github.repos import ReposClient
             from congregate.cli.ldap_group_sync import LdapGroupSync
 
@@ -442,7 +442,8 @@ def main():
             if arguments["count-unarchived-projects"]:
                 projects.count_unarchived_projects(local=arguments["--local"])
             if arguments["archive-staged-projects"]:
-                if config.source_type == "gitlab" or (config.source_type == "bitbucket server" and DEST):
+                if config.source_type == "gitlab" or (
+                        config.source_type == "bitbucket server" and DEST):
                     projects.update_staged_projects_archive_state(
                         dest=DEST, dry_run=DRY_RUN)
                 elif config.source_type == "github" or config.list_multiple_source_config("github_source") is not None:
@@ -461,7 +462,8 @@ def main():
                     log.warning(
                         f"Bulk archive not available for {config.source_type}. Did you mean to add '--dest'?")
             if arguments["unarchive-staged-projects"]:
-                if config.source_type == "gitlab" or (config.source_type == "bitbucket server" and DEST):
+                if config.source_type == "gitlab" or (
+                        config.source_type == "bitbucket server" and DEST):
                     projects.update_staged_projects_archive_state(
                         archive=False, dest=DEST, dry_run=DRY_RUN)
                 else:

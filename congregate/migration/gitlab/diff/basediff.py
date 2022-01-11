@@ -3,10 +3,10 @@ import base64
 import re
 from types import GeneratorType
 from bs4 import BeautifulSoup as bs
+from gitlab_ps_utils.misc_utils import is_error_message_present, pretty_print_key
+from gitlab_ps_utils.dict_utils import rewrite_list_into_dict, is_nested_dict, dig, find as nested_find
+from gitlab_ps_utils.jsondiff import Comparator
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import is_error_message_present, pretty_print_key
-from congregate.helpers.dict_utils import rewrite_list_into_dict, is_nested_dict, dig, find as nested_find
-from congregate.helpers.jsondiff import Comparator
 from congregate.helpers.mdbc import MongoConnector
 
 
@@ -85,7 +85,7 @@ class BaseDiffClient(BaseClass):
 
     def generate_split_html_report(self):
         """
-            Queries MongoDB for all diff_report collections 
+            Queries MongoDB for all diff_report collections
             and outputs them to the HTML report format
         """
         mongo = self.connect_to_mongo()
@@ -100,7 +100,8 @@ class BaseDiffClient(BaseClass):
                 "Project", diff, f"/data/results/{diff_col}.html")
         mongo.close_connection()
 
-    def diff(self, source_data, destination_data, critical_key=None, obfuscate=False, parent_group=None):
+    def diff(self, source_data, destination_data,
+             critical_key=None, obfuscate=False, parent_group=None):
         engine = Comparator()
         diff = None
         accuracy = 1
@@ -147,7 +148,8 @@ class BaseDiffClient(BaseClass):
             "accuracy": accuracy
         }
 
-    def generate_diff(self, asset, key, endpoint, critical_key=None, obfuscate=False, parent_group=None, **kwargs):
+    def generate_diff(self, asset, key, endpoint, critical_key=None,
+                      obfuscate=False, parent_group=None, **kwargs):
         valid_source_endpoint, source_data = self.is_endpoint_valid(
             endpoint(asset["id"], self.config.source_host, self.config.source_token, **kwargs))
         if valid_source_endpoint:
@@ -178,7 +180,8 @@ class BaseDiffClient(BaseClass):
                 else:
                     destination_data = self.generate_empty_data(
                         source_data)
-                return self.diff(source_data, destination_data, critical_key=critical_key, obfuscate=obfuscate, parent_group=parent_group)
+                return self.diff(source_data, destination_data, critical_key=critical_key,
+                                 obfuscate=obfuscate, parent_group=parent_group)
 
         return self.empty_diff()
 
@@ -188,7 +191,8 @@ class BaseDiffClient(BaseClass):
             "destination": destination_count
         }
 
-    def generate_gh_diff(self, asset, key, sort_key, source_data, gl_endpoint, critical_key=None, obfuscate=False, parent_group=None, **kwargs):
+    def generate_gh_diff(self, asset, key, sort_key, source_data, gl_endpoint,
+                         critical_key=None, obfuscate=False, parent_group=None, **kwargs):
         identifier = "{0}/{1}".format(parent_group,
                                       asset[key]) if parent_group else asset[key]
         if self.results.get(identifier) is not None:
@@ -212,9 +216,11 @@ class BaseDiffClient(BaseClass):
             destination_data = rewrite_list_into_dict(
                 destination_data, sort_key)
 
-        return self.diff(source_data, destination_data, critical_key=critical_key, obfuscate=obfuscate, parent_group=parent_group)
+        return self.diff(source_data, destination_data, critical_key=critical_key,
+                         obfuscate=obfuscate, parent_group=parent_group)
 
-    def calculate_individual_dict_accuracy(self, diff, source_data, destination_data, critical_key, parent_group=None):
+    def calculate_individual_dict_accuracy(
+            self, diff, source_data, destination_data, critical_key, parent_group=None):
         if diff is not None:
             dest_lines = self.total_number_of_lines(destination_data)
             src_lines = self.total_number_of_lines(source_data)
@@ -227,7 +233,8 @@ class BaseDiffClient(BaseClass):
         else:
             original_accuracy = 1.0
 
-        return self.critical_key_case_check(diff, critical_key, original_accuracy, parent_group=parent_group)
+        return self.critical_key_case_check(
+            diff, critical_key, original_accuracy, parent_group=parent_group)
 
     def total_number_of_lines(self, d, keys_to_exclude=None):
         count = 0
@@ -258,11 +265,13 @@ class BaseDiffClient(BaseClass):
                         count += 1
         return count
 
-    def critical_key_case_check(self, diff, critical_key, original_accuracy, parent_group=None):
+    def critical_key_case_check(
+            self, diff, critical_key, original_accuracy, parent_group=None):
         if critical_key in diff:
             diff_minus = diff[critical_key]['---']
             diff_plus = diff[critical_key]['+++']
-            if (parent_group and parent_group not in diff_plus) or diff_minus.lower() != diff_plus.lower():
+            if (parent_group and parent_group not in diff_plus) or diff_minus.lower(
+            ) != diff_plus.lower():
                 return 0
         return original_accuracy
 
@@ -275,7 +284,8 @@ class BaseDiffClient(BaseClass):
             if isinstance(obj, dict):
                 for o in obj.keys():
                     if "total" not in o.lower():
-                        if (o == "/projects/:id" or o == "/groups/:id") and obj[o]["accuracy"] == 0:
+                        if (o == "/projects/:id" or o ==
+                                "/groups/:id") and obj[o]["accuracy"] == 0:
                             result = "failure"
                             percentage_sum = 0
                             break
@@ -303,7 +313,8 @@ class BaseDiffClient(BaseClass):
         try:
             if isinstance(obj, dict):
                 for o in obj.keys():
-                    if (o == "/projects/:id" or o == "/groups/:id") and dig(obj, o, 'accuracy') == 0:
+                    if (o == "/projects/:id" or o ==
+                            "/groups/:id") and dig(obj, o, 'accuracy') == 0:
                         result = "failure"
                         percentage_sum = 0
                         break
@@ -459,7 +470,8 @@ class BaseDiffClient(BaseClass):
                         diff_cell_row.append(diff_cell_header)
                     diff_row_table.append(diff_cell_row)
                     for endpoint in v:
-                        if endpoint not in ["overall_accuracy", "error"] and 'total' not in endpoint.lower():
+                        if endpoint not in [
+                                "overall_accuracy", "error"] and 'total' not in endpoint.lower():
                             diff_data_row = soup.new_tag("tr")
                             data = [
                                 endpoint,

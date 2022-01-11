@@ -9,9 +9,9 @@ from docker import from_env
 from docker.errors import APIError, TLSParameterError
 
 from congregate.helpers.utils import get_congregate_path
-from congregate.helpers.misc_utils import safe_json_response
-from congregate.helpers.string_utils import obfuscate, deobfuscate
-from congregate.helpers.json_utils import json_pretty
+from gitlab_ps_utils.misc_utils import safe_json_response
+from gitlab_ps_utils.string_utils import obfuscate, deobfuscate
+from gitlab_ps_utils.json_utils import json_pretty
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.groups import GroupsApi

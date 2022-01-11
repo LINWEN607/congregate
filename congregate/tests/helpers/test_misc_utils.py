@@ -3,7 +3,7 @@ import base64
 import unittest
 from unittest import mock
 from pytest import mark
-import congregate.helpers.misc_utils as misc
+import gitlab_ps_utils.misc_utils as misc
 
 
 @mark.unit_test

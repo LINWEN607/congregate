@@ -6,11 +6,11 @@ from pathlib import Path
 from shutil import copy
 from time import time
 from datetime import timedelta, datetime
+from gitlab_ps_utils.misc_utils import is_error_message_present, get_dry_log, safe_json_response, strip_netloc
+from gitlab_ps_utils.json_utils import read_json_file_into_object, write_json_to_file
+from gitlab_ps_utils.dict_utils import dig
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import is_error_message_present, get_dry_log, safe_json_response, strip_netloc
 from congregate.helpers.utils import is_dot_com, get_congregate_path
-from congregate.helpers.json_utils import read_json_file_into_object, write_json_to_file
-from congregate.helpers.dict_utils import dig
 from congregate.migration.gitlab.api.users import UsersApi
 
 b = BaseClass()
@@ -189,7 +189,8 @@ def find_user_by_email_comparison_without_id(email, src=False):
         # Will searching for an explicit email actually return more than one?
         # Probably is just an array of 1
         for user in users:
-            if user and user.get("email") and user["email"].lower() == email.lower():
+            if user and user.get(
+                    "email") and user["email"].lower() == email.lower():
                 b.log.info(
                     f"Found user by matching primary email {email}")
                 return user
@@ -218,7 +219,8 @@ def get_dst_path_with_namespace(p, mirror=False):
 
 def get_target_namespace(project):
     if target_namespace := project.get("target_namespace"):
-        if (strip_netloc(target_namespace).lower() == project.get('namespace', '').lower()) or project.get("override_dstn_ns"):
+        if (strip_netloc(target_namespace).lower() == project.get(
+                'namespace', '').lower()) or project.get("override_dstn_ns"):
             return target_namespace
         else:
             return f"{target_namespace}/{project.get('namespace')}"

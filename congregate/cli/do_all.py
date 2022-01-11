@@ -1,4 +1,6 @@
 import json
+from gitlab_ps_utils.list_utils import remove_dupes
+from gitlab_ps_utils.file_utils import is_recent_file
 
 from congregate.cli.stage_groups import GroupStageCLI
 from congregate.cli.list_source import list_data
@@ -6,8 +8,6 @@ from congregate.migration.gitlab.users import UsersClient
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.migrate import MigrateClient
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.list_utils import remove_dupes
-from congregate.helpers.file_utils import is_recent_file
 
 users = UsersClient()
 groups = GroupsClient()
@@ -54,7 +54,8 @@ def do_all_groups_and_projects(dry_run=True):
     gcli = GroupStageCLI()
     gcli.stage_data(["all"], dry_run=dry_run)
 
-    # Set public_email field for all staged users on src before group/project export
+    # Set public_email field for all staged users on src before group/project
+    # export
     users.set_staged_users_public_email(dry_run=dry_run)
 
     migrate = MigrateClient(dry_run=dry_run, skip_users=True)
@@ -74,7 +75,8 @@ def do_all(dry_run=True):
     gcli = GroupStageCLI()
     gcli.stage_data(["all"], dry_run=False)
 
-    # Set public_email field for all staged users on src before group/project export
+    # Set public_email field for all staged users on src before group/project
+    # export
     users.set_staged_users_public_email(dry_run=dry_run)
 
     migrate = MigrateClient(dry_run=dry_run)

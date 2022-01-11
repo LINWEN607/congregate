@@ -1,5 +1,5 @@
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.json_utils import write_json_to_file
+from gitlab_ps_utils.json_utils import write_json_to_file
 from congregate.migration.bitbucket.api.groups import GroupsApi
 
 

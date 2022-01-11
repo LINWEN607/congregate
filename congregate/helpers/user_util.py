@@ -2,7 +2,7 @@ import json
 from csv import reader
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.string_utils import strip_numbers
+from gitlab_ps_utils.string_utils import strip_numbers
 
 
 '''
@@ -11,12 +11,13 @@ Usage:
 
 1. Add "user_map_csv" to config file containing path to user map in CSV form
 2. Open up a python shell with poetry (potery run python)
-3. Import this function (from congregate.helpers.misc_utils import map_users)
+3. Import this function (from congregate.user_utils import map_users)
 4. Execute this function (map_users())
 
 '''
 
 bm = BaseClass()
+
 
 def map_users(dry_run=True):
     total_matches = 0
@@ -123,9 +124,11 @@ def map_and_stage_users_by_email_match(dry_run=True):
     bm.log.info(f"{dry}Found {total_matches} users to remap:\n{joined}")
 
     joined = "\n".join(json.dumps(icns) for icns in in_csv_not_staged)
-    bm.log.info(f"{dry}Found {len(in_csv_not_staged)} users in the CSV not in staged_users: \n{joined}")
+    bm.log.info(
+        f"{dry}Found {len(in_csv_not_staged)} users in the CSV not in staged_users: \n{joined}")
 
-    bm.log.info(f"{dry}{len(users_dict) - len(rewritten_users)} users will be removed from staging, and only the mapped will be staged")
+    bm.log.info(
+        f"{dry}{len(users_dict) - len(rewritten_users)} users will be removed from staging, and only the mapped will be staged")
 
     if not dry_run:
         with open("%s/data/staged_users.json" % bm.app_path, "w") as f:

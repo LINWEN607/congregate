@@ -1,10 +1,10 @@
 import sys
 from re import search
 from pymongo import MongoClient, errors, DESCENDING
+from gitlab_ps_utils.misc_utils import strip_netloc
+from gitlab_ps_utils.json_utils import stream_json_yield_to_file, read_json_file_into_object
+from gitlab_ps_utils.file_utils import find_files_in_folder
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import strip_netloc
-from congregate.helpers.json_utils import stream_json_yield_to_file, read_json_file_into_object
-from congregate.helpers.file_utils import find_files_in_folder
 
 
 class MongoConnector(BaseClass):
@@ -163,7 +163,8 @@ class MongoConnector(BaseClass):
             except TypeError:
                 return self.db[collection].find_one(query)
         except errors.OperationFailure as e:
-            # Condition for mongomock testing. Hints are not supported in mongomock
+            # Condition for mongomock testing. Hints are not supported in
+            # mongomock
             if "Unrecognized field 'hint'" in e._message:
                 return self.db[collection].find_one(query)
             if "hint provided does not correspond to an existing index" in e._message:
@@ -184,7 +185,8 @@ class MongoConnector(BaseClass):
             except TypeError:
                 return self.db[collection].find(query)
         except errors.OperationFailure as e:
-            # Condition for mongomock testing. Hints are not supported in mongomock
+            # Condition for mongomock testing. Hints are not supported in
+            # mongomock
             if "Unrecognized field 'hint'" in e._message:
                 return self.db[collection].find(query)
             if "hint provided does not correspond to an existing index" in e._message:

@@ -1,9 +1,9 @@
 import requests
 
-from congregate.helpers.decorators import stable_retry, token_rotate
-from congregate.helpers.audit_logger import audit_logger
-from congregate.helpers.logger import myLogger
-from congregate.helpers.misc_utils import generate_audit_log_message, safe_json_response
+from gitlab_ps_utils.decorators import stable_retry, token_rotate
+from gitlab_ps_utils.audit_logger import audit_logger
+from gitlab_ps_utils.logger import myLogger
+from gitlab_ps_utils.misc_utils import generate_audit_log_message, safe_json_response
 from congregate.helpers.utils import is_github_dot_com
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.conf import Config
@@ -16,6 +16,7 @@ audit = audit_logger(__name__)
 
 class GitHubApi():
     index = 0
+
     def __init__(self, host, token, query=None, api=None):
         self.host = host
         self.token_array = token.split(",")
@@ -238,8 +239,9 @@ class GitHubApi():
             else:
                 lastPage = True
                 yield from self.pageless_data(resp_json, page_check=page_check, lastPage=lastPage)
-    
-    def get_total_count(self, host, api, params=None, limit=100, page_check=False):
+
+    def get_total_count(self, host, api, params=None,
+                        limit=100, page_check=False):
         """
         Retrieves total count of records form paginated API call
 
@@ -252,9 +254,12 @@ class GitHubApi():
         :returns: Total number of records related to that API call
         """
         uniq = {}
-        for data in self.list_all(host, api, params=params, limit=limit, page_check=page_check):
-            # Ignoring any data containing the 'pull_request' key. 
-            # See https://docs.github.com/en/rest/reference/issues#list-repository-issues for more information
+        for data in self.list_all(
+                host, api, params=params, limit=limit, page_check=page_check):
+            # Ignoring any data containing the 'pull_request' key.
+            # See
+            # https://docs.github.com/en/rest/reference/issues#list-repository-issues
+            # for more information
             if 'pull_request' not in data.keys():
                 uniq[data.get("id", data.get("name"))] = 1
         count = len(uniq)

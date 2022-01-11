@@ -1,8 +1,8 @@
 from requests.exceptions import RequestException
 
+from gitlab_ps_utils.misc_utils import is_error_message_present, strip_netloc
+from gitlab_ps_utils.dict_utils import pop_multiple_keys
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import is_error_message_present, strip_netloc
-from congregate.helpers.dict_utils import pop_multiple_keys
 from congregate.helpers.utils import is_dot_com
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.users import UsersApi
@@ -36,10 +36,13 @@ class KeysClient(BaseClass):
                     new_id, self.config.destination_host, self.config.destination_token, key)
                 # When a key being migrated already exists somewhere on the
                 # destination instance
-                if resp.status_code == 400 and is_error_message_present(resp)[0] and isinstance(resp.json().get("message"), dict):
+                if resp.status_code == 400 and is_error_message_present(
+                        resp)[0] and isinstance(resp.json().get("message"), dict):
                     if is_dot_com(self.config.destination_host):
-                        # Assuming it was created at some point during the migration
-                        if last_key := mongo.safe_find_one(coll, query={"key": key["key"]}, sort=[("created_at", mongo.DESCENDING)]):
+                        # Assuming it was created at some point during the
+                        # migration
+                        if last_key := mongo.safe_find_one(coll, query={"key": key["key"]}, sort=[
+                                                           ("created_at", mongo.DESCENDING)]):
                             self.projects_api.enable_deploy_key(
                                 new_id, last_key["id"], self.config.destination_host, self.config.destination_token)
                         else:

@@ -2,8 +2,8 @@ from time import sleep
 from base64 import b64encode
 import requests
 
+from gitlab_ps_utils.decorators import stable_retry
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.decorators import stable_retry
 
 
 class BitBucketServerApi(BaseClass):
@@ -22,7 +22,8 @@ class BitBucketServerApi(BaseClass):
         }
 
     @stable_retry
-    def generate_get_request(self, api, url=None, params=None, branch_permissions=False):
+    def generate_get_request(
+            self, api, url=None, params=None, branch_permissions=False):
         """
         Generates GET request to BitBucket API.
         You will need to provide the access token, and specific api url.
@@ -43,7 +44,8 @@ class BitBucketServerApi(BaseClass):
         if params is None:
             params = {}
 
-        return requests.get(url, params=params, headers=headers, verify=self.config.ssl_verify)
+        return requests.get(url, params=params, headers=headers,
+                            verify=self.config.ssl_verify)
 
     def list_all(self, api, params=None, limit=1000, branch_permissions=False):
         isLastPage = False

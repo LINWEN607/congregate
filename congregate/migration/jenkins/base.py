@@ -1,7 +1,7 @@
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.jenkins.api.base import JenkinsApi
-from congregate.helpers.misc_utils import strip_netloc
-from congregate.helpers.string_utils import convert_to_underscores
+from gitlab_ps_utils.misc_utils import strip_netloc
+from gitlab_ps_utils.string_utils import convert_to_underscores
 from congregate.helpers.mdbc import MongoConnector
 
 

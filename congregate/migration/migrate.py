@@ -12,8 +12,9 @@ from time import time
 from traceback import print_exc
 from requests.exceptions import RequestException
 
+from gitlab_ps_utils import json_utils, string_utils, dict_utils
 import congregate.helpers.migrate_utils as mig_utils
-from congregate.helpers import misc_utils, json_utils, string_utils, dict_utils, utils
+from congregate.helpers import misc_utils, utils
 from congregate.helpers.reporting import Reporting
 from congregate.helpers.jobtemplategenerator import JobTemplateGenerator
 from congregate.cli.stage_projects import ProjectStageCLI
@@ -705,7 +706,8 @@ class MigrateClient(BaseClass):
         }
         try:
             if not self.only_post_migration_info:
-                if (state == "active" or (state in self.INACTIVE and self.config.keep_inactive_users)) and all(v for v in [name, username, email]):
+                if (state == "active" or (state in self.INACTIVE and self.config.keep_inactive_users)) and all(
+                        v for v in [name, username, email]):
                     user_data = self.users.generate_user_data(user)
                     self.log.info(
                         f"{misc_utils.get_dry_log(self.dry_run)}Attempting to create user {email}")
@@ -1430,7 +1432,8 @@ class MigrateClient(BaseClass):
             pcli = ProjectStageCLI()
             pcli.stage_data(ids, self.dry_run)
 
-    def toggle_maintenance_mode(self, off=False, msg=None, dest=False, dry_run=True):
+    def toggle_maintenance_mode(
+            self, off=False, msg=None, dest=False, dry_run=True):
         host = self.config.destination_host if dest else self.config.source_host
         if utils.is_dot_com(host):
             self.log.warning(

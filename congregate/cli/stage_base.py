@@ -5,10 +5,10 @@ Copyright (c) 2021 - GitLab
 """
 
 import json
+from gitlab_ps_utils.misc_utils import get_dry_log, strip_netloc, validate_name
+from gitlab_ps_utils.list_utils import remove_dupes_with_keys, remove_dupes
+from gitlab_ps_utils.dict_utils import dig
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import get_dry_log, strip_netloc, validate_name
-from congregate.helpers.list_utils import remove_dupes_with_keys, remove_dupes
-from congregate.helpers.dict_utils import dig
 
 
 class BaseStageClass(BaseClass):
@@ -80,7 +80,8 @@ class BaseStageClass(BaseClass):
             f.write(json.dumps([] if skip_users else remove_dupes(
                 self.staged_users), indent=4))
 
-    def append_member_to_members_list(self, members_list, member, dry_run=True):
+    def append_member_to_members_list(
+            self, members_list, member, dry_run=True):
         """
             Appends the members found in the /members endpoint to the staged asset object
 
@@ -144,7 +145,9 @@ class BaseStageClass(BaseClass):
         return obj
 
     def the_number_of_instance(self, scm_source):
-        for i, single_source in enumerate(self.config.list_multiple_source_config("github_source")):
-            if scm_source == strip_netloc(single_source.get("src_hostname", "")):
+        for i, single_source in enumerate(
+                self.config.list_multiple_source_config("github_source")):
+            if scm_source == strip_netloc(
+                    single_source.get("src_hostname", "")):
                 return i
         return -1

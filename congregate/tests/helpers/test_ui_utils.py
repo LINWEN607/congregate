@@ -26,7 +26,7 @@ class UiUtilsTests(unittest.TestCase):
         self.assertEqual(expected, actual)
 
     @mock.patch("congregate.helpers.ui_utils.open")
-    @mock.patch("congregate.helpers.file_utils.get_hash_of_dirs")
+    @mock.patch("gitlab_ps_utils.file_utils.get_hash_of_dirs")
     def test_is_ui_out_of_date_true_with_exception(self, mock_hash, mock_open):
         mock_open.side_effect = [IOError]
         mock_hash.return_value = b"abc123"

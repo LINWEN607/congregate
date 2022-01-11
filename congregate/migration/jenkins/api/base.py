@@ -2,13 +2,16 @@ from re import search
 import xml.etree.ElementTree as ET
 import requests
 from requests.auth import HTTPBasicAuth
-from congregate.helpers.decorators import stable_retry
+from gitlab_ps_utils.decorators import stable_retry
+from gitlab_ps_utils.misc_utils import safe_json_response
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import safe_json_response
 
 
 class JenkinsApi(BaseClass):
-    FOLDER_JOB_CLASSES = ["com.cloudbees.hudson.plugins.folder.Folder", "jenkins.branch.OrganizationFolder"]
+    FOLDER_JOB_CLASSES = [
+        "com.cloudbees.hudson.plugins.folder.Folder",
+        "jenkins.branch.OrganizationFolder"]
+
     def __init__(self, host, user, token):
         self.host = host
         self.token = token
@@ -32,7 +35,8 @@ class JenkinsApi(BaseClass):
         return HTTPBasicAuth(self.user, self.token)
 
     @stable_retry
-    def generate_get_request(self, api, jenkins_path=None, url=None, params=None):
+    def generate_get_request(
+            self, api, jenkins_path=None, url=None, params=None):
         """
         Generates GET request to Jenkins API.
         You will need to provide the TC host, user, access token, and specific api url.
@@ -47,7 +51,8 @@ class JenkinsApi(BaseClass):
         """
 
         if url is None:
-            url = self.generate_jenkins_request_url(self.host, api, jenkins_path)
+            url = self.generate_jenkins_request_url(
+                self.host, api, jenkins_path)
 
         headers = self.generate_request_headers()
 
@@ -55,7 +60,8 @@ class JenkinsApi(BaseClass):
             params = {}
 
         auth = self.get_authorization()
-        return requests.get(url, params=params, headers=headers, auth=auth, verify=self.config.ssl_verify)
+        return requests.get(url, params=params, headers=headers,
+                            auth=auth, verify=self.config.ssl_verify)
 
     def list_all_jobs(self, jobs_path=None, folder_list=None):
         """
@@ -76,18 +82,19 @@ class JenkinsApi(BaseClass):
                         self.log.info("Duplicate folder found.")
                         raise StopIteration
 
-
     def list_current_level_jobs(self, job_path):
         """
         Returns a dict of job dictionaries at provided job_path
         """
-        return safe_json_response(self.generate_get_request("json", job_path, None, "pretty&tree=jobs[name,fullName,url,scm[userRemoteConfigs[url]]]"))
+        return safe_json_response(self.generate_get_request(
+            "json", job_path, None, "pretty&tree=jobs[name,fullName,url,scm[userRemoteConfigs[url]]]"))
 
     def get_job_config_xml(self, job_path):
         """
         Returns the xml of a specific job configuration on the Jenkins server.
         """
-        return self.safe_response(self.generate_get_request("config.xml", job_path))
+        return self.safe_response(
+            self.generate_get_request("config.xml", job_path))
 
     def get_job_params(self, job_path):
         '''
@@ -95,7 +102,9 @@ class JenkinsApi(BaseClass):
         Returns:    list of param dictionaries in following format
             [{"name": param_name}, {"defaultValue": param_value}]
         '''
-        job_info = safe_json_response(self.generate_get_request("json", job_path))
+        job_info = safe_json_response(
+            self.generate_get_request(
+                "json", job_path))
 
         param_list = []
         if job_info:
@@ -105,9 +114,11 @@ class JenkinsApi(BaseClass):
                 if dictionary.get("parameterDefinitions"):
                     for param_data in dictionary["parameterDefinitions"]:
                         if param_data.get("defaultParameterValue"):
-                            param_list.append({"name": param_data["name"], "defaultValue": param_data["defaultParameterValue"].get("value")})
+                            param_list.append(
+                                {"name": param_data["name"], "defaultValue": param_data["defaultParameterValue"].get("value")})
                         else:
-                            param_list.append({"name": param_data["name"], "defaultValue": None})
+                            param_list.append(
+                                {"name": param_data["name"], "defaultValue": None})
 
         return param_list
 

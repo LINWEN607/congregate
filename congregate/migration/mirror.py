@@ -1,9 +1,9 @@
 import json
 import requests
 from requests.exceptions import RequestException
+from gitlab_ps_utils.decorators import stable_retry
+from gitlab_ps_utils.dict_utils import pop_multiple_keys
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.decorators import stable_retry
-from congregate.helpers.dict_utils import pop_multiple_keys
 from congregate.migration.gitlab.projects import ProjectsApi
 
 
@@ -125,7 +125,7 @@ class MirrorClient(BaseClass):
                         "default_branch": "master"
                     }
                     self.projects_api.api.generate_put_request(self.config.destination_host, self.config.destination_token,
-                                             "projects/%d" % response["id"], json.dumps(default_branch))
+                                                               "projects/%d" % response["id"], json.dumps(default_branch))
             else:
                 self.log.info(
                     "Attempting to generate shell repo for %s and create mirror" % generic_repo["name"])
@@ -158,7 +158,8 @@ class MirrorClient(BaseClass):
 
     @stable_retry
     def enable_mirroring(self, dry_run=True):
-        for project in self.projects_api.get_all_projects(self.config.destination_host, self.config.destination_token):
+        for project in self.projects_api.get_all_projects(
+                self.config.destination_host, self.config.destination_token):
             if isinstance(project, dict):
                 encoded_name = project["name"].encode('ascii', 'replace')
                 import_status = project.get("import_status", None)

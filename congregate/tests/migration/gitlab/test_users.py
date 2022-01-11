@@ -6,7 +6,7 @@ from unittest.mock import patch, mock_open, PropertyMock, MagicMock
 from pytest import mark
 from requests.exceptions import RequestException
 
-from congregate.helpers.api import GitLabApi
+from gitlab_ps_utils.api import GitLabApi
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.migration.migrate import MigrateClient
 from congregate.tests.mockapi.gitlab.users import MockUsersApi
@@ -1094,7 +1094,8 @@ class UsersTests(unittest.TestCase):
 
         self.assertDictEqual(expected, actual)
 
-    @patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'dstn_parent_id',
+                  new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.reset_password',
            new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.force_random_password',
@@ -1156,7 +1157,8 @@ class UsersTests(unittest.TestCase):
 
         self.assertDictEqual(expected, actual)
 
-    @patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'dstn_parent_id',
+                  new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.reset_password',
            new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.force_random_password',
@@ -1222,7 +1224,7 @@ class UsersTests(unittest.TestCase):
            new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.group_sso_provider_map_file',
            new_callable=PropertyMock)
-    @patch('congregate.helpers.json_utils.read_json_file_into_object')
+    @patch('gitlab_ps_utils.json_utils.read_json_file_into_object')
     def test_generate_hash_map_with_invalid_file(
             self, read_file, map_file, pattern):
         pattern.return_value = "hash"

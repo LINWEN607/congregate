@@ -3,7 +3,7 @@ import unittest
 from unittest import mock
 from base64 import b64encode
 from pytest import mark
-from congregate.helpers.misc_utils import input_generator
+from gitlab_ps_utils.misc_utils import input_generator
 from congregate.cli import config
 from congregate.helpers.seed.generate_token import token_generator
 from congregate.helpers.seed.generator import SeedDataGenerator

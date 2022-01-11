@@ -1,6 +1,6 @@
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.github.api.gists import GistsApi
-from congregate.helpers.misc_utils import safe_json_response, is_error_message_present
+from gitlab_ps_utils.misc_utils import safe_json_response, is_error_message_present
 
 
 class GistsClient(BaseClass):

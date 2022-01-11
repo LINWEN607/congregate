@@ -59,7 +59,7 @@ The same applies for HTTP requests or anything that requires connecting to some 
 - Properties (when you need to mock our configuration getters)
     - Ex: `@mock.patch('congregate.helpers.conf.Config.<config-getter>', new_callable=mock.PropertyMock)`
 - Method return values
-    - Ex: `@mock.patch('congregate.helpers.api.get_count')`
+    - Ex: `@mock.patch('gitlab_ps_utils.api.get_count')`
 - Mock class object method return values
     - Ex: `@mock.patch.object(KeysClient, "migrate_user_ssh_keys")`
 
@@ -74,7 +74,7 @@ Utilize a [side_effect](https://docs.python.org/3/library/unittest.mock.html#uni
 Example test utilizing a side effect:
 
 ```python
-@mock.patch("congregate.helpers.json_utils.read_json_file_into_object")
+@mock.patch("gitlab_ps_utils.json_utils.read_json_file_into_object")
 @mock.patch("glob.glob")
 def test_stitch_json(glob, json):
     results = MockProjectResults()
@@ -193,7 +193,7 @@ Our integration tests will usually utilize the responses library to mock HTTP re
     # pylint: enable=no-member
     @mock.patch('congregate.helpers.conf.Config.destination_host', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_parent_id', new_callable=mock.PropertyMock)
-    @mock.patch('congregate.helpers.api.get_count')
+    @mock.patch('gitlab_ps_utils.api.get_count')
     @mock.patch.object(KeysClient, "migrate_user_ssh_keys")
     @mock.patch.object(KeysClient, "migrate_user_gpg_keys")
     @mock.patch('congregate.migration.migrate._DRY_RUN', False)

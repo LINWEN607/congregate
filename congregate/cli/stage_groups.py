@@ -7,13 +7,13 @@ Copyright (c) 2021 - GitLab
 import re
 import sys
 
-from congregate.cli.stage_base import BaseStageClass
-from congregate.helpers.misc_utils import get_dry_log, validate_name
-from congregate.helpers.list_utils import remove_dupes
-from congregate.helpers.dict_utils import rewrite_list_into_dict
+from gitlab_ps_utils.misc_utils import get_dry_log, validate_name
+from gitlab_ps_utils.list_utils import remove_dupes
+from gitlab_ps_utils.dict_utils import rewrite_list_into_dict
 
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.helpers.base_class import BaseClass
+from congregate.cli.stage_base import BaseStageClass
 
 class GroupStageCLI(BaseStageClass, BaseClass):
     def __init__(self):
@@ -21,9 +21,9 @@ class GroupStageCLI(BaseStageClass, BaseClass):
         self.groupsApi = GroupsApi()
         self.host = self.config.source_host
         self.token = self.config.source_token
-
-
-    def stage_data(self, groups_to_stage, dry_run=True, skip_users=False, scm_source=None):
+        
+    def stage_data(self, groups_to_stage, dry_run=True,
+                   skip_users=False, scm_source=None):
         """
             Stage data based on selected groups on source instance
 
@@ -35,7 +35,8 @@ class GroupStageCLI(BaseStageClass, BaseClass):
         if not dry_run:
             self.write_staging_files(skip_users=skip_users)
 
-    def build_staging_data(self, groups_to_stage, dry_run=True, scm_source=None):
+    def build_staging_data(self, groups_to_stage,
+                           dry_run=True, scm_source=None):
         """
             Build data down from group level, including sub-groups, projects and users (members)
 
@@ -61,7 +62,8 @@ class GroupStageCLI(BaseStageClass, BaseClass):
         # If there is CLI or UI input
         if list(filter(None, groups_to_stage)):
             # Stage ALL
-            if groups_to_stage[0] in ["all", "."] or len(groups_to_stage) == len(groups):
+            if groups_to_stage[0] in ["all", "."] or len(
+                    groups_to_stage) == len(groups):
                 for p in projects:
                     self.log.info("{0}Staging project {1} (ID: {2})".format(
                         get_dry_log(dry_run), p["path_with_namespace"], p["id"]))

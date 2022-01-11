@@ -3,7 +3,7 @@ from congregate.helpers.mdbc import MongoConnector
 from congregate.migration.github.api.users import UsersApi
 from congregate.migration.github.api.orgs import OrgsApi
 from congregate.migration.github.meta.github_browser import GitHubBrowser
-from congregate.helpers.misc_utils import safe_json_response, is_error_message_present, strip_netloc
+from gitlab_ps_utils.misc_utils import safe_json_response, is_error_message_present, strip_netloc
 from congregate.helpers.utils import is_github_dot_com
 
 

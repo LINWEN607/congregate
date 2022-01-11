@@ -1,9 +1,9 @@
 import requests
 
 from bs4 import BeautifulSoup as bs
-from congregate.helpers.dict_utils import xml_to_dict, dig
-from congregate.helpers.decorators import stable_retry
-from congregate.helpers.logger import myLogger
+from gitlab_ps_utils.dict_utils import xml_to_dict, dig
+from gitlab_ps_utils.decorators import stable_retry
+from gitlab_ps_utils.logger import myLogger
 from congregate.helpers.conf import Config
 
 
@@ -46,11 +46,13 @@ class TeamcityApi():
         if params is None:
             params = {}
 
-        return requests.get(url, params=params, headers=headers, verify=self.config.ssl_verify)
+        return requests.get(url, params=params, headers=headers,
+                            verify=self.config.ssl_verify)
 
     def get_maven_settings_file_links(self, jobid, recursive=False):
         t = []
-        maven_settings_request = self.generate_get_request(None, url=f"{self.host}/admin/editProject.html?projectId={jobid}&tab=mavenSettings")
+        maven_settings_request = self.generate_get_request(
+            None, url=f"{self.host}/admin/editProject.html?projectId={jobid}&tab=mavenSettings")
         if maven_settings_request.status_code == 200:
             data = maven_settings_request.text
             s = bs(data, 'html.parser')
@@ -58,11 +60,13 @@ class TeamcityApi():
                 for f in table.findAll(class_='edit'):
                     link = f.find('a')['onclick']
                     if "document.location.href" in link:
-                        file_link = link.split("document.location.href = '")[-1].replace("';", "")
+                        file_link = link.split(
+                            "document.location.href = '")[-1].replace("';", "")
                         t.append(file_link)
         else:
             if not recursive:
-                reattempt = self.get_maven_settings_file_links("_".join(jobid.split("_")[:-1]), recursive=True)
+                reattempt = self.get_maven_settings_file_links(
+                    "_".join(jobid.split("_")[:-1]), recursive=True)
                 if reattempt:
                     t += reattempt
         return t
@@ -92,7 +96,8 @@ class TeamcityApi():
         """
         Returns a dictionary of parameters to a specific build configuration on the TeamCity server.
         """
-        if param_response := self.generate_get_request("buildTypes/%s/parameters" % jobid):
+        if param_response := self.generate_get_request(
+                "buildTypes/%s/parameters" % jobid):
             return xml_to_dict(param_response.text)
 
     def list_build_params(self, jobid):
@@ -112,11 +117,18 @@ class TeamcityApi():
         Returns a dictionary of vcs entries to a specific build configuration on the TeamCity server.
         """
         job_data = xml_to_dict(self.get_build_config(jobid).text)
-        if "vcs-root-entry" in dig(job_data, 'buildType', 'vcs-root-entries', default=""):
-            vcs_id = dig(job_data, 'buildType', 'vcs-root-entries', 'vcs-root-entry', '@id')
+        if "vcs-root-entry" in dig(job_data, 'buildType',
+                                   'vcs-root-entries', default=""):
+            vcs_id = dig(
+                job_data,
+                'buildType',
+                'vcs-root-entries',
+                'vcs-root-entry',
+                '@id')
         else:
             return "no_scm"
-        return xml_to_dict(self.generate_get_request("vcs-roots/%s" % vcs_id).text)
+        return xml_to_dict(self.generate_get_request(
+            "vcs-roots/%s" % vcs_id).text)
 
     def list_vcs_configs(self):
         """
