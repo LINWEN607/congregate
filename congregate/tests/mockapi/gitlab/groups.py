@@ -754,3 +754,67 @@ class MockGroupsApi():
                 "visibility": "private"
             }
         ]
+
+    def get_all_descendat_groups(self):
+        return [
+            {
+                "id": 1,
+                "name": "Foobar Group",
+                "path": "foo-bar",
+                "description": "An interesting group",
+                "visibility": "public",
+                "lfs_enabled": True,
+                "avatar_url": "http://localhost:3000/uploads/group/avatar/1/foo.jpg",
+                "web_url": "http://localhost:3000/groups/foo-bar",
+                "request_access_enabled": False,
+                "full_name": "Foobar Group",
+                "full_path": "foo-bar",
+                "file_template_project_id": 1,
+                "parent_id": None,
+            },
+            {
+                "id": 2,
+                "name": "Foobar Group2",
+                "path": "foo-bar-2",
+                "description": "An interesting group as well",
+                "visibility": "public",
+                "lfs_enabled": True,
+                "avatar_url": "http://localhost:3000/uploads/group/avatar/1/foo.jpg",
+                "web_url": "http://localhost:3000/groups/foo-bar-2",
+                "request_access_enabled": False,
+                "full_name": "Foobar Group 2",
+                "full_path": "foo-bar-2",
+                "file_template_project_id": 1,
+                "parent_id": None,
+            },
+            {
+                "id": 3,
+                "name": "Foobar Group3",
+                "path": "foo-bar-3",
+                "description": "An interesting group as well",
+                "visibility": "public",
+                "lfs_enabled": True,
+                "avatar_url": "http://localhost:3000/uploads/group/avatar/1/foo.jpg",
+                "web_url": "http://localhost:3000/groups/foo-bar-2",
+                "request_access_enabled": False,
+                "full_name": "Foobar Group 3",
+                "full_path": "foo-bar-3",
+                "file_template_project_id": 1,
+                "parent_id": None,
+            },
+            {
+                "id": 4,
+                "name": "Foobar Group3",
+                "path": "foo-bar-3",
+                "description": "An interesting group as well",
+                "visibility": "public",
+                "lfs_enabled": True,
+                "avatar_url": "http://localhost:3000/uploads/group/avatar/1/foo.jpg",
+                "web_url": "http://localhost:3000/groups/foo-bar-2",
+                "request_access_enabled": False,
+                "full_name": "Foobar Group 3",
+                "full_path": "foo-bar-3",
+                "file_template_project_id": 1,
+                "parent_id": None,
+            }
+        ]
