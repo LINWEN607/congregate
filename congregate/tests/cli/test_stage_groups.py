@@ -26,7 +26,11 @@ class StageProjectsTests(unittest.TestCase):
     @mock.patch.object(GroupStageCLI, 'open_groups_file')
     @mock.patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=mock.PropertyMock)
     @mock.patch.object(ConfigurationValidator, 'source_type', new_callable=mock.PropertyMock)
-    def test_build_stage_data(self, mock_source_type, mock_parent_id, mock_descendat_groups, mock_groups, mock_users, mock_projects, mock_check, mock_open):
+    @mock.patch.object(ConfigurationValidator, 'source_token', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'source_host', new_callable=mock.PropertyMock)
+    def test_build_stage_data(self, mock_host, mock_token, mock_source_type, mock_parent_id, mock_descendat_groups, mock_groups, mock_users, mock_projects, mock_check, mock_open):
+        mock_host.return_value = self.config.config.source_host
+        mock_token.return_value = self.config.config.source_token
         mock_source_type.return_value = "gitlab"
         mock_parent_id.return_value = None
         mock_check.return_value = True
