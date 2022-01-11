@@ -187,7 +187,7 @@ class GroupsApi(GitLabApiWrapper):
         """
         return self.api.generate_get_request(host, token, f"groups/{gid}/notification_settings")
 
-    def export_group(self, host, token, gid, data=None, message=None):
+    def export_group(self, host, token, gid, data=None, headers=None, message=None):
         """
         Export a group using the groups api
 
@@ -195,8 +195,9 @@ class GroupsApi(GitLabApiWrapper):
             :param: token: (str) A token that can access the source host with export permissions
             :param: gid: (int) The group id on the source system
             :param: data: (str) Relevant data for the export
+            :param: headers: (str) The headers for the API request
         """
-        return self.api.generate_post_request(host, token, f"groups/{gid}/export", data=json.dumps(data), description=message)
+        return self.api.generate_post_request(host, token, f"groups/{gid}/export", data=data, headers=headers, description=message)
 
     def get_group_download_status(self, host, token, gid):
         """
@@ -211,7 +212,7 @@ class GroupsApi(GitLabApiWrapper):
         """
         return self.api.generate_get_request(host, token, f"groups/{gid}/export/download")
 
-    def import_group(self, host, token, data=None, files=None, message=None):
+    def import_group(self, host, token, data=None, files=None, headers=None, message=None):
         """
         Import a group using the groups api
 
@@ -219,10 +220,11 @@ class GroupsApi(GitLabApiWrapper):
             :param: token: (str) A token that can access the destination host with import permissions
             :param: files: (str) The group filename as it was exported
             :param: data: (str) Relevant data for the export
+            :param: headers: (str) The headers for the API request
         """
         if not message:
             message = f"Importing group with payload {str(data)}"
-        return self.api.generate_post_request(host, token, "groups/import", data=json.dumps(data), files=files, description=message)
+        return self.api.generate_post_request(host, token, "groups/import", data=data, files=files, headers=headers, description=message)
 
     def bulk_group_import(self, host, token, data=None, message=None):
         """

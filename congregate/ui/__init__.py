@@ -20,7 +20,7 @@ from . import controllers
 from . import models
 from . import views
 
-from congregate.helpers.logger import myLogger
+from gitlab_ps_utils.logger import myLogger
 
 
 log = myLogger('werkzeug', app_path=os.getenv('CONGREGATE_PATH'), log_name='congregate')

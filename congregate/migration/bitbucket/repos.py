@@ -1,8 +1,8 @@
 from urllib.parse import quote_plus
 
+from gitlab_ps_utils.misc_utils import safe_json_response, remove_dupes_but_take_higher_access, strip_netloc, is_error_message_present
+from gitlab_ps_utils.dict_utils import dig
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import safe_json_response, remove_dupes_but_take_higher_access, strip_netloc, is_error_message_present
-from congregate.helpers.dict_utils import dig
 from congregate.helpers.mdbc import MongoConnector
 from congregate.migration.bitbucket.api.repos import ReposApi
 from congregate.migration.bitbucket.api.users import UsersApi
@@ -32,7 +32,8 @@ class ReposClient(BaseClass):
             self.handle_retrieving_repos, self.repos_api.get_all_repos(), processes=processes, nestable=True)
 
     def handle_retrieving_repos(self, repo, mongo=None):
-        # List and reformat all Bitbucket Server repo to GitLab project metadata
+        # List and reformat all Bitbucket Server repo to GitLab project
+        # metadata
         error, resp = is_error_message_present(repo)
         if resp and not error:
             # mongo should be set to None unless this function is being used in a
@@ -51,13 +52,15 @@ class ReposClient(BaseClass):
             "REPO_WRITE": 30,  # Developer
             "REPO_READ": 20  # Reporter
         }
-        for member in self.repos_api.get_all_repo_users(project_key, repo_slug):
+        for member in self.repos_api.get_all_repo_users(
+                project_key, repo_slug):
             m = member["user"]
             m["permission"] = REPO_PERM_MAP[member["permission"]]
             members.append(m)
 
         if self.user_groups:
-            for group in self.repos_api.get_all_repo_groups(project_key, repo_slug):
+            for group in self.repos_api.get_all_repo_groups(
+                    project_key, repo_slug):
                 group_name = dig(group, 'group', 'name', default="").lower()
                 permission = REPO_PERM_MAP[group["permission"]]
                 if self.user_groups.get(group_name):
@@ -69,7 +72,8 @@ class ReposClient(BaseClass):
                     self.log.warning(
                         f"Unable to find repo {repo_slug} user group {group_name} or the group is empty")
 
-        return remove_dupes_but_take_higher_access(self.users.format_users(members))
+        return remove_dupes_but_take_higher_access(
+            self.users.format_users(members))
 
     def get_default_branch(self, project_key, repo_slug):
         resp = safe_json_response(
@@ -94,14 +98,19 @@ class ReposClient(BaseClass):
         prio = ["read-only", "no-deletes",
                 "fast-forward-only", "pull-request-only"]
         # Protect branch by highest priority and only once
-        if any(perm["type"] == prio[0] for perm in perms if dig(perm, 'matcher', 'displayId') == branch):
-            return self.migrate_branch_permissions(p, branch, pid) if p["type"] == prio[0] else None
+        if any(perm["type"] == prio[0] for perm in perms if dig(
+                perm, 'matcher', 'displayId') == branch):
+            return self.migrate_branch_permissions(
+                p, branch, pid) if p["type"] == prio[0] else None
         elif any(perm["type"] == prio[1] for perm in perms if dig(perm, 'matcher', 'displayId') == branch):
-            return self.migrate_branch_permissions(p, branch, pid) if p["type"] == prio[1] else None
+            return self.migrate_branch_permissions(
+                p, branch, pid) if p["type"] == prio[1] else None
         elif any(perm["type"] == prio[2] for perm in perms if dig(perm, 'matcher', 'displayId') == branch):
-            return self.migrate_branch_permissions(p, branch, pid) if p["type"] == prio[2] else None
+            return self.migrate_branch_permissions(
+                p, branch, pid) if p["type"] == prio[2] else None
         elif any(perm["type"] == prio[3] for perm in perms if dig(perm, 'matcher', 'displayId') == branch):
-            return self.migrate_branch_permissions(p, branch, pid) if p["type"] == prio[3] else None
+            return self.migrate_branch_permissions(
+                p, branch, pid) if p["type"] == prio[3] else None
 
     def migrate_branch_permissions(self, p, branch, pid):
         """

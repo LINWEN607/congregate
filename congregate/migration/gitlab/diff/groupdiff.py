@@ -1,13 +1,13 @@
+from gitlab_ps_utils.misc_utils import get_rollback_log
+from gitlab_ps_utils.dict_utils import rewrite_json_list_into_dict
+from gitlab_ps_utils.json_utils import read_json_file_into_object
 from congregate.migration.gitlab.diff.basediff import BaseDiffClient
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.issues import IssuesApi
 from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
 from congregate.migration.gitlab.groups import GroupsClient
-from congregate.helpers.misc_utils import get_rollback_log
-from congregate.helpers.dict_utils import rewrite_json_list_into_dict
 from congregate.helpers.migrate_utils import get_full_path_with_parent_namespace, is_top_level_group
 from congregate.helpers.utils import is_dot_com
-from congregate.helpers.json_utils import read_json_file_into_object
 
 
 class GroupDiffClient(BaseDiffClient):
@@ -15,7 +15,8 @@ class GroupDiffClient(BaseDiffClient):
         Extension of BaseDiffClient focused on finding the differences between migrated groups
     '''
 
-    def __init__(self, staged=False, subgroups_only=False, rollback=False, processes=None):
+    def __init__(self, staged=False, subgroups_only=False,
+                 rollback=False, processes=None):
         super().__init__()
         self.groups_api = GroupsApi()
         self.issues_api = IssuesApi()
@@ -71,7 +72,8 @@ class GroupDiffClient(BaseDiffClient):
     def generate_single_diff_report(self, group):
         diff_report = {}
         group_path = get_full_path_with_parent_namespace(group["full_path"])
-        if self.results.get(group_path) and (self.asset_exists(self.groups_api.get_group, self.results[group_path].get("id")) or isinstance(self.results.get(group_path), int)):
+        if self.results.get(group_path) and (self.asset_exists(self.groups_api.get_group,
+                                                               self.results[group_path].get("id")) or isinstance(self.results.get(group_path), int)):
             group_diff = self.handle_endpoints(group)
             diff_report[group_path] = group_diff
             try:

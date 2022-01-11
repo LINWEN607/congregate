@@ -1,6 +1,6 @@
 import os
 import subprocess
-from congregate.helpers.file_utils import get_hash_of_dirs
+from gitlab_ps_utils.file_utils import get_hash_of_dirs
 
 
 def build_ui(app_path):

@@ -1,15 +1,14 @@
 import json
 from time import sleep
 from requests.exceptions import RequestException
-from traceback import print_exc
+from gitlab_ps_utils.misc_utils import get_timedelta, safe_json_response, strip_netloc
+from gitlab_ps_utils.list_utils import remove_dupes
+from gitlab_ps_utils.json_utils import json_pretty
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.mdbc import MongoConnector
-from congregate.helpers.misc_utils import get_timedelta, safe_json_response, strip_netloc, get_dry_log
-from congregate.helpers.list_utils import remove_dupes
 from congregate.helpers.migrate_utils import get_full_path_with_parent_namespace, is_top_level_group, get_staged_groups, \
-    find_user_by_email_comparison_without_id, get_full_path_with_parent_namespace
-from congregate.helpers.json_utils import json_pretty
+    find_user_by_email_comparison_without_id
 from congregate.helpers.utils import is_dot_com
 from congregate.migration.gitlab.variables import VariablesClient
 from congregate.migration.gitlab.badges import BadgesClient

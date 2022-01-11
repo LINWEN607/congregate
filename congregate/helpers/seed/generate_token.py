@@ -26,8 +26,8 @@ import sys
 from urllib.parse import urljoin
 import requests
 from bs4 import BeautifulSoup
-from congregate.helpers.decorators import configurable_stable_retry
-from congregate.helpers.logger import myLogger
+from gitlab_ps_utils.decorators import configurable_stable_retry
+from gitlab_ps_utils.logger import myLogger
 
 
 class token_generator():
@@ -131,7 +131,8 @@ class token_generator():
         self.log.info("Obtained personal access token for root")
         return token
 
-    def generate_token(self, name, expires_at, url=None, username=None, pword=None):
+    def generate_token(self, name, expires_at, url=None,
+                       username=None, pword=None):
         if url is not None:
             self.__set_endpoint(url)
         if username is not None:

@@ -12,7 +12,7 @@ from pytest import mark
 from uuid import uuid4
 from base64 import b64encode
 
-from congregate.helpers.misc_utils import input_generator
+from gitlab_ps_utils.misc_utils import input_generator
 from congregate.cli import config
 from congregate.helpers.seed.generate_token import token_generator
 from congregate.helpers.seed.generator import SeedDataGenerator

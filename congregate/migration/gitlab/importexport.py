@@ -8,11 +8,11 @@ from glob import glob
 from requests.exceptions import RequestException
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import get_dry_log, \
+from gitlab_ps_utils.misc_utils import get_dry_log, \
     safe_json_response
 from congregate.helpers.migrate_utils import check_is_project_or_group_for_logging, migration_dry_run
-from congregate.helpers.file_utils import download_file
-from congregate.helpers.json_utils import json_pretty
+from gitlab_ps_utils.file_utils import download_file
+from gitlab_ps_utils.json_utils import json_pretty
 from congregate.aws import AwsClient
 from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.groups import GroupsClient
@@ -184,7 +184,7 @@ class ImportExportClient(BaseClass):
                 break
         return group
 
-    def get_export_response(self, source_id, is_project, headers=None, data=None):
+    def get_export_response(self, source_id, is_project, data=None, headers=None):
         """
         Gets the export response for both project and group exports
         """
@@ -196,7 +196,7 @@ class ImportExportClient(BaseClass):
                 host, token, source_id, data=data, headers=headers)
         else:
             response = self.groups_api.export_group(
-                host, token, source_id, data=data)
+                host, token, source_id, data=data, headers=headers)
         return response
 
     def export_to_aws(self, source_id, filename, is_project=True):
@@ -436,6 +436,7 @@ class ImportExportClient(BaseClass):
         elif self.config.location == "filesystem-aws":
             pass
         elif self.config.location == "filesystem":
+            token = self.config.destination_token
             with open("%s/downloads/%s" % (self.config.filesystem_path, filename), "rb") as f:
                 data = {
                     "path": path,
@@ -445,10 +446,13 @@ class ImportExportClient(BaseClass):
                 files = {
                     "file": (filename, f)
                 }
+                headers = {
+                    "Private-Token": token
+                }
                 message = "Importing group %s with payload %s and members %s" % (
                     path, data, members)
                 resp = self.groups_api.import_group(
-                    self.config.destination_host, self.config.destination_token, data=data, files=files, message=message)
+                    self.config.destination_host, token, data=data, files=files, headers=headers, message=message)
         return resp
 
     def get_override_params(self, project):

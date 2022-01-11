@@ -1,12 +1,12 @@
 
 import json
 from os import path
+from requests.exceptions import RequestException
+from gitlab_ps_utils.dict_utils import rewrite_list_into_dict
+from gitlab_ps_utils import api, misc_utils
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers import api, misc_utils
-from congregate.helpers.dict_utils import rewrite_list_into_dict
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.api.users import UsersApi
-from requests.exceptions import RequestException
 
 
 class CompareClient(BaseClass):
@@ -53,7 +53,8 @@ class CompareClient(BaseClass):
 
         return results, self.unknown_users
 
-    def load_group_data(self, file_path, host, token, location=None, top_level_group=None):
+    def load_group_data(self, file_path, host, token,
+                        location=None, top_level_group=None):
         if path.exists(file_path):
             with open(file_path, "r") as f:
                 return json.load(f)
@@ -160,17 +161,17 @@ class CompareClient(BaseClass):
 
             {
                 27: {
-                    'email': 'jdoe@email.com', 
-                    'destination_instance_user_id': 1234, 
-                    'destination_instance_username': 'jdoe', 
+                    'email': 'jdoe@email.com',
+                    'destination_instance_user_id': 1234,
+                    'destination_instance_username': 'jdoe',
                     'source_username': 'jdoe'
                 }
                 ...
             }
 
-            where: 
+            where:
 
-            - 27 is the current ID staged for that user in the group or project. If this doesn't match destination_instance_user_id, 
+            - 27 is the current ID staged for that user in the group or project. If this doesn't match destination_instance_user_id,
                 then the staged data needs to be corrected
 
             - email is the email found across both instances

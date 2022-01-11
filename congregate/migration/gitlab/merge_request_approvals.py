@@ -1,8 +1,8 @@
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import is_error_message_present, safe_json_response
-from congregate.helpers.dict_utils import pop_multiple_keys
+from gitlab_ps_utils.misc_utils import is_error_message_present, safe_json_response
+from gitlab_ps_utils.dict_utils import pop_multiple_keys
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.api.projects import ProjectsApi

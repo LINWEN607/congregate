@@ -1,6 +1,6 @@
 import unittest
 from pytest import mark
-from congregate.helpers.jsondiff import Comparator
+from gitlab_ps_utils.jsondiff import Comparator
 
 
 @mark.unit_test
@@ -16,7 +16,6 @@ class ComparatorTests(unittest.TestCase):
         actual = self.engine._compare_arrays(list_one, list_two)
 
         self.assertEqual(expected, actual)
-
 
     def test_list_comparison_long_list(self):
         list_one = [{"Hello": "World"}, 2, 3, 4, 5]

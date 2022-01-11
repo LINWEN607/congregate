@@ -2,7 +2,7 @@ from congregate.helpers.base_class import BaseClass
 from congregate.migration.bitbucket.api.projects import ProjectsApi
 from congregate.migration.bitbucket.api.users import UsersApi
 from congregate.helpers.mdbc import MongoConnector
-from congregate.helpers.misc_utils import strip_netloc, is_error_message_present
+from gitlab_ps_utils.misc_utils import strip_netloc, is_error_message_present
 
 
 class UsersClient(BaseClass):

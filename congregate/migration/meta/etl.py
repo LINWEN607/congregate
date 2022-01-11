@@ -2,7 +2,6 @@ from pathlib import Path
 import json
 import pandas as pd
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.list_utils import safe_list_index_lookup
 
 class WaveSpreadsheetHandler(BaseClass):
     def __init__(self, file_path, columns_to_use=None):
@@ -17,14 +16,22 @@ class WaveSpreadsheetHandler(BaseClass):
 
             Supported file types: .xls, .xlsx, .xlsm, .xlsb, .odf, .ods, .odt, .csv
         """
-        excel_types = ['.xls', '.xlsx', '.xlsm', '.xlsb', '.odf', '.ods', '.odt']
+        excel_types = [
+            '.xls',
+            '.xlsx',
+            '.xlsm',
+            '.xlsb',
+            '.odf',
+            '.ods',
+            '.odt']
         extension = Path(self.file_path).suffix
         if extension in excel_types:
             return "excel"
         elif extension == ".csv":
             return "csv"
         else:
-            raise ValueError(f"{self.file_path} is an invalid file type for extraction and transformation")
+            raise ValueError(
+                f"{self.file_path} is an invalid file type for extraction and transformation")
 
     def read_file_as_dataframe(self, df_filter=None):
         """
@@ -47,8 +54,9 @@ class WaveSpreadsheetHandler(BaseClass):
 
             See here: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.to_json.html for more information regarding `to_json`
         """
-        return json.loads(self.read_file_as_dataframe(df_filter=df_filter).to_json(orient='records'))
-    
+        return json.loads(self.read_file_as_dataframe(
+            df_filter=df_filter).to_json(orient='records'))
+
     def filter_data(self, df, column, value):
         """
             Return a filtered subset of a dataframe where the filter is a specific value in a specific column
@@ -63,7 +71,7 @@ class WaveSpreadsheetHandler(BaseClass):
         """
         if (mapping := self.config.wave_spreadsheet_column_mapping) and columns_to_use:
             for k, v in mapping.items():
-                if (ind := columns_to_use.index(v) if v in columns_to_use else None):
+                if (ind := columns_to_use.index(v)
+                        if v in columns_to_use else None):
                     columns_to_use[ind] = k
         return columns_to_use
-        

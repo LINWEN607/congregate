@@ -1,8 +1,8 @@
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.misc_utils import get_dry_log
-from congregate.helpers.json_utils import json_pretty
+from gitlab_ps_utils.misc_utils import get_dry_log
+from gitlab_ps_utils.json_utils import json_pretty
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 

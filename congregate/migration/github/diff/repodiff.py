@@ -1,5 +1,8 @@
+from gitlab_ps_utils.api import GitLabApi
+from gitlab_ps_utils.misc_utils import get_rollback_log
+from gitlab_ps_utils.dict_utils import rewrite_json_list_into_dict, dig
+from gitlab_ps_utils.json_utils import read_json_file_into_object
 from congregate.migration.gitlab.diff.basediff import BaseDiffClient
-from congregate.helpers.api import GitLabApi
 from congregate.migration.github.api.base import GitHubApi
 from congregate.migration.github.api.repos import ReposApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
@@ -7,9 +10,6 @@ from congregate.migration.gitlab.api.issues import IssuesApi
 from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
 from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
 from congregate.migration.github.repos import ReposClient
-from congregate.helpers.misc_utils import get_rollback_log
-from congregate.helpers.dict_utils import rewrite_json_list_into_dict, dig
-from congregate.helpers.json_utils import read_json_file_into_object
 from congregate.helpers.migrate_utils import get_dst_path_with_namespace
 
 
@@ -101,19 +101,22 @@ class RepoDiffClient(BaseDiffClient):
                 "/")
         else:
             project_path = get_dst_path_with_namespace(project)
-        if not (project_id := dig(self.results.get(project_path), "response", "repo_id")):
+        if not (project_id := dig(self.results.get(
+                project_path), "response", "repo_id")):
             project_id = dig(self.results.get(project_path), "response", "id")
 
         project_path_replaced = project_path.replace(".", "_")
         group_namespace = "/".join(project_path_replaced.split("/")[:1])
         mongo = self.connect_to_mongo()
-        if self.results.get(project_path) and ((self.asset_exists(self.gl_projects_api.get_project, project_id)) or isinstance(self.results.get(project_path), int)):
+        if self.results.get(project_path) and ((self.asset_exists(
+                self.gl_projects_api.get_project, project_id)) or isinstance(self.results.get(project_path), int)):
             project_diff = self.handle_endpoints(project)
             diff_report[project_path_replaced] = project_diff
             try:
                 diff_report[project_path_replaced]["overall_accuracy"] = self.calculate_overall_accuracy(
                     diff_report[project_path_replaced])
-                # Cast all keys and values to strings to avoid mongo key validation errors
+                # Cast all keys and values to strings to avoid mongo key
+                # validation errors
                 cleaned_data = {str(key): str(val)
                                 for key, val in (diff_report.copy()).items()}
                 mongo.insert_data(
@@ -217,15 +220,18 @@ class RepoDiffClient(BaseDiffClient):
 
         return repo_diff
 
-    def generate_repo_diff(self, project, sort_key, source_data, gl_endpoint, **kwargs):
-        return self.generate_gh_diff(project, "path_with_namespace", sort_key, source_data, gl_endpoint, parent_group=self.config.dstn_parent_group_path or project.get("target_namespace", ""), **kwargs)
+    def generate_repo_diff(self, project, sort_key,
+                           source_data, gl_endpoint, **kwargs):
+        return self.generate_gh_diff(project, "path_with_namespace", sort_key, source_data, gl_endpoint,
+                                     parent_group=self.config.dstn_parent_group_path or project.get("target_namespace", ""), **kwargs)
 
-    def generate_repo_count_diff(self, project, gh_api, gl_api, bypass_x_total_count=False):
+    def generate_repo_count_diff(
+            self, project, gh_api, gl_api, bypass_x_total_count=False):
         key = "path_with_namespace"
         destination_id = self.get_destination_id(
             project, key, self.config.dstn_parent_group_path)
         source_count = self.gh_api.get_total_count(
-            self.config.source_host,  gh_api)
+            self.config.source_host, gh_api)
         if isinstance(gl_api, list):
             gl_api[0] = gl_api[0].replace(":id", str(destination_id))
             destination_count = self.gl_api.get_nested_total_count(

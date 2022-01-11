@@ -2,6 +2,9 @@ import unittest
 from unittest import mock
 from pytest import mark, fixture
 import responses
+from gitlab_ps_utils.exceptions import ConfigurationException
+from gitlab_ps_utils.string_utils import obfuscate
+from gitlab_ps_utils.api import GitLabApi
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
 from congregate.tests.mockapi.gitlab.users import MockUsersApi as GLMockUsers
@@ -9,9 +12,6 @@ from congregate.tests.mockapi.github.users import MockUsersApi as GHMockUsers
 from congregate.tests.mockapi.bitbucket.users import MockUsersApi as BBSUsers
 from congregate.tests.mockapi.gitlab.token import invalid_token
 from congregate.tests.mockapi.gitlab.error import other_error
-from congregate.helpers.exceptions import ConfigurationException
-from congregate.helpers.string_utils import obfuscate
-from congregate.helpers.api import GitLabApi
 
 
 @mark.unit_test
@@ -160,9 +160,11 @@ class ConfigurationValidationTests(unittest.TestCase):
     @responses.activate
     # pylint: enable=no-member
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.validate_dstn_token')
-    @mock.patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator,
+                       'dstn_parent_id', new_callable=mock.PropertyMock)
     @mock.patch.object(GitLabApi, "generate_v4_request_url")
-    def test_succeed_parent_group_path_validation(self, url, parent_id, valid_token):
+    def test_succeed_parent_group_path_validation(
+            self, url, parent_id, valid_token):
         parent_id.return_value = 4
         self.config.as_obj().set("DESTINATION", "dstn_parent_group_path", "twitter")
         url_value = "https://gitlab.com/api/v4/groups/4"
@@ -178,7 +180,8 @@ class ConfigurationValidationTests(unittest.TestCase):
 
     @responses.activate
     # pylint: enable=no-member
-    @mock.patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator,
+                       'dstn_parent_id', new_callable=mock.PropertyMock)
     @mock.patch.object(GitLabApi, "generate_v4_request_url")
     def test_fail_parent_group_path_validation(self, url, parent_id):
         parent_id.return_value = 4
@@ -220,7 +223,8 @@ class ConfigurationValidationTests(unittest.TestCase):
 
     @responses.activate
     # pylint: enable=no-member
-    @mock.patch.object(ConfigurationValidator, 'source_type', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'source_type',
+                       new_callable=mock.PropertyMock)
     @mock.patch("getpass.getpass")
     @mock.patch.object(GitLabApi, "generate_v4_request_url")
     def test_validate_gitlab_src_token_invalid(self, url, secret, src_type):
@@ -239,11 +243,15 @@ class ConfigurationValidationTests(unittest.TestCase):
 
     @responses.activate
     # pylint: enable=no-member
-    @mock.patch.object(ConfigurationValidator, 'source_type', new_callable=mock.PropertyMock)
-    @mock.patch.object(ConfigurationValidator, 'source_host', new_callable=mock.PropertyMock)
-    @mock.patch.object(ConfigurationValidator, 'ssl_verify', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'source_type',
+                       new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'source_host',
+                       new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'ssl_verify',
+                       new_callable=mock.PropertyMock)
     @mock.patch("getpass.getpass")
-    def test_validate_github_src_token_invalid(self, secret, verify, host, src_type):
+    def test_validate_github_src_token_invalid(
+            self, secret, verify, host, src_type):
         secret.return_value = "test"
         src_type.return_value = "github"
         verify.return_value = False
@@ -261,11 +269,15 @@ class ConfigurationValidationTests(unittest.TestCase):
 
     @responses.activate
     # pylint: enable=no-member
-    @mock.patch.object(ConfigurationValidator, 'source_type', new_callable=mock.PropertyMock)
-    @mock.patch.object(ConfigurationValidator, 'source_host', new_callable=mock.PropertyMock)
-    @mock.patch.object(ConfigurationValidator, 'ssl_verify', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'source_type',
+                       new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'source_host',
+                       new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'ssl_verify',
+                       new_callable=mock.PropertyMock)
     @mock.patch("getpass.getpass")
-    def test_validate_github_src_token_not_admin(self, secret, verify, host, src_type):
+    def test_validate_github_src_token_not_admin(
+            self, secret, verify, host, src_type):
         secret.return_value = "test"
         src_type.return_value = "github"
         verify.return_value = False
@@ -283,11 +295,15 @@ class ConfigurationValidationTests(unittest.TestCase):
 
     @responses.activate
     # pylint: enable=no-member
-    @mock.patch.object(ConfigurationValidator, 'source_type', new_callable=mock.PropertyMock)
-    @mock.patch.object(ConfigurationValidator, 'source_host', new_callable=mock.PropertyMock)
-    @mock.patch.object(ConfigurationValidator, 'ssl_verify', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'source_type',
+                       new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'source_host',
+                       new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'ssl_verify',
+                       new_callable=mock.PropertyMock)
     @mock.patch("getpass.getpass")
-    def test_validate_github_src_token_success(self, secret, verify, host, src_type):
+    def test_validate_github_src_token_success(
+            self, secret, verify, host, src_type):
         secret.return_value = "test"
         src_type.return_value = "github"
         verify.return_value = False
@@ -304,11 +320,15 @@ class ConfigurationValidationTests(unittest.TestCase):
 
     @responses.activate
     # pylint: enable=no-member
-    @mock.patch.object(ConfigurationValidator, 'source_type', new_callable=mock.PropertyMock)
-    @mock.patch.object(ConfigurationValidator, 'source_host', new_callable=mock.PropertyMock)
-    @mock.patch.object(ConfigurationValidator, 'source_username', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'source_type',
+                       new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'source_host',
+                       new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator,
+                       'source_username', new_callable=mock.PropertyMock)
     @mock.patch("getpass.getpass")
-    def test_validate_bbs_src_token_invalid(self, secret, username, host, src_type):
+    def test_validate_bbs_src_token_invalid(
+            self, secret, username, host, src_type):
         secret.return_value = "test"
         src_type.return_value = "bitbucket server"
         username.return_value = "admin"
@@ -325,11 +345,15 @@ class ConfigurationValidationTests(unittest.TestCase):
 
     @responses.activate
     # pylint: enable=no-member
-    @mock.patch.object(ConfigurationValidator, 'source_type', new_callable=mock.PropertyMock)
-    @mock.patch.object(ConfigurationValidator, 'source_host', new_callable=mock.PropertyMock)
-    @mock.patch.object(ConfigurationValidator, 'source_username', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'source_type',
+                       new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'source_host',
+                       new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator,
+                       'source_username', new_callable=mock.PropertyMock)
     @mock.patch("getpass.getpass")
-    def test_validate_bbs_src_token_user_invalid_group_invalid(self, secret, username, host, src_type):
+    def test_validate_bbs_src_token_user_invalid_group_invalid(
+            self, secret, username, host, src_type):
         secret.return_value = "test"
         src_type.return_value = "bitbucket server"
         username.return_value = "non-user"
@@ -351,11 +375,15 @@ class ConfigurationValidationTests(unittest.TestCase):
 
     @responses.activate
     # pylint: enable=no-member
-    @mock.patch.object(ConfigurationValidator, 'source_type', new_callable=mock.PropertyMock)
-    @mock.patch.object(ConfigurationValidator, 'source_host', new_callable=mock.PropertyMock)
-    @mock.patch.object(ConfigurationValidator, 'source_username', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'source_type',
+                       new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'source_host',
+                       new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator,
+                       'source_username', new_callable=mock.PropertyMock)
     @mock.patch("getpass.getpass")
-    def test_validate_bbs_src_token_not_sys_admin(self, secret, username, host, src_type):
+    def test_validate_bbs_src_token_not_sys_admin(
+            self, secret, username, host, src_type):
         secret.return_value = "test"
         src_type.return_value = "bitbucket server"
         username.return_value = "non-admin"
@@ -372,11 +400,15 @@ class ConfigurationValidationTests(unittest.TestCase):
 
     @responses.activate
     # pylint: enable=no-member
-    @mock.patch.object(ConfigurationValidator, 'source_type', new_callable=mock.PropertyMock)
-    @mock.patch.object(ConfigurationValidator, 'source_host', new_callable=mock.PropertyMock)
-    @mock.patch.object(ConfigurationValidator, 'source_username', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'source_type',
+                       new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'source_host',
+                       new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator,
+                       'source_username', new_callable=mock.PropertyMock)
     @mock.patch("getpass.getpass")
-    def test_validate_bbs_src_token_success(self, secret, username, host, src_type):
+    def test_validate_bbs_src_token_success(
+            self, secret, username, host, src_type):
         secret.return_value = "test"
         src_type.return_value = "bitbucket server"
         username.return_value = "admin"
@@ -393,11 +425,15 @@ class ConfigurationValidationTests(unittest.TestCase):
 
     @responses.activate
     # pylint: enable=no-member
-    @mock.patch.object(ConfigurationValidator, 'source_type', new_callable=mock.PropertyMock)
-    @mock.patch.object(ConfigurationValidator, 'source_host', new_callable=mock.PropertyMock)
-    @mock.patch.object(ConfigurationValidator, 'source_username', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'source_type',
+                       new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'source_host',
+                       new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator,
+                       'source_username', new_callable=mock.PropertyMock)
     @mock.patch("getpass.getpass")
-    def test_validate_bbs_src_token_user_invalid_group_valid_success(self, secret, username, host, src_type):
+    def test_validate_bbs_src_token_user_invalid_group_valid_success(
+            self, secret, username, host, src_type):
         secret.return_value = "test"
         src_type.return_value = "bitbucket server"
         username.return_value = "non-user"
@@ -423,7 +459,8 @@ class ConfigurationValidationTests(unittest.TestCase):
 
     @responses.activate
     # pylint: enable=no-member
-    @mock.patch.object(ConfigurationValidator, 'source_type', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'source_type',
+                       new_callable=mock.PropertyMock)
     @mock.patch("getpass.getpass")
     @mock.patch.object(GitLabApi, "generate_v4_request_url")
     def test_validate_gitlab_src_token_not_admin(self, url, secret, src_type):
@@ -442,7 +479,8 @@ class ConfigurationValidationTests(unittest.TestCase):
 
     @responses.activate
     # pylint: enable=no-member
-    @mock.patch.object(ConfigurationValidator, 'source_type', new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'source_type',
+                       new_callable=mock.PropertyMock)
     @mock.patch("getpass.getpass")
     @mock.patch.object(GitLabApi, "generate_v4_request_url")
     def test_validate_gitlab_src_token_success(self, url, secret, src_type):
