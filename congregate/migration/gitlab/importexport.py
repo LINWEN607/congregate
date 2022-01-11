@@ -710,12 +710,13 @@ class ImportExportClient(BaseClass):
         while True:
             details = safe_json_response(resp)
             state = details.get("status")
+            log_string = f"Bulk group import {state}, with status response:\n{json_pretty(details)}"
             if state == "finished":
-                self.log.info("Bulk group import finished")
+                self.log.info(log_string)
                 imported = True
                 break
             if state == "failed":
-                self.log.error("Bulk group import failed")
+                self.log.error(log_string)
                 break
             if total_time < timeout:
                 self.log.info(
@@ -725,7 +726,6 @@ class ImportExportClient(BaseClass):
                 resp = self.groups_api.get_bulk_group_import_status(
                     self.config.destination_host, self.config.destination_token, iid)
             else:
-                self.log.error(
-                    f"Bulk group import time limit exceeded with status:\n{json_pretty(details)}")
+                self.log.error(f"Time limit exceeded. {log_string}")
                 break
         return imported
