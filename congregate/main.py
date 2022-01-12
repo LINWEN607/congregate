@@ -26,6 +26,7 @@ Usage:
     # TODO: Refactor, project name matching does not seem correct
     congregate find-unimported-projects [--commit]
     congregate stage-unimported-projects [--commit] # TODO: Refactor, broken
+    congregate url-rewrite-only [--commit]
     congregate remove-users-from-parent-group [--commit]
     congregate migrate-variables-in-stage [--commit]
     congregate mirror-staged-projects [--commit]
@@ -141,6 +142,7 @@ Commands:
     get-total-count                         Get total count of migrated projects. Used to compare exported projects to imported projects.
     find-unimported-projects                Return a list of projects that failed import.
     stage-unimported-projects               Stage unimported projects based on {CONGREGATE_PATH}/data/unimported_projects.txt.
+    url-rewrite-only                        Performs the URL rewrite portion of a migration as a stand-alone step, instead of as a post-migration step. Requires the projects to be staged, and to exist on destination
     remove-users-from-parent-group          Remove all users with at most reporter access from the parent group.
     migrate-variables-in-stage              Migrate CI variables for staged projects.
     mirror-staged-projects                  Set up project mirroring for staged projects.
@@ -639,7 +641,8 @@ def main():
                 print("Secret copied to clipboard (pbcopy)")
             else:
                 print(f"Secret: {data}")
-
+        if arguments["url-rewrite-only"]:
+            projects.perform_url_rewrite_only(dry_run=DRY_RUN)
 
 if __name__ == "__main__":
     main()

@@ -1,7 +1,9 @@
 import json
 import base64
+from os import linesep
 from os.path import dirname
 import datetime
+from sqlite3 import DataError
 from time import time
 from requests.exceptions import RequestException
 
@@ -16,20 +18,22 @@ from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.users import UsersClient
 from congregate.helpers.mdbc import MongoConnector
-from congregate.helpers.migrate_utils import get_dst_path_with_namespace, get_full_path_with_parent_namespace, \
-    dig, get_staged_projects, get_staged_groups, find_user_by_email_comparison_without_id, add_post_migration_stats, is_user_project
+from congregate.helpers.migrate_utils import get_dst_path_with_namespace,  get_full_path_with_parent_namespace, \
+    dig, get_staged_projects, get_staged_groups, find_user_by_email_comparison_without_id, add_post_migration_stats, is_user_project, \
+        get_staged_user_projects
 from congregate.helpers.utils import rotate_logs
 from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
 
 
 class ProjectsClient(BaseClass):
-    def __init__(self):
+    def __init__(self, DRY_RUN=True):
         self.projects_api = ProjectsApi()
         self.groups_api = GroupsApi()
         self.users_api = UsersApi()
         self.groups = GroupsClient()
         self.users = UsersClient()
         self.project_repository_api = ProjectRepositoryApi()
+        self.dry_run = DRY_RUN
         super().__init__()
 
     def get_projects(self):
@@ -558,10 +562,8 @@ class ProjectsClient(BaseClass):
                 if not put_resp or (put_resp and put_resp.status_code == 400):
                     self.log.error(
                         f"Could not put commit for regex replace:\nproject: {project_id}\nbranch name: {branch_name}\nfile: {f}")
-                branch_name = ""
-
-            # A branch_name reset would need to go here for the multiple
-            # branches
+                # A branch_name reset would need to go here for the multiple
+                # branches
 
     def create_staged_projects_structure(
             self, dry_run=True, disable_cicd=False):
@@ -850,3 +852,63 @@ class ProjectsClient(BaseClass):
                         f"Failed to create project {s.get('path_with_namespace')} fork relation, with error:\n{re}")
                     continue
         add_post_migration_stats(start, log=self.log)
+
+    def perform_url_rewrite_only(self, dry_run=True):
+        """
+            :param dry_run: (bool) Should this be a dry_run. Default=True
+
+            Entry point for the stand-alone URL rewrite functionality (instead of running as a post-migration step on project import)
+            Does some preliminary data checks, then spawns the multiprocessing call of handle_rewriting_project_yaml
+        """
+        self.dry_run = dry_run
+        if not self.config.remapping_file_path:
+            self.log.error(f"{get_dry_log(dry_run)}Remapping file path not set. Set remapping_file_path under [APP] in the congregate.conf")
+            return
+        staged_projects = get_staged_projects()
+        
+        if staged_projects:
+            if user_projects := get_staged_user_projects(staged_projects):
+                self.log.error(f"{get_dry_log(dry_run)}User projects staged. Please remove and re-run:\n{''.format(linesep.join(u for u in user_projects))}")
+                return
+            rewrite_results = list(rr for rr in self.multi.start_multi_process(
+                    self.handle_rewriting_project_yaml, staged_projects, processes=self.config.processes))
+            
+            self.log.info(f"### {get_dry_log(dry_run)}Project URL rewrite results ###\n{json_pretty(rewrite_results)}")
+
+    def handle_rewriting_project_yaml(self, project):
+        """
+            :param project: (dict) The project for which we are performing the rewrite. Is a staged_project entry
+            :param dry_run: (bool) Should this be a dry_run. Default=True
+
+            This function will not work if the project does not exist on the destination.
+            Attempts to locate the staged project on the destination, and if found, performs the url rewrite
+            Will generally be called by perform_url_rewrite_only, but can be called individually for one-off
+            Using DRY-RUN is a good way to check the data on the destination system. It will search, log, etc
+            but will not attempt to do the rewrite. A good way to make sure all expected projects are created.
+        """
+        try:
+            import_id = None     
+            dst_path_with_namespace = None
+            return_dict = None
+            dst_path_with_namespace = get_dst_path_with_namespace(project)
+            self.log.info(f"{dst_path_with_namespace}")
+            dst_pid = self.find_project_by_path(self.config.destination_host, self.config.destination_token, dst_path_with_namespace)
+            if dst_pid:
+                # As this is a stand-alone run, we will make an assumption that the project is imported, and skip the import check
+                self.log.info(f"{get_dry_log(self.dry_run)}Project {dst_path_with_namespace} (ID: {dst_pid}) found on destination.")
+                import_id = dst_pid
+            else:
+                self.log.error(
+                    f"{get_dry_log(self.dry_run)}Project {dst_path_with_namespace} NOT found on destination. URL rewrite will not be performed.")
+                raise DataError(f"Project {dst_path_with_namespace} not found")
+            
+            # Always log
+            self.log.info(f"{get_dry_log(self.dry_run)}Performing rewrite for project {dst_path_with_namespace} with ID {import_id}")
+
+            # Perform the replacement using the existing code
+            if import_id and not self.dry_run:
+                self.migrate_gitlab_variable_replace_ci_yml(import_id)
+        except Exception as ex:
+            return_dict = {"id": import_id, "path": dst_path_with_namespace, "message": "error", "exception": str(ex)}
+        finally:
+            return return_dict or {"id": import_id, "path": dst_path_with_namespace, "message": "success", "exception": None}
