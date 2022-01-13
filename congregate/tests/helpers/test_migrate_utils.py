@@ -765,3 +765,16 @@ class MigrateTests(unittest.TestCase):
     def test_check_is_project_or_group_for_logging_project(self):
         assert mutils.check_is_project_or_group_for_logging(True) is "Project"
         assert mutils.check_is_project_or_group_for_logging(False) is "Group"
+
+    @patch("congregate.helpers.migrate_utils.get_staged_user_projects")
+    def test_check_for_staged_user_projects_logs_on_true_and_returns_true(self, mock_get_staged_user_projects):
+        mock_get_staged_user_projects.return_value = ["path_with_namespace"]
+        with self.assertLogs(mutils.b.log, level="WARN") as al:
+            self.assertListEqual(mutils.check_for_staged_user_projects([{}]), ["path_with_namespace"])
+            self.assertListEqual(al.output, ['WARNING:congregate.helpers.base_class:User projects staged:\npath_with_namespace'])
+
+    @patch("congregate.helpers.migrate_utils.get_staged_user_projects")
+    def test_check_for_staged_user_projects_false_when_none_found(self, mock_get_staged_user_projects):
+        mock_get_staged_user_projects.return_value = None
+        # Looks like the self.assertNoLogs only exists in 3.10 and above, so just check the False
+        assert mutils.check_for_staged_user_projects([{}]) is None

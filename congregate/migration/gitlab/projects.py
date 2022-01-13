@@ -20,7 +20,7 @@ from congregate.migration.gitlab.users import UsersClient
 from congregate.helpers.mdbc import MongoConnector
 from congregate.helpers.migrate_utils import get_dst_path_with_namespace,  get_full_path_with_parent_namespace, \
     dig, get_staged_projects, get_staged_groups, find_user_by_email_comparison_without_id, add_post_migration_stats, is_user_project, \
-        get_staged_user_projects
+        check_for_staged_user_projects
 from congregate.helpers.utils import rotate_logs
 from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
 
@@ -867,8 +867,7 @@ class ProjectsClient(BaseClass):
         staged_projects = get_staged_projects()
         
         if staged_projects:
-            if user_projects := get_staged_user_projects(staged_projects):
-                self.log.error(f"{get_dry_log(dry_run)}User projects staged. Please remove and re-run:\n{''.format(linesep.join(u for u in user_projects))}")
+            if check_for_staged_user_projects(staged_projects):                
                 return
             rewrite_results = list(rr for rr in self.multi.start_multi_process(
                     self.handle_rewriting_project_yaml, staged_projects, processes=self.config.processes))

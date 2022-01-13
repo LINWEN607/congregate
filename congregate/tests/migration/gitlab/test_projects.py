@@ -583,16 +583,17 @@ class ProjectsTests(unittest.TestCase):
             self.projects.perform_url_rewrite_only()
         self.assertEqual(al.output, ['ERROR:congregate.helpers.base_class:DRY-RUN: Remapping file path not set. Set remapping_file_path under [APP] in the congregate.conf'])
 
-    @patch("congregate.migration.gitlab.projects.get_staged_user_projects")
+    @patch.object(ProjectsClient, "handle_rewriting_project_yaml")
+    @patch("congregate.migration.gitlab.projects.check_for_staged_user_projects")
     @patch("congregate.migration.gitlab.projects.get_staged_projects")
     @patch.object(Config, 'remapping_file_path', new_callable=PropertyMock)
-    def test_perform_url_rewrite_only_fails_when_user_projects_staged(self, mock_remapping_file_path, mock_get_staged_projects, mock_get_staged_user_projects):
+    def test_perform_url_rewrite_only_fails_when_user_projects_staged(self, mock_remapping_file_path, mock_get_staged_projects, mock_check_for_staged_user_projects, mock_handle_rewriting_project_yaml):
         mock_remapping_file_path.return_value = "some_path"
-        mock_get_staged_projects.return_value = ["a"]
-        mock_get_staged_user_projects.return_value = ["a"]        
-        with self.assertLogs(self.projects.log, level="ERROR") as al:
-            self.projects.perform_url_rewrite_only()
-        self.assertEqual(al.output, ['ERROR:congregate.helpers.base_class:DRY-RUN: User projects staged. Please remove and re-run:\n'])
+        mock_get_staged_projects.return_value = [{"project_type": "user"}]
+        mock_check_for_staged_user_projects.return_value = ["pathwithnamespace"]        
+        assert self.projects.perform_url_rewrite_only() is None
+        mock_check_for_staged_user_projects.assert_called_once()
+        mock_handle_rewriting_project_yaml.assert_not_called()
 
     @patch.object(ProjectsClient, "migrate_gitlab_variable_replace_ci_yml")
     @patch.object(ProjectsApi, "get_project_import_status")
