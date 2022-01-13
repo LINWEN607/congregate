@@ -480,4 +480,4 @@ class Config(BaseConfig):
                 }
         which allows for multiple files with multiple changes.
         """
-        return self.prop("APP", "remapping_file")
+        return self.prop("APP", "remapping_file_path")
