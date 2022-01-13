@@ -19,16 +19,16 @@ class ImportClient(BaseClass):
     def trigger_import_from_bb_server(self, project, dry_run=True):
         project_path = project["path_with_namespace"]
         project_key, repo = self.get_project_repo_from_full_path(project_path)
+        tn = f"{self.config.dstn_parent_group_path or ''}/{project_key}".strip(
+            "/")
         data = {
             "bitbucket_server_url": self.config.source_host,
             "bitbucket_server_username": self.config.source_username,
             "personal_access_token": self.config.source_token,
             "bitbucket_server_project": project_key,
-            "bitbucket_server_repo": repo
+            "bitbucket_server_repo": repo,
+            "target_namespace": tn
         }
-        tn = f"{self.config.dstn_parent_group_path or ''}/{project_key}".strip(
-            "/")
-        data["target_namespace"] = tn
 
         if self.config.lower_case_project_path:
             data["new_name"] = repo.lower()
@@ -42,16 +42,16 @@ class ImportClient(BaseClass):
                     error = resp.get("error")
                     self.log.error(
                         f"Project {project_path} import to {tn} failed with response {resp} and error {error}")
-                    return self.get_failed_result(tn, error)
-                return self.get_result_data(tn, resp)
+                    return self.get_failed_result(project_path, error)
+                return self.get_result_data(project_path, resp)
             except ValueError as ve:
                 self.log.error(
                     f"Failed to import project {project_path} to {tn} due to {ve}")
-                return self.get_failed_result(tn)
+                return self.get_failed_result(project_path)
         else:
             data.pop("personal_access_token", None)
             migration_dry_run("project", data)
-            return self.get_failed_result(tn, data)
+            return self.get_failed_result(project_path, data)
 
     def trigger_import_from_ghe(
             self, pid, path_with_namespace, tn, host, token, dry_run=True):
