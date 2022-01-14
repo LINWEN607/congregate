@@ -1,14 +1,13 @@
 import json
-from time import sleep
 from requests.exceptions import RequestException
+from gitlab_ps_utils.list_utils import remove_dupes
+from gitlab_ps_utils.json_utils import json_pretty
+from gitlab_ps_utils.misc_utils import get_timedelta, safe_json_response, strip_netloc
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.mdbc import MongoConnector
-from gitlab_ps_utils.misc_utils import get_timedelta, safe_json_response, strip_netloc
-from gitlab_ps_utils.list_utils import remove_dupes
 from congregate.helpers.migrate_utils import get_full_path_with_parent_namespace, is_top_level_group, get_staged_groups, \
     find_user_by_email_comparison_without_id
-from gitlab_ps_utils.json_utils import json_pretty
 from congregate.helpers.utils import is_dot_com
 from congregate.migration.gitlab.variables import VariablesClient
 from congregate.migration.gitlab.badges import BadgesClient
@@ -209,7 +208,7 @@ class GroupsClient(BaseClass):
             resp = self.namespaces_api.get_namespace_by_full_path(
                 full_path=full_name_with_parent_namespace, host=host, token=token)
         if resp.status_code == 200:
-            return resp.json()
+            return safe_json_response(resp)
         return None
 
     def add_members_to_destination_group(self, host, token, group_id, members):
@@ -217,11 +216,11 @@ class GroupsClient(BaseClass):
         self.log.info(
             f"Adding members to Group ID {group_id}:\n{json_pretty(members)}")
         for member in members:
-            if member.get("email", None):
+            if member.get("email"):
                 user_id_req = find_user_by_email_comparison_without_id(
                     member["email"])
                 member["user_id"] = user_id_req.get(
-                    "id", None) if user_id_req else None
+                    "id") if user_id_req else None
                 result[member["email"]] = False
                 if member.get("user_id"):
                     resp = safe_json_response(
@@ -229,23 +228,3 @@ class GroupsClient(BaseClass):
                     if resp:
                         result[member["email"]] = True
         return result
-
-    def wait_for_parent_group_creation(self, group):
-        timeout = 0
-        wait_time = self.config.export_import_status_check_time
-        ppath = group["full_path"].rsplit("/", 1)[0]
-        name = group["name"]
-        pnamespace = self.namespaces_api.get_namespace_by_full_path(
-            ppath, self.config.destination_host, self.config.destination_token)
-        while pnamespace.status_code != 200:
-            self.log.info(
-                f"Waiting {self.config.export_import_status_check_time} seconds to create parent group {ppath} for group {name}")
-            timeout += wait_time
-            sleep(wait_time)
-            if timeout > wait_time * 10:
-                self.log.error(
-                    f"Time limit exceeded waiting for parent group {ppath} to create for group {name}")
-                return None
-            pnamespace = self.namespaces_api.get_namespace_by_full_path(
-                ppath, self.config.destination_host, self.config.destination_token)
-        return pnamespace

@@ -271,36 +271,27 @@ class MigrateClient(BaseClass):
         group["full_path"] = mig_utils.get_full_path_with_parent_namespace(
             group["full_path"])
         if not self.dry_run:
+            host = self.config.destination_host
+            token = self.config.destination_token
             # Wait for parent group to create
             if self.config.dstn_parent_group_path:
-                pnamespace = self.groups.wait_for_parent_group_creation(group)
+                pnamespace = self.ie.wait_for_group_import(group["full_path"])
                 if not pnamespace:
                     return {
                         group["full_path"]: False
                     }
-                group["parent_id"] = misc_utils.safe_json_response(
-                    pnamespace)["id"] if group["parent_id"] else self.config.dstn_parent_id
-            if group.get("description") is None:
-                group["description"] = ""
-            result = misc_utils.safe_json_response(self.groups_api.create_group(
-                self.config.destination_host, self.config.destination_token, group))
-            error, result = misc_utils.is_error_message_present(result)
-            if result and not error:
+                group["parent_id"] = pnamespace.get(
+                    "id") if group["parent_id"] else self.config.dstn_parent_id
+            group["description"] = group.get("description") or ""
+            result = misc_utils.safe_json_response(
+                self.groups_api.create_group(host, token, group))
+            is_error, result = misc_utils.is_error_message_present(result)
+            if result and not is_error:
                 if group_id := result.get("id"):
-                    result["members"] = self.groups.add_members_to_destination_group(
-                        self.config.destination_host, self.config.destination_token, group_id, members)
+                    if not self.remove_members:
+                        result["members"] = self.groups.add_members_to_destination_group(
+                            host, token, group_id, members)
                     self.remove_import_user(group_id, gl_type="group")
-                    if self.remove_members:
-                        for member in members:
-                            if member.get("user_id"):
-                                resp = self.groups_api.remove_member(
-                                    group_id, member["user_id"],
-                                    self.config.destination_host,
-                                    self.config.destination_token
-                                )
-                                if resp and resp.status_code == 204:
-                                    result["members"][member["email"]
-                                                      ] = "removed"
         return {
             group["full_path"]: result
         }
@@ -576,23 +567,25 @@ class MigrateClient(BaseClass):
             group["path"] = group["path"].lower()
         group["parent_id"] = self.config.dstn_parent_id
         group_id = None
-        if group_id := self.groups.find_group_id_by_path(
-                self.config.destination_host, self.config.destination_token, group["full_path"]):
+        host = self.config.destination_host
+        token = self.config.destination_token
+        if group_id := self.groups.find_group_id_by_path(host, token, group["full_path"]):
             self.log.info(
                 f"{group['full_path']} ({group_id}) found. Skipping import. Adding members")
         if not self.dry_run:
             if not group_id:
-                result = misc_utils.safe_json_response(self.groups_api.create_group(
-                    self.config.destination_host, self.config.destination_token, group))
+                result = misc_utils.safe_json_response(
+                    self.groups_api.create_group(host, token, group))
                 error, result = misc_utils.is_error_message_present(result)
                 if result and not error:
-                    group_id = result.get("id", None)
+                    group_id = result.get("id")
                 else:
                     self.log.error(f"Unable to create group due to: {result}")
             if group_id:
                 result = {}
-                result["members"] = self.groups.add_members_to_destination_group(
-                    self.config.destination_host, self.config.destination_token, group_id, members)
+                if not self.remove_members:
+                    result["members"] = self.groups.add_members_to_destination_group(
+                        host, token, group_id, members)
                 self.remove_import_user(group_id, gl_type="group")
         return {
             group["full_path"]: result
