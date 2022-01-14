@@ -121,7 +121,8 @@ class ImportExportClient(BaseClass):
         exported = False
         total_time = 0
         wait_time = self.config.export_import_status_check_time
-        timeout = self.config.export_import_timeout
+        # Lightweight and requires half the timeout at most
+        timeout = self.config.export_import_timeout/2
         response = self.get_export_response(gid, is_project=False)
         while True:
             # Wait until rate limit is resolved
@@ -166,7 +167,8 @@ class ImportExportClient(BaseClass):
         group = {}
         timer = 0
         wait_time = self.config.export_import_status_check_time
-        timeout = self.config.export_import_timeout
+        # Lightweight and requires half the timeout at most
+        timeout = self.config.export_import_timeout/2
         while True:
             group = self.groups.find_group_by_path(
                 self.config.destination_host, self.config.destination_token, path)
