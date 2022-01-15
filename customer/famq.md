@@ -189,7 +189,7 @@ Additionally:
 
 ## Does the source instance need to be updated to latest in order to migrate?
 
-Not necessarily. Having the source instance align as close as possible with the destination version, while not surpassing, is preferable.
+Following the [version history](https://docs.gitlab.com/ee/user/project/settings/import_export.html#version-history) it should be at most 2 minor versions behind the destination instance version, while not surpassing it.
 
 >Imports from a newer version of GitLab are not supported. The Importing GitLab version must be greater than or equal to the Exporting GitLab version.
 
