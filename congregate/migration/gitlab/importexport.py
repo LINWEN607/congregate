@@ -1,18 +1,17 @@
 import json
-
 from re import sub
 from urllib.parse import quote, quote_plus
 from time import sleep
 from os import remove
 from glob import glob
+from gitlab_ps_utils.misc_utils import get_dry_log, safe_json_response
+from gitlab_ps_utils.file_utils import download_file
+from gitlab_ps_utils.json_utils import json_pretty
+
 from requests.exceptions import RequestException
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 from congregate.helpers.base_class import BaseClass
-from gitlab_ps_utils.misc_utils import get_dry_log, \
-    safe_json_response
 from congregate.helpers.migrate_utils import check_is_project_or_group_for_logging, migration_dry_run
-from gitlab_ps_utils.file_utils import download_file
-from gitlab_ps_utils.json_utils import json_pretty
 from congregate.aws import AwsClient
 from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.groups import GroupsClient
@@ -31,7 +30,7 @@ class ImportExportClient(BaseClass):
     COOL_OFF_MINUTES = 1.1
 
     def __init__(self):
-        super(ImportExportClient, self).__init__()
+        super().__init__()
         self.aws = self.get_AwsClient()
         self.projects = ProjectsClient()
         self.groups = GroupsClient()
@@ -68,14 +67,15 @@ class ImportExportClient(BaseClass):
         wait_time = self.config.export_import_status_check_time
         timeout = self.config.export_import_timeout
         export_type = check_is_project_or_group_for_logging(is_project)
-        response = self.get_export_response(src_id, is_project)
+        response = self.trigger_export_and_get_response(src_id, is_project)
         while True:
             # Wait until rate limit is resolved
             while response.status_code == 429:
                 self.log.info(
                     f"Re-exporting {export_type.lower()} {name} (ID: {src_id}), waiting {self.COOL_OFF_MINUTES} minutes due to:\n{response.text}")
                 sleep(self.COOL_OFF_MINUTES * 60)
-                response = self.get_export_response(src_id, is_project)
+                response = self.trigger_export_and_get_response(
+                    src_id, is_project)
             if response.status_code == 202:
                 status = self.get_export_status(src_id, is_project)
                 if status.status_code == 200:
@@ -90,7 +90,7 @@ class ImportExportClient(BaseClass):
                         self.log.error(
                             f"{export_type} {name} export failed{' (re-exporting)' if retry else ''}, with response:\n{json_pretty(status_json)}")
                         if retry:
-                            response = self.get_export_response(
+                            response = self.trigger_export_and_get_response(
                                 src_id, is_project)
                             retry = False
                             total_time = 0
@@ -108,7 +108,8 @@ class ImportExportClient(BaseClass):
             elif retry:
                 self.log.error(
                     f"{export_type} {name} export trigger failed{' (re-exporting)' if retry else ''}, with response:\n{response.text}")
-                response = self.get_export_response(src_id, is_project)
+                response = self.trigger_export_and_get_response(
+                    src_id, is_project)
                 retry = False
                 total_time = 0
             else:
@@ -122,14 +123,15 @@ class ImportExportClient(BaseClass):
         total_time = 0
         wait_time = self.config.export_import_status_check_time
         timeout = self.config.export_import_timeout
-        response = self.get_export_response(gid, is_project=False)
+        response = self.trigger_export_and_get_response(gid, is_project=False)
         while True:
             # Wait until rate limit is resolved
             while response.status_code == 429:
                 self.log.info(
                     f"Re-exporting group {gid}, waiting {self.COOL_OFF_MINUTES} minutes due to:\n{response.text}")
                 sleep(self.COOL_OFF_MINUTES * 60)
-                response = self.get_export_response(gid, is_project=False)
+                response = self.trigger_export_and_get_response(
+                    gid, is_project=False)
             if response.status_code == 202:
                 status = self.groups_api.get_group_download_status(
                     self.config.source_host, self.config.source_token, gid)
@@ -153,7 +155,8 @@ class ImportExportClient(BaseClass):
             elif retry:
                 self.log.error(
                     f"Group {gid} export failed (re-exporting), with response:\n{response.text}")
-                response = self.get_export_response(gid, is_project=False)
+                response = self.trigger_export_and_get_response(
+                    gid, is_project=False)
                 retry = False
                 total_time = 0
             else:
@@ -184,7 +187,7 @@ class ImportExportClient(BaseClass):
                 break
         return group
 
-    def get_export_response(self, source_id, is_project, data=None, headers=None):
+    def trigger_export_and_get_response(self, source_id, is_project, data=None, headers=None):
         """
         Gets the export response for both project and group exports
         """
@@ -211,7 +214,7 @@ class ImportExportClient(BaseClass):
         }
         data = "&".join(upload)
         try:
-            response = self.get_export_response(
+            response = self.trigger_export_and_get_response(
                 source_id, is_project, data=data, headers=headers)
             return response
         except RequestException as e:
