@@ -1,9 +1,10 @@
+from gitlab_ps_utils.misc_utils import safe_json_response, is_error_message_present, strip_netloc
+
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.mdbc import MongoConnector
 from congregate.migration.github.api.users import UsersApi
 from congregate.migration.github.api.orgs import OrgsApi
 from congregate.migration.github.meta.github_browser import GitHubBrowser
-from gitlab_ps_utils.misc_utils import safe_json_response, is_error_message_present, strip_netloc
 from congregate.helpers.utils import is_github_dot_com
 
 
@@ -22,9 +23,8 @@ class UsersClient(BaseClass):
     def establish_browser_connection(self):
         if self.username and self.password:
             return GitHubBrowser(self.host, self.username, self.password)
-        else:
-            self.log.warning(
-                "Username/password not set in UseClient initialization. Skipping github browser connection")
+        self.log.warning(
+            "Username/password not set in UseClient initialization. Skipping github browser connection")
 
     def retrieve_user_info(self, processes=None):
         """
