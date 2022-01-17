@@ -240,7 +240,9 @@ class MockReposApi():
                 "default_branch": "master",
                 "permissions": {
                     "admin": True,
+                    "maintain": True,
                     "push": True,
+                    "triage": True,
                     "pull": True
                 },
                 "temp_clone_token": "",
@@ -346,7 +348,9 @@ class MockReposApi():
                 "default_branch": "master",
                 "permissions": {
                     "admin": False,
+                    "maintain": False,
                     "push": False,
+                    "triage": True,
                     "pull": True
                 },
                 "temp_clone_token": "",

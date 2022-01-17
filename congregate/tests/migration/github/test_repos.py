@@ -1,3 +1,4 @@
+import enum
 import unittest
 import warnings
 from unittest.mock import patch, PropertyMock, MagicMock
@@ -134,7 +135,7 @@ class ReposTests(unittest.TestCase):
             }
         ]
 
-        for i in range(len(expected_projects)):
+        for i, _ in enumerate(expected_projects):
             self.assertEqual(
                 actual_projects[i].items(), expected_projects[i].items())
 
@@ -237,10 +238,10 @@ class ReposTests(unittest.TestCase):
             }
         ]
 
-        self.assertLogs("Failed to get JSON for user {} repo {} ({})".format(
-            "pprokic", "pprokic-public-repo", json_404))
+        self.assertLogs(
+            f"Failed to get JSON for user pprokic repo pprokic-public-repo ({json_404})")
 
-        for i in range(len(expected_projects)):
+        for i, _ in enumerate(expected_projects):
             self.assertEqual(
                 actual_projects[i].items(), expected_projects[i].items())
 
