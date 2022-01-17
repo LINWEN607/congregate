@@ -11,7 +11,7 @@ Usage:
     congregate stage-groups <groups>... [--skip-users] [--commit] [--scm-source=hostname]
     congregate stage-wave <wave> [--commit] [--scm-source=hostname]
     congregate create-stage-wave-csv [--commit]
-    congregate migrate [--processes=<n>] [--reporting] [--skip-users] [--remove-members] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostname] [--commit] [--reg-dry-run]
+    congregate migrate [--processes=<n>] [--reporting] [--skip-users] [--remove-members] [--stream-groups] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostname] [--commit] [--reg-dry-run]
     congregate rollback [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
     congregate ui
     congregate do-all [--commit]
@@ -78,6 +78,7 @@ Arguments:
     skip-users                              Stage: Skip staging users; Migrate: Skip migrating users; Rollback: Remove only groups and projects.
     remove-members                          Remove all members of created (GitHub) or imported (GitLab) groups. Skip adding any members of BitBucket imported repos.
     hard-delete                             Remove user contributions and solely owned groups
+    stream-groups                           Streamed approach of migrating staged groups in bulk
     skip-groups                             Rollback: Remove only users and projects
     skip-group-export                       Skip exporting groups from source instance
     skip-group-import                       Skip importing groups to destination instance
@@ -353,6 +354,7 @@ def main():
                     dry_run=DRY_RUN,
                     skip_users=SKIP_USERS,
                     remove_members=REMOVE_MEMBERS,
+                    stream_groups=arguments["--stream-groups"],
                     skip_group_export=bool(
                         arguments["--skip-group-export"] or ONLY_POST_MIGRATION_INFO),
                     skip_group_import=arguments["--skip-group-import"],

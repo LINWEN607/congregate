@@ -1,8 +1,8 @@
 import json
 from requests.exceptions import RequestException
+from gitlab_ps_utils.misc_utils import get_timedelta, safe_json_response, strip_netloc
 from gitlab_ps_utils.list_utils import remove_dupes
 from gitlab_ps_utils.json_utils import json_pretty
-from gitlab_ps_utils.misc_utils import get_timedelta, safe_json_response, strip_netloc
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.mdbc import MongoConnector
@@ -228,3 +228,26 @@ class GroupsClient(BaseClass):
                     if resp:
                         result[member["email"]] = True
         return result
+
+    def find_and_stage_group_bulk_entities(self, groups):
+        entities, result = [], []
+        namespace = self.config.dstn_parent_group_path or ""
+        for g in groups:
+            full_path = g["full_path"]
+            full_path_with_parent_namespace = get_full_path_with_parent_namespace(
+                full_path)
+            dst_grp = self.find_group_by_path(
+                self.config.destination_host, self.config.destination_token, full_path_with_parent_namespace)
+            dst_gid = dst_grp.get("id") if dst_grp else None
+            if dst_gid:
+                self.log.info(
+                    f"Group {full_path} (ID: {dst_gid}) already exists on destination")
+                result.append({full_path_with_parent_namespace: dst_gid})
+            else:
+                result.append({full_path_with_parent_namespace: False})
+                entities.append({
+                    "source_full_path": full_path,
+                    "source_type": "group_entity",
+                    "destination_name": g["name"],
+                    "destination_namespace": namespace})
+        return entities, result

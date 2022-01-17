@@ -246,11 +246,11 @@ def get_results(res):
     c = 0
     for r in res:
         for v in r.values():
-            error, v = is_error_message_present(v)
-            if error or not v:
+            is_error, v = is_error_message_present(v)
+            if is_error or v == False:
                 c += 1
             repo_present = dig(v, 'repository')
-            if repo_present is not None and repo_present is False:
+            if repo_present == False:
                 c += 1
     return {
         "Total": len(res),

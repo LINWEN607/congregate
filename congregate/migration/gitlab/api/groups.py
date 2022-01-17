@@ -215,6 +215,48 @@ class GroupsApi(GitLabApiWrapper):
             message = f"Importing group with payload {str(data)}"
         return self.api.generate_post_request(host, token, "groups/import", data=data, files=files, headers=headers, description=message)
 
+    def bulk_group_import(self, host, token, data=None, message=None):
+        """
+        Start a new GitLab migration
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/bulk_imports.html#start-a-new-gitlab-migration
+
+            :param: host: (str) The destination host
+            :param: token: (str) A token that can access the destination host with import permissions
+            :param: data: (str) Relevant data for the import
+        """
+        if not message:
+            clean_data = data.copy()
+            clean_data.pop("configuration")
+            message = f"Importing groups in bulk with payload {str(clean_data)}"
+        return self.api.generate_post_request(host, token, "bulk_imports", data=json.dumps(data), description=message)
+
+    def get_bulk_group_import_status(self, host, token, bid):
+        """
+        Get GitLab migration details
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/bulk_imports.html#get-gitlab-migration-details
+
+            :param: bid: (int) GitLab bulk import ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Response object containing the response to GET /bulk_imports/:id
+        """
+        return self.api.generate_get_request(host, token, f"bulk_imports/{bid}")
+
+    def get_all_bulk_group_import_entities(self, host, token, bid):
+        """
+        List GitLab migration entities
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/bulk_imports.html#list-gitlab-migration-entities
+
+            :param: bid: (int) GitLab bulk import ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Response object containing the response to GET /bulk_imports/:bid/entities
+        """
+        return self.api.list_all(host, token, f"bulk_imports/{bid}/entities")
+
     def get_all_group_members_incl_inherited(self, gid, host, token):
         """
         Gets a list of group members viewable by the authenticated user, including inherited members through ancestor groups

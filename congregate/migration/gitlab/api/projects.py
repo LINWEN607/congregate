@@ -1157,7 +1157,7 @@ class ProjectsApi(GitLabApiWrapper):
         """
         if not message:
             audit_data = data.copy()
-            audit_data.pop("url", None)
+            audit_data.pop("url")
             message = (
                 f"Creating project {pid} remote mirror with payload {audit_data}")
         return self.api.generate_post_request(host, token, f"projects/{pid}/remote_mirrors", json.dumps(data), description=message)
