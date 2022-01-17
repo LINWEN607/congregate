@@ -370,12 +370,13 @@ class UsersClient(BaseClass):
             new_user = find_user_by_email_comparison_without_id(email)
             if new_user:
                 users_found.append({
-                    "id": new_user.get("id"),
+                    "id": new_user.get("id"),                    
                     "email": new_user.get("email"),
                     "src_state": state,
                     "dest_state": new_user.get("state"),
                     "last_sign_in_at": new_user.get("last_sign_in_at"),
-                    "identities": new_user.get("identities")
+                    "identities": new_user.get("identities"),
+                    "public_email": new_user.get("public_email")
                 })
             else:
                 users_not_found[user.get("id")] = {
