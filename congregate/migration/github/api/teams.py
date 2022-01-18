@@ -1,6 +1,7 @@
 from congregate.migration.github.api.base import GitHubApi
 from congregate.helpers.conf import Config
 
+
 class TeamsApi():
     def __init__(self, host, token):
         self.host = host

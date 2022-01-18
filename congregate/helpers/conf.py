@@ -162,6 +162,11 @@ class Config(BaseConfig):
                          default=None, obfuscated=True)
 
     @property
+    def source_token_array(self):
+        return self.prop_array("SOURCE", "src_access_token",
+                               default=None, obfuscated=True)
+
+    @property
     def src_parent_id(self):
         return self.prop_int("SOURCE", "src_parent_group_id")
 
