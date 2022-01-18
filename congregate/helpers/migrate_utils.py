@@ -146,6 +146,7 @@ def get_staged_user_projects(staged_projects):
                 for sp in staged_projects if is_user_project(sp)]
     return []
 
+
 def check_for_staged_user_projects(staged_projects):
     """
         Check if user projects are in the list of staged_projects. If they are, log a warning and return the list of namespaces, else return None
@@ -153,8 +154,10 @@ def check_for_staged_user_projects(staged_projects):
         :return: True if user projects are found in staged_projects, else False
     """
     if user_projects := get_staged_user_projects(staged_projects):
-        b.log.warning("User projects staged:\n{}".format("\n".join(u for u in user_projects)))
+        b.log.warning("User projects staged:\n{}".format(
+            "\n".join(u for u in user_projects)))
     return user_projects
+
 
 def get_user_project_namespace(p):
     """
@@ -204,7 +207,7 @@ def find_user_by_email_comparison_without_id(email, src=False):
                     f"Found user by matching primary email {email}")
                 return user
             # Allow secondary emails in user search (as of 13.7)
-            elif user and user.get("email"):
+            if user and user.get("email"):
                 b.log.warning(
                     f"Found user by email {email}, with primary set to {user['email']}")
             else:
