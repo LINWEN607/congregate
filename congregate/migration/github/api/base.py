@@ -22,9 +22,11 @@ class GitHubApi():
         self.api = api
         self.config = Config()
         self.token_array = self.config.source_token_array
-        self.token = self.token_array[self.index] or token
+        # Give passed variables priority
+        self.token = self.token_array[self.index] if (
+            self.token_array and len(self.token_array) > 1) else token
         # Test Query
-        self.query = """
+        self.query = query or """
             query {
             viewer {
                 __schema
