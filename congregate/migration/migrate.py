@@ -636,8 +636,10 @@ class MigrateClient(BaseClass):
 
     def are_results(self, results, var, stage):
         if not results:
+            sub_only = " Migrating ONLY sub-groups without '--subgroups-only'?" if var == "group" and stage in [
+                "export", "import"] else ""
             self.log.warning(
-                "Results from {0} {1} returned as empty. Aborting.".format(var, stage))
+                f"Results from {var} {stage} returned as empty.{sub_only} Aborting.")
             mig_utils.add_post_migration_stats(self.dry_run, log=self.log)
             sys.exit()
 
