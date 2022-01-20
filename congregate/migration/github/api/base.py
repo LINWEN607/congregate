@@ -265,7 +265,7 @@ class GitHubApi():
             if 'pull_request' not in data.keys():
                 uniq[data.get("id", data.get("name"))] = 1
         count = len(uniq)
-        log.info(f"Total count for {api}: {count}")
+        log.info(f"Total count for {host} endpoint {api}: {count}")
         return count
 
     def pageless_data(self, resp_json, page_check=False, lastPage=False):
