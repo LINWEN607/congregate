@@ -327,6 +327,8 @@ test:failed-e2e-full-cleanup:
     - .fallback-e2e-cleanup
     - .aws-creds
   when: on_failure
+  rules:
+    - !reference [.e2e-test-setup, rules]
   cache:
     key: "$CI_COMMIT_SHA-full"
     paths:
@@ -340,6 +342,8 @@ test:failed-e2e-single-group-cleanup:
   extends: 
     - .fallback-e2e-cleanup
     - .aws-creds
+  rules:
+    - !reference [.e2e-test-setup, rules]
   cache:
     key: "$CI_COMMIT_SHA-sg"
     paths:
