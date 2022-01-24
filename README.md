@@ -26,6 +26,9 @@ Congregate gathers (meta)data from source system(s), transforms and down-selects
 - [Frequently asked question about automated migrations](./customer/famq.md)
 - [Technical Troubleshooting](./docs/troubleshooting.md)
 - [Migration Service Delivery Kit](https://gitlab.com/gitlab-org/professional-services-automation/delivery-kits/migration-template)
+- [GitLab Partner Program](https://partners.gitlab.com/English/?ReturnUrl=/prm/English/c/Training)
+
+For support questions please create an issue from our [Congregate support issue template](./.gitlab/issue_templates/congregate-support.md).
 
 <!-->
 ## About
