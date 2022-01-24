@@ -124,7 +124,7 @@ class UsersClient(BaseClass):
             self, user, users_map, expiration_date):
         email = user["email"]
         uid = user["id"]
-        if users_map.get(email, None) is None:
+        if users_map.get(email) is None:
             data = {
                 "name": "temp_migration_token",
                 "expires_at": expiration_date,
@@ -132,11 +132,11 @@ class UsersClient(BaseClass):
                     "api"
                 ]
             }
-            new_impersonation_token = self.users_api.create_user_impersonation_token(
+            new_impersonation_token = safe_json_response(self.users_api.create_user_impersonation_token(
                 self.config.destination_host,
                 self.config.destination_token,
                 uid,
-                data).json()
+                data))
             users_map[email] = new_impersonation_token
             users_map[email]["user_id"] = uid
         return users_map[email]

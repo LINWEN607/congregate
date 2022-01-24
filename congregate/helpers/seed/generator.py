@@ -330,14 +330,13 @@ class SeedDataGenerator(BaseClass):
         users_map = {}
         expiration_date = (date.today() + timedelta(days=1)
                            ).strftime('%Y-%m-%d')
-        for i in range(0, len(created_users)):
+        for i, _ in enumerate(created_users):
             user = created_users[i]
-            self.log.info(
-                "{0}Creating user project ({1})".format(get_dry_log(dry_run), user))
+            self.log.info(f"{dry_run}Creating user project ({user})")
             if not dry_run:
                 token = self.users.find_or_create_impersonation_token(
                     user, users_map, expiration_date)
-                if token.get("token") is not None:
+                if token and token.get("token") is not None:
                     created_projects.append(self.projects.projects_api.create_project(
                         self.config.source_host, token, dummy_project_data[i]["name"], data=dummy_project_data[i]).json())
                 else:
