@@ -389,6 +389,8 @@ class UsersClient(BaseClass):
                     for u in users_found if not u.get("last_sign_in_at")]
         no_identities = [(u.get("email"), u.get("dest_state"))
                          for u in users_found if not u.get("identities")]
+        no_public_email = [(u.get("email"), u.get("public_email")) for u in users_found if u.get("email") != u.get("public_email")]
+
         found = f"Found ({len(users_found)})"
         blkd = f"Blocked ({len(blocked)})"
         mismatch = f"State mismatch ({len(state_mismatch)})"
@@ -396,6 +398,7 @@ class UsersClient(BaseClass):
         wo_ids = f"W/O identities ({len(no_identities)})"
         not_found = f"NOT found ({len(users_not_found)})"
         dupe = f"Duplicate ({len(duplicate_users)})"
+        pub_email = f"Incorrect or no public email: ({len(no_public_email)})"
         self.log.info(f"""
             {found}:\n{json_pretty(users_found)}
             {blkd}:\n{json_pretty(blocked)}
@@ -404,6 +407,7 @@ class UsersClient(BaseClass):
             {wo_ids}:\n{json_pretty(no_identities)}
             {not_found}:\n{json_pretty(users_not_found)}
             {dupe}:\n{json_pretty(duplicate_users)}
+            {pub_email}:\n{json_pretty(no_public_email)}
         """)
         if table:
             d = {
