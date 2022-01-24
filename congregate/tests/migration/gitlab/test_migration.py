@@ -1,5 +1,5 @@
 import unittest
-from time import sleep
+from time import sleep, time
 from pytest import mark
 
 from congregate.cli import do_all
@@ -32,7 +32,7 @@ class MigrationEndToEndTest(unittest.TestCase):
 
     def test_user_migration_diff(self):
         user_diff = UserDiffClient(staged=True)
-        diff_report = user_diff.generate_diff_report()
+        diff_report = user_diff.generate_diff_report(time())
         user_diff.generate_html_report(
             "User", diff_report, "/data/results/user_migration_results.html")
         self.assertGreaterEqual(
@@ -40,7 +40,7 @@ class MigrationEndToEndTest(unittest.TestCase):
 
     def test_group_migration_diff(self):
         group_diff = GroupDiffClient(staged=True)
-        diff_report = group_diff.generate_diff_report()
+        diff_report = group_diff.generate_diff_report(time())
         group_diff.generate_html_report(
             "Group", diff_report, "/data/results/group_migration_results.html")
         self.assertGreaterEqual(
@@ -48,7 +48,7 @@ class MigrationEndToEndTest(unittest.TestCase):
 
     def test_project_migration_diff(self):
         project_diff = ProjectDiffClient(staged=True)
-        diff_report = project_diff.generate_diff_report()
+        diff_report = project_diff.generate_diff_report(time())
         project_diff.generate_html_report(
             "Project", diff_report, "/data/results/project_migration_results.html")
         self.assertGreaterEqual(
@@ -59,10 +59,10 @@ def rollback_diff():
     diff_report = {}
     base_diff = BaseDiffClient()
     project_diff = ProjectDiffClient(staged=True, rollback=True)
-    diff_report["project_diff"] = project_diff.generate_diff_report()
+    diff_report["project_diff"] = project_diff.generate_diff_report(time())
     group_diff = GroupDiffClient(staged=True, rollback=True)
-    diff_report["group_diff"] = group_diff.generate_diff_report()
+    diff_report["group_diff"] = group_diff.generate_diff_report(time())
     user_diff = UserDiffClient(staged=True, rollback=True)
-    diff_report["user_diff"] = user_diff.generate_diff_report()
+    diff_report["user_diff"] = user_diff.generate_diff_report(time())
     base_diff.generate_html_report(
         "Rollback", diff_report, "/data/results/migration_rollback_results.html")

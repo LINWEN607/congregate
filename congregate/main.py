@@ -523,7 +523,7 @@ def main():
                         )
                         user_diff.generate_html_report(
                             "User",
-                            user_diff.generate_diff_report(),
+                            user_diff.generate_diff_report(start),
                             "/data/results/user_migration_results.html"
                         )
                     if not SKIP_GROUPS:
@@ -535,7 +535,7 @@ def main():
                         )
                         group_diff.generate_html_report(
                             "Group",
-                            group_diff.generate_diff_report(),
+                            group_diff.generate_diff_report(start),
                             "/data/results/group_migration_results.html"
                         )
                     if not SKIP_PROJECTS:
@@ -546,7 +546,7 @@ def main():
                         )
                         project_diff.generate_html_report(
                             "Project",
-                            project_diff.generate_diff_report(),
+                            project_diff.generate_diff_report(start),
                             "/data/results/project_migration_results.html"
                         )
                 elif config.source_type == "github" or SCM_SOURCE is not None:
@@ -571,7 +571,7 @@ def main():
                             processes=PROCESSES,
                             rollback=ROLLBACK
                         )
-                    repo_diff.generate_diff_report()
+                    repo_diff.generate_diff_report(start)
                     repo_diff.generate_split_html_report()
                 add_post_migration_stats(start, log=log)
 
@@ -645,6 +645,7 @@ def main():
                 print(f"Secret: {data}")
         if arguments["url-rewrite-only"]:
             projects.perform_url_rewrite_only(dry_run=DRY_RUN)
+
 
 if __name__ == "__main__":
     main()

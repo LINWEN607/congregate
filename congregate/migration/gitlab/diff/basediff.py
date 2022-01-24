@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup as bs
 from gitlab_ps_utils.misc_utils import is_error_message_present, pretty_print_key
 from gitlab_ps_utils.dict_utils import rewrite_list_into_dict, is_nested_dict, dig, find as nested_find
 from gitlab_ps_utils.jsondiff import Comparator
+
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.mdbc import MongoConnector
 
