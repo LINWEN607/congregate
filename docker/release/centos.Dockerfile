@@ -107,9 +107,6 @@ RUN cd /opt/congregate && \
     python3.8 -m pip install --user poetry && \
     python3.8 -m poetry install
 
-# Initialize congregate directories
-RUN congregate init
-
 # Install node dependencies
 RUN npm install --no-optional && \
     npm run build
@@ -118,5 +115,9 @@ RUN npm install --no-optional && \
 RUN cd /opt/congregate && \
     chown -R ps-user:wheel dist && \
     chmod -R 750 dist
+
+# Initialize congregate directories
+WORKDIR /opt/congregate
+RUN ./congregate.sh init
 
 EXPOSE 8000

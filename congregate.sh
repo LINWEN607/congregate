@@ -24,7 +24,9 @@ function is_running() {
 }
 
 function do_it() {
-    CONGREGATE_PATH=$(pwd) APP_PATH=$(pwd) && poetry run python congregate/main.py $@
+    set -e
+    CONGREGATE_PATH=$(pwd) APP_PATH=$(pwd) && /home/ps-user/.local/bin/poetry run python congregate/main.py $@
+    set +e
 }
 
 if [ ! -f "/tmp/congregate.pid" ]; then
