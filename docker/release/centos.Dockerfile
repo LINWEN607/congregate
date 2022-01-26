@@ -118,6 +118,6 @@ RUN cd /opt/congregate && \
 
 # Initialize congregate directories
 WORKDIR /opt/congregate
-RUN ./congregate.sh init
+RUN export PATH=$PATH:/home/ps-user/.local/bin/ && ./congregate.sh init
 
 EXPOSE 8000

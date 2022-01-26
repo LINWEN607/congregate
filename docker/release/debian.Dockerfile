@@ -93,7 +93,7 @@ USER ps-user
 
 # Initialize congregate directories
 WORKDIR /opt/congregate
-RUN ./congregate.sh init
+RUN export PATH=$PATH:/home/ps-user/.local/bin/ && ./congregate.sh init
 
 RUN echo 'if [ -z "$(ps aux | grep mongo | grep -v grep)" ]; then mongod --fork --logpath /var/log/mongodb/mongod.log; fi' >> ~/.bashrc && \
     echo 'if [ -z "$(ps aux | grep mongo | grep -v grep)" ]; then mongod --fork --logpath /var/log/mongodb/mongod.log; fi' >> ~/.zshrc

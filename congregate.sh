@@ -25,7 +25,7 @@ function is_running() {
 
 function do_it() {
     set -e
-    CONGREGATE_PATH=$(pwd) APP_PATH=$(pwd) && /home/ps-user/.local/bin/poetry run python congregate/main.py $@
+    CONGREGATE_PATH=$(pwd) APP_PATH=$(pwd) && poetry run python congregate/main.py $@
     set +e
 }
 
