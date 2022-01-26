@@ -3,15 +3,18 @@ from os.path import exists
 import requests
 from jenkins import Jenkins
 
+
 def formatted_message(message, resp):
     fmt_message = f"\n{message}\n{resp.status_code}\n"
     if resp.status_code != 200:
         fmt_message = f"\n{message}\n{resp.status_code}: {resp.text}\n"
     return fmt_message
 
+
 def formatted_url(endpoint):
     url_base = "http://localhost:8080"
     return f"{url_base}/{endpoint}"
+
 
 def setup_jenkins():
     s = requests.Session()
@@ -46,26 +49,26 @@ def setup_jenkins():
 
     print(formatted_message("Logging in", login))
 
-    suggested_plugins =  [
-        "cloudbees-folder", 
-        "antisamy-markup-formatter", 
-        "build-timeout", 
-        "credentials-binding", 
-        "timestamper", 
-        "ws-cleanup", 
-        "ant", 
-        "gradle", 
-        "workflow-aggregator", 
-        "github-branch-source", 
-        "pipeline-github-lib", 
-        "pipeline-stage-view", 
-        "git", 
-        "subversion", 
-        "ssh-slaves", 
-        "matrix-auth", 
-        "pam-auth", 
-        "ldap", 
-        "email-ext", 
+    suggested_plugins = [
+        "cloudbees-folder",
+        "antisamy-markup-formatter",
+        "build-timeout",
+        "credentials-binding",
+        "timestamper",
+        "ws-cleanup",
+        "ant",
+        "gradle",
+        "workflow-aggregator",
+        "github-branch-source",
+        "pipeline-github-lib",
+        "pipeline-stage-view",
+        "git",
+        "subversion",
+        "ssh-slaves",
+        "matrix-auth",
+        "pam-auth",
+        "ldap",
+        "email-ext",
         "mailer",
         "multiple-scms",
         "gitlab-plugin"
@@ -78,14 +81,15 @@ def setup_jenkins():
     # Installing suggested list of plugins
     for plugin in suggested_plugins:
         plugin_name = f"plugin.{plugin}"
-        installPlugins = s.post(formatted_url(f"pluginManager/install?{plugin_name}=true"), 
-            data={
-                "dynamicLoad": True,
-                "Jenkins-Crumb": crumb
-            }
+        installPlugins = s.post(formatted_url(f"pluginManager/install?{plugin_name}=true"),
+                                data={
+            "dynamicLoad": True,
+            "Jenkins-Crumb": crumb
+        }
         )
 
-        print(formatted_message(f"Installing plugin {plugin_name}", installPlugins))
+        print(formatted_message(
+            f"Installing plugin {plugin_name}", installPlugins))
 
     # Since the plugin requests above just trigger the install, the actual install is not completed
     # before a response is returned
@@ -94,11 +98,11 @@ def setup_jenkins():
 
     # Create new admin user
     createAdmin = s.post(formatted_url('setupWizard/createAdminUser'), data={
-        "username": "test-admin", 
-        "password1": "password", 
-        "password2": "password", 
-        "fullname": "test admin", 
-        "email": "test@email.com", 
+        "username": "test-admin",
+        "password1": "password",
+        "password2": "password",
+        "fullname": "test admin",
+        "email": "test@email.com",
         "Jenkins-Crumb": crumb
     })
 
@@ -136,6 +140,7 @@ def setup_jenkins():
     # Write a file to check if jenkins is already set up
     with open("/var/jenkins_home/install-finished", "w") as f:
         f.write("install complete")
+
 
 def seed_data():
     print("Logging in to Jenkins to seed data")
@@ -175,7 +180,7 @@ def seed_data():
         <configVersion>2</configVersion>
         <userRemoteConfigs>
         <hudson.plugins.git.UserRemoteConfig>
-        <url>https://github.gitlab-proserv.net/firdaus/gitlab-jenkins.git</url>
+        <url>https://github.example.net/firdaus/gitlab-jenkins.git</url>
         <credentialsId>gitlabgithub</credentialsId>
         </hudson.plugins.git.UserRemoteConfig>
         </userRemoteConfigs>
@@ -199,7 +204,7 @@ def seed_data():
         <buildWrappers/>
         </project>
     """)
-    
+
     print("Creating job freestyle-job")
     j.create_job("freestyle-job", """
         <project>
@@ -235,7 +240,7 @@ def seed_data():
         <configVersion>2</configVersion>
         <userRemoteConfigs>
         <hudson.plugins.git.UserRemoteConfig>
-        <url>https://github.gitlab-proserv.net/firdaus/scm-info-repo.git</url>
+        <url>https://github.example.net/firdaus/scm-info-repo.git</url>
         <credentialsId>gitlabgithub</credentialsId>
         </hudson.plugins.git.UserRemoteConfig>
         </userRemoteConfigs>
@@ -314,7 +319,7 @@ def seed_data():
     #     <configVersion>2</configVersion>
     #     <userRemoteConfigs>
     #     <hudson.plugins.git.UserRemoteConfig>
-    #     <url>https://github.gitlab-proserv.net/Jenkins-Test-Org/Jenkins-Public-Repo.git</url>
+    #     <url>https://github.example.net/Jenkins-Test-Org/Jenkins-Public-Repo.git</url>
     #     <credentialsId>Jordan_PAT</credentialsId>
     #     </hudson.plugins.git.UserRemoteConfig>
     #     </userRemoteConfigs>

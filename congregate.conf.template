@@ -103,10 +103,10 @@
 ### Consider below changes when multiple sources are GitHub Server, all other configuration remains same
 #sources = {
 #    "github_source": [{
-#        "src_hostname": "https://github.gitlab-proserv.net",
+#        "src_hostname": "https://github.example1.net",
 #        "src_access_token": "<base64 encoded token>"
 #        },{
-#        "src_hostname": "https://github.gitlab-proserv.net",
+#        "src_hostname": "https://github.example2.net",
 #        "src_access_token": "<base64 encoded token>"
 #        }
 #    ]

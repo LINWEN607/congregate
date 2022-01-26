@@ -131,7 +131,7 @@ class OrgsTests(unittest.TestCase):
                 "members": repo_members,
                 "path": "googleapis",
                 "path_with_namespace": "org1/googleapis",
-                "http_url_to_repo": "https://github.gitlab-proserv.net/org1/googleapis.git",
+                "http_url_to_repo": "https://github.example.net/org1/googleapis.git",
                 "ci_sources": {
                     "Jenkins": ['test-job1', 'test-job2'],
                     "TeamCity": []
@@ -156,7 +156,7 @@ class OrgsTests(unittest.TestCase):
                     "TeamCity": []
                 },
                 "path_with_namespace": "org1/gradio",
-                "http_url_to_repo": "https://github.gitlab-proserv.net/org1/gradio.git",
+                "http_url_to_repo": "https://github.example.net/org1/gradio.git",
                 "namespace": {
                     "path": "org1",
                     "kind": "group",
@@ -184,7 +184,7 @@ class OrgsTests(unittest.TestCase):
                         "members": [],
                         "path": "googleapis",
                         "path_with_namespace": "org1/googleapis",
-                        "http_url_to_repo": "https://github.gitlab-proserv.net/org1/googleapis.git",
+                        "http_url_to_repo": "https://github.example.net/org1/googleapis.git",
                         "ci_sources": {
                             "Jenkins": ['test-job1', 'test-job2'],
                             "TeamCity": []
@@ -205,7 +205,7 @@ class OrgsTests(unittest.TestCase):
                         "members": [],
                         "path": "gradio",
                         "path_with_namespace": "org1/gradio",
-                        "http_url_to_repo": "https://github.gitlab-proserv.net/org1/gradio.git",
+                        "http_url_to_repo": "https://github.example.net/org1/gradio.git",
                         "ci_sources": {
                             "Jenkins": ['test-job1', 'test-job2'],
                             "TeamCity": []
@@ -359,7 +359,7 @@ class OrgsTests(unittest.TestCase):
                     "full_path": "org2"
                 },
                 "path_with_namespace": "org2/arrow",
-                "http_url_to_repo": "https://github.gitlab-proserv.net/org2/arrow.git",
+                "http_url_to_repo": "https://github.example.net/org2/arrow.git",
                 "visibility": "public",
                 "description": None,
                 "members": org_team_repo_members
@@ -380,7 +380,7 @@ class OrgsTests(unittest.TestCase):
                     "full_path": "org2"
                 },
                 "path_with_namespace": "org2/phaser",
-                "http_url_to_repo": "https://github.gitlab-proserv.net/org2/phaser.git",
+                "http_url_to_repo": "https://github.example.net/org2/phaser.git",
                 "visibility": "private",
                 "description": None,
                 "members": org_team_repo_members
@@ -412,7 +412,7 @@ class OrgsTests(unittest.TestCase):
                             "full_path": "org2"
                         },
                         "path_with_namespace": "org2/arrow",
-                        "http_url_to_repo": "https://github.gitlab-proserv.net/org2/arrow.git",
+                        "http_url_to_repo": "https://github.example.net/org2/arrow.git",
                         "visibility": "public",
                         "description": None,
                         "members": []
@@ -433,7 +433,7 @@ class OrgsTests(unittest.TestCase):
                             "full_path": "org2"
                         },
                         "path_with_namespace": "org2/phaser",
-                        "http_url_to_repo": "https://github.gitlab-proserv.net/org2/phaser.git",
+                        "http_url_to_repo": "https://github.example.net/org2/phaser.git",
                         "visibility": "private",
                         "description": None,
                         "members": []
@@ -538,7 +538,7 @@ class OrgsTests(unittest.TestCase):
                     "full_path": "org2"
                 },
                 "path_with_namespace": "org2/arrow",
-                "http_url_to_repo": "https://github.gitlab-proserv.net/org2/arrow.git",
+                "http_url_to_repo": "https://github.example.net/org2/arrow.git",
                 "visibility": "public",
                 "description": None,
                 "members": org_team_repo_members
@@ -559,7 +559,7 @@ class OrgsTests(unittest.TestCase):
                     "full_path": "org2"
                 },
                 "path_with_namespace": "org2/phaser",
-                "http_url_to_repo": "https://github.gitlab-proserv.net/org2/phaser.git",
+                "http_url_to_repo": "https://github.example.net/org2/phaser.git",
                 "visibility": "private",
                 "description": None,
                 "members": org_team_repo_members
@@ -591,7 +591,7 @@ class OrgsTests(unittest.TestCase):
                             "full_path": "org2"
                         },
                         "path_with_namespace": "org2/arrow",
-                        "http_url_to_repo": "https://github.gitlab-proserv.net/org2/arrow.git",
+                        "http_url_to_repo": "https://github.example.net/org2/arrow.git",
                         "visibility": "public",
                         "description": None,
                         "members": []
@@ -612,7 +612,7 @@ class OrgsTests(unittest.TestCase):
                             "full_path": "org2"
                         },
                         "path_with_namespace": "org2/phaser",
-                        "http_url_to_repo": "https://github.gitlab-proserv.net/org2/phaser.git",
+                        "http_url_to_repo": "https://github.example.net/org2/phaser.git",
                         "visibility": "private",
                         "description": None,
                         "members": []

@@ -1,10 +1,10 @@
 import json
 import os
-import requests
 import re
 import sys
 import subprocess
 import uuid
+import requests
 from gitlab_ps_utils.processes import MultiProcessing
 
 
@@ -17,8 +17,8 @@ class Manage_Repos():
         self,
         remote_name='new-origin',
         temp_dir='congregate/tests/data/repos/',
-        remote_url='git@github.gitlab-proserv.net:',
-        # git@github.gitlab-proserv.net:seed-testing/purifycss.git-loop-0.git
+        remote_url='git@github.example.net:',
+        # git@github.example.net:seed-testing/purifycss.git-loop-0.git
         **kwargs
 
     ):

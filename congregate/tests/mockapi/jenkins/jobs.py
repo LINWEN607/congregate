@@ -36,7 +36,7 @@ class JenkinsJobsApi():
                 <configVersion>2</configVersion>
                 <userRemoteConfigs>
                 <hudson.plugins.git.UserRemoteConfig>
-                    <url>https://github.gitlab-proserv.net/firdaus/gitlab-jenkins.git</url>
+                    <url>https://github.example.net/firdaus/gitlab-jenkins.git</url>
                     <credentialsId>gitlabgithub</credentialsId>
                 </hudson.plugins.git.UserRemoteConfig>
                 </userRemoteConfigs>
@@ -107,7 +107,7 @@ class JenkinsJobsApi():
                                                       ('userRemoteConfigs',
                                                        OrderedDict([('hudson.plugins.git.UserRemoteConfig',
                                                                      OrderedDict([('url',
-                                                                                   'https://github.gitlab-proserv.net/firdaus/gitlab-jenkins.git'),
+                                                                                   'https://github.example.net/firdaus/gitlab-jenkins.git'),
                                                                                   ('credentialsId',
                                                                                    'gitlabgithub')]))])),
                                                       ('branches',
@@ -137,14 +137,14 @@ class JenkinsJobsApi():
             },
             {
                 "name": "job/scm-info-job",
-                "url": "https://github.gitlab-proserv.net/firdaus/scm-info-repo.git"
+                "url": "https://github.example.net/firdaus/scm-info-repo.git"
             },
             {
                 "name": "job/test-job",
-                "url": "https://github.gitlab-proserv.net/firdaus/gitlab-jenkins.git"
+                "url": "https://github.example.net/firdaus/gitlab-jenkins.git"
             }
             # {
             #     'name': 'job/test-folder/job/nested-demo-job',
-            #     'url': 'https://github.gitlab-proserv.net/Jenkins-Test-Org/Jenkins-Public-Repo.git'
+            #     'url': 'https://github.example.net/Jenkins-Test-Org/Jenkins-Public-Repo.git'
             # }
         ]
