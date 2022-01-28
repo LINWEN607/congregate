@@ -90,7 +90,7 @@ def get_export_filename_from_namespace_and_name(namespace, name=""):
         namespace, "/" + name if name else "").replace("/", "_").lower()
 
 
-def get_project_namespace(p, mirror=False):
+def get_project_dest_namespace(p, mirror=False):
     """
     If this is a user project, the namespace == username
 
@@ -101,12 +101,8 @@ def get_project_namespace(p, mirror=False):
     p_namespace = dig(p, 'namespace', 'full_path') if isinstance(
         p.get("namespace"), dict) else p.get("namespace")
 
-    if not is_user_project(p):
-        if b.config.src_parent_id and b.config.src_parent_group_path:
-            single_group_name = b.config.src_parent_group_path.split("/")[-1]
-            p_namespace = f"{single_group_name}{p_namespace.split(b.config.src_parent_group_path)[-1]}"
-        if b.config.dstn_parent_id and not mirror:
-            return f"{b.config.dstn_parent_group_path}/{p_namespace}"
+    if not is_user_project(p) and b.config.dstn_parent_id and not mirror:
+        return f"{b.config.dstn_parent_group_path}/{p_namespace}"
     return p_namespace
 
 
@@ -226,7 +222,7 @@ def get_dst_path_with_namespace(p, mirror=False):
         :param mirror (bool): Whether we are mirroring a repo on destination
         :return: Destination project path with namespace
     """
-    return f"{get_user_project_namespace(p) if is_user_project(p) else get_project_namespace(p, mirror)}/{p.get('path')}"
+    return f"{get_user_project_namespace(p) if is_user_project(p) else get_project_dest_namespace(p, mirror)}/{p.get('path')}"
 
 
 def get_target_namespace(project):
@@ -234,8 +230,7 @@ def get_target_namespace(project):
         if (strip_netloc(target_namespace).lower() == project.get(
                 'namespace', '').lower()) or project.get("override_dstn_ns"):
             return target_namespace
-        else:
-            return f"{target_namespace}/{project.get('namespace')}"
+        return f"{target_namespace}/{project.get('namespace')}"
     return None
 
 

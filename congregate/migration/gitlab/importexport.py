@@ -19,7 +19,7 @@ from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.namespaces import NamespacesApi
-from congregate.helpers.migrate_utils import get_project_namespace, is_user_project, get_user_project_namespace, \
+from congregate.helpers.migrate_utils import get_project_dest_namespace, is_user_project, get_user_project_namespace, \
     get_export_filename_from_namespace_and_name, get_dst_path_with_namespace, get_full_path_with_parent_namespace, is_loc_supported
 
 
@@ -243,45 +243,45 @@ class ImportExportClient(BaseClass):
         if is_user_project(project):
             self.log.info(
                 f"{dry}{name} is a USER project ({namespace}). Attempting to import into their namespace")
-            dst_namespace = get_user_project_namespace(project)
+            dest_namespace = get_user_project_namespace(project)
         else:
             self.log.info(
                 f"{dry}{name} is NOT a USER project. Attempting to import into a group namespace")
-            dst_namespace = get_project_namespace(project)
+            dest_namespace = get_project_dest_namespace(project)
 
         if not dry_run:
             import_response = self.attempt_import(
-                filename, name, path, dst_namespace, override_params, members)
+                filename, name, path, dest_namespace, override_params, members)
             # Use until group import status endpoint is available
             if import_response.status_code == 404:
                 total_time = 0
                 wait_time = self.config.export_import_status_check_time
                 timeout = self.COOL_OFF_MINUTES * 60
                 while self.namespaces_api.get_namespace_by_full_path(
-                        dst_namespace, self.config.destination_host, self.config.destination_token).status_code != 200:
+                        dest_namespace, self.config.destination_host, self.config.destination_token).status_code != 200:
                     self.log.info(
-                        f"Waited {total_time}/{timeout} seconds to create {dst_namespace} for project {name}")
+                        f"Waited {total_time}/{timeout} seconds to create {dest_namespace} for project {name}")
                     total_time += wait_time
                     sleep(wait_time)
                     if total_time > timeout:
                         self.log.error(
-                            f"Time limit exceeded waiting for project {name} to import to {dst_namespace}, with response:\n{import_response}")
+                            f"Time limit exceeded waiting for project {name} to import to {dest_namespace}, with response:\n{import_response}")
                         return None
                 import_response = self.attempt_import(
-                    filename, name, path, dst_namespace, override_params, members)
+                    filename, name, path, dest_namespace, override_params, members)
             elif import_response.status_code == 422:
                 self.log.error(
-                    f"Project {name} failed to import to {dst_namespace}, due to:\n{import_response.text}")
+                    f"Project {name} failed to import to {dest_namespace}, due to:\n{import_response.text}")
                 return None
             import_id = self.get_import_id_from_response(
-                import_response, filename, name, path, dst_namespace, override_params, members)
+                import_response, filename, name, path, dest_namespace, override_params, members)
         else:
             self.log.info(
                 f"{dry}Outputing project {name} (file: {filename}) migration data to dry_run_project_migration.json")
             migration_dry_run("project", {
                 "filename": filename,
                 "name": name,
-                "namespace": dst_namespace,
+                "namespace": dest_namespace,
                 "override_params": override_params,
                 "project": project})
         return import_id

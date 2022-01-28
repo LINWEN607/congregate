@@ -251,47 +251,46 @@ class MigrateTests(unittest.TestCase):
                   "dstn_parent_group_path", new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, "dstn_parent_id",
                   new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, "src_parent_group_path",
-                  new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, "src_parent_id",
-                  new_callable=PropertyMock)
-    def test_get_project_namespace(
-            self, src_parent_id, src_parent_group_path, dstn_parent_id, dstn_parent_group_path):
+    def test_get_project_dest_namespace(self, dstn_parent_id, dstn_parent_group_path):
         dstn_parent_id.return_value = 4
         dstn_parent_group_path.return_value = "test"
-        src_parent_id.return_value = None
-        src_parent_group_path.return_value = None
-        self.assertEqual(mutils.get_project_namespace(
+        self.assertEqual(mutils.get_project_dest_namespace(
             self.mock_projects.get_staged_group_project()), "test/pmm-demo")
         dstn_parent_id.return_value = None
-        self.assertEqual(mutils.get_project_namespace(
+        self.assertEqual(mutils.get_project_dest_namespace(
             self.mock_projects.get_staged_group_project()), "pmm-demo")
         dstn_parent_id.return_value = 1
-        self.assertEqual(mutils.get_project_namespace(
+        self.assertEqual(mutils.get_project_dest_namespace(
             self.mock_projects.get_staged_user_project()), "pmm-demo")
 
     @patch.object(ConfigurationValidator,
                   "dstn_parent_group_path", new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, "dstn_parent_id",
                   new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, "src_parent_group_path",
-                  new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, "src_parent_id",
-                  new_callable=PropertyMock)
-    def test_get_project_namespace_with_src_group(
-            self, src_parent_id, src_parent_group_path, dstn_parent_id, dstn_parent_group_path):
+    def test_get_project_dest_namespace_with_src_group(self, dstn_parent_id, dstn_parent_group_path):
         dstn_parent_id.return_value = 4
         dstn_parent_group_path.return_value = "test"
-        src_parent_id.return_value = 1
-        src_parent_group_path.return_value = "marketing/pmm"
-        self.assertEqual(mutils.get_project_namespace(
-            self.mock_projects.get_staged_nested_group_project()), "test/pmm/pmm-demo")
+        self.assertEqual(mutils.get_project_dest_namespace(
+            self.mock_projects.get_staged_nested_group_project()), "test/marketing/pmm/pmm-demo")
         dstn_parent_id.return_value = None
-        self.assertEqual(mutils.get_project_namespace(
-            self.mock_projects.get_staged_nested_group_project()), "pmm/pmm-demo")
+        self.assertEqual(mutils.get_project_dest_namespace(
+            self.mock_projects.get_staged_nested_group_project()), "marketing/pmm/pmm-demo")
         dstn_parent_id.return_value = 1
-        self.assertEqual(mutils.get_project_namespace(
+        self.assertEqual(mutils.get_project_dest_namespace(
             self.mock_projects.get_staged_user_project()), "pmm-demo")
+
+    @patch.object(ConfigurationValidator,
+                  "dstn_parent_group_path", new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, "dstn_parent_id",
+                  new_callable=PropertyMock)
+    def test_get_project_dest_namespace_with_same_subgroup(self, dstn_parent_id, dstn_parent_group_path):
+        dstn_parent_id.return_value = 4
+        dstn_parent_group_path.return_value = "test/test"
+        self.assertEqual(mutils.get_project_dest_namespace(
+            self.mock_projects.get_staged_double_nested_group_project()), "test/test/marketing/pmm/pmm/pmm-demo")
+        dstn_parent_id.return_value = None
+        self.assertEqual(mutils.get_project_dest_namespace(
+            self.mock_projects.get_staged_double_nested_group_project()), "marketing/pmm/pmm/pmm-demo")
 
     # pylint: disable=no-member
     @responses.activate
@@ -770,8 +769,10 @@ class MigrateTests(unittest.TestCase):
     def test_check_for_staged_user_projects_logs_on_true_and_returns_true(self, mock_get_staged_user_projects):
         mock_get_staged_user_projects.return_value = ["path_with_namespace"]
         with self.assertLogs(mutils.b.log, level="WARN") as al:
-            self.assertListEqual(mutils.check_for_staged_user_projects([{}]), ["path_with_namespace"])
-            self.assertListEqual(al.output, ['WARNING:congregate.helpers.base_class:User projects staged:\npath_with_namespace'])
+            self.assertListEqual(mutils.check_for_staged_user_projects([{}]), [
+                                 "path_with_namespace"])
+            self.assertListEqual(al.output, [
+                                 'WARNING:congregate.helpers.base_class:User projects staged:\npath_with_namespace'])
 
     @patch("congregate.helpers.migrate_utils.get_staged_user_projects")
     def test_check_for_staged_user_projects_false_when_none_found(self, mock_get_staged_user_projects):
