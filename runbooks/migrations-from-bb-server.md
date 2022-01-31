@@ -14,6 +14,7 @@ This runbook covers the process of migrating a wave of **groups and projects** f
 
     3:00PM 2020-09-07 - 3:00AM 2020-09-07
 -->
+📅
 
 ## Slack channel for communication
 
@@ -23,16 +24,32 @@ This runbook covers the process of migrating a wave of **groups and projects** f
 
 ## Points of contact
 
-<!--
+<!-- PLEASE REMOVE BLOCK AFTER POPULATING TO AVOID TAGGING PEOPLE THAT SHOULD NOT BE INVOLVED
     Provide the gitlab handles for the various people involved in this migration wave and their specific role in the migration. 
-    
+
+    You must provide the following roles:
+    - PSE conducting the migration
+    - SIRT group assigning an on-call Security engineer during the migration period
+    - Infra managers group assigning an SRE during the migration period
+    - Support managers group assigning a Support engineer during the migration period
+
+    Optional roles to provide:
+    - Backup PSE if the migration period spans several hours
+    - .com Support Engineer with rails console access for their awareness
+    - PS manager for their awareness
+
     For example:
 
-    * @leopardm: PSE conducting the migration
-    * (gitlab.com) @blutz1: Security Manager (Security Incident Response Team - SIRT) in the loop in case anything goes wrong
+    ### GitLab
+
+    * @<username>: PSE conducting the migration
     * (gitlab.com) @gitlab-com/gl-security/security-operations/sirt: SIRT engineers responding to gitlab.com alerts e.g. Admin user impersonations
-    * (gitlab.com) @gitlab-com/gl-infra/managers: Infra managers that are aware of the migration and assigning the SRE during the migration period
-    * (gitlab.com) @lyle: Support Manager with Rails Console access
+    * (gitlab.com) @gitlab-com/gl-infra/managers: Infra managers that are aware of the migration and assigning an SRE during the migration period
+    * (gitlab.com) @gitlab-com/support/managers: Support managers that are aware of the migration and assigning a Support engineer during the migration period
+
+    ### <Customer>
+
+    * @<username>: Customer point of contact
 -->
 
 ## BitBucket Projects (GitLab Groups) to migrate
@@ -110,7 +127,7 @@ Copy the following data and add subsequent columns for single project migration
   * **NOTE:** The command assumes you have no groups or projects staged
 * [ ] Confirm everything looks correct and move on to the next step in the runbook
   * Specifically, review the API requests and make sure the paths look correct.
-  * If anything looks wrong in the dry run, make a note of it in the issue and reach out to @pprokic or @leopardm for review. Do not proceed with the migration if the dry run data looks incorrect. If this is incorrect, the data we send will be incorrect.
+  * If anything looks wrong in the dry run, make a note of it in the issue and reach out to @gitlab-org/professional-services-automation/tools/migration for review. Do not proceed with the migration if the dry run data looks incorrect. If this is incorrect, the data we send will be incorrect.
 * [ ] Copy `data/results/dry_run_user_migration.json` to `/opt/congregate/data/waves/user_wave/` and attach to this issue
 * [ ] Notify in the internal Slack channel dedicated to this migration you have completed dry run for the user wave
 
@@ -148,7 +165,7 @@ Copy the following data and add subsequent columns for single project migration
 * [ ] Run the following command: `nohup ./congregate.sh migrate --skip-users > data/waves/wave_<insert_wave_number>/wave_<insert_wave_number>_dry_run.log 2>&1 &`
 * [ ] Confirm everything looks correct and move on to the next step in the runbook
   * Specifically, review the API requests and make sure the paths look correct. For example, make sure any parent IDs or namespaces are matching the parent ID and parent namespaces we have specified in the congregate config.
-  * If anything looks wrong in the dry run, make a note of it in the issue and reach out to @pprokic or @leopardm for review. Do not proceed with the migration if the dry run data looks incorrect. If this is incorrect, the data we send will be incorrect.
+  * If anything looks wrong in the dry run, make a note of it in the issue and reach out to @gitlab-org/professional-services-automation/tools/migration for review. Do not proceed with the migration if the dry run data looks incorrect. If this is incorrect, the data we send will be incorrect.
 * [ ] Copy `data/results/dry_run_*_migration.json` to `/opt/congregate/data/waves/wave_<insert_wave_number>/` and attach to this issue
 * [ ] Notify in the internal Slack channel dedicated to this migration you have completed dry run for the wave
 
