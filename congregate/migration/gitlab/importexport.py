@@ -434,11 +434,9 @@ class ImportExportClient(BaseClass):
                              path, members, parent_id=None):
         resp = None
         self.log.info("Importing group {} from filesystem".format(name))
-        # NOTE: Group export does not yet support (AWS/S3) user attributes
-        if self.config.location == "aws":
-            pass
-        elif self.config.location == "filesystem-aws":
-            pass
+        if self.config.location in ["aws", "filesystem-aws"]:
+            self.log.warning(
+                "NOTICE: Group export does not yet support (AWS/S3) user attributes")
         elif self.config.location == "filesystem":
             token = self.config.destination_token
             with open("%s/downloads/%s" % (self.config.filesystem_path, filename), "rb") as f:
@@ -598,7 +596,7 @@ class ImportExportClient(BaseClass):
                         "PRIVATE-TOKEN": self.config.source_token}, verify=self.config.ssl_verify)
             # TODO: Refactor and sync with other scenarios (#119)
             elif loc == "filesystem-aws":
-                self.log.error(
+                self.log.warning(
                     "NOTICE: Filesystem-AWS exports are not currently supported")
                 # exported = self.export_thru_fs_aws(pid, name, namespace) if not dry_run else True
             elif loc == "aws":

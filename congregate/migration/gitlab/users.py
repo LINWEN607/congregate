@@ -207,12 +207,12 @@ class UsersClient(BaseClass):
 
     def build_suffix_username(self, username):
         # Concat the suffix
-        if self.config.username_suffix is not None:
-            return "{0}_{1}".format(username, self.config.username_suffix)
-        else:
-            self.log.error(
-                "Username suffix not set. Defaulting to a single underscore following the username")
-            return "{0}_".format(username)
+        suffix = self.config.username_suffix
+        if suffix == "_":
+            self.log.warning(
+                f"Default username suffix '{suffix}' (underscore) set")
+            return f"{username}{suffix}"
+        return f"{username}_{suffix.lstrip('_')}"
 
     def add_users_to_parent_group(self, dry_run=True):
         user_results_path = f"{self.app_path}/data/results/user_migration_results.json"
@@ -389,7 +389,8 @@ class UsersClient(BaseClass):
                     for u in users_found if not u.get("last_sign_in_at")]
         no_identities = [(u.get("email"), u.get("dest_state"))
                          for u in users_found if not u.get("identities")]
-        no_public_email = [(u.get("email"), u.get("public_email")) for u in users_found if u.get("email") != u.get("public_email")]
+        no_public_email = [(u.get("email"), u.get("public_email"))
+                           for u in users_found if u.get("email") != u.get("public_email")]
 
         found = f"Found ({len(users_found)})"
         blkd = f"Blocked ({len(blocked)})"
