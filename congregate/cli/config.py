@@ -116,7 +116,7 @@ def generate_config():
         "Migrating from an external (non-GitLab) instance (Default: No)? ")
     if ext_src.lower() in ["yes", "y"]:
         src = input(
-            "Source (1. Bitbucket Server, 2. GitHub, 3. Bitbucket Cloud, 4. Subversion)? ")
+            "Source (1. Bitbucket Server, 2. GitHub (Cloud or Enterprise)? ")
         if src.lower() in ["1", "1.", "bitbucket server"]:
             config.set("SOURCE", "src_type", "Bitbucket Server")
             config.set("SOURCE", "src_username", input("Username: "))
