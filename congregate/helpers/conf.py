@@ -43,7 +43,7 @@ class Config(BaseConfig):
     @property
     def shared_runners_enabled(self):
         return self.prop_bool(
-            "DESTINATION", "shared_runners_enabled", default=True)
+            "DESTINATION", "shared_runners_enabled", default=False)
 
     @property
     def append_project_suffix_on_existing_found(self):
@@ -86,7 +86,7 @@ class Config(BaseConfig):
 
     @property
     def username_suffix(self):
-        return self.prop("DESTINATION", "username_suffix")
+        return self.prop("DESTINATION", "username_suffix", default="_")
 
     @property
     def mirror_username(self):
@@ -297,33 +297,33 @@ class Config(BaseConfig):
     def keep_inactive_users(self):
         """
         Determines if we should keep inactive users.
-        :return: The set config value or False as default.
+        :return: The set config value or True as default.
         """
-        return self.prop_bool("USER", "keep_inactive_users", default=False)
+        return self.prop_bool("USER", "keep_inactive_users", default=True)
 
     @property
     def reset_password(self):
         """
         Whether or not we should send the reset password link on user creation. Note: The API defaults to false
-        :return: The set config value or True as default.
+        :return: The set config value or False as default.
         """
-        return self.prop_bool("USER", "reset_pwd", default=True)
+        return self.prop_bool("USER", "reset_pwd", default=False)
 
     @property
     def force_random_password(self):
         """
         This API flag for user creation is not well-documented, but can be used in combination with password and
         reset_password to generate a random password at create
-        :return: The set config value or False as default.
+        :return: The set config value or True as default.
         """
-        return self.prop_bool("USER", "force_rand_pwd", default=False)
+        return self.prop_bool("USER", "force_rand_pwd", default=True)
 
 # APP
     @property
     def export_import_status_check_time(self):
         """
         The frequency of checking a group or project export or import status.
-        Depending whether we are migrating during peak hours or not we should be able to adjust it.
+        We can adjust it depending whether we are migrating during peak hours or not.
         In general it should be increased when using multiple processes i.e. when the API cannot handle all the requests.
         :return: The set config value or 10 (seconds) as default.
         """

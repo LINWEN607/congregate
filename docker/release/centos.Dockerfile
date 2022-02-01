@@ -1,4 +1,5 @@
-FROM centos:centos8.4.2105
+FROM centos:8.4.2105
+FROM rockylinux/rockylinux:8.5
 
 # Add ps-user and give them sudo privileges
 RUN adduser ps-user && \
