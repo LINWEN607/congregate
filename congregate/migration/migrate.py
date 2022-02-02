@@ -374,16 +374,12 @@ class MigrateClient(BaseClass):
 
         return gh_host, gh_token
 
-    def handle_gh_post_migration(
-            self, result, path_with_namespace, project, pid, members):
-        result[path_with_namespace]["members"] = (
-            self.projects.add_members_to_destination_project(
-                self.config.destination_host,
-                self.config.destination_token,
-                pid,
-                members
-            )
-        )
+    def handle_gh_post_migration(self, result, path_with_namespace, project, pid, members):
+        host = self.config.destination_host
+        token = self.config.destination_token
+        result[path_with_namespace]["members"] = self.projects.add_members_to_destination_project(
+            host, token, pid, members)
+
         # Disable Shared CI
         self.disable_shared_ci(path_with_namespace, pid)
 
@@ -414,6 +410,18 @@ class MigrateClient(BaseClass):
         # Determine whether to remove all repo members
         result[path_with_namespace]["members"]["email"] = self.handle_member_retention(
             members, pid)
+
+        # Import status
+        result[path_with_namespace]["import_status"] = misc_utils.safe_json_response(
+            self.projects_api.get_project_import_status(host, token, pid))
+
+        # Save import failed relations and stats
+        with open(self.app_path + "/data/results/import_failed_relations.json", "a") as f:
+            status_json = result[path_with_namespace]["import_status"]
+            json.dump({path_with_namespace: {
+                "failed_relations": status_json.get("failed_relations"),
+                "stats": status_json.get("failed_relations")
+            } if status_json else None}, f, indent=4)
 
         return result
 

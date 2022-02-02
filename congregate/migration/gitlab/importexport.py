@@ -515,17 +515,17 @@ class ImportExportClient(BaseClass):
                     host, token, import_id)
                 if status.status_code == 200:
                     status_json = safe_json_response(status)
-                    state = status_json.get("import_status", None)
+                    state = status_json.get(
+                        "import_status") if status_json else None
                     if state == "finished":
                         self.log.info(
                             f"Project {name} successfully imported to {dst_namespace}, with import status:\n{json_pretty(status_json)}")
                         with open(self.app_path + "/data/results/import_failed_relations.json", "a") as f:
-                            json.dump({status_json.get("path_with_namespace", None): status_json.get(
-                                "failed_relations", None)}, f, indent=4)
+                            json.dump({status_json.get("path_with_namespace"): status_json.get(
+                                "failed_relations")}, f, indent=4)
                         break
-                    elif state == "failed":
-                        if self.SAML_MSG in status_json.get(
-                                "import_error", None):
+                    if state == "failed":
+                        if self.SAML_MSG in status_json.get("import_error"):
                             self.log.error(
                                 f"Project {name} import to {dst_namespace} failed:\n{json_pretty(status_json)}")
                             return None
