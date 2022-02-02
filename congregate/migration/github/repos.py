@@ -467,7 +467,7 @@ class ReposClient(BaseClass):
     def archive_migrated_repo(self, new_id, repo):
         gh_repo = safe_json_response(
             self.repos_api.get_repo(repo["namespace"], repo["path"]))
-        if gh_repo and gh_repo.get("archived", None):
+        if gh_repo and gh_repo.get("archived"):
             self.gl_projects_api.archive_project(
                 self.config.destination_host, self.config.destination_token, new_id)
             return True

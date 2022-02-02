@@ -304,16 +304,15 @@ class MigrateClient(BaseClass):
         src_pwn = project["path_with_namespace"]
         staged_tn = project.get("target_namespace")
 
+        # stage-wave populated fields
         if project.get("override_dstn_ns") and staged_tn:
             dstn_pwn = f"{staged_tn}/{project['path']}"
         elif staged_tn:
             dstn_pwn = f"{staged_tn}/{src_pwn}"
-        elif self.config.dstn_parent_group_path:
-            dstn_pwn = f"{self.config.dstn_parent_group_path}/{src_pwn}"
+        # Default staging
         else:
-            self.log.error(
-                f"Neither 'target_namespace' or 'dstn_parent_group_path' set for project {src_pwn}")
-            return None
+            dstn_pwn = f"{self.config.dstn_parent_group_path or ''}/{src_pwn}".strip(
+                "/")
 
         if target_namespace := mig_utils.get_target_namespace(project):
             tn = target_namespace
