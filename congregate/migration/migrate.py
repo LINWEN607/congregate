@@ -304,15 +304,14 @@ class MigrateClient(BaseClass):
         src_pwn = project["path_with_namespace"]
         staged_tn = project.get("target_namespace")
 
-        # stage-wave populated fields
+        # stage-wave staging, based on spreadsheet file
         if project.get("override_dstn_ns") and staged_tn:
             dstn_pwn = f"{staged_tn}/{project['path']}"
         elif staged_tn:
             dstn_pwn = f"{staged_tn}/{src_pwn}"
-        # Default staging
+        # Default config-based staging
         else:
-            dstn_pwn = f"{self.config.dstn_parent_group_path or ''}/{src_pwn}".strip(
-                "/")
+            dstn_pwn = mig_utils.get_external_path_with_namespace(src_pwn)
 
         if target_namespace := mig_utils.get_target_namespace(project):
             tn = target_namespace
@@ -418,8 +417,9 @@ class MigrateClient(BaseClass):
         with open(self.app_path + "/data/results/import_failed_relations.json", "a") as f:
             status_json = result[path_with_namespace]["import_status"]
             json.dump({path_with_namespace: {
-                "failed_relations": status_json.get("failed_relations"),
-                "stats": status_json.get("failed_relations")
+                "import_error": status_json.get("import_error"),
+                "stats": status_json.get("failed_relations"),   # As of 14.6
+                "failed_relations": status_json.get("failed_relations")
             } if status_json else None}, f, indent=4)
 
         return result

@@ -779,3 +779,17 @@ class MigrateTests(unittest.TestCase):
         mock_get_staged_user_projects.return_value = None
         # Looks like the self.assertNoLogs only exists in 3.10 and above, so just check the False
         assert mutils.check_for_staged_user_projects([{}]) is None
+
+    @patch.object(ConfigurationValidator, "dstn_parent_group_path", new_callable=PropertyMock)
+    def test_get_external_path_with_namespace(self, dstn_path):
+        dstn_path.return_value = None
+        path_with_namespace = "test/repo"
+        self.assertEqual(mutils.get_external_path_with_namespace(
+            path_with_namespace), path_with_namespace)
+
+    @patch.object(ConfigurationValidator, "dstn_parent_group_path", new_callable=PropertyMock)
+    def test_get_external_path_with_namespace_with_parent(self, dstn_path):
+        dstn_path.return_value = "/parent/group"
+        path_with_namespace = "test/repo"
+        self.assertEqual(mutils.get_external_path_with_namespace(
+            path_with_namespace), f"parent/group/{path_with_namespace}")

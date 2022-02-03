@@ -3,7 +3,7 @@ from gitlab_ps_utils.misc_utils import is_error_message_present, safe_json_respo
 from gitlab_ps_utils.dict_utils import dig
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.migrate_utils import migration_dry_run
+from congregate.helpers.migrate_utils import migration_dry_run, get_external_path_with_namespace
 from congregate.helpers.utils import is_dot_com, is_github_dot_com
 from congregate.migration.gitlab.api.external_import import ImportApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
@@ -20,8 +20,7 @@ class ImportClient(BaseClass):
     def trigger_import_from_bb_server(self, project, dry_run=True):
         project_path = project["path_with_namespace"]
         project_key, repo = self.get_project_repo_from_full_path(project_path)
-        tn = f"{self.config.dstn_parent_group_path or ''}/{project_key}".strip(
-            "/")
+        tn = get_external_path_with_namespace(project_key)
         data = {
             "bitbucket_server_url": self.config.source_host,
             "bitbucket_server_username": self.config.source_username,

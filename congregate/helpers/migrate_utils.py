@@ -342,3 +342,7 @@ def check_is_project_or_group_for_logging(is_project):
 def migration_dry_run(data_type, post_data):
     with open(f"{get_congregate_path()}/data/results/dry_run_{data_type}_migration.json", "a") as f:
         json.dump(post_data, f, indent=4)
+
+
+def get_external_path_with_namespace(path_with_namespace):
+    return f"{b.config.dstn_parent_group_path or ''}/{path_with_namespace}".strip("/")
