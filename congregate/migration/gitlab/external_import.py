@@ -99,7 +99,7 @@ class ImportClient(BaseClass):
         total_time = 0
         wait_time = self.config.export_import_status_check_time
         timeout = self.config.export_import_timeout
-        success = False
+        imported, success = False, False
         while True:
             project_statistics = safe_json_response(
                 self.projects.get_project_statistics(
@@ -108,24 +108,23 @@ class ImportClient(BaseClass):
                     self.config.destination_token
                 )
             )
-            if project_statistics and project_statistics.get(
-                    "data", None) is not None:
-                if project_statistics["data"].get("project", None) is not None:
+            if project_statistics and project_statistics.get("data") is not None:
+                if project_statistics["data"].get("project") is not None:
+                    # Main criterion
                     if dig(project_statistics, 'data', 'project',
                            'importStatus', default="") == "finished":
                         self.log.info(
-                            f"Import Status is marked as finished for {full_path}. Import is complete")
-                        success = True
-                        break
+                            f"Import Status is marked as finished for {full_path}")
+                        imported = True
                     stats = dig(project_statistics, 'data',
                                 'project', 'statistics')
-                    if stats["commitCount"] > 0:
+                    # Sub criteria
+                    if imported and stats["commitCount"] > 0:
                         self.log.info(
                             f"Git commits have been found for {full_path}. Import is complete")
                         success = True
                         break
-                    if (stats["storageSize"] > 0) or (
-                            stats['repositorySize'] > 0):
+                    if imported and ((stats["storageSize"] > 0) or (stats['repositorySize'] > 0)):
                         self.log.info(
                             f"Project storage is greater than 0 for {full_path}. Import is complete")
                         success = True
