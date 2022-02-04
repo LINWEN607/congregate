@@ -44,6 +44,7 @@ from congregate.migration.jenkins.base import JenkinsClient
 from congregate.migration.teamcity.base import TeamcityClient
 from congregate.migration.bitbucket.repos import ReposClient as BBSReposClient
 from congregate.migration.github.repos import ReposClient
+from congregate.migration.github.api.users import UsersApi as GitHubUsersApi
 
 
 class MigrateClient(BaseClass):
@@ -396,12 +397,12 @@ class MigrateClient(BaseClass):
             self.gh_repos.migrate_gh_project_protected_branch(pid, project)
         )
 
-        # Add project level MR rules
+        # Add repo level MR rules
         result[path_with_namespace]["project_level_mr_approvals"] = (
             self.gh_repos.migrate_gh_project_level_mr_approvals(pid, project)
         )
 
-        # Archive migrated projects on destination
+        # Archive migrated repos on destination
         result[path_with_namespace]["archived"] = self.gh_repos.archive_migrated_repo(
             pid, project)
 
@@ -409,20 +410,34 @@ class MigrateClient(BaseClass):
         result[path_with_namespace]["members"]["email"] = self.handle_member_retention(
             members, pid)
 
-        # Import status
-        result[path_with_namespace]["import_status"] = misc_utils.safe_json_response(
-            self.projects_api.get_project_import_status(host, token, pid))
-
-        # Save import failed relations and stats
-        with open(self.app_path + "/data/results/import_failed_relations.json", "a") as f:
-            status_json = result[path_with_namespace]["import_status"]
-            json.dump({path_with_namespace: {
-                "import_error": status_json.get("import_error"),
-                "stats": status_json.get("failed_relations"),   # As of 14.6
-                "failed_relations": status_json.get("failed_relations")
-            } if status_json else None}, f, indent=4)
+        # Repo import status
+        result[path_with_namespace]["import_status"] = self.get_gh_repo_import_status(
+            host, token, pid)
 
         return result
+
+    def get_gh_repo_import_status(self, host, token, pid):
+        import_status = misc_utils.safe_json_response(
+            self.projects_api.get_project_import_status(host, token, pid))
+        if import_status:
+            # Save to file to avoid outputing long lists to log
+            failed_relations = import_status.pop("failed_relations")
+            # Exposed as of GitLab 14.6
+            stats = import_status.pop(
+                "stats") if import_status.get("stats") else None
+
+            # Save import_error, user rate_limit status, import stats and failed relations
+            with open(self.app_path + "/data/results/import_failed_relations.json", "a") as f:
+                import_error = import_status.get("import_error")
+                json.dump({import_status.get("path_with_namespace"): {
+                    "import_error": import_error,
+                    "gh_rate_limit_status": misc_utils.safe_json_response(
+                        GitHubUsersApi(self.config.source_host, self.config.source_token).get_rate_limit_status())
+                    if import_error else None,
+                    "stats": stats,
+                    "failed_relations": failed_relations
+                } if import_status else None}, f, indent=4)
+        return import_status
 
     def handle_ext_ci_src_migration(self, result, project, project_id):
         if jenkins_configs := self.config.list_ci_source_config(
