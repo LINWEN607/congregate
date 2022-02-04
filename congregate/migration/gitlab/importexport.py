@@ -5,13 +5,12 @@ from time import sleep
 from os import remove
 from glob import glob
 from gitlab_ps_utils.misc_utils import get_dry_log, safe_json_response
-from gitlab_ps_utils.file_utils import download_file
+from gitlab_ps_utils.file_utils import download_file, is_gzip
 from gitlab_ps_utils.json_utils import json_pretty
 
 from requests.exceptions import RequestException
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.migrate_utils import check_is_project_or_group_for_logging, migration_dry_run
 from congregate.aws import AwsClient
 from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.groups import GroupsClient
@@ -20,7 +19,8 @@ from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.namespaces import NamespacesApi
 from congregate.helpers.migrate_utils import get_project_dest_namespace, is_user_project, get_user_project_namespace, \
-    get_export_filename_from_namespace_and_name, get_dst_path_with_namespace, get_full_path_with_parent_namespace, is_loc_supported
+    get_export_filename_from_namespace_and_name, get_dst_path_with_namespace, get_full_path_with_parent_namespace, \
+    is_loc_supported, check_is_project_or_group_for_logging, migration_dry_run
 
 
 class ImportExportClient(BaseClass):
@@ -273,6 +273,11 @@ class ImportExportClient(BaseClass):
                 self.log.error(
                     f"Project {name} failed to import to {dest_namespace}, due to:\n{import_response.text}")
                 return None
+            elif import_response.status_code == 400:
+                self.log.error(
+                    f"Project {name} failed to import to {dest_namespace}, due to:\n{import_response.text}\n\t"
+                    "Double check your path. If your path seems correct, make sure you can manually create a project in the GL instance UI under the path")
+                return None
             import_id = self.get_import_id_from_response(
                 import_response, filename, name, path, dest_namespace, override_params, members)
         else:
@@ -340,8 +345,7 @@ class ImportExportClient(BaseClass):
                         "Private-Token": self.config.destination_token,
                         "Content-Type": m.content_type
                     }
-                    message = "Importing project %s with the following payload %s and following members %s" % (
-                        name, m, members)
+                    message = f"Importing project {name} with the following payload {m} and following members {members}"
                     resp = self.projects_api.import_project(
                         self.config.destination_host, self.config.destination_token, data=m, headers=headers, message=message)
             except AttributeError as ae:
@@ -588,12 +592,7 @@ class ImportExportClient(BaseClass):
             if loc == "filesystem":
                 exported = self.wait_for_export_to_finish(pid, name)
                 if exported:
-                    url = "{0}/api/v4/projects/{1}/export/download".format(
-                        self.config.source_host, pid)
-                    self.log.info("Downloading project {0} (ID: {1}) as {2}".format(
-                        name, pid, filename))
-                    download_file(url, self.config.filesystem_path, filename, headers={
-                        "PRIVATE-TOKEN": self.config.source_token}, verify=self.config.ssl_verify)
+                    self.handle_gzip_download(name, pid, filename)
             # TODO: Refactor and sync with other scenarios (#119)
             elif loc == "filesystem-aws":
                 self.log.warning(
@@ -614,6 +613,23 @@ class ImportExportClient(BaseClass):
         else:
             return True
         return exported
+
+
+    def handle_gzip_download(self, name, pid, filename):
+        '''
+        Attempt to download the export, if its not a valid export, try again.
+        '''
+        url = f"{self.config.source_host}/api/v4/projects/{pid}/export/download"
+        self.log.info(f"Downloading project {name} (ID: {pid}) as {filename}")
+        new_file = download_file(
+            url,
+            self.config.filesystem_path,
+            filename,
+            headers={"PRIVATE-TOKEN": self.config.source_token},
+            verify=self.config.ssl_verify)
+        if not is_gzip(f"{self.config.filesystem_path}/downloads/{new_file}"):
+            raise ValueError("Downloaded file is not a Gzip file.")
+        self.log.info(f"{name} export file successfully downloaded. Verified {filename} is a gzip file.")
 
     def export_thru_fs_aws(self, pid, name, namespace):
         path_with_namespace = "%s_%s.tar.gz" % (namespace, name)
