@@ -324,27 +324,37 @@ class UsersClient(BaseClass):
         if data == "staged_users":
             staged = [u for u in staged if u.get("state") not in self.INACTIVE]
         else:
-            groups = data == "staged_groups"
+            is_group = data == "staged_groups"
             for s in staged:
-                spath = s.get("full_path") if groups else s.get(
+                spath = s.get("full_path") if is_group else s.get(
                     "path_with_namespace")
                 self.log.info(
                     f"{get_dry_log(dry_run)}Removing inactive users from {spath} members")
                 if (not dry_run) and membership:
-                    try:
-                        for m in s.get("members", []):
-                            if m.get("state") in self.INACTIVE:
-                                self.groups_api.remove_member(s.get("id"), m.get("id"), self.config.source_host, self.config.source_token) if groups else self.projects_api.remove_member(
-                                    s.get("id"), m.get("id"), self.config.source_host, self.config.source_token)
-                    except RequestException as re:
-                        self.log.error(
-                            f"Failed to remove {m.get('name')} from {spath}, with error:\n{re}")
+                    self.remove_members(s, is_group, spath)
                 s["members"] = [m for m in s.get("members", []) if m.get(
                     "state") not in self.INACTIVE]
         if not dry_run:
             write_json_to_file(
                 f"{self.app_path}/data/{data}.json", staged, log=self.log)
         return staged
+
+    def remove_members(self, staged, is_group, staged_path):
+        try:
+            host = self.config.source_host
+            token = self.config.source_token
+            sid = staged.get("id")
+            for m in staged.get("members", []):
+                if m.get("state") in self.INACTIVE:
+                    if is_group:
+                        self.groups_api.remove_member(
+                            sid, m.get("id"), host, token)
+                    else:
+                        self.projects_api.remove_member(
+                            sid, m.get("id"), host, token)
+        except RequestException as re:
+            self.log.error(
+                f"Failed to remove {m.get('name')} from {staged_path}, with error:\n{re}")
 
     def search_for_staged_users(self, table=False):
         """
