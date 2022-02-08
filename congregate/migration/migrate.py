@@ -12,9 +12,10 @@ from time import time
 from traceback import print_exc
 from requests.exceptions import RequestException
 
-from gitlab_ps_utils import json_utils, string_utils, dict_utils
+from gitlab_ps_utils import json_utils, string_utils, dict_utils, misc_utils
+
 import congregate.helpers.migrate_utils as mig_utils
-from congregate.helpers import misc_utils, utils
+from congregate.helpers.utils import rotate_logs, is_dot_com
 from congregate.helpers.reporting import Reporting
 from congregate.helpers.jobtemplategenerator import JobTemplateGenerator
 from congregate.cli.stage_projects import ProjectStageCLI
@@ -126,7 +127,7 @@ class MigrateClient(BaseClass):
         else:
             mig_utils.clean_data(dry_run=False, files=[
                 f"{self.app_path}/data/results/import_failed_relations.json"])
-        utils.rotate_logs()
+        rotate_logs()
 
         if self.config.source_type == "gitlab":
             self.migrate_from_gitlab()
@@ -142,7 +143,7 @@ class MigrateClient(BaseClass):
             f"{misc_utils.get_dry_log(self.dry_run)}Completed migrating from {self.config.source_host} to {self.config.destination_host}")
 
     def validate_groups_and_projects(self, staged, are_projects=False):
-        if dupes := misc_utils.get_duplicate_paths(
+        if dupes := mig_utils.get_duplicate_paths(
                 staged, are_projects=are_projects):
             self.log.warning("Duplicate {} paths:\n{}".format(
                 "project" if are_projects else "group", "\n".join(d for d in dupes)))
@@ -171,7 +172,7 @@ class MigrateClient(BaseClass):
 
         # Remove import user from parent group to avoid inheritance
         # (self-managed only)
-        if not self.dry_run and self.config.dstn_parent_id and not utils.is_dot_com(
+        if not self.dry_run and self.config.dstn_parent_id and not is_dot_com(
                 self.config.destination_host):
             self.remove_import_user(
                 self.config.dstn_parent_id, gl_type="group")
@@ -1399,7 +1400,7 @@ class MigrateClient(BaseClass):
         return is_result
 
     def rollback(self):
-        utils.rotate_logs()
+        rotate_logs()
         dry_log = misc_utils.get_dry_log(self.dry_run)
 
         # Remove groups and projects OR only empty groups
@@ -1538,7 +1539,7 @@ class MigrateClient(BaseClass):
     def toggle_maintenance_mode(
             self, off=False, msg=None, dest=False, dry_run=True):
         host = self.config.destination_host if dest else self.config.source_host
-        if utils.is_dot_com(host):
+        if is_dot_com(host):
             self.log.warning(
                 f"Not allowed to toggle maintenance mode on {host}")
         else:

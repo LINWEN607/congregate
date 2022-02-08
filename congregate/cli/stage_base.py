@@ -1,14 +1,17 @@
 """
 Congregate - GitLab instance migration utility
 
-Copyright (c) 2021 - GitLab
+Copyright (c) 2022 - GitLab
 """
 
 import json
-from gitlab_ps_utils.misc_utils import get_dry_log, strip_netloc, validate_name
+
+from gitlab_ps_utils.misc_utils import get_dry_log, strip_netloc
 from gitlab_ps_utils.list_utils import remove_dupes_with_keys, remove_dupes
 from gitlab_ps_utils.dict_utils import dig
+
 from congregate.helpers.base_class import BaseClass
+from congregate.helpers.migrate_utils import validate_name
 
 
 class BaseStageClass(BaseClass):
@@ -111,7 +114,7 @@ class BaseStageClass(BaseClass):
         try:
             obj = {
                 "id": project["id"],
-                "name": validate_name(project["name"], log=self.log),
+                "name": validate_name(project["name"]),
                 "namespace": dig(project, 'namespace', 'full_path'),
                 "path": project["path"],
                 "path_with_namespace": project["path_with_namespace"],
@@ -154,7 +157,6 @@ class BaseStageClass(BaseClass):
 
     def format_group(self, group):
         # Decrease size of staged_groups.json
-        group.pop("projects")
-        group["name"] = validate_name(
-            group["name"], is_group=True, log=self.log)
+        group.pop("projects", None)
+        group["name"] = validate_name(group["name"], is_group=True)
         return group

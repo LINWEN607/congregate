@@ -7,7 +7,7 @@ Copyright (c) 2021 - GitLab
 import re
 import sys
 
-from gitlab_ps_utils.misc_utils import get_dry_log, validate_name
+from gitlab_ps_utils.misc_utils import get_dry_log
 from gitlab_ps_utils.list_utils import remove_dupes
 from gitlab_ps_utils.dict_utils import rewrite_list_into_dict
 
@@ -81,7 +81,7 @@ class GroupStageCLI(BaseStageClass):
                 end = int(match.split("-")[1])
                 for i in range(start, end):
                     # Retrieve group object from groups.json
-                    self.append_data(self.format_group(groups[i]), groups_to_stage, p_range=range(
+                    self.append_data(groups[i], groups_to_stage, p_range=range(
                         start, end), dry_run=dry_run)
             # Random selection
             else:
