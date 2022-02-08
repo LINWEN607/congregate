@@ -600,11 +600,12 @@ class MigrateClient(BaseClass):
             if not group_id:
                 result = misc_utils.safe_json_response(
                     self.groups_api.create_group(host, token, group))
-                error, result = misc_utils.is_error_message_present(result)
-                if result and not error:
+                is_error, result = misc_utils.is_error_message_present(result)
+                if result and not is_error:
                     group_id = result.get("id")
                 else:
-                    self.log.error(f"Unable to create group due to: {result}")
+                    self.log.error(
+                        f"Unable to create group {group['full_path']} due to: {result}")
             if group_id:
                 result = {}
                 if not self.remove_members:
