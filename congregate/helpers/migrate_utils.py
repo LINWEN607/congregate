@@ -2,6 +2,9 @@ import sys
 import os
 import errno
 import json
+
+from re import sub
+from collections import Counter
 from pathlib import Path
 from shutil import copy
 from time import time
@@ -346,3 +349,26 @@ def migration_dry_run(data_type, post_data):
 
 def get_external_path_with_namespace(path_with_namespace):
     return f"{b.config.dstn_parent_group_path or ''}/{path_with_namespace}".strip("/")
+
+
+def validate_name(name, is_group=False):
+    """
+    Validate group and project names to satisfy the following criteria:
+    Name can only contain letters, digits, emojis, '_', '.', dash, space, parenthesis (groups only).
+    It must start with letter, digit, emoji or '_'.
+    """
+    valid = " ".join(sub(r"[^\U00010000-\U0010ffff\w\_\-\.\(\) ]" if is_group else r"[^\U00010000-\U0010ffff\w\_\-\. ]",
+                     " ", name.lstrip("-").lstrip(".")).split())
+    if name != valid:
+        b.log.warning(
+            f"Renaming invalid {'group' if is_group else 'project'} name '{name}' -> '{valid}'")
+    return valid
+
+
+def get_duplicate_paths(data, are_projects=True):
+    """
+        Legacy GL versions had case insensitive paths, which on newer GL versions are seen as duplicates
+    """
+    paths = [x.get("path_with_namespace", "").lower() if are_projects else x.get(
+        "full_path", "").lower() for x in data]
+    return [i for i, c in Counter(paths).items() if c > 1]

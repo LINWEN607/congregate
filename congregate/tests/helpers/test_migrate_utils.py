@@ -793,3 +793,59 @@ class MigrateTests(unittest.TestCase):
         path_with_namespace = "test/repo"
         self.assertEqual(mutils.get_external_path_with_namespace(
             path_with_namespace), f"parent/group/{path_with_namespace}")
+
+    def test_validate_name_project(self):
+        assert mutils.validate_name(
+            "-:: This.is-how/WE do\n&it#? - šđžčć") == "This.is-how WE do it - šđžčć"
+
+    def test_validate_name_group(self):
+        assert mutils.validate_name(
+            "-:: This.is-how/WE do\n&it#? - (šđžčć)", is_group=True) == "This.is-how WE do it - (šđžčć)"
+
+    def test_get_duplicate_paths_projects(self):
+        data = [{
+            "path_with_namespace": "a/b"
+        },
+            {
+            "path_with_namespace": "d/b"
+        },
+            {
+            "path_with_namespace": "d/b"
+        },
+            {
+            "path_with_namespace": "d/b"
+        },
+            {
+            "path_with_namespace": "a/b"
+        },
+            {
+            "path_with_namespace": "b/c"
+        }]
+        expected = ["a/b", "d/b"]
+        actual = mutils.get_duplicate_paths(data)
+
+        self.assertEqual(expected, actual)
+
+    def test_get_duplicate_paths_groups(self):
+        data = [{
+            "full_path": "a/b"
+        },
+            {
+            "full_path": "d/b"
+        },
+            {
+            "full_path": "d/b"
+        },
+            {
+            "full_path": "d/b"
+        },
+            {
+            "full_path": "a/b"
+        },
+            {
+            "full_path": "b/c"
+        }]
+        expected = ["a/b", "d/b"]
+        actual = mutils.get_duplicate_paths(data, are_projects=False)
+
+        self.assertEqual(expected, actual)
