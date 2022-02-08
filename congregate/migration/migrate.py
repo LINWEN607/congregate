@@ -411,12 +411,12 @@ class MigrateClient(BaseClass):
             members, pid)
 
         # Repo import status
-        result[path_with_namespace]["import_status"] = self.get_gh_repo_import_status(
+        result[path_with_namespace]["import_status"] = self.get_external_repo_import_status(
             host, token, pid)
 
         return result
 
-    def get_gh_repo_import_status(self, host, token, pid):
+    def get_external_repo_import_status(self, host, token, pid):
         import_status = misc_utils.safe_json_response(
             self.projects_api.get_project_import_status(host, token, pid))
         if import_status:
@@ -629,13 +629,15 @@ class MigrateClient(BaseClass):
             return result
         path_with_namespace = next(iter(result))
         result_response = result[path_with_namespace]["response"]
-        if project_id := result_response.get("id", None):
+        if project_id := result_response.get("id"):
             full_path = result_response.get("full_path").strip("/")
             success = self.ext_import.wait_for_project_to_import(full_path)
             if success:
+                host = self.config.destination_host
+                token = self.config.destination_token
                 if not self.remove_members:
                     result[path_with_namespace]["members"] = self.projects.add_members_to_destination_project(
-                        self.config.destination_host, self.config.destination_token, project_id, members)
+                        host, token, project_id, members)
                 # Set default branch
                 self.branches.set_branch(
                     path_with_namespace, project_id, project.get("default_branch"))
@@ -651,6 +653,10 @@ class MigrateClient(BaseClass):
 
                 # Remove import user
                 self.remove_import_user(project_id)
+
+                # Repo import status
+                result[path_with_namespace]["import_status"] = self.get_external_repo_import_status(
+                    host, token, project_id)
             else:
                 result = self.ext_import.get_failed_result(path_with_namespace, data={
                     "error": "Import time limit exceeded. Unable to execute post migration phase"
