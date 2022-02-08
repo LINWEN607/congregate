@@ -69,9 +69,7 @@ class ProjectStageCLI(BaseStageClass):
                 for g in groups:
                     self.log.info("{0}Staging group {1} (ID: {2})".format(
                         get_dry_log(dry_run), g["full_path"], g["id"]))
-                    # Decrease size of self.staged_groups.json
-                    g.pop("projects", None)
-                    self.staged_groups.append(g)
+                    self.staged_groups.append(self.format_group(g))
 
                 for u in users:
                     self.log.info("{0}Staging user {1} (ID: {2})".format(
@@ -122,8 +120,7 @@ class ProjectStageCLI(BaseStageClass):
             if group_to_stage:
                 self.log.info("{0}Staging group {1} (ID: {2})".format(get_dry_log(
                     dry_run), group_to_stage["full_path"], group_to_stage["id"]))
-                group_to_stage.pop("projects", None)
-                self.staged_groups.append(group_to_stage)
+                self.staged_groups.append(self.format_group(group_to_stage))
 
                 # Append all group members to staged users
                 for member in group_to_stage.get("members", []):

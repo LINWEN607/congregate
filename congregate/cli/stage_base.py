@@ -151,3 +151,10 @@ class BaseStageClass(BaseClass):
                     single_source.get("src_hostname", "")):
                 return i
         return -1
+
+    def format_group(self, group):
+        # Decrease size of staged_groups.json
+        group.pop("projects")
+        group["name"] = validate_name(
+            group["name"], is_group=True, log=self.log)
+        return group

@@ -13,6 +13,7 @@ from gitlab_ps_utils.dict_utils import rewrite_list_into_dict
 
 from congregate.cli.stage_base import BaseStageClass
 
+
 class GroupStageCLI(BaseStageClass):
 
     def stage_data(self, groups_to_stage, dry_run=True,
@@ -65,8 +66,7 @@ class GroupStageCLI(BaseStageClass):
                 for g in groups:
                     self.log.info("{0}Staging group {1} (ID: {2})".format(
                         get_dry_log(dry_run), g["full_path"], g["id"]))
-                    g.pop("projects", None)
-                    self.staged_groups.append(g)
+                    self.staged_groups.append(self.format_group(g))
 
                 for u in users:
                     self.log.info("{0}Staging user {1} (ID: {2})".format(
@@ -81,7 +81,7 @@ class GroupStageCLI(BaseStageClass):
                 end = int(match.split("-")[1])
                 for i in range(start, end):
                     # Retrieve group object from groups.json
-                    self.append_data(groups[i], groups_to_stage, p_range=range(
+                    self.append_data(self.format_group(groups[i]), groups_to_stage, p_range=range(
                         start, end), dry_run=dry_run)
             # Random selection
             else:
@@ -119,9 +119,7 @@ class GroupStageCLI(BaseStageClass):
 
         self.log.info("{0}Staging group {1} (ID: {2}) [{3}/{4}]".format(get_dry_log(
             dry_run), group["full_path"], group["id"], len(self.staged_groups) + 1, len(p_range) if p_range else len(groups_to_stage)))
-        group.pop("projects", None)
-        group["name"] = validate_name(group["name"], log=self.log)
-        self.staged_groups.append(group)
+        self.staged_groups.append(self.format_group(group))
 
         # Append all group members to staged users
         for member in group.get("members", []):
