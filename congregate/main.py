@@ -612,13 +612,9 @@ def main():
                     dest=DEST,
                     dry_run=DRY_RUN)
             if arguments["ldap-group-sync"]:
-                if not DRY_RUN:
-                    ldap = LdapGroupSync()
-                    ldap.load_pdv(arguments['<file-path>'])
-                    ldap.synchronize_groups(dry_run=DRY_RUN)
-                else:
-                    print(
-                        "\nThis command will setup LDAP group sync based on the file passed in via <file-path>")
+                ldap = LdapGroupSync()
+                ldap.load_pdv(arguments['<file-path>'])
+                ldap.synchronize_groups(dry_run=DRY_RUN)
             if arguments["set-staged-users-public-email"]:
                 users.set_staged_users_public_email(
                     dry_run=DRY_RUN, hide=arguments["--hide"])

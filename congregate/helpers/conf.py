@@ -109,17 +109,30 @@ class Config(BaseConfig):
         return self.prop_int("DESTINATION", "pmi_project_id")
 
     # LDAP Info
+    @property
     def ldap_group_link_provider(self):
         """
         The LDAP server label from the instance configuration.
-        In gitlab.rb: gitlab_rails['ldap_servers'].label
-        On the UI: Visible in the LDAP synchonizations page for a group
+        This is the type, "ldap" in this case, plus the gitlab_rails['ldap_servers']
+        section value in gitlab.rb. Using the below default from gitlab.rb as an example,
+        this value should be "ldapmain" as it is of type "ldap" and we want
+        to bind to the "main" server
+        
+        gitlab_rails['ldap_servers'] = YAML.load <<-'EOS'                   
+            main: # 'main' is the GitLab 'provider ID' of this LDAP server
+                label: 'LDAP'                                                                              
+                host: 'openldap'                                         
+                port: 1389                                                                 
+                uid: 'uid'
         """
         return self.prop("DESTINATION", "ldap_group_link_provider", default="")
 
+    @property
     def ldap_group_link_group_access(self):
         """
-        The minimum access to give users via the sync. This maps directly to the values at https://docs.gitlab.com/ee/api/members.html#valid-access-levels
+        The minimum access to give users via the sync. This maps directly to the values at 
+        https://docs.gitlab.com/ee/api/members.html#valid-access-levels
+        
         Defaults to no access
         """
         return self.prop_int(
