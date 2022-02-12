@@ -315,16 +315,18 @@ class MigrateClient(BaseClass):
         else:
             dstn_pwn = mig_utils.get_external_path_with_namespace(src_pwn)
 
+        # TODO: Make this target namespace lookup requirement configurable
         if target_namespace := mig_utils.get_target_namespace(project):
             tn = target_namespace
         else:
             tn = mig_utils.get_dst_path_with_namespace(
                 project).rsplit("/", 1)[0]
-        # TODO: Make this target namespace lookup requirement configurable
-        if self.groups.find_group_id_by_path(
-                self.config.destination_host, self.config.destination_token, tn):
-            if dst_pid := self.projects.find_project_by_path(
-                    self.config.destination_host, self.config.destination_token, dstn_pwn):
+
+        host = self.config.destination_host
+        token = self.config.destination_token
+        if self.groups.find_group_id_by_path(host, token, tn):
+            # Already imported
+            if dst_pid := self.projects.find_project_by_path(host, token, dstn_pwn):
                 result = self.ext_import.get_result_data(
                     dstn_pwn, {"id": dst_pid})
                 if self.only_post_migration_info:
@@ -333,12 +335,12 @@ class MigrateClient(BaseClass):
                 else:
                     self.log.warning(
                         f"Skipping import. Repo {dstn_pwn} has already been imported")
+            # New import
             else:
                 result = self.ext_import.trigger_import_from_ghe(
                     project["id"], dstn_pwn, tn, gh_host, gh_token, dry_run=self.dry_run)
                 result_response = result[dstn_pwn]["response"]
-                if (isinstance(result_response, dict)) and (
-                        project_id := result_response.get("id")):
+                if (isinstance(result_response, dict)) and (project_id := result_response.get("id")):
                     full_path = result_response.get("full_path").strip("/")
                     success = self.ext_import.wait_for_project_to_import(
                         full_path)
@@ -346,9 +348,18 @@ class MigrateClient(BaseClass):
                         result = self.handle_gh_post_migration(
                             result, dstn_pwn, project, project_id, members)
                     else:
-                        result = self.ext_import.get_failed_result(dstn_pwn, data={
-                            "error": "Import time limit exceeded. Unable to execute post migration phase"
-                        })
+                        result = self.ext_import.get_failed_result(
+                            dstn_pwn,
+                            data={"error": "Import time limit exceeded. Unable to execute post migration phase"})
+                else:
+                    result = self.ext_import.get_failed_result(
+                        dstn_pwn,
+                        data={"error": f"Failed import, with response {result_response}. Unable to execute post migration phase"})
+
+            # Repo import status
+            if dst_pid or project_id:
+                result[dstn_pwn]["import_status"] = self.get_external_repo_import_status(
+                    host, token, dst_pid or project_id)
         else:
             log = f"Target namespace {tn} does not exist"
             self.log.info("Skipping import. " + log +
@@ -410,10 +421,6 @@ class MigrateClient(BaseClass):
         # Determine whether to remove all repo members
         result[path_with_namespace]["members"]["email"] = self.handle_member_retention(
             members, pid)
-
-        # Repo import status
-        result[path_with_namespace]["import_status"] = self.get_external_repo_import_status(
-            host, token, pid)
 
         return result
 
@@ -633,9 +640,9 @@ class MigrateClient(BaseClass):
         if project_id := result_response.get("id"):
             full_path = result_response.get("full_path").strip("/")
             success = self.ext_import.wait_for_project_to_import(full_path)
+            host = self.config.destination_host
+            token = self.config.destination_token
             if success:
-                host = self.config.destination_host
-                token = self.config.destination_token
                 if not self.remove_members:
                     result[path_with_namespace]["members"] = self.projects.add_members_to_destination_project(
                         host, token, project_id, members)
@@ -654,14 +661,14 @@ class MigrateClient(BaseClass):
 
                 # Remove import user
                 self.remove_import_user(project_id)
-
-                # Repo import status
-                result[path_with_namespace]["import_status"] = self.get_external_repo_import_status(
-                    host, token, project_id)
             else:
-                result = self.ext_import.get_failed_result(path_with_namespace, data={
-                    "error": "Import time limit exceeded. Unable to execute post migration phase"
-                })
+                result = self.ext_import.get_failed_result(
+                    path_with_namespace,
+                    data={"error": "Import time limit exceeded. Unable to execute post migration phase"})
+
+            # Repo import status
+            result[path_with_namespace]["import_status"] = self.get_external_repo_import_status(
+                host, token, project_id)
         return result
 
     def are_results(self, results, var, stage):
