@@ -1,0 +1,41 @@
+site_name: Congregate
+
+theme:
+  name: material
+
+markdown_extensions:
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji 
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+
+nav:
+  - Home: index.md
+  - Usage:
+    - Getting Started: using-congregate.md
+    - Extras:
+      - LDAP Group Sync: ldap-group-sync.md
+  - Readme: project_readme.md
+  - Installation:
+    - Full Setup: full_setup.md
+    - Troubleshooting: troubleshooting.md
+  - Supported Migration Features:
+    - GitLab: gitlab-migration-features-matrix.md
+    - Bitbucket: bitbucket-migration-features-matrix.md
+    - GitHub: github-migration-features-matrix.md
+    - Migration Workflows: workflow.md
+  - Development:
+    - Set up development environment: setup-dev-env.md
+    - GitHub Development Setup: github-development-setup.md
+    - Writing tests: writing-tests.md
+    - Roadmap: roadmap.md
+    - API Docs: reference/
+  - Contribute to Congregate: contributing.md
+  - Congregate Wiki: https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/wikis/home
+
+plugins:
+    - search
+    - mermaid2
+    - mkdocstrings
+    - gen-files:
+        scripts:
+        - docs/gen_ref_nav.py

@@ -1,13 +1,5 @@
 # Migration Workflow
 
-## Legend
-
-:white_check_mark: = supported
-
-:heavy_minus_sign: = not yet supported / in development
-
-:x: = not supported
-
 ## Pre-migration steps
 
 ### Pre-requisites and considerations
@@ -25,19 +17,17 @@
   * Groups (top-level groups)
   * Projects (LFS, Container Registry Images) - may require breaking up into migration waves
 
-```eval_rst
-.. mermaid::
-
-    graph TD
-        A(Source considerations) --> |Users| B{Type}
-        B --> C(Blocked)
-        B --> D(Deactivated)
-        B --> E(LDAP_Blocked)
-        B --> F(Banned)
-        A --> |Groups| G(Top-level)
-        A --> |Projects| H{Features}
-        H --> I(LFS)
-        H --> J(Container Registry Images)
+``` mermaid
+graph TD
+  A(Source considerations) --> |Users| B{Type}
+  B --> C(Blocked)
+  B --> D(Deactivated)
+  B --> E(LDAP_Blocked)
+  B --> F(Banned)
+  A --> |Groups| G(Top-level)
+  A --> |Projects| H{Features}
+  H --> I(LFS)
+  H --> J(Container Registry Images)
 ```
 
 * GitLab destination instance considerations:
@@ -49,17 +39,15 @@
   * Send user password reset link (via email) upon their creation (Default: `True`)?
   * Set newly created user password to a random value (Default: `False`)?
 
-```eval_rst
-.. mermaid::
-
-    graph TD
-        A(Destination considerations) --> |True| B(Enable shared runners)
-        A --> |False| C(Append project suffix)
-        A --> |?| D(Migrate to parent group)
-        A --> |?| E(Append username suffix)
-        A --> |False| F(Keep inactive users)
-        A --> |True| G(Reset pwd)
-        A --> |False| H(Force random pwd)
+``` mermaid
+graph TD
+  A(Destination considerations) --> |True| B(Enable shared runners)
+  A --> |False| C(Append project suffix)
+  A --> |?| D(Migrate to parent group)
+  A --> |?| E(Append username suffix)
+  A --> |False| F(Keep inactive users)
+  A --> |True| G(Reset pwd)
+  A --> |False| H(Force random pwd)
 ```
 
 * Export storage considerations - for storing group and project archives (exports), container registry images, logs
@@ -69,12 +57,10 @@
     * Groups :heavy_minus_sign:
   * Hybrid (Filesystem-AWS) :heavy_minus_sign:
 
-```eval_rst
-.. mermaid::
-
-    graph TD
-        A(Export storage) --> |Groups & Projects| B(Filesystem)
-        A --> |Projects| C(AWS S3)
+``` mermaid
+graph TD
+  A(Export storage) --> |Groups & Projects| B(Filesystem)
+  A --> |Projects| C(AWS S3)
 ```
 
 ### Timing and Planning
@@ -89,73 +75,63 @@
 
 ### Dry-run
 
-```eval_rst
-.. mermaid::
-
-    graph TD
-        A(Staged)--> |Users| B{Dry-run}
-        A--> |Groups| B{Dry-run}
-        A--> |Projects| B{Dry-run}
-        B --> |Users| C(Dry-run logs)
-        B --> |Groups| D(Dry-run logs)
-        B --> |Projects| E(Dry-run logs)
+``` mermaid
+graph TD
+  A(Staged)--> |Users| B{Dry-run}
+  A--> |Groups| B{Dry-run}
+  A--> |Projects| B{Dry-run}
+  B --> |Users| C(Dry-run logs)
+  B --> |Groups| D(Dry-run logs)
+  B --> |Projects| E(Dry-run logs)
 ```
 
 ### Migrate users
 
-```eval_rst
-.. mermaid::
-
-    graph TD
-        A(Stage ALL Users) --> B{Inspect}
-        B --> |Found| C(Skip)
-        B --> |Not found| D{Remove inactive?}
-        D --> |Yes| E(Remove, Dry-run & Inspect)
-        E --> F(Migrate)
-        D --> |No| G(Dry-run & Inspect)
-        G --> H(Migrate and block on destination)
+``` mermaid
+graph TD
+  A(Stage ALL Users) --> B{Inspect}
+  B --> |Found| C(Skip)
+  B --> |Not found| D{Remove inactive?}
+  D --> |Yes| E(Remove, Dry-run & Inspect)
+  E --> F(Migrate)
+  D --> |No| G(Dry-run & Inspect)
+  G --> H(Migrate and block on destination)
 ```
 
 ### Migrate groups & sub-groups
 
-```eval_rst
-.. mermaid::
-
-    graph TD
-        A(Stage ALL top-level groups w/ sub-groups) --> B(Dry-run & Inspect)
-        B --> C(Migrate)
+``` mermaid
+graph TD
+  A(Stage ALL top-level groups w/ sub-groups) --> B(Dry-run & Inspect)
+  B --> C(Migrate)
 ```
 
 ### Migrate projects
 
-```eval_rst
-.. mermaid::
-
-    graph TD
-        A(Stage Projects) --> |All| B(Dry-run & Inspect)
-        B --> C(Migrate)
-        A --> |Waves| D{Break into waves}
-        D --> E(Dry-run & Inspect)
-        E --> F(Migrate Wave 1)
-        D --> G(Dry-run & Inspect)
-        G --> H(Migrate Wave 2)
-        D --> I(Dry-run & Inspect)
-        I --> J(Migrate Wave n)
+``` mermaid
+graph TD
+  A(Stage Projects) --> |All| B(Dry-run & Inspect)
+  B --> C(Migrate)
+  A --> |Waves| D{Break into waves}
+  D --> E(Dry-run & Inspect)
+  E --> F(Migrate Wave 1)
+  D --> G(Dry-run & Inspect)
+  G --> H(Migrate Wave 2)
+  D --> I(Dry-run & Inspect)
+  I --> J(Migrate Wave n)
 ```
 
 ### Rollback
 
-```eval_rst
-.. mermaid::
-
-    graph TD
-        A(Migrated users) --> B{Hard delete}
-        B --> |Yes| C(Dry-run & Inspect)
-        C --> D(Rollback with contributions)
-        B --> |No| E(Dry-run & Inspect)
-        E --> F(Rollback)
-        G(Migrated groups) --> H(Dry-run & Inspect)
-        H --> I(Rollback)
-        J(Migrated projects) --> K(Dry-run & Inspect)
-        K --> L(Rollback)
+``` mermaid
+graph TD
+  A(Migrated users) --> B{Hard delete}
+  B --> |Yes| C(Dry-run & Inspect)
+  C --> D(Rollback with contributions)
+  B --> |No| E(Dry-run & Inspect)
+  E --> F(Rollback)
+  G(Migrated groups) --> H(Dry-run & Inspect)
+  H --> I(Rollback)
+  J(Migrated projects) --> K(Dry-run & Inspect)
+  K --> L(Rollback)
 ```

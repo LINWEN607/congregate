@@ -30,7 +30,7 @@ Congregate gathers (meta)data from source system(s), transforms and down-selects
 
 For support questions please create an issue from our [Congregate support issue template](./.gitlab/issue_templates/congregate-support.md).
 
-<!-->
+<!--
 ## About
 
 * Congregate is a Professional Services utility for migrating one or more data sources into a single GitLab instance.
