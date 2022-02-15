@@ -1,12 +1,4 @@
 [[package]]
-name = "alabaster"
-version = "0.7.12"
-description = "A configurable sidebar-enabled Sphinx theme"
-category = "main"
-optional = false
-python-versions = "*"
-
-[[package]]
 name = "astroid"
 version = "2.9.3"
 description = "An abstract syntax tree for Python with inference support."
@@ -79,17 +71,6 @@ docutils = ">=0.10,<0.16"
 PyYAML = ">=3.10,<5.5"
 rsa = ">=3.1.2,<4.8"
 s3transfer = ">=0.5.0,<0.6.0"
-
-[[package]]
-name = "babel"
-version = "2.9.1"
-description = "Internationalization utilities"
-category = "main"
-optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
-
-[package.dependencies]
-pytz = ">=2015.7"
 
 [[package]]
 name = "beautifulsoup4"
@@ -197,17 +178,6 @@ description = "Cross-platform colored terminal text."
 category = "main"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
-
-[[package]]
-name = "commonmark"
-version = "0.9.1"
-description = "Python parser for the CommonMark Markdown spec"
-category = "main"
-optional = false
-python-versions = "*"
-
-[package.extras]
-test = ["flake8 (==3.7.8)", "hypothesis (==3.55.3)"]
 
 [[package]]
 name = "coverage"
@@ -367,14 +337,6 @@ description = "Internationalized Domain Names in Applications (IDNA)"
 category = "main"
 optional = false
 python-versions = ">=3.5"
-
-[[package]]
-name = "imagesize"
-version = "1.3.0"
-description = "Getting image size from png/jpeg/jpeg2000/gif file"
-category = "main"
-optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 
 [[package]]
 name = "importlib-metadata"
@@ -558,6 +520,17 @@ description = "MkDocs plugin to programmatically generate documentation pages du
 category = "main"
 optional = false
 python-versions = ">=3.7,<4.0"
+
+[package.dependencies]
+mkdocs = ">=1.0.3,<2.0.0"
+
+[[package]]
+name = "mkdocs-literate-nav"
+version = "0.4.1"
+description = "MkDocs plugin to specify the navigation in Markdown instead of YAML"
+category = "main"
+optional = false
+python-versions = ">=3.6,<4.0"
 
 [package.dependencies]
 mkdocs = ">=1.0.3,<2.0.0"
@@ -969,19 +942,6 @@ python-versions = ">=3.6"
 pyyaml = "*"
 
 [[package]]
-name = "recommonmark"
-version = "0.6.0"
-description = "A docutils-compatibility bridge to CommonMark, enabling you to write CommonMark inside of Docutils & Sphinx projects."
-category = "main"
-optional = false
-python-versions = "*"
-
-[package.dependencies]
-commonmark = ">=0.8.1"
-docutils = ">=0.11"
-sphinx = ">=1.3.1"
-
-[[package]]
 name = "requests"
 version = "2.27.1"
 description = "Python HTTP for Humans."
@@ -1068,140 +1028,12 @@ optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*"
 
 [[package]]
-name = "snowballstemmer"
-version = "2.2.0"
-description = "This package provides 29 stemmers for 28 languages generated from Snowball algorithms."
-category = "main"
-optional = false
-python-versions = "*"
-
-[[package]]
 name = "soupsieve"
 version = "2.3.1"
 description = "A modern CSS selector implementation for Beautiful Soup."
 category = "main"
 optional = false
 python-versions = ">=3.6"
-
-[[package]]
-name = "sphinx"
-version = "2.4.1"
-description = "Python documentation generator"
-category = "main"
-optional = false
-python-versions = ">=3.5"
-
-[package.dependencies]
-alabaster = ">=0.7,<0.8"
-babel = ">=1.3,<2.0 || >2.0"
-colorama = {version = ">=0.3.5", markers = "sys_platform == \"win32\""}
-docutils = ">=0.12"
-imagesize = "*"
-Jinja2 = ">=2.3"
-packaging = "*"
-Pygments = ">=2.0"
-requests = ">=2.5.0"
-snowballstemmer = ">=1.1"
-sphinxcontrib-applehelp = "*"
-sphinxcontrib-devhelp = "*"
-sphinxcontrib-htmlhelp = "*"
-sphinxcontrib-jsmath = "*"
-sphinxcontrib-qthelp = "*"
-sphinxcontrib-serializinghtml = "*"
-
-[package.extras]
-docs = ["sphinxcontrib-websupport"]
-test = ["pytest (<5.3.3)", "pytest-cov", "html5lib", "flake8 (>=3.5.0)", "flake8-import-order", "mypy (>=0.761)", "docutils-stubs"]
-
-[[package]]
-name = "sphinx-press-theme"
-version = "0.5.1"
-description = "A Sphinx-doc theme based on Vuepress"
-category = "main"
-optional = false
-python-versions = "*"
-
-[package.dependencies]
-sphinx = ">=2.0.0"
-
-[[package]]
-name = "sphinxcontrib-applehelp"
-version = "1.0.2"
-description = "sphinxcontrib-applehelp is a sphinx extension which outputs Apple help books"
-category = "main"
-optional = false
-python-versions = ">=3.5"
-
-[package.extras]
-lint = ["flake8", "mypy", "docutils-stubs"]
-test = ["pytest"]
-
-[[package]]
-name = "sphinxcontrib-devhelp"
-version = "1.0.2"
-description = "sphinxcontrib-devhelp is a sphinx extension which outputs Devhelp document."
-category = "main"
-optional = false
-python-versions = ">=3.5"
-
-[package.extras]
-lint = ["flake8", "mypy", "docutils-stubs"]
-test = ["pytest"]
-
-[[package]]
-name = "sphinxcontrib-htmlhelp"
-version = "2.0.0"
-description = "sphinxcontrib-htmlhelp is a sphinx extension which renders HTML help files"
-category = "main"
-optional = false
-python-versions = ">=3.6"
-
-[package.extras]
-lint = ["flake8", "mypy", "docutils-stubs"]
-test = ["pytest", "html5lib"]
-
-[[package]]
-name = "sphinxcontrib-jsmath"
-version = "1.0.1"
-description = "A sphinx extension which renders display math in HTML via JavaScript"
-category = "main"
-optional = false
-python-versions = ">=3.5"
-
-[package.extras]
-test = ["pytest", "flake8", "mypy"]
-
-[[package]]
-name = "sphinxcontrib-mermaid"
-version = "0.3.1"
-description = "Mermaid diagrams in yours Sphinx powered docs"
-category = "main"
-optional = false
-python-versions = "*"
-
-[[package]]
-name = "sphinxcontrib-qthelp"
-version = "1.0.3"
-description = "sphinxcontrib-qthelp is a sphinx extension which outputs QtHelp document."
-category = "main"
-optional = false
-python-versions = ">=3.5"
-
-[package.extras]
-lint = ["flake8", "mypy", "docutils-stubs"]
-test = ["pytest"]
-
-[[package]]
-name = "sphinxcontrib-serializinghtml"
-version = "1.1.5"
-description = "sphinxcontrib-serializinghtml is a sphinx extension which outputs \"serialized\" HTML files (json and pickle)."
-category = "main"
-optional = false
-python-versions = ">=3.5"
-
-[package.extras]
-lint = ["flake8", "mypy", "docutils-stubs"]
-test = ["pytest"]
 
 [[package]]
 name = "toml"
@@ -1355,13 +1187,9 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "1.1"
 python-versions = "3.8.12"
-content-hash = "ea0d161dbd761ecece4422147946c180235ffa032f605723a9f64cf0da31ddc9"
+content-hash = "3c5752758ae494175f0653cf520f0c64332a48ad372af09c6f63928a01a74fb0"
 
 [metadata.files]
-alabaster = [
-    {file = "alabaster-0.7.12-py2.py3-none-any.whl", hash = "sha256:446438bdcca0e05bd45ea2de1668c1d9b032e1a9154c2c259092d77031ddd359"},
-    {file = "alabaster-0.7.12.tar.gz", hash = "sha256:a661d72d58e6ea8a57f7a86e37d86716863ee5e92788398526d58b26a4e4dc02"},
-]
 astroid = [
     {file = "astroid-2.9.3-py3-none-any.whl", hash = "sha256:506daabe5edffb7e696ad82483ad0228245a9742ed7d2d8c9cdb31537decf9f6"},
     {file = "astroid-2.9.3.tar.gz", hash = "sha256:1efdf4e867d4d8ba4a9f6cf9ce07cd182c4c41de77f23814feb27ca93ca9d877"},
@@ -1385,10 +1213,6 @@ autopep8 = [
 awscli = [
     {file = "awscli-1.22.51-py3-none-any.whl", hash = "sha256:eadaa662cf34d43123cee252e21ab0cc7a160316ddfb107ad3d3c8cc1d1f722d"},
     {file = "awscli-1.22.51.tar.gz", hash = "sha256:fb0631f46e163f4d0f88c496554df1ea748adb9cc5d616ccff2e89a1daaddd75"},
-]
-babel = [
-    {file = "Babel-2.9.1-py2.py3-none-any.whl", hash = "sha256:ab49e12b91d937cd11f0b67cb259a57ab4ad2b59ac7a3b41d6c06c0ac5b0def9"},
-    {file = "Babel-2.9.1.tar.gz", hash = "sha256:bc0c176f9f6a994582230df350aa6e05ba2ebe4b3ac317eab29d9be5d2768da0"},
 ]
 beautifulsoup4 = [
     {file = "beautifulsoup4-4.10.0-py3-none-any.whl", hash = "sha256:9a315ce70049920ea4572a4055bc4bd700c940521d36fc858205ad4fcde149bf"},
@@ -1472,10 +1296,6 @@ click = [
 colorama = [
     {file = "colorama-0.4.3-py2.py3-none-any.whl", hash = "sha256:7d73d2a99753107a36ac6b455ee49046802e59d9d076ef8e47b61499fa29afff"},
     {file = "colorama-0.4.3.tar.gz", hash = "sha256:e96da0d330793e2cb9485e9ddfd918d456036c7149416295932478192f4436a1"},
-]
-commonmark = [
-    {file = "commonmark-0.9.1-py2.py3-none-any.whl", hash = "sha256:da2f38c92590f83de410ba1a3cbceafbc74fee9def35f9251ba9a971d6d66fd9"},
-    {file = "commonmark-0.9.1.tar.gz", hash = "sha256:452f9dc859be7f06631ddcb328b6919c67984aca654e5fefb3914d54691aed60"},
 ]
 coverage = [
     {file = "coverage-6.3.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:eeffd96882d8c06d31b65dddcf51db7c612547babc1c4c5db6a011abe9798525"},
@@ -1641,10 +1461,6 @@ gunicorn = [
 idna = [
     {file = "idna-3.3-py3-none-any.whl", hash = "sha256:84d9dd047ffa80596e0f246e2eab0b391788b0503584e8945f2368256d2735ff"},
     {file = "idna-3.3.tar.gz", hash = "sha256:9d643ff0a55b762d5cdb124b8eaa99c66322e2157b69160bc32796e824360e6d"},
-]
-imagesize = [
-    {file = "imagesize-1.3.0-py2.py3-none-any.whl", hash = "sha256:1db2f82529e53c3e929e8926a1fa9235aa82d0bd0c580359c67ec31b2fddaa8c"},
-    {file = "imagesize-1.3.0.tar.gz", hash = "sha256:cd1750d452385ca327479d45b64d9c7729ecf0b3969a58148298c77092261f9d"},
 ]
 importlib-metadata = [
     {file = "importlib_metadata-4.11.0-py3-none-any.whl", hash = "sha256:6affcdb3aec542dd98df8211e730bba6c5f2bec8288d47bacacde898f548c9ad"},
@@ -1832,6 +1648,10 @@ mkdocs-autorefs = [
 mkdocs-gen-files = [
     {file = "mkdocs-gen-files-0.3.4.tar.gz", hash = "sha256:c69188486bdc1e74bd2b9b7ebbde9f9eb21052ae7762f1b35420cfbfc6d7122e"},
     {file = "mkdocs_gen_files-0.3.4-py3-none-any.whl", hash = "sha256:07f43245c87a03cfb03884e767655c2a61def24d07e47fb3a8d26b1581524d6a"},
+]
+mkdocs-literate-nav = [
+    {file = "mkdocs-literate-nav-0.4.1.tar.gz", hash = "sha256:9efe26b662f2f901cae5807bfd51446d30ea7e033c2bc43a15d6282c7dfac1ab"},
+    {file = "mkdocs_literate_nav-0.4.1-py3-none-any.whl", hash = "sha256:a4b761792ba21defbe2dfd5e0de6ba451639e1ca0f0661c37eda83cc6261e4f9"},
 ]
 mkdocs-material = [
     {file = "mkdocs-material-8.1.11.tar.gz", hash = "sha256:091bafac6978db7eec5660cd5142cee24efdb6a2d8235a2b2cc84d527cffb414"},
@@ -2160,10 +1980,6 @@ pyyaml-env-tag = [
     {file = "pyyaml_env_tag-0.1-py3-none-any.whl", hash = "sha256:af31106dec8a4d68c60207c1886031cbf839b68aa7abccdb19868200532c2069"},
     {file = "pyyaml_env_tag-0.1.tar.gz", hash = "sha256:70092675bda14fdec33b31ba77e7543de9ddc88f2e5b99160396572d11525bdb"},
 ]
-recommonmark = [
-    {file = "recommonmark-0.6.0-py2.py3-none-any.whl", hash = "sha256:2ec4207a574289355d5b6ae4ae4abb29043346ca12cdd5f07d374dc5987d2852"},
-    {file = "recommonmark-0.6.0.tar.gz", hash = "sha256:29cd4faeb6c5268c633634f2d69aef9431e0f4d347f90659fd0aab20e541efeb"},
-]
 requests = [
     {file = "requests-2.27.1-py2.py3-none-any.whl", hash = "sha256:f22fa1e554c9ddfd16e6e41ac79759e17be9e492b3587efa038054674760e72d"},
     {file = "requests-2.27.1.tar.gz", hash = "sha256:68d7c56fd5a8999887728ef304a6d12edc7be74f1cfa47714fc8b414525c9a61"},
@@ -2191,47 +2007,9 @@ six = [
     {file = "six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"},
     {file = "six-1.16.0.tar.gz", hash = "sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926"},
 ]
-snowballstemmer = [
-    {file = "snowballstemmer-2.2.0-py2.py3-none-any.whl", hash = "sha256:c8e1716e83cc398ae16824e5572ae04e0d9fc2c6b985fb0f900f5f0c96ecba1a"},
-    {file = "snowballstemmer-2.2.0.tar.gz", hash = "sha256:09b16deb8547d3412ad7b590689584cd0fe25ec8db3be37788be3810cbf19cb1"},
-]
 soupsieve = [
     {file = "soupsieve-2.3.1-py3-none-any.whl", hash = "sha256:1a3cca2617c6b38c0343ed661b1fa5de5637f257d4fe22bd9f1338010a1efefb"},
     {file = "soupsieve-2.3.1.tar.gz", hash = "sha256:b8d49b1cd4f037c7082a9683dfa1801aa2597fb11c3a1155b7a5b94829b4f1f9"},
-]
-sphinx = [
-    {file = "Sphinx-2.4.1-py3-none-any.whl", hash = "sha256:5024a67f065fe60d9db2005580074d81f22a02dd8f00a5b1ec3d5f4d42bc88d8"},
-    {file = "Sphinx-2.4.1.tar.gz", hash = "sha256:f929b72e0cfe45fa581b8964d54457117863a6a6c9369ecc1a65b8827abd3bf2"},
-]
-sphinx-press-theme = [
-    {file = "sphinx_press_theme-0.5.1.tar.gz", hash = "sha256:bbb8b52b7c5721114ed230efbd97dbdc78c06097d1f8b16dddc9295d7bd09618"},
-]
-sphinxcontrib-applehelp = [
-    {file = "sphinxcontrib-applehelp-1.0.2.tar.gz", hash = "sha256:a072735ec80e7675e3f432fcae8610ecf509c5f1869d17e2eecff44389cdbc58"},
-    {file = "sphinxcontrib_applehelp-1.0.2-py2.py3-none-any.whl", hash = "sha256:806111e5e962be97c29ec4c1e7fe277bfd19e9652fb1a4392105b43e01af885a"},
-]
-sphinxcontrib-devhelp = [
-    {file = "sphinxcontrib-devhelp-1.0.2.tar.gz", hash = "sha256:ff7f1afa7b9642e7060379360a67e9c41e8f3121f2ce9164266f61b9f4b338e4"},
-    {file = "sphinxcontrib_devhelp-1.0.2-py2.py3-none-any.whl", hash = "sha256:8165223f9a335cc1af7ffe1ed31d2871f325254c0423bc0c4c7cd1c1e4734a2e"},
-]
-sphinxcontrib-htmlhelp = [
-    {file = "sphinxcontrib-htmlhelp-2.0.0.tar.gz", hash = "sha256:f5f8bb2d0d629f398bf47d0d69c07bc13b65f75a81ad9e2f71a63d4b7a2f6db2"},
-    {file = "sphinxcontrib_htmlhelp-2.0.0-py2.py3-none-any.whl", hash = "sha256:d412243dfb797ae3ec2b59eca0e52dac12e75a241bf0e4eb861e450d06c6ed07"},
-]
-sphinxcontrib-jsmath = [
-    {file = "sphinxcontrib-jsmath-1.0.1.tar.gz", hash = "sha256:a9925e4a4587247ed2191a22df5f6970656cb8ca2bd6284309578f2153e0c4b8"},
-    {file = "sphinxcontrib_jsmath-1.0.1-py2.py3-none-any.whl", hash = "sha256:2ec2eaebfb78f3f2078e73666b1415417a116cc848b72e5172e596c871103178"},
-]
-sphinxcontrib-mermaid = [
-    {file = "sphinxcontrib_mermaid-0.3.1-py2.py3-none-any.whl", hash = "sha256:d2e33529c63c12724193b210dcbd4285ca6cff17b8f91f9dbcb8b4b7d07595e7"},
-]
-sphinxcontrib-qthelp = [
-    {file = "sphinxcontrib-qthelp-1.0.3.tar.gz", hash = "sha256:4c33767ee058b70dba89a6fc5c1892c0d57a54be67ddd3e7875a18d14cba5a72"},
-    {file = "sphinxcontrib_qthelp-1.0.3-py2.py3-none-any.whl", hash = "sha256:bd9fc24bcb748a8d51fd4ecaade681350aa63009a347a8c14e637895444dfab6"},
-]
-sphinxcontrib-serializinghtml = [
-    {file = "sphinxcontrib-serializinghtml-1.1.5.tar.gz", hash = "sha256:aa5f6de5dfdf809ef505c4895e51ef5c9eac17d0f287933eb49ec495280b6952"},
-    {file = "sphinxcontrib_serializinghtml-1.1.5-py2.py3-none-any.whl", hash = "sha256:352a9a00ae864471d3a7ead8d7d79f5fc0b57e8b3f95e9867eb9eb28999b92fd"},
 ]
 toml = [
     {file = "toml-0.10.2-py2.py3-none-any.whl", hash = "sha256:806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b"},

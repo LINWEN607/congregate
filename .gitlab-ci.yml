@@ -557,7 +557,7 @@ pages:
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
       changes:
         - runbooks/*
-        - congregate/docs/**/*
+        - ./docs/*
         - ./**/*.md
   dependencies:
     - code_quality
@@ -565,11 +565,10 @@ pages:
     - mkdir -p data
     - poetry config experimental.new-installer false
     - poetry install
-    - cp gl-code-quality-report.json congregate/docs/source/_static/
-    - poetry run sphinx-apidoc -f -o congregate/docs/source/ ./
-    - cd congregate/docs
-    - make html
-    - mv build/html ../../public
+    # TODO
+    # - cp gl-code-quality-report.json congregate/docs/source/_static/
+    - poetry run mkdocs build
+    - mv site public
   retry: 2
   artifacts:
     paths:
