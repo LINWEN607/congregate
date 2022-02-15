@@ -2,6 +2,7 @@ site_name: Congregate
 
 theme:
   name: material
+  logo: img/logo.png
 
 markdown_extensions:
   - pymdownx.emoji:
@@ -32,6 +33,7 @@ nav:
   - Contribute to Congregate: contributing.md
   - Congregate Wiki: https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/wikis/home
 
+# This order needs to be retained
 plugins:
     - search
     - mermaid2
