@@ -45,7 +45,6 @@ from congregate.migration.jenkins.base import JenkinsClient
 from congregate.migration.teamcity.base import TeamcityClient
 from congregate.migration.bitbucket.repos import ReposClient as BBSReposClient
 from congregate.migration.github.repos import ReposClient
-from congregate.migration.github.api.users import UsersApi as GitHubUsersApi
 
 
 class MigrateClient(BaseClass):
@@ -358,7 +357,7 @@ class MigrateClient(BaseClass):
 
             # Repo import status
             if dst_pid or project_id:
-                result[dstn_pwn]["import_status"] = self.get_external_repo_import_status(
+                result[dstn_pwn]["import_status"] = self.ext_import.get_external_repo_import_status(
                     host, token, dst_pid or project_id)
         else:
             log = f"Target namespace {tn} does not exist"
@@ -422,30 +421,11 @@ class MigrateClient(BaseClass):
         result[path_with_namespace]["members"]["email"] = self.handle_member_retention(
             members, pid)
 
+        # Repo import status
+        result[path_with_namespace]["import_status"] = self.ext_import.get_external_repo_import_status(
+            host, token, pid)
+
         return result
-
-    def get_external_repo_import_status(self, host, token, pid):
-        import_status = misc_utils.safe_json_response(
-            self.projects_api.get_project_import_status(host, token, pid))
-        if import_status:
-            # Save to file to avoid outputing long lists to log
-            failed_relations = import_status.pop("failed_relations")
-            # Exposed as of GitLab 14.6
-            stats = import_status.pop(
-                "stats") if import_status.get("stats") else None
-
-            # Save import_error, user rate_limit status, import stats and failed relations
-            with open(self.app_path + "/data/results/import_failed_relations.json", "a") as f:
-                import_error = import_status.get("import_error")
-                json.dump({import_status.get("path_with_namespace"): {
-                    "import_error": import_error,
-                    "gh_rate_limit_status": misc_utils.safe_json_response(
-                        GitHubUsersApi(self.config.source_host, self.config.source_token).get_rate_limit_status())
-                    if import_error else None,
-                    "stats": stats,
-                    "failed_relations": failed_relations
-                } if import_status else None}, f, indent=4)
-        return import_status
 
     def handle_ext_ci_src_migration(self, result, project, project_id):
         if jenkins_configs := self.config.list_ci_source_config(
@@ -661,13 +641,17 @@ class MigrateClient(BaseClass):
 
                 # Remove import user
                 self.remove_import_user(project_id)
+
+                # Repo import status
+                result[path_with_namespace]["import_status"] = self.ext_import.get_external_repo_import_status(
+                    host, token, project_id)
             else:
                 result = self.ext_import.get_failed_result(
                     path_with_namespace,
                     data={"error": "Import time limit exceeded. Unable to execute post migration phase"})
 
             # Repo import status
-            result[path_with_namespace]["import_status"] = self.get_external_repo_import_status(
+            result[path_with_namespace]["import_status"] = self.ext_import.get_external_repo_import_status(
                 host, token, project_id)
         return result
 
