@@ -192,14 +192,14 @@ class BaseDiffClient(BaseClass):
                         response)
                 else:
                     destination_data = self.generate_empty_data(
-                        source_data)
+                        source_data, identifier)
             else:
                 destination_data = {
-                    "error": "asset missing"
+                    "error": f"asset {identifier} is missing"
                 }
         else:
             destination_data = self.generate_empty_data(
-                source_data)
+                source_data, identifier)
         return destination_data
 
     def calculate_individual_dict_accuracy(
@@ -385,19 +385,19 @@ class BaseDiffClient(BaseClass):
                 f"Unable to generate cleaned instance data. Returning empty list, with error:\n{te}")
             return []
 
-    def generate_empty_data(self, source):
+    def generate_empty_data(self, source, identifier):
         if isinstance(source, list):
             return [
                 {
-                    'error': 'asset is missing'
+                    "error": f"asset {identifier} is missing"
                 }
             ]
         return {
-            'error': 'asset is missing'
+            "error": "asset {identifier} is missing"
         }
 
     def generate_html_report(self, asset, diff, filepath, nested=False):
-        filepath = "{0}{1}".format(self.app_path, filepath)
+        filepath = f"{self.app_path}{filepath}"
         self.log.info(f"Writing HTML report to {filepath}")
         soup = bs(
             "<html><body><table class = 'content'></table></body></html>", features="lxml")
