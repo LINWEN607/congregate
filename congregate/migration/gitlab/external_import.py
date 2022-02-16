@@ -114,14 +114,20 @@ class ImportClient(BaseClass):
             if project_statistics and project_statistics.get("data") is not None:
                 if project_statistics["data"].get("project") is not None:
                     # Main criterion
-                    if dig(project_statistics, 'data', 'project',
-                           'importStatus', default="") == "finished":
+                    status = dig(project_statistics, 'data',
+                                 'project', 'importStatus', default="")
+                    if status == "finished":
                         self.log.info(
-                            f"Import Status is marked as finished for {full_path}")
+                            f"Import status is marked as {status} for {full_path}")
                         imported = True
+                    if status == "failed":
+                        self.log.error(
+                            f"Import status is marked as {status} for {full_path}")
+                        success = False
+                        break
+                    # Sub criteria
                     stats = dig(project_statistics, 'data',
                                 'project', 'statistics')
-                    # Sub criteria
                     if imported and stats["commitCount"] > 0:
                         self.log.info(
                             f"Git commits have been found for {full_path}. Import is complete")

@@ -349,7 +349,7 @@ class MigrateClient(BaseClass):
                     else:
                         result = self.ext_import.get_failed_result(
                             dstn_pwn,
-                            data={"error": "Import time limit exceeded. Unable to execute post migration phase"})
+                            data={"error": "Import failed or time limit exceeded. Unable to execute post migration phase"})
                 else:
                     result = self.ext_import.get_failed_result(
                         dstn_pwn,
@@ -648,7 +648,7 @@ class MigrateClient(BaseClass):
             else:
                 result = self.ext_import.get_failed_result(
                     path_with_namespace,
-                    data={"error": "Import time limit exceeded. Unable to execute post migration phase"})
+                    data={"error": "Import failed or time limit exceeded. Unable to execute post migration phase"})
 
             # Repo import status
             result[path_with_namespace]["import_status"] = self.ext_import.get_external_repo_import_status(
