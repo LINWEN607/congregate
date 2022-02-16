@@ -195,7 +195,8 @@ class BaseDiffClient(BaseClass):
                         source_data, identifier)
             else:
                 destination_data = {
-                    "error": f"asset {identifier} is missing"
+                    # identifier being the specific API endpoint
+                    "error": f"asset '{identifier}' is missing"
                 }
         else:
             destination_data = self.generate_empty_data(
@@ -386,14 +387,15 @@ class BaseDiffClient(BaseClass):
             return []
 
     def generate_empty_data(self, source, identifier):
+        # identifier being the specific API endpoint
         if isinstance(source, list):
             return [
                 {
-                    "error": f"asset {identifier} is missing"
+                    "error": f"asset '{identifier}' is missing"
                 }
             ]
         return {
-            "error": "asset {identifier} is missing"
+            "error": f"asset '{identifier}' is missing"
         }
 
     def generate_html_report(self, asset, diff, filepath, nested=False):
