@@ -396,9 +396,6 @@ class MigrateClient(BaseClass):
         # Migrate any external CI data
         self.handle_ext_ci_src_migration(result, project, pid)
 
-        # Remove import user from members
-        self.remove_import_user(pid)
-
         # Add pages file to repo
         result[path_with_namespace]["is_gh_pages"] = self.add_pipeline_for_github_pages(
             pid)
@@ -424,6 +421,10 @@ class MigrateClient(BaseClass):
         # Repo import status
         result[path_with_namespace]["import_status"] = self.ext_import.get_external_repo_import_status(
             host, token, pid)
+
+        # Remove import user; SKIP if removing all other members
+        if not self.remove_members:
+            self.remove_import_user(pid)
 
         return result
 
@@ -626,6 +627,7 @@ class MigrateClient(BaseClass):
                 if not self.remove_members:
                     result[path_with_namespace]["members"] = self.projects.add_members_to_destination_project(
                         host, token, project_id, members)
+
                 # Set default branch
                 self.branches.set_branch(
                     path_with_namespace, project_id, project.get("default_branch"))
@@ -639,12 +641,13 @@ class MigrateClient(BaseClass):
                 self.bbs_repos_client.correct_repo_description(
                     project, project_id)
 
-                # Remove import user
-                self.remove_import_user(project_id)
-
                 # Repo import status
                 result[path_with_namespace]["import_status"] = self.ext_import.get_external_repo_import_status(
                     host, token, project_id)
+
+                # Remove import user; SKIP if removing all other members
+                if not self.remove_members:
+                    self.remove_import_user(project_id)
             else:
                 result = self.ext_import.get_failed_result(
                     path_with_namespace,

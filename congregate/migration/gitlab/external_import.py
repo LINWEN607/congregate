@@ -120,7 +120,7 @@ class ImportClient(BaseClass):
                         self.log.info(
                             f"Import status is marked as {status} for {full_path}")
                         imported = True
-                    if status == "failed":
+                    elif status == "failed":
                         self.log.error(
                             f"Import status is marked as {status} for {full_path}")
                         success = False
