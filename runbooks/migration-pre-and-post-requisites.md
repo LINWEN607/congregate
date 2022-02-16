@@ -21,6 +21,7 @@ This runbook covers the process of preparing and cleaning up after a migration f
 
 ### GitLab
 
+* [ ] For to-SaaS migrations, verify with the Account/Sales team that all licensing is setup for the `namespace` on `gitlab.com`
 * [ ] Setup the migration VM that will host the Professional Services (PS) migration tool’s (Congregate) Docker container.
   * It should have minimal port and IP access. See [VM Requirements](#vm) for more detail.
   * **NOTE:** If required the VM might be created, by the customer, within their environment. Make sure this approach is covered in the SoW.
