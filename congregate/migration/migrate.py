@@ -711,7 +711,7 @@ class MigrateClient(BaseClass):
         }
         old_user = {
             "email": email,
-            "id": user.get("id", None)
+            "id": user.get("id")
         }
         try:
             if not self.only_post_migration_info:

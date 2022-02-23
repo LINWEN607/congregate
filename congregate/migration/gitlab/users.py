@@ -561,32 +561,30 @@ class UsersClient(BaseClass):
         :param user: The user entity (from staged_users.json) not the user_data that we generate
         :return: The ID of either the created user or the user found by email
         """
+        error_resp = f"{response} - {response.text}"
+        log_resp = f"User {user} creation failed, due to"
+        email = user.get("email")
         if response.status_code == 409:
-            self.log.info("User {0} already exists".format(user["email"]))
+            self.log.error(f"{log_resp} duplication:\n{error_resp}")
             try:
                 # Try to find the user by email. We either just created this,
                 # or it already existed
-                response = find_user_by_email_comparison_without_id(
-                    user["email"])
+                response = find_user_by_email_comparison_without_id(email)
                 return self.get_user_creation_id_and_email(response)
             except RequestException as e:
                 self.log.error(
-                    "Failed to retrieve user {0} status, due to:\n{1}".format(user, e))
+                    f"Failed to retrieve user {user} creation status, due to:\n{e}")
         elif response.status_code == 400:
-            return self.log_and_return_failed_user_creation(
-                f"Unable to create user due to improperly formatted request for user email {user['email']} :\n{response.text}", user["email"])
+            return self.log_and_return_failed_user_creation(f"{log_resp} improperly formatted request:\n{error_resp}", email)
         elif response.status_code == 500:
-            return self.log_and_return_failed_user_creation(
-                "Unable to create user due to internal server error:\n{}".format(response.text), user["email"])
+            return self.log_and_return_failed_user_creation(f"{log_resp} internal server error:\n{error_resp}", email)
         else:
             if resp := safe_json_response(response):
                 return {
-                    "email": resp["email"],
-                    "id": resp["id"]
+                    "email": resp.get("email"),
+                    "id": resp.get("id")
                 }
-            else:
-                return self.log_and_return_failed_user_creation(
-                    response.text, user["email"])
+            return self.log_and_return_failed_user_creation(error_resp, email)
 
     def log_and_return_failed_user_creation(self, message, email):
         self.log.error(message)
