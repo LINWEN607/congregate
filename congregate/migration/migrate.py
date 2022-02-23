@@ -418,10 +418,6 @@ class MigrateClient(BaseClass):
         result[path_with_namespace]["members"]["email"] = self.handle_member_retention(
             members, pid)
 
-        # Repo import status
-        result[path_with_namespace]["import_status"] = self.ext_import.get_external_repo_import_status(
-            host, token, pid)
-
         # Remove import user; SKIP if removing all other members
         if not self.remove_members:
             self.remove_import_user(pid)
@@ -640,10 +636,6 @@ class MigrateClient(BaseClass):
                 # project's description
                 self.bbs_repos_client.correct_repo_description(
                     project, project_id)
-
-                # Repo import status
-                result[path_with_namespace]["import_status"] = self.ext_import.get_external_repo_import_status(
-                    host, token, project_id)
 
                 # Remove import user; SKIP if removing all other members
                 if not self.remove_members:
