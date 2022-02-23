@@ -86,7 +86,7 @@ class Config(BaseConfig):
 
     @property
     def username_suffix(self):
-        return self.prop("DESTINATION", "username_suffix", default="_")
+        return self.prop("DESTINATION", "username_suffix", default="migrated")
 
     @property
     def mirror_username(self):
@@ -117,7 +117,7 @@ class Config(BaseConfig):
         section value in gitlab.rb. Using the below default from gitlab.rb as an example,
         this value should be "ldapmain" as it is of type "ldap" and we want
         to bind to the "main" server
-        
+
         gitlab_rails['ldap_servers'] = YAML.load <<-'EOS'                   
             main: # 'main' is the GitLab 'provider ID' of this LDAP server
                 label: 'LDAP'                                                                              
@@ -132,7 +132,7 @@ class Config(BaseConfig):
         """
         The minimum access to give users via the sync. This maps directly to the values at 
         https://docs.gitlab.com/ee/api/members.html#valid-access-levels
-        
+
         Defaults to no access
         """
         return self.prop_int(

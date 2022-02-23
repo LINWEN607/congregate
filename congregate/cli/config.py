@@ -93,9 +93,8 @@ def generate_config():
 
     # Misc destination instance configuration
     username_suffix = input(
-        "To avoid username collision, please input suffix to append to username: ")
-    config.set("DESTINATION", "username_suffix",
-               username_suffix if username_suffix != "_" else "")
+        "To avoid username collision, please input suffix to append to username (default '<username>_migrated'): ")
+    config.set("DESTINATION", "username_suffix", username_suffix or "migrated")
     mirror = input(
         "Planning a soft cut-over migration by mirroring repos to keep both instances running (Default: No)? ")
     if mirror.lower() in ["yes", "y"]:

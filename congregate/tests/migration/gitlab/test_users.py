@@ -517,7 +517,7 @@ class UsersTests(unittest.TestCase):
     @patch.object(UsersClient, "username_exists")
     @patch.object(UsersApi, "search_for_user_by_email")
     @patch.object(UsersClient, "user_email_exists")
-    def test_create_valid_username_not_found_email_found_username_returns_underscore_username_if_suffix_not_set(
+    def test_create_valid_username_not_found_email_found_username_returns_username_if_suffix_not_set(
             self,
             mock_email_check,
             mock_user_search,
@@ -531,10 +531,12 @@ class UsersTests(unittest.TestCase):
         mock_email_check.return_value = False
         mock_user_search.return_value = [dummy_user]
         mock_username_exists.return_value = True
-        mock_username_suffix.return_value = "_"
+        mock_username_suffix.return_value = "migrated"
         dummy_user["username"] = "JUST NOW CREATED"
-        created_user_name = self.users.create_valid_username(dummy_user)
-        self.assertEqual(created_user_name, f"{dummy_user['username']}_")
+        with self.assertLogs(self.users.log, level="WARNING"):
+            created_user_name = self.users.create_valid_username(dummy_user)
+        self.assertEqual(created_user_name,
+                         f"{dummy_user['username']}_migrated")
 
     # pylint: disable=no-member
     @responses.activate

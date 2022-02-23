@@ -207,11 +207,11 @@ class UsersClient(BaseClass):
 
     def build_suffix_username(self, username):
         # Concat the suffix
-        suffix = self.config.username_suffix
-        if suffix == "_":
+        suffix = str(self.config.username_suffix)
+        if suffix == "migrated":
             self.log.warning(
-                f"Default username suffix '{suffix}' (underscore) set")
-            return f"{username}{suffix}"
+                f"Default username suffix '{suffix}' set")
+            return f"{username}_{suffix}"
         return f"{username}_{suffix.lstrip('_')}"
 
     def add_users_to_parent_group(self, dry_run=True):
