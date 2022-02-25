@@ -57,7 +57,7 @@ def get_staged_groups_without_failed_export(staged_groups, failed_export):
 
         :param staged_groups: The current list of staged groups
         :param failed_export: A list of group export filenames
-        :return: A new staged_grups list removing those that failed export
+        :return: A new staged_groups list removing those that failed export
     """
     return [g for g in staged_groups if get_export_filename_from_namespace_and_name(
         g["full_path"]) not in failed_export]
@@ -89,8 +89,7 @@ def get_export_filename_from_namespace_and_name(namespace, name=""):
         :param name: Project name
         :return: Exported filename
     """
-    return "{0}{1}.tar.gz".format(
-        namespace, "/" + name if name else "").replace("/", "_").lower()
+    return f"{namespace}{'/' + name if name else ''}.tar.gz".replace("/", "_").lower()
 
 
 def get_project_dest_namespace(p, mirror=False):
@@ -272,7 +271,8 @@ def is_top_level_group(g):
 
 def is_loc_supported(loc):
     if loc not in ["filesystem", "aws"]:
-        sys.exit(f"Unsupported export location: {loc}")
+        b.log.error(f"Unsupported export location: {loc}")
+        sys.exit(os.EX_CONFIG)
 
 
 def can_migrate_users(users):
@@ -327,7 +327,7 @@ def add_post_migration_stats(start, log=None):
         if log:
             log.info(f"Total number of POST/PUT/DELETE requests: {reqs_no}")
     if log:
-        log.info("Total time: {}".format(timedelta(seconds=time() - start)))
+        log.info(f"Total time: {timedelta(seconds=time() - start)}")
 
 
 def write_results_to_file(import_results, result_type="project", log=None):

@@ -1,4 +1,5 @@
 import sys
+import os
 import time
 
 from gitlab_ps_utils.processes import MultiProcessing
@@ -59,7 +60,7 @@ class Seed_GHE(BaseClass):
         if self._check_org_exists(self.organization, orgs):
             print(
                 f"ERROR: Wouldn't be prudent. Org '{self.organization}' already exists")
-            sys.exit()
+            sys.exit(os.EX_CANTCREAT)
         else:
             data = {
                 'login': self.organization,
@@ -71,7 +72,7 @@ class Seed_GHE(BaseClass):
                     f"Encountered an error creating Organization: '{self.organization}'.\nA {r.status_code}"
                     f" was returned, with the following message;\n{r.text}\n"
                 )
-                sys.exit()
+                sys.exit(os.EX_SOFTWARE)
 
     def create_repo(self, repo):
         data = {
@@ -84,7 +85,7 @@ class Seed_GHE(BaseClass):
                 f"Encountered an error creating Org Repo: '{repo}'.\nA {r.status_code}"
                 f" was returned, with the following message;\n{r.text}\n"
             )
-            sys.exit()
+            sys.exit(os.EX_SOFTWARE)
 
     def _check_org_exists(self, org, orgs):
         for record in orgs:

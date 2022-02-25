@@ -1,17 +1,17 @@
-from os import getcwd, path, mkdir, makedirs
 from configparser import ConfigParser, NoOptionError
 
 import json
 import sys
+import os
 import requests
 
+from gitlab_ps_utils.misc_utils import safe_json_response
+from gitlab_ps_utils.string_utils import obfuscate, deobfuscate
+from gitlab_ps_utils.json_utils import json_pretty
 from docker import from_env
 from docker.errors import APIError, TLSParameterError
 
 from congregate.helpers.utils import get_congregate_path
-from gitlab_ps_utils.misc_utils import safe_json_response
-from gitlab_ps_utils.string_utils import obfuscate, deobfuscate
-from gitlab_ps_utils.json_utils import json_pretty
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.groups import GroupsApi
@@ -25,7 +25,7 @@ instance = InstanceApi()
 aws = AwsClient()
 reg_client = RegistryClient()
 app_path = get_congregate_path()
-config_path = "{}/data/congregate.conf".format(app_path)
+config_path = f"{app_path}/data/congregate.conf"
 
 """
     CLI for configuring congregate
@@ -49,8 +49,8 @@ def generate_config():
         config.set("DESTINATION", "import_user_id", str(migration_user["id"]))
     else:
         config.set("DESTINATION", "import_user_id", "")
-        print("WARNING: Destination user not found. Please enter 'import_user_id' manually (in {})".format(
-            config_path))
+        print(
+            f"WARNING: Destination user not found. Please enter 'import_user_id' manually (in {config_path})")
     shared_runners_enabled = input(
         "Enable shared runners on destination instance (Default: Yes)? ")
     config.set("DESTINATION", "shared_runners_enabled",
@@ -79,8 +79,8 @@ def generate_config():
                        group["full_path"])
         else:
             config.set("DESTINATION", "dstn_parent_group_path", "")
-            print("WARNING: Destination group not found. Please enter 'dstn_parent_group_id' and 'dstn_parent_group_path' manually (in {})".format(
-                config_path))
+            print(
+                f"WARNING: Destination group not found. Please enter 'dstn_parent_group_id' and 'dstn_parent_group_path' manually (in {config_path})")
         config.set("DESTINATION", "group_sso_provider",
                    input("Migrating to a group with SAML SSO enabled? Input SSO provider (auth0, adfs, etc.): "))
         if config.get("DESTINATION", "group_sso_provider"):
@@ -104,8 +104,8 @@ def generate_config():
                        migration_user["username"])
         else:
             config.set("DESTINATION", "mirror_username", "")
-            print("WARNING: Destination (mirror) user not found. Please enter 'mirror_username' manually (in {})".format(
-                config_path))
+            print(
+                f"WARNING: Destination (mirror) user not found. Please enter 'mirror_username' manually (in {config_path})")
     else:
         config.set("DESTINATION", "mirror_username", "")
     config.set("DESTINATION", "max_asset_expiration_time", "24")
@@ -123,12 +123,12 @@ def generate_config():
         elif src.lower() in ["2", "2.", "github"]:
             config.set("SOURCE", "src_type", "GitHub")
         else:
-            print("Source type {} is currently not supported".format(src))
-            sys.exit()
+            print(f"Source type {src} is currently not supported")
+            sys.exit(os.EX_CONFIG)
         config.set("SOURCE", "src_hostname", input(
-            "Source instance ({}) URL: ".format(config.get("SOURCE", "src_type"))))
+            f"Source instance ({config.get('SOURCE', 'src_type')}) URL: "))
         config.set("SOURCE", "src_access_token", obfuscate(
-            "Source instance ({}) Personal Access Token: ".format(config.get("SOURCE", "src_type"))))
+            f"Source instance ({config.get('SOURCE', 'src_type')}) Personal Access Token: "))
     else:
         # Non-external source instance configuration
         config.set("SOURCE", "src_type", "GitLab")
@@ -155,8 +155,8 @@ def generate_config():
                            src_group["full_path"])
             else:
                 config.set("SOURCE", "src_parent_group_path", "")
-                print("WARNING: Source group not found. Please enter 'src_parent_group_id' and 'src_parent_group_path' manually (in {})".format(
-                    config_path))
+                print(
+                    f"WARNING: Source group not found. Please enter 'src_parent_group_id' and 'src_parent_group_path' manually (in {config_path})")
         export_import_timeout = input(
             "Timeout (in seconds) for group or project export or import (Default: 3600): ")
         config.set("SOURCE", "export_import_timeout",
@@ -196,16 +196,16 @@ def generate_config():
                 aws.set_secret_access_key(deobfuscate(
                     config.get("EXPORT", "s3_secret_access_key")))
             except NoOptionError as noe:
-                print("Failed to get AWS S3 key, with error:\n{}".format(noe))
+                print(f"Failed to get AWS S3 key, with error:\n{noe}")
             except Exception as e:
-                print("Failed to set AWS S3 key, with error:\n{}".format(e))
+                print(f"Failed to set AWS S3 key, with error:\n{e}")
         else:
             config.set("EXPORT", "location", "filesystem")
 
         abs_path = input(
-            "ABSOLUTE path for exporting/updating projects (Default: {})? ".format(getcwd()))
+            f"ABSOLUTE path for exporting/updating projects (Default: {os.getcwd()})? ")
         config.set("EXPORT", "filesystem_path",
-                   abs_path if abs_path and abs_path.startswith("/") else getcwd())
+                   abs_path if abs_path and abs_path.startswith("/") else os.getcwd())
 
     # CI Source configuration
     ci_src = input("Migrating from a CI Source (Default: No)? ")
@@ -220,37 +220,36 @@ def generate_config():
             config.set("CI_SOURCE", "ci_src_username",
                        input("CI Source Username: "))
             config.set("CI_SOURCE", "ci_src_access_token", obfuscate(
-                "CI Source instance ({}) Personal Access Token: ".format(config.get("CI_SOURCE", "ci_src_type"))))
+                f"CI Source instance ({config.get('CI_SOURCE', 'ci_src_type')}) Personal Access Token: "))
         elif ci_src_option.lower() in ["2", "2.", "teamcity"]:
             config.set("CI_SOURCE", "ci_src_type", "TeamCity")
             config.set("CI_SOURCE", "ci_src_hostname", input(
-                "CI Source instance ({}) URL: ".format(config.get("CI_SOURCE", "ci_src_type"))))
+                f"CI Source instance ({config.get('CI_SOURCE', 'ci_src_type')}) URL: "))
             config.set("CI_SOURCE", "ci_src_username",
                        input("CI Source Username: "))
             config.set("CI_SOURCE", "ci_src_access_token", obfuscate(
-                "CI Source instance ({}) Personal Access Token: ".format(config.get("CI_SOURCE", "ci_src_type"))))
+                f"CI Source instance ({config.get('CI_SOURCE', 'ci_src_type')}) Personal Access Token: "))
         elif ci_src_option.lower() in ["3", "3.", "jenkins and teamcity"]:
             # Jenkins Config
             config.add_section("JENKINS_CI_SOURCE")
             config.set("JENKINS_CI_SOURCE", "jenkins_ci_src_type", "Jenkins")
             config.set("JENKINS_CI_SOURCE", "jenkins_ci_src_hostname", input(
-                "Jenkins CI Source instance ({}) URL: ".format(config.get("JENKINS_CI_SOURCE", "jenkins_ci_src_type"))))
+                f"Jenkins CI Source instance ({config.get('JENKINS_CI_SOURCE', 'jenkins_ci_src_type')}) URL: "))
             config.set("JENKINS_CI_SOURCE", "jenkins_ci_src_username",
                        input("Jenkins CI Source Username: "))
             config.set("JENKINS_CI_SOURCE", "jenkins_ci_src_access_token", obfuscate(
-                "Jenkins CI Source instance ({}) Personal Access Token: ".format(config.get("JENKINS_CI_SOURCE", "jenkins_ci_src_type"))))
+                f"Jenkins CI Source instance ({config.get('JENKINS_CI_SOURCE', 'jenkins_ci_src_type')}) Personal Access Token: "))
             # Teamcity Config
             config.add_section("TEAMCITY_CI_SOURCE")
             config.set("TEAMCITY_CI_SOURCE", "tc_ci_src_type", "TeamCity")
             config.set("TEAMCITY_CI_SOURCE", "tc_ci_src_hostname", input(
-                "Teamcity CI Source instance ({}) URL: ".format(config.get("TEAMCITY_CI_SOURCE", "tc_ci_src_type"))))
+                f"Teamcity CI Source instance ({config.get('TEAMCITY_CI_SOURCE', 'tc_ci_src_type')}) URL: "))
             config.set("TEAMCITY_CI_SOURCE", "tc_ci_src_username",
                        input("Teamcity CI Source Username: "))
             config.set("TEAMCITY_CI_SOURCE", "tc_ci_src_access_token", obfuscate(
-                "Teamcity CI Source instance ({}) Personal Access Token: ".format(config.get("TEAMCITY_CI_SOURCE", "tc_ci_src_type"))))
+                f"Teamcity CI Source instance ({config.get('TEAMCITY_CI_SOURCE', 'tc_ci_src_type')}) Personal Access Token: "))
         else:
-            print(
-                "CI Source type {} is currently not supported".format(ci_src_option))
+            print(f"CI Source type {ci_src_option} is currently not supported")
 
     # User specific configuration
     config.add_section("USER")
@@ -319,21 +318,21 @@ def write_to_file(config):
 
         :param: data: (dict) config object
     """
-    if not path.isdir("{}/data".format(app_path)):
-        mkdir(f"{app_path}/data")
-        mkdir(f"{app_path}/data/logs")
-        mkdir(f"{app_path}/data/results")
+    if not os.path.isdir(f"{app_path}/data"):
+        os.mkdir(f"{app_path}/data")
+        os.mkdir(f"{app_path}/data/logs")
+        os.mkdir(f"{app_path}/data/results")
     if config.has_option("EXPORT", "filesystem_path") and config.get(
             "EXPORT", "filesystem_path"):
         down_dir = config.get("EXPORT", "filesystem_path")
         sub_dir = "downloads"
-        if not path.isdir("{0}/{1}".format(down_dir, sub_dir)):
+        if not os.path.isdir("{0}/{1}".format(down_dir, sub_dir)):
             print(
-                "Filesystem path {} sub-folder 'downloads' does not exist. Creating it...".format(down_dir))
-            f_path = path.join(down_dir, sub_dir)
-            makedirs(f_path)
+                f"Filesystem path {down_dir} sub-folder 'downloads' does not exist. Creating it...")
+            f_path = os.path.join(down_dir, sub_dir)
+            os.makedirs(f_path)
     with open(config_path, "w") as f:
-        print("Writing configuration to file ({})...".format(config_path))
+        print(f"Writing configuration to file ({config_path})...")
         config.write(f)
 
 
@@ -343,13 +342,13 @@ def test_registries(token, registry, user):
         client.login(username=user.get("username"),
                      password=token, registry=registry)
     except (APIError, TLSParameterError) as err:
-        print("Failed to login to docker registry {0}, with error:\n{1}".format(
-            registry, err))
-        sys.exit()
+        print(
+            f"Failed to login to docker registry {registry}, with error:\n{err}")
+        sys.exit(os.EX_NOPERM)
     except Exception as e:
-        print("Login attempt to docker registry {0} failed, with error:\n{1}".format(
-            registry, e))
-        sys.exit()
+        print(
+            f"Login attempt to docker registry {registry} failed, with error:\n{e}")
+        sys.exit(os.EX_UNAVAILABLE)
 
 
 def test_slack(url):
@@ -362,7 +361,7 @@ def test_slack(url):
             raise Exception(resp)
     except Exception as em:
         print("EXCEPTION: " + str(em))
-        sys.exit()
+        sys.exit(os.EX_UNAVAILABLE)
 
 
 def get_sso_provider_pattern():
@@ -429,7 +428,7 @@ def update_config(data):
             if k1 == k2 and v2 != v1:
                 write_new_config = True
                 print(
-                    "Updating config option {0}/{1} from {2} -> {3}".format(section, k1, v1, v2))
+                    f"Updating config option {section}/{k1} from {v1} -> {v2}")
                 config_obj.set(section, k1, v2)
         x += len(options)
 

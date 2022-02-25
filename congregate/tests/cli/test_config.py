@@ -203,7 +203,7 @@ class ConfigTests(unittest.TestCase):
 
         mock_get_group.return_value = GroupHack()
         with patch('congregate.cli.config.write_to_file', mock_file):
-            with patch('congregate.cli.config.getcwd', lambda: "."):
+            with patch('congregate.cli.config.os.getcwd', lambda: "."):
                 with patch('congregate.cli.config.get_congregate_path', lambda: "."):
                     with patch('congregate.cli.config.obfuscate', lambda x: "dGVzdA=="):
                         with patch('congregate.cli.config.test_registries', lambda x, y, z: None):
@@ -295,7 +295,7 @@ class ConfigTests(unittest.TestCase):
 
         mock_get_group.return_value = GroupHack()
         with patch('congregate.cli.config.write_to_file', mock_file):
-            with patch('congregate.cli.config.getcwd', lambda: "."):
+            with patch('congregate.cli.config.os.getcwd', lambda: "."):
                 with patch('congregate.cli.config.get_congregate_path', lambda: "."):
                     with patch('congregate.cli.config.aws.set_access_key_id', lambda x: "access_key_id"):
                         with patch('congregate.cli.config.aws.set_secret_access_key', lambda x: "secret_access_key"):
@@ -390,7 +390,7 @@ class ConfigTests(unittest.TestCase):
 
         mock_get_group.return_value = GroupHack()
         with patch('congregate.cli.config.write_to_file', mock_file):
-            with patch('congregate.cli.config.getcwd', lambda: "."):
+            with patch('congregate.cli.config.os.getcwd', lambda: "."):
                 with patch('congregate.cli.config.get_congregate_path', lambda: "."):
                     with patch('congregate.cli.config.aws.set_access_key_id', lambda x: "access_key_id"):
                         with patch('congregate.cli.config.aws.set_secret_access_key', lambda x: "secret_access_key"):
@@ -569,7 +569,7 @@ class ConfigTests(unittest.TestCase):
         mock_get_group.return_value = GroupHack()
 
         with patch('congregate.cli.config.write_to_file', mock_file):
-            with patch('congregate.cli.config.getcwd', lambda: "."):
+            with patch('congregate.cli.config.os.getcwd', lambda: "."):
                 with patch('congregate.cli.config.get_congregate_path', lambda: "."):
                     with patch('congregate.cli.config.obfuscate', lambda x: "dGVzdA=="):
                         with patch('congregate.cli.config.test_registries', lambda x, y, z: None):

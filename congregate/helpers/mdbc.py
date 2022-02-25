@@ -1,4 +1,5 @@
 import sys
+import os
 from re import search
 from pymongo import MongoClient, errors, DESCENDING
 from gitlab_ps_utils.misc_utils import strip_netloc
@@ -30,11 +31,11 @@ class MongoConnector(BaseClass):
         except errors.ServerSelectionTimeoutError:
             self.log.error(
                 f"ServerSelectionTimeoutError: Unable to connect to mongodb at {host}:{port}")
-            sys.exit()
+            sys.exit(os.EX_NOHOST)
         except errors.ConnectionFailure:
             self.log.error(
                 f"ConnectionFailure: Unable to connect to mongodb at {host}:{port}")
-            sys.exit()
+            sys.exit(os.EX_UNAVAILABLE)
 
     def __generate_collections_list(self):
         collections = []

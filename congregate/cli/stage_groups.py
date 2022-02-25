@@ -6,6 +6,7 @@ Copyright (c) 2021 - GitLab
 
 import re
 import sys
+import os
 
 from gitlab_ps_utils.misc_utils import get_dry_log
 from gitlab_ps_utils.list_utils import remove_dupes
@@ -59,18 +60,18 @@ class GroupStageCLI(BaseStageClass):
             if groups_to_stage[0] in ["all", "."] or len(
                     groups_to_stage) == len(groups):
                 for p in projects:
-                    self.log.info("{0}Staging project {1} (ID: {2})".format(
-                        get_dry_log(dry_run), p["path_with_namespace"], p["id"]))
+                    self.log.info(
+                        f"{get_dry_log(dry_run)}Staging project {p['path_with_namespace']} (ID: {p['id']})")
                     self.staged_projects.append(self.get_project_metadata(p))
 
                 for g in groups:
-                    self.log.info("{0}Staging group {1} (ID: {2})".format(
-                        get_dry_log(dry_run), g["full_path"], g["id"]))
+                    self.log.info(
+                        f"{get_dry_log(dry_run)}Staging group {g['full_path']} (ID: {g['id']})")
                     self.staged_groups.append(self.format_group(g))
 
                 for u in users:
-                    self.log.info("{0}Staging user {1} (ID: {2})".format(
-                        get_dry_log(dry_run), u["username"], u["id"]))
+                    self.log.info(
+                        f"{get_dry_log(dry_run)}Staging user {u['username']} (ID: {u['id']})")
                     self.staged_users.append(u)
             # CLI range input
             elif re.search(r"\d+-\d+", groups_to_stage[0]) is not None:
@@ -95,10 +96,10 @@ class GroupStageCLI(BaseStageClass):
                     except ValueError:
                         self.log.error(
                             f"Please use a space delimited list of integers (group IDs), NOT {d}")
-                        sys.exit()
+                        sys.exit(os.EX_IOERR)
                     except KeyError:
                         self.log.error(f"Unknown group ID {d}")
-                        sys.exit()
+                        sys.exit(os.EX_DATAERR)
                     self.append_data(group, groups_to_stage, dry_run=dry_run)
         else:
             self.log.info("Staging empty list")
@@ -113,12 +114,12 @@ class GroupStageCLI(BaseStageClass):
             # Append all project members to staged users
             for project_member in obj.get("members", []):
                 self.append_member_to_members_list([], project_member, dry_run)
-            self.log.info("{0}Staging project {1} (ID: {2})".format(
-                get_dry_log(dry_run), obj.get("path_with_namespace"), obj.get("id")))
+            self.log.info(
+                f"{get_dry_log(dry_run)}Staging project {obj.get('path_with_namespace')} (ID: {obj.get('id')})")
             self.staged_projects.append(obj)
 
-        self.log.info("{0}Staging group {1} (ID: {2}) [{3}/{4}]".format(get_dry_log(
-            dry_run), group["full_path"], group["id"], len(self.staged_groups) + 1, len(p_range) if p_range else len(groups_to_stage)))
+        self.log.info(
+            f"{get_dry_log(dry_run)}Staging group {group['full_path']} (ID: {group['id']}) [{len(self.staged_groups) + 1}/{len(p_range) if p_range else len(groups_to_stage)}]")
         self.staged_groups.append(self.format_group(group))
 
         # Append all group members to staged users

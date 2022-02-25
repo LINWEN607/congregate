@@ -183,7 +183,7 @@ def list_data(processes=None, partial=False, skip_users=False,
     else:
         b.log.warning(
             f"Cannot list from {src_type} source type - {b.config.source_host}")
-        sys.exit()
+        sys.exit(os.EX_CONFIG)
 
     for f in staged_files:
         write_empty_file(f)

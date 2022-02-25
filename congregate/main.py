@@ -240,7 +240,7 @@ def main():
             with open(f"{app_path}/pyproject.toml", "r") as f:
                 print(
                     f"Congregate {dig(load_toml(f), 'tool', 'poetry', 'version')}")
-            sys.exit()
+            sys.exit(os.EX_OK)
         DRY_RUN = not arguments["--commit"]
         STAGED = arguments["--staged"]
         ROLLBACK = arguments["--rollback"]

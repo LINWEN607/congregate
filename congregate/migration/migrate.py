@@ -665,7 +665,7 @@ class MigrateClient(BaseClass):
             self.log.warning(
                 f"Results from {var} {stage} returned as empty.{sub_only} Aborting.")
             mig_utils.add_post_migration_stats(self.dry_run, log=self.log)
-            sys.exit()
+            sys.exit(os.EX_OK)
 
     def migrate_user_info(self):
         staged_users = mig_utils.get_staged_users()

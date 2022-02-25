@@ -58,8 +58,9 @@ class WaveStageCLI(BaseStageClass):
         unable_to_find = []
 
         if not os.path.isfile(self.config.wave_spreadsheet_path):
-            sys.exit(
-                f"The spreadsheet {self.config.wave_spreadsheet_path} does not exist. Please create a spreasheet with the projects scheduled for migration")
+            self.log.error(
+                f"The spreadsheet {self.config.wave_spreadsheet_path} does not exist. Please create a spreadsheet with the projects scheduled for migration")
+            sys.exit(os.EX_CONFIG)
 
         wsh = WaveSpreadsheetHandler(
             self.config.wave_spreadsheet_path,
@@ -77,8 +78,9 @@ class WaveStageCLI(BaseStageClass):
             )
         )
         if not wave_data:
-            sys.exit(
+            self.log.error(
                 f"Wave name is empty in {self.config.wave_spreadsheet_path} spreadsheet or the spreadsheet is empty.")
+            sys.exit(os.EX_CONFIG)
 
         # Some basic sanity checks for reading in spreadsheet data
         self.check_spreadsheet_data()
@@ -165,8 +167,8 @@ class WaveStageCLI(BaseStageClass):
         if project["project_type"] == "group":
             group_to_stage = self.rewritten_groups[self.rewritten_projects.get(project["id"])[
                 "namespace"]["id"]].copy()
-            self.log.info("{0}Staging group {1} (ID: {2})".format(get_dry_log(
-                dry_run), group_to_stage["full_path"], group_to_stage["id"]))
+            self.log.info(
+                f"{get_dry_log(dry_run)}Staging group {group_to_stage['full_path']} (ID: {group_to_stage['id']})")
             group_to_stage.pop("projects", None)
             self.handle_parent_group(wave_row, group_to_stage)
             self.staged_groups.append(group_to_stage)
@@ -200,8 +202,8 @@ class WaveStageCLI(BaseStageClass):
             # Append all project members to staged users
             for project_member in obj["members"]:
                 self.append_member_to_members_list([], project_member, dry_run)
-            self.log.info("{0}Staging project {1} (ID: {2})".format(
-                get_dry_log(dry_run), obj["path_with_namespace"], obj["id"]))
+            self.log.info(
+                f"{get_dry_log(dry_run)}Staging project {obj['path_with_namespace']} (ID: {obj['id']})")
             self.staged_projects.append(obj)
 
         self.log.info(
