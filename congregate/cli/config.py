@@ -197,8 +197,10 @@ def generate_config():
                     config.get("EXPORT", "s3_secret_access_key")))
             except NoOptionError as noe:
                 print(f"Failed to get AWS S3 key, with error:\n{noe}")
+                sys.exit(os.EX_CONFIG)
             except Exception as e:
                 print(f"Failed to set AWS S3 key, with error:\n{e}")
+                sys.exit(os.EX_CONFIG)
         else:
             config.set("EXPORT", "location", "filesystem")
 
@@ -377,7 +379,7 @@ def get_sso_provider_pattern():
                 "Select SSO provider pattern type (1. Email, 2. Hash, 3. UID (pass-through)): ")
             if int(sso_provider_pattern_option) == 1:
                 return options.get(1)
-            elif int(sso_provider_pattern_option) == 2:
+            if int(sso_provider_pattern_option) == 2:
                 print(
                     "We expect to handle hashes through a JSON that looks like the following:\n{}".format(json_pretty([
                         {
@@ -386,17 +388,17 @@ def get_sso_provider_pattern():
                         }
                     ])))
                 return options.get(2)
-            elif int(sso_provider_pattern_option) == 3:
+            if int(sso_provider_pattern_option) == 3:
                 print(
                     "Not fully implemented yet, assuming the same 'extern_uid' is being mapped")
                 return options.get(3)
-            elif int(sso_provider_pattern_option) == 4:
+            if int(sso_provider_pattern_option) == 4:
                 print("Not implemented yet")
                 return None
-            else:
-                print("Choose a valid option")
+            print(f"'{sso_provider_pattern_option}' is not a valid option")
         except ValueError:
             print("Please input a number for your option")
+            sys.exit(os.EX_DATAERR)
 
 
 def update_config(data):

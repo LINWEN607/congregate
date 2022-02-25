@@ -214,9 +214,9 @@ class AwsClient(BaseClass):
         return filename in r.stdout.read()
 
     def set_access_key_id(self, key):
-        command = "aws configure set aws_access_key_id {}".format(key)
+        command = f"aws configure set aws_access_key_id {key}"
         call(command.split(" "))
 
     def set_secret_access_key(self, key):
-        command = "aws configure set aws_secret_access_key {}".format(key)
+        command = f"aws configure set aws_secret_access_key {key}"
         call(command.split(" "))
