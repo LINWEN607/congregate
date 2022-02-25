@@ -26,6 +26,11 @@ function is_running() {
 function do_it() {
     set -e
     CONGREGATE_PATH=$(pwd) APP_PATH=$(pwd) && poetry run python congregate/main.py $@
+    exit_code=$?
+    if [ "${exit_code}" -ne 0 ]; then
+        echo "exit ${exit_code}"
+    fi
+    echo "echo 0"
     set +e
 }
 
