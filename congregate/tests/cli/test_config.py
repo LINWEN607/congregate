@@ -436,7 +436,7 @@ class ConfigTests(unittest.TestCase):
             # "dstn_parent_group_path",  # destination parent group full path
             "group_sso_provider",  # SSO provider
             "1",  # SSO provider pattern
-            "_",  # username suffix
+            "",  # username suffix
             "yes",   # mirror
             # "mirror_username",  # mirror username
             "no",  # external_src_url

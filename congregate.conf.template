@@ -39,7 +39,7 @@ import_user_id = 0
 # dstn_parent_group_path = destination_parent_group_full_path
 # group_sso_provider = group_sso_provider
 # group_sso_provider_pattern = email
-# username_suffix = _
+# username_suffix = migrated
 # mirror_username = 
 ### The maximum number of hours to rollback users, groups, and projects. Default value is 24
 # max_asset_expiration_time = 24
@@ -57,7 +57,7 @@ import_user_id = 0
 # shared_runners_enabled = False
 # project_suffix = False
 # max_import_retries = 3
-# username_suffix = _
+# username_suffix = migrated
 
 ### Following Destination changes based on reporting requirements and issue creation
 # reporting = {

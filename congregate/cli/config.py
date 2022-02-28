@@ -52,21 +52,21 @@ def generate_config():
         print(
             f"WARNING: Destination user not found. Please enter 'import_user_id' manually (in {config_path})")
     shared_runners_enabled = input(
-        "Enable shared runners on destination instance (Default: Yes)? ")
+        "Enable shared runners on destination instance (Default: 'Yes')? ")
     config.set("DESTINATION", "shared_runners_enabled",
                "False" if shared_runners_enabled.lower() in ["no", "n"] else "True")
     project_suffix = input(
-        "Append suffix to project found on destination instance (Default: No)? ")
+        "Append suffix to project found on destination instance (Default: 'No')? ")
     config.set("DESTINATION", "project_suffix",
                "True" if project_suffix.lower() in ["yes", "y"] else "False")
     max_import_retries = input(
-        "Max no. of project import retries (Default: 3): ")
+        "Max no. of project import retries (Default: '3'): ")
     config.set("DESTINATION", "max_import_retries",
                max_import_retries if max_import_retries else "3")
 
     # Parent group destination instance configuration
     dstn_group = input(
-        "Are you migrating to a parent group, e.g. gitlab.com (Default: No)? ")
+        "Are you migrating to a parent group, e.g. gitlab.com (Default: 'No')? ")
     if dstn_group.lower() in ["yes", "y"]:
         config.set("DESTINATION", "dstn_parent_group_id", input(
             "Parent group ID (Group -> Settings -> General): "))
@@ -93,11 +93,11 @@ def generate_config():
 
     # Misc destination instance configuration
     username_suffix = input(
-        "To avoid username collision, please input suffix to append to username: ")
-    config.set("DESTINATION", "username_suffix",
-               username_suffix if username_suffix != "_" else "")
+        "To avoid username collision, please input a suffix to append to the username. \
+        This will create a username of '<username>_<suffix>' (Default: 'migrated'): ")
+    config.set("DESTINATION", "username_suffix", username_suffix or "migrated")
     mirror = input(
-        "Planning a soft cut-over migration by mirroring repos to keep both instances running (Default: No)? ")
+        "Planning a soft cut-over migration by mirroring repos to keep both instances running (Default: 'No')? ")
     if mirror.lower() in ["yes", "y"]:
         if migration_user.get("username"):
             config.set("DESTINATION", "mirror_username",
@@ -113,7 +113,7 @@ def generate_config():
     # Source instance configuration
     config.add_section("SOURCE")
     ext_src = input(
-        "Migrating from an external (non-GitLab) instance (Default: No)? ")
+        "Migrating from an external (non-GitLab) instance (Default: 'No')? ")
     if ext_src.lower() in ["yes", "y"]:
         src = input(
             "Source (1. Bitbucket Server, 2. GitHub (Cloud or Enterprise)? ")
@@ -141,7 +141,7 @@ def generate_config():
         config.set("SOURCE", "src_tier", lic.get(
             "plan", "core") if lic else "core")
         source_group = input(
-            "Are you migrating from a parent group to a new instance, e.g. gitlab.com to self-managed (Default: No)? ")
+            "Are you migrating from a parent group to a new instance, e.g. gitlab.com to self-managed (Default: 'No')? ")
         if source_group.lower() in ["yes", "y"]:
             config.set("SOURCE", "src_parent_group_id", input(
                 "Source group ID (Group -> Settings -> General): "))
@@ -158,13 +158,13 @@ def generate_config():
                 print(
                     f"WARNING: Source group not found. Please enter 'src_parent_group_id' and 'src_parent_group_path' manually (in {config_path})")
         export_import_timeout = input(
-            "Timeout (in seconds) for group or project export or import (Default: 3600): ")
+            "Timeout (in seconds) for group or project export or import (Default: '3600'): ")
         config.set("SOURCE", "export_import_timeout",
                    export_import_timeout or "3600")
 
         # GitLab source/destination instance registry configuration
         migrating_registries = input(
-            "Are you migrating any container registries (Default: No)? ")
+            "Are you migrating any container registries (Default: 'No')? ")
         if migrating_registries.lower() in ["yes", "y"]:
             config.set("SOURCE", "src_registry_url", input(
                 "Source instance Container Registry URL: "))
@@ -178,11 +178,11 @@ def generate_config():
         # GitLab project export/update configuration
         config.add_section("EXPORT")
         location = input(
-            "Staging location for exported projects and groups, AWS (projects only) or filesystem (default)?: ")
+            "Staging location for exported projects and groups, AWS (projects only) or filesystem (Default)?: ")
         if location.lower() == "aws":
             config.set("EXPORT", "location", "aws")
             config.set("EXPORT", "s3_name", input("AWS S3 bucket name: "))
-            region = input("AWS S3 bucket region (Default: us-east-1): ")
+            region = input("AWS S3 bucket region (Default: 'us-east-1'): ")
             config.set("EXPORT", "s3_region",
                        region if region else "us-east-1")
             config.set("EXPORT", "s3_access_key_id",
@@ -210,7 +210,7 @@ def generate_config():
                    abs_path if abs_path and abs_path.startswith("/") else os.getcwd())
 
     # CI Source configuration
-    ci_src = input("Migrating from a CI Source (Default: No)? ")
+    ci_src = input("Migrating from a CI Source (Default: 'No')? ")
     if ci_src.lower() in ["yes", "y"]:
         config.add_section("CI_SOURCE")
         ci_src_option = input(
@@ -256,22 +256,22 @@ def generate_config():
     # User specific configuration
     config.add_section("USER")
     keep_inactive_users = input(
-        "Keep inactive users (blocked, ldap_blocked, deactivated, banned) in staged users/groups/projects (Default: No)? ")
+        "Keep inactive users (blocked, ldap_blocked, deactivated, banned) in staged users/groups/projects (Default: 'No')? ")
     config.set("USER", "keep_inactive_users",
                "True" if keep_inactive_users.lower() in ["yes", "y"] else "False")
     reset_pwd = input(
-        "Should users receive password reset emails (Default: Yes)? ")
+        "Should users receive password reset emails (Default: 'Yes')? ")
     config.set("USER", "reset_pwd", "False" if reset_pwd.lower()
                in ["no", "n"] else "True")
     force_rand_pwd = input(
-        "Should users be created with a randomized password (Default: No)? ")
+        "Should users be created with a randomized password (Default: 'No')? ")
     config.set("USER", "force_rand_pwd",
                "True" if force_rand_pwd.lower() in ["yes", "y"] else "False")
 
     # Generic App configuration
     config.add_section("APP")
     export_import_status_check_time = input(
-        "Check time (in seconds) for group or project export or import status (Default: 10): ")
+        "Check time (in seconds) for group or project export or import status (Default: '10'): ")
     config.set("APP", "export_import_status_check_time",
                export_import_status_check_time or "10")
     wave_spreadsheet = input(
@@ -293,14 +293,14 @@ def generate_config():
                 json.dumps(d)
             )
     slack = input(
-        "Send alerts (logs) to Slack via Incoming WebHooks (Default: No)? ")
+        "Send alerts (logs) to Slack via Incoming WebHooks (Default: 'No')? ")
     if slack.lower() in ["yes", "y"]:
         config.set("APP", "slack_url", input(
             "Slack Incoming WebHooks URL: "))
         test_slack(config.get("APP", "slack_url"))
 
     mongo = input(
-        "External mongodb host? (Default: No)? ")
+        "External mongodb host? (Default: 'No')? ")
     if mongo.lower() in ["yes", "y"]:
         config.set("APP", "mongo_host", input(
             "Mongo host (excluding port): "))
