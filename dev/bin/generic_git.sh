@@ -8,6 +8,7 @@ push_branches='refs/remotes/old-origin/*:refs/heads/*'
 
 function usage(){  
     echo "Usage: $0 [original repo url] [repository folder] [target group_name] "  
+    echo "Example: $0 abc.git <test> "
     exit 1  
  } 
 
@@ -18,12 +19,12 @@ else
     echo "1. The repo name: ${repo_url##*/}"
     git clone "ssh://admin@$name" $repo_folder
     cd $repo_folder
-    echo "2. the new repo url: $target_group/${repo_url##*/}"
     echo "where am I"
     pwd
+    echo "2. the new repo url: $target_group/${repo_url##*/}"
     read -p 'Press [Enter] key to continue...'
     git remote rename origin old-origin 
-    git remote add origin $target_group/${name##*/}
+    git remote add origin "git@gitlab.com:$target_group/${name##*/}"
     echo "Pushing all the branches from Gerrit to GitLab including LFS"
     git push origin $push_branches
     read -p 'Press [Enter] key to continue...'
