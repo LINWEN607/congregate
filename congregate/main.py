@@ -616,8 +616,11 @@ def main():
                 ldap.load_pdv(arguments['<file-path>'])
                 ldap.synchronize_groups(dry_run=DRY_RUN)
             if arguments["set-staged-users-public-email"]:
+                start = time()
+                rotate_logs()
                 users.set_staged_users_public_email(
                     dry_run=DRY_RUN, hide=arguments["--hide"])
+                add_post_migration_stats(start, log=log)
             if arguments["create-staged-projects-structure"]:
                 projects.create_staged_projects_structure(
                     dry_run=DRY_RUN, disable_cicd=arguments["--disable-cicd"])
