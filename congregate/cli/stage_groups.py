@@ -27,6 +27,7 @@ class GroupStageCLI(BaseStageClass):
             :param: skip_users (bool) If true will skip writing staged users to file
         """
         self.build_staging_data(groups_to_stage, dry_run, scm_source)
+        self.list_staged_users_without_public_email()
         if not dry_run:
             self.write_staging_files(skip_users=skip_users)
 

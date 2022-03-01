@@ -9,6 +9,7 @@ import json
 from gitlab_ps_utils.misc_utils import get_dry_log, strip_netloc
 from gitlab_ps_utils.list_utils import remove_dupes_with_keys, remove_dupes
 from gitlab_ps_utils.dict_utils import dig
+from gitlab_ps_utils.json_utils import json_pretty
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.migrate_utils import validate_name
@@ -160,3 +161,14 @@ class BaseStageClass(BaseClass):
         group.pop("projects", None)
         group["name"] = validate_name(group["name"], is_group=True)
         return group
+
+    def list_staged_users_without_public_email(self):
+        if self.staged_users:
+            no_public_email = [{
+                "name": u.get("name"),
+                "username": u.get("username"),
+                "email": u.get("email"),
+                "public_email": u.get("public_email")
+            } for u in self.staged_users if u.get("email") != u.get("public_email")]
+            self.log.warning(
+                f"Staged users with incorrect (not primary email) or no `public_email` field set ({len(no_public_email)}):\n{json_pretty(no_public_email)}")

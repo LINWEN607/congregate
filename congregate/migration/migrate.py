@@ -782,9 +782,6 @@ class MigrateClient(BaseClass):
 
     def export_import_groups(self, staged_top_groups, staged_subgroups, dry_log):
         if not self.skip_group_export:
-            # Set public_email field for users that are exported as members
-            self.users.set_staged_users_public_email(dry_run=self.dry_run)
-
             self.log.info(f"{dry_log}Exporting groups")
             export_results = list(er for er in self.multi.start_multi_process(
                 self.handle_exporting_groups,
@@ -808,10 +805,6 @@ class MigrateClient(BaseClass):
             # Filter out the failed ones
             staged_top_groups = mig_utils.get_staged_groups_without_failed_export(
                 staged_top_groups, failed)
-
-            # Revert back users' public_email field after export
-            self.users.set_staged_users_public_email(
-                dry_run=self.dry_run, hide=True)
         else:
             self.log.info(
                 "SKIP: Assuming staged groups are already exported")
@@ -1061,9 +1054,6 @@ class MigrateClient(BaseClass):
                 self.log.warning("User projects staged:\n{}".format(
                     "\n".join(u for u in user_projects)))
             if not self.skip_project_export:
-                # Set public_email field for users that are exported as members
-                self.users.set_staged_users_public_email(dry_run=self.dry_run)
-
                 self.log.info("{}Exporting projects".format(dry_log))
                 export_results = list(er for er in self.multi.start_multi_process(
                     self.handle_exporting_projects, staged_projects, processes=self.processes))
@@ -1084,10 +1074,6 @@ class MigrateClient(BaseClass):
                 # Filter out the failed ones
                 staged_projects = mig_utils.get_staged_projects_without_failed_export(
                     staged_projects, failed)
-
-                # Revert back users' public_email field after export
-                self.users.set_staged_users_public_email(
-                    dry_run=self.dry_run, hide=True)
             else:
                 self.log.info(
                     "SKIP: Assuming staged projects are already exported")
