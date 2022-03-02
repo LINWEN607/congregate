@@ -9,12 +9,11 @@ from gitlab_ps_utils.dict_utils import rewrite_list_into_dict
 from gitlab_ps_utils.list_utils import remove_dupes
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.migrate_utils import get_staged_users, find_user_by_email_comparison_without_id
+from congregate.helpers.migrate_utils import get_staged_users, find_user_by_email_comparison_without_id, is_gl_version_older_than
 from congregate.helpers.utils import is_dot_com
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.users import UsersApi
-from congregate.migration.gitlab.api.instance import InstanceApi
 from congregate.helpers.mdbc import MongoConnector
 
 
@@ -23,7 +22,6 @@ class UsersClient(BaseClass):
         self.groups_api = GroupsApi()
         self.users_api = UsersApi()
         self.projects_api = ProjectsApi()
-        self.instance_api = InstanceApi()
         super().__init__()
         self.sso_hash_map = self.generate_hash_map()
 
@@ -665,12 +663,8 @@ class UsersClient(BaseClass):
     def set_staged_users_public_email(self, dry_run=True, hide=False):
         staged_users = get_staged_users()
         host = self.config.source_host
-        version = safe_json_response(
-            self.instance_api.get_version(host, self.config.source_token))
-        # Skip if version is < 14
-        if version and version.get("version") and int(version["version"].split(".")[0]) < 14:
-            self.log.info(
-                f"SKIP: Not mandatory to set public_email field for users on GitLab version {version}")
+        token = self.config.source_token
+        if is_gl_version_older_than(14, host, token, "SKIP: Not mandatory to set 'public_email' field for staged users"):
             return
         for su in staged_users:
             # Assume primary email matches on dest

@@ -12,7 +12,7 @@ from gitlab_ps_utils.dict_utils import dig
 from gitlab_ps_utils.json_utils import json_pretty
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.migrate_utils import validate_name
+from congregate.helpers.migrate_utils import validate_name, is_gl_version_older_than
 
 
 class BaseStageClass(BaseClass):
@@ -163,10 +163,10 @@ class BaseStageClass(BaseClass):
         return group
 
     def list_staged_users_without_public_email(self):
+        if is_gl_version_older_than(14, self.config.source_host, self.config.source_token, "SKIP: Not mandatory to set 'public_email' field for staged users"):
+            return
         if self.staged_users:
             no_public_email = [{
-                "name": u.get("name"),
-                "username": u.get("username"),
                 "email": u.get("email"),
                 "public_email": u.get("public_email")
             } for u in self.staged_users if u.get("email") != u.get("public_email")]

@@ -1,7 +1,7 @@
 """
 Congregate - GitLab instance migration utility
 
-Copyright (c) 2021 - GitLab
+Copyright (c) 2022 - GitLab
 """
 
 import re

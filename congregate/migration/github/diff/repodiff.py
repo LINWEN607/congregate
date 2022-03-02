@@ -222,7 +222,6 @@ class RepoDiffClient(BaseDiffClient):
             project, "name", transformed_data, self.gl_projects_api.get_all_project_releases, obfuscate=True)
 
         if not self.rollback:
-
             pass
 
         return repo_diff
