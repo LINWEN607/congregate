@@ -191,7 +191,7 @@ Copy the following data and add subsequent rows for single group migration
   * `data/results/project_migration_results.json`
   * `data/results/import_failed_relations.json`
   * `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log`
-* [ ] Inspect `data/results/import_failed_relations` for any project import failed relations (missing feature info)
+* [ ] Inspect `data/results/import_failed_relations.json` for any project import failed relations (missing feature info)
   * In case of missing MRs, Piplines, etc. that are critical to the customer and business:
     * [ ] Stage and rollback projects with critical failed relations
       * **NOTE:** `--skip-users` and `--skip-groups`
