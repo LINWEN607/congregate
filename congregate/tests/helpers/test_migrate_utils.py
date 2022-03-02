@@ -1,16 +1,17 @@
 import unittest
 from pytest import mark
 import responses
-from unittest.mock import patch, PropertyMock
+from unittest.mock import patch, PropertyMock, MagicMock
 
 from gitlab_ps_utils.api import GitLabApi
 import congregate.helpers.migrate_utils as mutils
+from congregate.migration.gitlab.api.instance import InstanceApi
 from congregate.tests.mockapi.gitlab.users import MockUsersApi
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
 from congregate.tests.mockapi.gitlab.projects import MockProjectsApi
+from congregate.tests.mockapi.gitlab.version import MockVersionApi
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.migration.gitlab.api.groups import GroupsApi
-from congregate.tests.helpers.mock_data.results import MockProjectResults
 
 
 @mark.unit_test
@@ -19,6 +20,7 @@ class MigrateTests(unittest.TestCase):
         self.mock_users = MockUsersApi()
         self.mock_groups = MockGroupsApi()
         self.mock_projects = MockProjectsApi()
+        self.mock_version = MockVersionApi()
 
     class ThingWithJson:
         def __init__(self, jsons):
@@ -849,3 +851,40 @@ class MigrateTests(unittest.TestCase):
         actual = mutils.get_duplicate_paths(data, are_projects=False)
 
         self.assertEqual(expected, actual)
+
+    @patch.object(InstanceApi, "get_version")
+    def test_is_gl_version_older_than_none_false(self, mock_version):
+        mock_get = MagicMock()
+        type(mock_get).status_code = PropertyMock(return_value=500)
+        mock_get.json.return_value = None
+        mock_version.return_value = mock_get
+        self.assertFalse(mutils.is_gl_version_older_than(
+            14, "host", "token", "log"))
+
+    @patch.object(InstanceApi, "get_version")
+    def test_is_gl_version_older_than_invalid_false(self, mock_version):
+        mock_get = MagicMock()
+        type(mock_get).status_code = PropertyMock(return_value=200)
+        mock_get.json.return_value = {}
+        mock_version.return_value = mock_get
+        self.assertFalse(mutils.is_gl_version_older_than(
+            14, "host", "token", "log"))
+
+    @patch.object(InstanceApi, "get_version")
+    def test_is_gl_version_older_than_newer_false(self, mock_version):
+        mock_get = MagicMock()
+        type(mock_get).status_code = PropertyMock(return_value=200)
+        mock_get.json.return_value = self.mock_version.get_12_0_version()
+        mock_version.return_value = mock_get
+        self.assertFalse(mutils.is_gl_version_older_than(
+            12, "host", "token", "log"))
+
+    @patch.object(InstanceApi, "get_version")
+    def test_is_gl_version_older_than_older_true(self, mock_version):
+        mock_get = MagicMock()
+        type(mock_get).status_code = PropertyMock(return_value=200)
+        mock_get.json.return_value = self.mock_version.get_12_0_version()
+        mock_version.return_value = mock_get
+        with self.assertLogs(mutils.b.log, level="INFO"):
+            self.assertTrue(mutils.is_gl_version_older_than(
+                13, "host", "token", "log"))

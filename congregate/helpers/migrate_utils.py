@@ -15,9 +15,11 @@ from gitlab_ps_utils.dict_utils import dig
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.utils import is_dot_com, get_congregate_path
 from congregate.migration.gitlab.api.users import UsersApi
+from congregate.migration.gitlab.api.instance import InstanceApi
 
 b = BaseClass()
 users_api = UsersApi()
+instance_api = InstanceApi()
 
 
 def get_failed_export_from_results(res):
@@ -372,3 +374,14 @@ def get_duplicate_paths(data, are_projects=True):
     paths = [x.get("path_with_namespace", "").lower() if are_projects else x.get(
         "full_path", "").lower() for x in data]
     return [i for i, c in Counter(paths).items() if c > 1]
+
+
+def is_gl_version_older_than(set_version, host, token, log):
+    """
+        Lookup GL instance version and throw custom log based
+    """
+    version = safe_json_response(instance_api.get_version(host, token))
+    if version and version.get("version") and int(version["version"].split(".")[0]) < set_version:
+        b.log.info(f"{log} on GitLab version {version}")
+        return True
+    return False
