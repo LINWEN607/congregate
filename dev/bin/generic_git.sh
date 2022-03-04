@@ -8,6 +8,8 @@ push_branches='refs/remotes/old-origin/*:refs/heads/*'
 function usage(){  
     echo "Usage: $0 [original repo with group name] [target group_name] "  
     echo "Example: $0 abc.git <test> "
+    echo "During the script, user need to input source SSH clone url such as ssh://<username>@<the server name>:29418"
+    echo "And destination SSH clone url such as git@gitlab.com"
     exit 1  
  } 
 
