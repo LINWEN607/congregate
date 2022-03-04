@@ -25,10 +25,10 @@ else
     echo "What is the clone URL for destination instance?"
     echo "For example, for GitLab: git@gitlab.com"
     read dest_clone_url
-    echo "The new repo url: $dest_clone_url:$target_group/${repo_name##*/}"
+    echo "The new repo url: $dest_clone_url:$target_group/${repo_name}"
     read -p 'Press [Enter] key to continue...'
     git remote rename origin old-origin 
-    git remote add origin "git@gitlab.com:$target_group/${repo_name##*/}"
+    git remote add origin "git@gitlab.com:$target_group/${repo_name}"
     echo "Pushing all the branches from Gerrit to GitLab including LFS"
     git push origin $push_branches
     read -p 'Press [Enter] key to continue...'
