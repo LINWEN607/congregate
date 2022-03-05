@@ -34,7 +34,7 @@ else
     echo "Pushing all the branches from Gerrit to GitLab including LFS"
     git push origin $push_branches
     read -p 'Press [Enter] key to continue...'
-    echo "Pushing all the rags from Gerrit to GitLab including LFS"
+    echo "Pushing all the Tags from Gerrit to GitLab including LFS"
     git push -u origin --tags
     echo "Migration Completes!"
 fi
