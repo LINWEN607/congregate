@@ -100,6 +100,8 @@ workflow:
   services:
     - name: "$JENKINS_SEED_IMAGE_NAME"
       alias: jenkins-test
+      variables:
+        SEED_DATA: "true"
 
 code_quality:
   artifacts:

@@ -1,8 +1,8 @@
 from time import sleep
 from os.path import exists
+from os import getenv
 import requests
 from jenkins import Jenkins
-
 
 def formatted_message(message, resp):
     fmt_message = f"\n{message}\n{resp.status_code}\n"
@@ -265,89 +265,14 @@ def seed_data():
         </project>
     """)
 
-    # print("Creating folder tset-folder")
-    # j.create_folder("test-folder", """
-    #     <com.cloudbees.hudson.plugins.folder.Folder plugin="cloudbees-folder@6.14">
-    #     <description/>
-    #     <properties/>
-    #     <folderViews class="com.cloudbees.hudson.plugins.folder.views.DefaultFolderViewHolder">
-    #     <views>
-    #     <hudson.model.AllView>
-    #     <owner class="com.cloudbees.hudson.plugins.folder.Folder" reference="../../../.."/>
-    #     <name>All</name>
-    #     <filterExecutors>false</filterExecutors>
-    #     <filterQueue>false</filterQueue>
-    #     <properties class="hudson.model.View$PropertyList"/>
-    #     </hudson.model.AllView>
-    #     </views>
-    #     <tabBar class="hudson.views.DefaultViewsTabBar"/>
-    #     </folderViews>
-    #     <healthMetrics>
-    #     <com.cloudbees.hudson.plugins.folder.health.WorstChildHealthMetric>
-    #     <nonRecursive>false</nonRecursive>
-    #     </com.cloudbees.hudson.plugins.folder.health.WorstChildHealthMetric>
-    #     </healthMetrics>
-    #     <icon class="com.cloudbees.hudson.plugins.folder.icons.StockFolderIcon"/>
-    #     </com.cloudbees.hudson.plugins.folder.Folder>
-    # """)
-
-    # print("Creating job test-folder/nested-demo-job")
-    # j.create_job("test-folder/nested-demo-job", """
-    #     <project>
-    #     <actions/>
-    #     <description>Single job with unmased param</description>
-    #     <keepDependencies>false</keepDependencies>
-    #     <properties>
-    #     <com.dabsquared.gitlabjenkins.connection.GitLabConnectionProperty plugin="gitlab-plugin@1.5.13">
-    #     <gitLabConnection/>
-    #     </com.dabsquared.gitlabjenkins.connection.GitLabConnectionProperty>
-    #     <org.jenkinsci.plugins.gitlablogo.GitlabLogoProperty plugin="gitlab-logo@1.0.5">
-    #     <repositoryName/>
-    #     </org.jenkinsci.plugins.gitlablogo.GitlabLogoProperty>
-    #     <hudson.model.ParametersDefinitionProperty>
-    #     <parameterDefinitions>
-    #     <hudson.model.StringParameterDefinition>
-    #     <name>Unmasked parameter</name>
-    #     <description>Value is 'unmasked'</description>
-    #     <defaultValue>unmasked</defaultValue>
-    #     <trim>false</trim>
-    #     </hudson.model.StringParameterDefinition>
-    #     </parameterDefinitions>
-    #     </hudson.model.ParametersDefinitionProperty>
-    #     </properties>
-    #     <scm class="hudson.plugins.git.GitSCM" plugin="git@4.3.0">
-    #     <configVersion>2</configVersion>
-    #     <userRemoteConfigs>
-    #     <hudson.plugins.git.UserRemoteConfig>
-    #     <url>https://github.example.net/Jenkins-Test-Org/Jenkins-Public-Repo.git</url>
-    #     <credentialsId>Jordan_PAT</credentialsId>
-    #     </hudson.plugins.git.UserRemoteConfig>
-    #     </userRemoteConfigs>
-    #     <branches>
-    #     <hudson.plugins.git.BranchSpec>
-    #     <name>*/master</name>
-    #     </hudson.plugins.git.BranchSpec>
-    #     </branches>
-    #     <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
-    #     <submoduleCfg class="list"/>
-    #     <extensions/>
-    #     </scm>
-    #     <canRoam>true</canRoam>
-    #     <disabled>false</disabled>
-    #     <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
-    #     <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
-    #     <triggers/>
-    #     <concurrentBuild>false</concurrentBuild>
-    #     <builders/>
-    #     <publishers/>
-    #     <buildWrappers/>
-    #     </project>
-    # """)
 
 
 if __name__ == "__main__":
     if not exists("/var/jenkins_home/install-finished"):
         setup_jenkins()
-        seed_data()
+        if getenv('SEED_DATA') == "true":
+            seed_data()
+        else:
+            print("Skipping seed_data")
     else:
         print("Jenkins is already setup. Skipping")
