@@ -652,11 +652,9 @@ class MigrateClient(BaseClass):
 
     def are_results(self, results, var, stage):
         if not results:
-            sub_only = " Migrating ONLY sub-groups without '--subgroups-only'?" if var == "group" and stage in [
-                "export", "import"] else ""
             self.log.warning(
-                f"Results from {var} {stage} returned as empty.{sub_only} Aborting.")
-            mig_utils.add_post_migration_stats(self.dry_run, log=self.log)
+                f"Results from {var} {stage} returned as empty. Aborting.")
+            mig_utils.add_post_migration_stats(self.start, log=self.log)
             sys.exit(os.EX_OK)
 
     def migrate_user_info(self):
@@ -769,7 +767,7 @@ class MigrateClient(BaseClass):
         staged_subgroups = [
             g for g in staged_groups if not mig_utils.is_top_level_group(g)]
         dry_log = misc_utils.get_dry_log(self.dry_run)
-        if staged_groups:
+        if staged_top_groups or (staged_subgroups and self.subgroups_only):
             self.validate_groups_and_projects(staged_groups)
             if self.stream_groups:
                 self.stream_import_groups(
@@ -778,7 +776,8 @@ class MigrateClient(BaseClass):
                 self.export_import_groups(
                     staged_top_groups, staged_subgroups, dry_log)
         else:
-            self.log.info("SKIP: No groups staged for migration")
+            self.log.info(
+                "SKIP: No groups staged for migration. Migrating ONLY sub-groups without '--subgroups-only'?")
 
     def export_import_groups(self, staged_top_groups, staged_subgroups, dry_log):
         if not self.skip_group_export:
