@@ -88,12 +88,8 @@ class ReposClient(BaseClass):
             "path": repo_name,
             "name": repo_name,
             "ci_sources": {
-                "Jenkins": self.list_ci_sources_jenkins(
-                    repo_url,
-                    mongo),
-                "TeamCity": self.list_ci_sources_teamcity(
-                    repo_url,
-                    mongo)},
+                "Jenkins": self.list_ci_sources_jenkins(repo_url, mongo) if self.config.jenkins_ci_source_host else None,
+                "TeamCity": self.list_ci_sources_teamcity(repo_url, mongo)} if self.config.tc_ci_source_host else None,
             "namespace": {
                 "id": dig(repo, 'owner', 'id'),
                 "path": repo_path,
