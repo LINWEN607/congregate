@@ -133,7 +133,7 @@ class OrgsTests(unittest.TestCase):
                 "path_with_namespace": "org1/googleapis",
                 "http_url_to_repo": "https://github.example.net/org1/googleapis.git",
                 "ci_sources": {
-                    "Jenkins": ['test-job1', 'test-job2'],
+                    "Jenkins": [],
                     "TeamCity": []
                 },
                 "namespace": {
@@ -152,7 +152,7 @@ class OrgsTests(unittest.TestCase):
                 "members": repo_members,
                 "path": "gradio",
                 "ci_sources": {
-                    "Jenkins": ['test-job1', 'test-job2'],
+                    "Jenkins": [],
                     "TeamCity": []
                 },
                 "path_with_namespace": "org1/gradio",
@@ -186,7 +186,7 @@ class OrgsTests(unittest.TestCase):
                         "path_with_namespace": "org1/googleapis",
                         "http_url_to_repo": "https://github.example.net/org1/googleapis.git",
                         "ci_sources": {
-                            "Jenkins": ['test-job1', 'test-job2'],
+                            "Jenkins": [],
                             "TeamCity": []
                         },
                         "namespace": {
@@ -207,7 +207,7 @@ class OrgsTests(unittest.TestCase):
                         "path_with_namespace": "org1/gradio",
                         "http_url_to_repo": "https://github.example.net/org1/gradio.git",
                         "ci_sources": {
-                            "Jenkins": ['test-job1', 'test-job2'],
+                            "Jenkins": [],
                             "TeamCity": []
                         },
                         "namespace": {
@@ -236,14 +236,10 @@ class OrgsTests(unittest.TestCase):
         actual_projects = [
             d for d, _ in self.mongo_mock.stream_collection("projects-github.example.com")]
 
-        for i in range(len(expected_groups)):
-            self.assertDictEqual(
-                actual_groups[i], expected_groups[i]
-            )
-        for i in range(len(expected_projects)):
-            self.assertDictEqual(
-                actual_projects[i], expected_projects[i]
-            )
+        for i, _ in enumerate(expected_groups):
+            self.assertDictEqual(actual_groups[i], expected_groups[i])
+        for i, _ in enumerate(expected_projects):
+            self.assertDictEqual(actual_projects[i], expected_projects[i])
 
     @patch.object(OrgsApi, "get_org")
     def test_add_org_as_group_error(self, mock_org_response):
@@ -348,7 +344,7 @@ class OrgsTests(unittest.TestCase):
                 "path": "arrow",
                 "name": "arrow",
                 "ci_sources": {
-                    "Jenkins": ['test-job1', 'test-job2'],
+                    "Jenkins": [],
                     "TeamCity": []
                 },
                 "namespace": {
@@ -369,7 +365,7 @@ class OrgsTests(unittest.TestCase):
                 "path": "phaser",
                 "name": "phaser",
                 "ci_sources": {
-                    "Jenkins": ['test-job1', 'test-job2'],
+                    "Jenkins": [],
                     "TeamCity": []
                 },
                 "namespace": {
@@ -401,7 +397,7 @@ class OrgsTests(unittest.TestCase):
                         "path": "arrow",
                         "name": "arrow",
                         "ci_sources": {
-                            "Jenkins": ['test-job1', 'test-job2'],
+                            "Jenkins": [],
                             "TeamCity": []
                         },
                         "namespace": {
@@ -422,7 +418,7 @@ class OrgsTests(unittest.TestCase):
                         "path": "phaser",
                         "name": "phaser",
                         "ci_sources": {
-                            "Jenkins": ['test-job1', 'test-job2'],
+                            "Jenkins": [],
                             "TeamCity": []
                         },
                         "namespace": {
@@ -456,13 +452,11 @@ class OrgsTests(unittest.TestCase):
         self.assertEqual(actual_groups.sort(key=lambda x: x["id"]),
                          expected_groups.sort(key=lambda x: x["id"]))
 
-        self.assertLogs("Failed to get full_path for team ({})".format(
-            self.mock_orgs.get_org_child_team()))
+        self.assertLogs(
+            f"Failed to get full_path for team ({self.mock_orgs.get_org_child_team()})")
 
-        for i in range(len(expected_projects)):
-            self.assertDictEqual(
-                actual_projects[i], expected_projects[i]
-            )
+        for i, _ in enumerate(expected_projects):
+            self.assertDictEqual(actual_projects[i], expected_projects[i])
 
     @patch.object(TeamsApi, "get_team_repos")
     @patch.object(TeamsApi, "get_team_members")
@@ -527,7 +521,7 @@ class OrgsTests(unittest.TestCase):
                 "path": "arrow",
                 "name": "arrow",
                 "ci_sources": {
-                    "Jenkins": ['test-job1', 'test-job2'],
+                    "Jenkins": [],
                     "TeamCity": []
                 },
                 "namespace": {
@@ -548,7 +542,7 @@ class OrgsTests(unittest.TestCase):
                 "path": "phaser",
                 "name": "phaser",
                 "ci_sources": {
-                    "Jenkins": ['test-job1', 'test-job2'],
+                    "Jenkins": [],
                     "TeamCity": []
                 },
                 "namespace": {
@@ -580,7 +574,7 @@ class OrgsTests(unittest.TestCase):
                         "path": "arrow",
                         "name": "arrow",
                         "ci_sources": {
-                            "Jenkins": ['test-job1', 'test-job2'],
+                            "Jenkins": [],
                             "TeamCity": []
                         },
                         "namespace": {
@@ -601,7 +595,7 @@ class OrgsTests(unittest.TestCase):
                         "path": "phaser",
                         "name": "phaser",
                         "ci_sources": {
-                            "Jenkins": ['test-job1', 'test-job2'],
+                            "Jenkins": [],
                             "TeamCity": []
                         },
                         "namespace": {
@@ -635,6 +629,6 @@ class OrgsTests(unittest.TestCase):
 
         self.assertEqual(actual_groups.sort(key=lambda x: x["id"]),
                          expected_groups.sort(key=lambda x: x["id"]))
-        for i in range(len(expected_projects)):
+        for i, _ in enumerate(expected_projects):
             self.assertEqual(
                 actual_projects[i].items(), expected_projects[i].items())
