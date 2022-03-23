@@ -9,16 +9,11 @@ services:
       GITLAB_OMNIBUS_CONFIG: |-
         gitlab_rails['initial_root_password'] = '5iveL!fe'
         alertmanager['enable'] = false
-    command: 
+    command:
       [
-      "sh",
-      "-c",
-      "sleep 300 && 
-      rm /opt/gitlab/embedded/service/gitlab-rails/lib/tasks/gitlab/seed/group_seed.rake && 
-      cd /opt/gitlab/embedded/service/gitlab-rails/lib/tasks/gitlab/seed && 
-      wget -O group_seed.rake https://gitlab.com/snippets/1936616/raw && 
-      gitlab-rake 'gitlab:seed:group_seed[2,root]' & :; 
-      /assets/wrapper",
+        "sh",
+        "-c",
+        "sleep 300 && rm /opt/gitlab/embedded/service/gitlab-rails/lib/tasks/gitlab/seed/group_seed.rake && cd /opt/gitlab/embedded/service/gitlab-rails/lib/tasks/gitlab/seed && wget -O group_seed.rake https://gitlab.com/gitlab-org/professional-services-automation/delivery-kits/migration-template/-/snippets/2173332/raw/main/group_seed.rake && gitlab-rake 'gitlab:seed:group_seed[2,root]' & :; /assets/wrapper"
       ]
     ports:
       - '8080:80'
@@ -43,17 +38,17 @@ services:
     networks:
       ldap:
   congregate:
-      image: registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate:rolling-centos
-      container_name: congregate
-      hostname: congregate
-      privileged: true
-      volumes:
-          - /var/run/docker.sock:/var/run/docker.sock
-      ports:
-          - 8000:8000
-      entrypoint: "/bin/bash -c 'sleep infinity'"
-      networks:
-          ldap:
+    image: registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate:rolling-centos
+    container_name: congregate
+    hostname: congregate
+    privileged: true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - 8000:8000
+    entrypoint: "/bin/bash -c 'sleep infinity'"
+    networks:
+      ldap:
 
 volumes:
   openldap_data:
@@ -61,7 +56,7 @@ volumes:
 
 networks:
   ldap:
-    ipam: 
+    ipam:
       driver: default
       config:
         - subnet: 173.28.0.0/29
