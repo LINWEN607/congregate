@@ -95,17 +95,17 @@ class BaseStageClass(BaseClass):
             params: rewritten_users: object containing the specific member to be added to the group or project
         """
         if isinstance(member, dict):
-            if member.get("id", None) is not None:
+            if member.get("id") is not None:
                 self.log.info("{0}Staging user {1} (ID: {2})".format(
                     get_dry_log(dry_run), member["username"], member["id"]))
-                if self.rewritten_users.get(member['id'], None):
+                if self.rewritten_users.get(member['id']):
                     self.staged_users.append(
                         self.rewritten_users[member["id"]])
                     members_list.append(member)
         else:
             self.log.error(member)
 
-    def get_project_metadata(self, project):
+    def get_project_metadata(self, project, group=False):
         """
             Get the object data providing project information
 
@@ -113,6 +113,8 @@ class BaseStageClass(BaseClass):
             :return: obj object
         """
         try:
+            # If group=True a project IDs is passed
+            project = self.rewritten_projects[project] if group else project
             obj = {
                 "id": project["id"],
                 "name": validate_name(project["name"]),
@@ -124,8 +126,7 @@ class BaseStageClass(BaseClass):
                 # Will be deprecated in favor of builds_access_level
                 "jobs_enabled": project.get("jobs_enabled"),
                 "project_type": dig(project, 'namespace', 'kind'),
-                # Project members are not listed when listing group projects
-                "members": project["members"] if project.get("members") else self.rewritten_projects[project["id"]]["members"],
+                "members": project["members"],
                 "http_url_to_repo": project["http_url_to_repo"]
             }
             if project.get("ci_sources"):

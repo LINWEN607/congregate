@@ -1,7 +1,7 @@
 """
 Congregate - GitLab instance migration utility
 
-Copyright (c) 2021 - GitLab
+Copyright (c) 2022 - GitLab
 """
 
 import re
@@ -110,8 +110,8 @@ class GroupStageCLI(BaseStageClass):
 
     def append_data(self, group, groups_to_stage, p_range=0, dry_run=True):
         # Append all group projects to staged projects
-        for project in group.get("projects", []):
-            obj = self.get_project_metadata(project)
+        for pid in group.get("projects", []):
+            obj = self.get_project_metadata(pid, group=True)
             # Append all project members to staged users
             for project_member in obj.get("members", []):
                 self.append_member_to_members_list([], project_member, dry_run)
