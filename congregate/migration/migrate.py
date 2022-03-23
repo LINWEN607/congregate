@@ -198,7 +198,7 @@ class MigrateClient(BaseClass):
             mig_utils.write_results_to_file(
                 results, result_type="group", log=self.log)
         else:
-            self.log.info("SKIP: No groups staged for migration")
+            self.log.warning("SKIP: No groups staged for migration")
         # Migrate GH repos to projects
         staged_projects = mig_utils.get_staged_projects()
         if staged_projects and not self.skip_project_import:
@@ -219,7 +219,7 @@ class MigrateClient(BaseClass):
                 f"### {dry_log}Project import results ###\n{json_utils.json_pretty(import_results)}")
             mig_utils.write_results_to_file(import_results, log=self.log)
         else:
-            self.log.info("SKIP: No projects staged for migration")
+            self.log.warning("SKIP: No projects staged for migration")
 
         # After all is said and done, run our reporting with the
         # staged_projects and results
@@ -542,7 +542,7 @@ class MigrateClient(BaseClass):
             mig_utils.write_results_to_file(
                 results, result_type="group", log=self.log)
         else:
-            self.log.info("SKIP: No groups staged for migration")
+            self.log.warning("SKIP: No groups staged for migration")
 
         # Migrate BB repos as GL projects
         staged_projects = mig_utils.get_staged_projects()
@@ -565,7 +565,7 @@ class MigrateClient(BaseClass):
                           .format(dry_log, json_utils.json_pretty(import_results)))
             mig_utils.write_results_to_file(import_results, log=self.log)
         else:
-            self.log.info("SKIP: No projects staged for migration")
+            self.log.warning("SKIP: No projects staged for migration")
 
     def migrate_bitbucket_group(self, group):
         result = False
