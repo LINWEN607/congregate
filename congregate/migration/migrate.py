@@ -688,7 +688,7 @@ class MigrateClient(BaseClass):
                 self.log.info(
                     "SKIP: Assuming staged users are already migrated")
         else:
-            self.log.info("SKIP: No users staged for migration")
+            self.log.warning("SKIP: No users staged for migration")
 
     def handle_user_creation(self, user):
         """
@@ -776,7 +776,7 @@ class MigrateClient(BaseClass):
                 self.export_import_groups(
                     staged_top_groups, staged_subgroups, dry_log)
         else:
-            self.log.info(
+            self.log.warning(
                 "SKIP: No groups staged for migration. Migrating ONLY sub-groups without '--subgroups-only'?")
 
     def export_import_groups(self, staged_top_groups, staged_subgroups, dry_log):
@@ -846,7 +846,7 @@ class MigrateClient(BaseClass):
                 ex_full_path = next(iter(ir))
                 full_path = ir.get("source_full_path") or ex_full_path
                 status = ir.get("status")
-                if not self.dry_run and (status == "finished" or ir.get(ex_full_path)):
+                if status == "finished" or ir.get(ex_full_path):
                     src_gid = next((g["id"] for g in (
                         staged_top_groups + staged_subgroups) if g["full_path"] == full_path), None)
                     dst_gid = ir.get("namespace_id") or ex_full_path
@@ -1093,7 +1093,7 @@ class MigrateClient(BaseClass):
                 self.log.info(
                     "SKIP: Assuming staged projects will be later imported")
         else:
-            self.log.info("SKIP: No projects staged for migration")
+            self.log.warning("SKIP: No projects staged for migration")
 
     def handle_exporting_projects(self, project):
         name = project["name"]
