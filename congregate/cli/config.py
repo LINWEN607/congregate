@@ -52,9 +52,9 @@ def generate_config():
         print(
             f"WARNING: Destination user not found. Please enter 'import_user_id' manually (in {config_path})")
     shared_runners_enabled = input(
-        "Enable shared runners on destination instance (Default: 'Yes')? ")
+        "Enable shared runners on destination instance (Default: 'No')? ")
     config.set("DESTINATION", "shared_runners_enabled",
-               "False" if shared_runners_enabled.lower() in ["no", "n"] else "True")
+               "True" if shared_runners_enabled.lower() in ["yes", "y"] else "False")
     project_suffix = input(
         "Append suffix to project found on destination instance (Default: 'No')? ")
     config.set("DESTINATION", "project_suffix",
@@ -256,17 +256,17 @@ def generate_config():
     # User specific configuration
     config.add_section("USER")
     keep_inactive_users = input(
-        "Keep inactive users (blocked, ldap_blocked, deactivated, banned) in staged users/groups/projects (Default: 'No')? ")
+        "Keep inactive users (blocked, ldap_blocked, deactivated, banned) in staged users/groups/projects (Default: 'Yes')? ")
     config.set("USER", "keep_inactive_users",
-               "True" if keep_inactive_users.lower() in ["yes", "y"] else "False")
+               "False" if keep_inactive_users.lower() in ["no", "n"] else "True")
     reset_pwd = input(
-        "Should users receive password reset emails (Default: 'Yes')? ")
-    config.set("USER", "reset_pwd", "False" if reset_pwd.lower()
-               in ["no", "n"] else "True")
+        "Should users receive password reset emails (Default: 'No')? ")
+    config.set("USER", "reset_pwd", "True" if reset_pwd.lower()
+               in ["yes", "y"] else "False")
     force_rand_pwd = input(
-        "Should users be created with a randomized password (Default: 'No')? ")
+        "Should users be created with a randomized password (Default: 'Yes')? ")
     config.set("USER", "force_rand_pwd",
-               "True" if force_rand_pwd.lower() in ["yes", "y"] else "False")
+               "False" if force_rand_pwd.lower() in ["no", "n"] else "True")
 
     # Generic App configuration
     config.add_section("APP")
@@ -308,8 +308,10 @@ def generate_config():
         config.set("APP", "mongo_host", "localhost")
         config.set("APP", "mongo_port", "27017")
 
+    # Default implied config
     config.set("APP", "ui_port", "8000")
     config.set("APP", "processes", "4")
+    config.set("APP", "ssl_verify", "True")
 
     write_to_file(config)
 
