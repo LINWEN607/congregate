@@ -4,7 +4,7 @@
 
 1. Download and install docker, podman, or any other application that can run docker containers
 1. Run `git clone git@gitlab.com:gitlab-org/professional-services-automation/tools/migration/congregate.git` to pull the congregate repo to your local environment.
-1. Generate a personal access token from your gitlab.com account that has the read_registry permission by clicking `User Icon (top right) > Settings > Access Tokens > Generate Access Token`.
+1. Generate a personal access token from your gitlab.com account that has the `read_registry` permission by clicking *User Icon (top right) > Settings > Access Tokens > Generate Access Token*.
 1. Then run `docker login registry.gitlab.com` and provide your username and paste the access token when prompted for a password.
 1. Pull the docker image from the [container registry](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/container_registry/2394823):
     * :white_check_mark: For official versioned releases, `docker pull registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate:<version>` (or `:latest-<debian|centos>`)
