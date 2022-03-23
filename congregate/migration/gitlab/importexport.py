@@ -86,7 +86,7 @@ class ImportExportClient(BaseClass):
                             f"{export_type} {name} has finished exporting, with response:\n{json_pretty(status_json)}")
                         exported = True
                         break
-                    if state == "failed":
+                    if state in ["failed", "none"]:
                         self.log.error(
                             f"{export_type} {name} export failed{' (re-exporting)' if retry else ''}, with response:\n{json_pretty(status_json)}")
                         if retry:
@@ -614,7 +614,6 @@ class ImportExportClient(BaseClass):
             return True
         return exported
 
-
     def handle_gzip_download(self, name, pid, filename):
         '''
         Attempt to download the export, if its not a valid export, try again.
@@ -629,7 +628,8 @@ class ImportExportClient(BaseClass):
             verify=self.config.ssl_verify)
         if not is_gzip(f"{self.config.filesystem_path}/downloads/{new_file}"):
             raise ValueError("Downloaded file is not a Gzip file.")
-        self.log.info(f"{name} export file successfully downloaded. Verified {filename} is a gzip file.")
+        self.log.info(
+            f"{name} export file successfully downloaded. Verified {filename} is a gzip file.")
 
     def export_thru_fs_aws(self, pid, name, namespace):
         path_with_namespace = "%s_%s.tar.gz" % (namespace, name)
