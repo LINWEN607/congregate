@@ -20,6 +20,44 @@ class RepoDiffClient(BaseDiffClient):
     '''
         Extension of BaseDiffClient focused on finding the differences between migrated repositories
     '''
+    KEYS_TO_IGNORE = [
+        "_links",
+        "last_activity_at",
+        "created_at",
+        "http_url_to_repo",
+        "readme_url",
+        "web_url",
+        "ssh_url_to_repo",
+        "project",
+        "forking_access_level",
+        "container_expiration_policy",
+        "approvals_before_merge",
+        "mirror",
+        "packages_enabled",
+        "external_authorization_classification_label",
+        "service_desk_address",
+        "service_desk_enabled",
+        "marked_for_deletion_at",
+        "marked_for_deletion_on",
+        "compliance_frameworks",
+        "forked_from_project",
+        "author_email",
+        "author_name",
+        "authored_date",
+        "committed_date",
+        "committer_email",
+        "committer_name",
+        "created_at",
+        "message",
+        "parent_ids",
+        "title",
+        "short_id",
+        "id",
+        "iid",
+        "project_id",
+        "source_project_id",
+        "target_project_id"
+    ]
 
     def __init__(self, host, token, staged=False,
                  rollback=False, processes=None):
@@ -39,44 +77,7 @@ class RepoDiffClient(BaseDiffClient):
             read_json_file_into_object(self.results_path))
         self.results_mtime = getmtime(self.results_path)
         self.processes = processes
-        self.keys_to_ignore = [
-            "_links",
-            "last_activity_at",
-            "created_at",
-            "http_url_to_repo",
-            "readme_url",
-            "web_url",
-            "ssh_url_to_repo",
-            "project",
-            "forking_access_level",
-            "container_expiration_policy",
-            "approvals_before_merge",
-            "mirror",
-            "packages_enabled",
-            "external_authorization_classification_label",
-            "service_desk_address",
-            "service_desk_enabled",
-            "marked_for_deletion_at",
-            "marked_for_deletion_on",
-            "compliance_frameworks",
-            "forked_from_project",
-            "author_email",
-            "author_name",
-            "authored_date",
-            "committed_date",
-            "committer_email",
-            "committer_name",
-            "created_at",
-            "message",
-            "parent_ids",
-            "title",
-            "short_id",
-            "id",
-            "iid",
-            "project_id",
-            "source_project_id",
-            "target_project_id"
-        ]
+        self.keys_to_ignore = self.KEYS_TO_IGNORE
         if staged:
             self.source_data = read_json_file_into_object(
                 f"{self.app_path}/data/staged_projects.json")
@@ -204,8 +205,6 @@ class RepoDiffClient(BaseDiffClient):
                 repo_tag_data)
             repo_diff["/projects/:id/tags"] = self.generate_repo_diff(
                 project, "name", transformed_data, self.gl_repository_api.get_all_project_repository_tags, obfuscate=True)
-
-            self.keys_to_ignore.append("id")
 
             # issues
             repo_issue_data = list(self.repos_api.get_repo_issues(
