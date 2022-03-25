@@ -41,7 +41,8 @@ class GroupsClient(BaseClass):
                 group_id, host, token))
             # Save all group projects ID references as part of group metadata
             group["projects"] = []
-            for project in self.groups_api.get_all_group_projects(group_id, host, token, with_shared=False):
+            # Only list direct projects to avoid overhead
+            for project in self.groups_api.get_all_group_projects(group_id, host, token, include_subgroups=False, with_shared=False):
                 group["projects"].append(project["id"])
                 # Avoids having to also list all gitlab.com parent group projects
                 project["members"] = list(
@@ -56,8 +57,7 @@ class GroupsClient(BaseClass):
 
         mongo.close_connection()
 
-    def retrieve_group_info(
-            self, host, token, location="source", processes=None):
+    def retrieve_group_info(self, host, token, location="source", processes=None):
         prefix = location if location != "source" else ""
 
         if self.config.src_parent_group_path:
