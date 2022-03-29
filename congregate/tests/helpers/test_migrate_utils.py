@@ -798,11 +798,11 @@ class MigrateTests(unittest.TestCase):
 
     def test_validate_name_project(self):
         assert mutils.validate_name(
-            "-:: This.is-how/WE do\n&it#? - šđžčć") == "This.is-how WE do it - šđžčć"
+            " !  _-:: This.is-how/WE do\n&it#? - šđžčć_  ? ") == "This.is-how WE do it - šđžčć"
 
     def test_validate_name_group(self):
         assert mutils.validate_name(
-            "-:: This.is-how/WE do\n&it#? - (šđžčć)", is_group=True) == "This.is-how WE do it - (šđžčć)"
+            " !  _-:: This.is-how/WE do\n&it#? - (šđžčć)_  ? ", is_group=True) == "This.is-how WE do it - (šđžčć"
 
     def test_get_duplicate_paths_projects(self):
         data = [{

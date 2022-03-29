@@ -395,7 +395,7 @@ class ImportExportClient(BaseClass):
                 parent_id = found
             else:
                 self.log.warning(
-                    f"Parent group {parent_path} not found on destination")
+                    f"Parent group {parent_path} NOT found on destination")
                 return False
         if not dry_run:
             import_response = self.attempt_group_import(

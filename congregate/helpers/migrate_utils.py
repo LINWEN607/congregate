@@ -3,6 +3,7 @@ import os
 import errno
 import json
 
+from string import punctuation
 from re import sub
 from collections import Counter
 from pathlib import Path
@@ -359,8 +360,12 @@ def validate_name(name, is_group=False):
     Name can only contain letters, digits, emojis, '_', '.', dash, space, parenthesis (groups only).
     It must start with letter, digit, emoji or '_'.
     """
-    valid = " ".join(sub(r"[^\U00010000-\U0010ffff\w\_\-\.\(\) ]" if is_group else r"[^\U00010000-\U0010ffff\w\_\-\. ]",
-                     " ", name.lstrip("-").lstrip(".")).split())
+    # Remove leading and trailing special characters and spaces
+    stripped = name.strip(punctuation + " ")
+
+    # Validate naming convention in docstring
+    valid = " ".join(sub(
+        r"[^\U00010000-\U0010ffff\w\_\-\.\(\) ]" if is_group else r"[^\U00010000-\U0010ffff\w\_\-\. ]", " ", stripped).split())
     if name != valid:
         b.log.warning(
             f"Renaming invalid {'group' if is_group else 'project'} name '{name}' -> '{valid}'")
