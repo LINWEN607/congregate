@@ -36,8 +36,7 @@ class BadgesClient(BaseClass):
                     self.groups.add_group_badge(
                         new_id, self.config.destination_host, self.config.destination_token, data=data)
         except TypeError as te:
-            self.log.error(
-                f"Group badges {response} {te}".format(response, te))
+            self.log.error(f"Group badges {response}:\n{te}")
         except RequestException as re:
             self.log.error(
                 f"Failed to migrate group {parent_group_path} (ID: {old_id}) badges, with error:\n{re}")
