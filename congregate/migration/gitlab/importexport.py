@@ -86,19 +86,14 @@ class ImportExportClient(BaseClass):
                             f"{export_type} {name} has finished exporting, with response:\n{json_pretty(status_json)}")
                         exported = True
                         break
-                    if state == "failed":
+                    # We don't want to wait for queued exports
+                    if total_time > timeout/4 and state == "none":
                         self.log.error(
-                            f"{export_type} {name} export failed{' (re-exporting)' if retry else ''}, with response:\n{json_pretty(status_json)}")
-                        if retry:
-                            response = self.trigger_export_and_get_response(
-                                src_id, is_project)
-                            retry = False
-                            total_time = 0
-                        else:
-                            break
-                    elif total_time < timeout:
+                            f"SKIP: {export_type} {name} export with status '{state}' and response:\n{json_pretty(status_json)}")
+                        break
+                    if total_time < timeout:
                         self.log.info(
-                            f"{export_type} {name} export status ({state}) after {total_time}/{timeout} seconds")
+                            f"{export_type} {name} export status '{state}' after {total_time}/{timeout} seconds")
                         total_time += wait_time
                         sleep(wait_time)
                     else:
