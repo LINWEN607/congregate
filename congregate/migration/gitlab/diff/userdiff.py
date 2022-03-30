@@ -28,7 +28,8 @@ class UserDiffClient(BaseDiffClient):
         "target_id",
         "bio",
         "bio_html",
-        "sign_in_count"
+        "sign_in_count",
+        "namespace_id"
     ]
 
     def __init__(self, staged=False, rollback=False, processes=None):
