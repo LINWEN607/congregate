@@ -86,7 +86,7 @@ class ImportExportClient(BaseClass):
                             f"{export_type} {name} has finished exporting, with response:\n{json_pretty(status_json)}")
                         exported = True
                         break
-                    if state in ["failed", "none"]:
+                    if state == "failed":
                         self.log.error(
                             f"{export_type} {name} export failed{' (re-exporting)' if retry else ''}, with response:\n{json_pretty(status_json)}")
                         if retry:
