@@ -5,7 +5,7 @@ import sys
 import os
 import requests
 
-from gitlab_ps_utils.misc_utils import safe_json_response
+from gitlab_ps_utils.misc_utils import safe_json_response, is_error_message_present
 from gitlab_ps_utils.string_utils import obfuscate, deobfuscate
 from gitlab_ps_utils.json_utils import json_pretty
 from docker import from_env
@@ -132,12 +132,16 @@ def generate_config():
     else:
         # Non-external source instance configuration
         config.set("SOURCE", "src_type", "GitLab")
+        src_type = config.get("SOURCE", "src_type")
         config.set("SOURCE", "src_hostname", input("Source instance URL: "))
         config.set("SOURCE", "src_access_token", obfuscate(
-            "Source instance ({}) Personal Access Token: ").format(config.get("SOURCE", "src_type")))
+            f"Source instance ({src_type}) Personal Access Token: "))
         lic = safe_json_response(instance.get_current_license(
             config.get("SOURCE", "src_hostname"),
             deobfuscate(config.get("SOURCE", "src_access_token"))))
+        if lic and is_error_message_present(lic):
+            print(
+                f"Insufficient token permission to GET license plan, setting default (core/free):\n{lic}")
         config.set("SOURCE", "src_tier", lic.get(
             "plan", "core") if lic else "core")
         source_group = input(
