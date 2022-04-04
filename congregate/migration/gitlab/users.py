@@ -357,13 +357,14 @@ class UsersClient(BaseClass):
     def search_for_staged_users(self, table=False):
         """
         Read the information in staged_users.json and output users that are:
-            - found
+            - Found on destination
                 - State mismatch
                 - NOT logged in
                 - W/O identities
-                - blocked
-            - NOT found
-            - duplicate (emails)
+                - Blocked
+            - NOT found on destination
+            - Public email NOT set or incorrect on source
+            - Duplicate (emails)
         Does the search based on the primary email address and *NOT* username
         :return:
         """
@@ -383,12 +384,11 @@ class UsersClient(BaseClass):
                     "src_state": state,
                     "dest_state": new_user.get("state"),
                     "last_sign_in_at": new_user.get("last_sign_in_at"),
-                    "identities": new_user.get("identities"),
-                    "public_email": new_user.get("public_email")
+                    "identities": new_user.get("identities")
                 })
             else:
                 users_not_found[user.get("id")] = {
-                    "email": email, "state": state}
+                    "email": email, "src_state": state}
         blocked = [u.get("email")
                    for u in users_found if u.get("dest_state") == "blocked"]
         state_mismatch = [(u.get("email"), f"{u.get('src_state')} -> {u.get('dest_state')}")
@@ -398,7 +398,7 @@ class UsersClient(BaseClass):
         no_identities = [(u.get("email"), u.get("dest_state"))
                          for u in users_found if not u.get("identities")]
         no_public_email = [(u.get("email"), u.get("public_email"))
-                           for u in users_found if u.get("email") != u.get("public_email")]
+                           for u in staged_users if u.get("email") != u.get("public_email")]
 
         found = f"Found ({len(users_found)})"
         blkd = f"Blocked ({len(blocked)})"
@@ -406,8 +406,8 @@ class UsersClient(BaseClass):
         no_log = f"NOT logged in ({len(no_login)})"
         wo_ids = f"W/O identities ({len(no_identities)})"
         not_found = f"NOT found ({len(users_not_found)})"
+        pub_email = f"Public email NOT set or incorrect ({len(no_public_email)})"
         dupe = f"Duplicate ({len(duplicate_users)})"
-        pub_email = f"Incorrect or no public email: ({len(no_public_email)})"
         self.log.info(f"""
             {found}:\n{json_pretty(users_found)}
             {blkd}:\n{json_pretty(blocked)}
@@ -415,8 +415,8 @@ class UsersClient(BaseClass):
             {no_log}:\n{json_pretty(no_login)}
             {wo_ids}:\n{json_pretty(no_identities)}
             {not_found}:\n{json_pretty(users_not_found)}
-            {dupe}:\n{json_pretty(duplicate_users)}
             {pub_email}:\n{json_pretty(no_public_email)}
+            {dupe}:\n{json_pretty(duplicate_users)}
         """)
         if table:
             d = {
@@ -426,6 +426,7 @@ class UsersClient(BaseClass):
                 no_log: Series(no_login, dtype=str),
                 wo_ids: Series(no_identities, dtype=str),
                 not_found: Series([(u.get("email"), u.get("src_state")) for u in users_not_found.values()], dtype=str),
+                pub_email: Series(no_public_email, dtype=str),
                 dupe: Series([(u.get("email"), u.get("state"))
                              for u in duplicate_users], dtype=str)
             }
