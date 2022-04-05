@@ -42,8 +42,8 @@ class GroupsClient(BaseClass):
                 gid, host, token))
 
             # Save all group projects ID references as part of group metadata
-            group["projects"] = []
             # Only list direct projects to avoid overhead
+            group["projects"] = []
             for project in self.groups_api.get_all_group_projects(gid, host, token, include_subgroups=False, with_shared=False):
                 group["projects"].append(project["id"])
 
@@ -56,6 +56,8 @@ class GroupsClient(BaseClass):
             group["desc_groups"] = []
             for g in self.groups_api.get_all_descendant_groups(gid, host, token):
                 group["desc_groups"].append(g["id"])
+
+            # Traverse subgroups
             for subgroup in self.groups_api.get_all_subgroups(
                     gid, host, token):
                 self.log.debug("Traversing into subgroup")
