@@ -6,7 +6,6 @@ from congregate.tests.mockapi.gitlab.projects import MockProjectsApi
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
 from congregate.tests.mockapi.gitlab.users import MockUsersApi
 from congregate.helpers.configuration_validator import ConfigurationValidator
-from congregate.helpers.base_class import BaseClass
 
 
 @mark.unit_test
@@ -16,8 +15,7 @@ class StageProjectsTests(unittest.TestCase):
         self.groups_api = MockGroupsApi()
         self.users_api = MockUsersApi()
         self.mock = mock.MagicMock()
-        self.gcli = GroupStageCLI()
-        self.config = BaseClass()
+        self.gs_cli = GroupStageCLI()
 
     @mock.patch('builtins.open')
     @mock.patch('os.path.isfile')
@@ -26,11 +24,7 @@ class StageProjectsTests(unittest.TestCase):
     @mock.patch.object(GroupStageCLI, 'open_groups_file')
     @mock.patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=mock.PropertyMock)
     @mock.patch.object(ConfigurationValidator, 'source_type', new_callable=mock.PropertyMock)
-    @mock.patch.object(ConfigurationValidator, 'source_token', new_callable=mock.PropertyMock)
-    @mock.patch.object(ConfigurationValidator, 'source_host', new_callable=mock.PropertyMock)
-    def test_build_stage_data(self, mock_host, mock_token, mock_source_type, mock_parent_id, mock_groups, mock_users, mock_projects, mock_check, mock_open):
-        mock_host.return_value = self.config.config.source_host
-        mock_token.return_value = self.config.config.source_token
+    def test_build_stage_data(self, mock_source_type, mock_parent_id, mock_groups, mock_users, mock_projects, mock_check, mock_open):
         mock_source_type.return_value = "gitlab"
         mock_parent_id.return_value = None
         mock_check.return_value = True
@@ -39,7 +33,7 @@ class StageProjectsTests(unittest.TestCase):
         mock_groups.return_value = self.groups_api.get_all_groups_list()
         mock_open.return_value = {}
 
-        staged_projects, staged_users, staged_groups = self.gcli.build_staging_data([
+        staged_projects, staged_users, staged_groups = self.gs_cli.build_staging_data([
             "2", "3"])
 
         expected_projects = [
@@ -212,7 +206,7 @@ class StageProjectsTests(unittest.TestCase):
         mock_groups.return_value = self.groups_api.get_all_groups_list()
         mock_open.return_value = {}
 
-        staged_projects, staged_users, staged_groups = self.gcli.build_staging_data([
+        staged_projects, staged_users, staged_groups = self.gs_cli.build_staging_data([
             "2-4"])
 
         expected_projects = [
@@ -411,7 +405,7 @@ class StageProjectsTests(unittest.TestCase):
         ]
 
         self.assertEqual(len(expected_projects), len(staged_projects))
-        #self.assertEqual(len(expected_groups), len(staged_groups))
+        self.assertEqual(len(expected_groups), len(staged_groups))
         self.assertEqual(len(expected_users), len(staged_users))
 
         for i, _ in enumerate(expected_projects):
@@ -438,7 +432,7 @@ class StageProjectsTests(unittest.TestCase):
         mock_groups.return_value = self.groups_api.get_all_groups_list()
         mock_open.return_value = {}
 
-        staged_projects, staged_users, staged_groups = self.gcli.build_staging_data([
+        staged_projects, staged_users, staged_groups = self.gs_cli.build_staging_data([
             "all"])
 
         self.assertEqual(
@@ -463,4 +457,4 @@ class StageProjectsTests(unittest.TestCase):
         mock_open.return_value = {}
 
         with self.assertRaises(SystemExit) as ex:
-            self.gcli.build_staging_data(["bogus"])
+            self.gs_cli.build_staging_data(["bogus"])
