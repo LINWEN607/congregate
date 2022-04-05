@@ -92,7 +92,7 @@ class UsersTests(unittest.TestCase):
                 "name": "ghost",
                 "id": 1,
                 "state": "active",
-                "avatar_url": "https://github.gitlab-proserv.net/avatars/u/1?",
+                "avatar_url": "https://github.example.net/avatars/u/1?",
                 "is_admin": False,
                 "email": "test@email.com"
             },
@@ -101,7 +101,7 @@ class UsersTests(unittest.TestCase):
                 "name": "gitlab",
                 "id": 3,
                 "state": "active",
-                "avatar_url": "https://github.gitlab-proserv.net/avatars/u/3?",
+                "avatar_url": "https://github.example.net/avatars/u/3?",
                 "is_admin": True,
                 "email": "test@email.com"
             }
@@ -272,5 +272,6 @@ class UsersTests(unittest.TestCase):
 
     def mock_user_client(self):
         with patch.object(UsersClient, "connect_to_mongo") as mongo_mock:
-            mongo_mock.return_value = MongoConnector(client=mongomock.MongoClient)
+            mongo_mock.return_value = MongoConnector(
+                client=mongomock.MongoClient)
             return UsersClient("http://github.example.com", "123", None, None)

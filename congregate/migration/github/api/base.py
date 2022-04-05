@@ -1,9 +1,9 @@
 import requests
-
 from gitlab_ps_utils.decorators import stable_retry, token_rotate
 from gitlab_ps_utils.audit_logger import audit_logger
 from gitlab_ps_utils.logger import myLogger
 from gitlab_ps_utils.misc_utils import generate_audit_log_message, safe_json_response
+
 from congregate.helpers.utils import is_github_dot_com
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.conf import Config
@@ -19,12 +19,14 @@ class GitHubApi():
 
     def __init__(self, host, token, query=None, api=None):
         self.host = host
-        self.token_array = token.split(",")
-        self.token = self.token_array[self.index]
         self.api = api
         self.config = Config()
+        self.token_array = self.config.source_token_array
+        # Give passed variables priority
+        self.token = self.token_array[self.index] if (
+            self.token_array and len(self.token_array) > 1) else token
         # Test Query
-        self.query = """
+        self.query = query or """
             query {
             viewer {
                 __schema
@@ -263,7 +265,7 @@ class GitHubApi():
             if 'pull_request' not in data.keys():
                 uniq[data.get("id", data.get("name"))] = 1
         count = len(uniq)
-        log.info(f"Total count for {api}: {count}")
+        log.info(f"Total count for {host} endpoint {api}: {count}")
         return count
 
     def pageless_data(self, resp_json, page_check=False, lastPage=False):

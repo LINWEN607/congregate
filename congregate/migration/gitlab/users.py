@@ -1,5 +1,4 @@
 from os import path
-from time import time
 from requests.exceptions import RequestException
 from pandas import DataFrame, Series, set_option
 
@@ -10,13 +9,12 @@ from gitlab_ps_utils.dict_utils import rewrite_list_into_dict
 from gitlab_ps_utils.list_utils import remove_dupes
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.migrate_utils import get_staged_users, find_user_by_email_comparison_without_id, add_post_migration_stats
+from congregate.helpers.migrate_utils import get_staged_users, find_user_by_email_comparison_without_id, is_gl_version_older_than
 from congregate.helpers.utils import is_dot_com
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.helpers.mdbc import MongoConnector
-from congregate.helpers.utils import rotate_logs
 
 
 class UsersClient(BaseClass):
@@ -124,7 +122,7 @@ class UsersClient(BaseClass):
             self, user, users_map, expiration_date):
         email = user["email"]
         uid = user["id"]
-        if users_map.get(email, None) is None:
+        if users_map.get(email) is None:
             data = {
                 "name": "temp_migration_token",
                 "expires_at": expiration_date,
@@ -132,11 +130,11 @@ class UsersClient(BaseClass):
                     "api"
                 ]
             }
-            new_impersonation_token = self.users_api.create_user_impersonation_token(
+            new_impersonation_token = safe_json_response(self.users_api.create_user_impersonation_token(
                 self.config.destination_host,
                 self.config.destination_token,
                 uid,
-                data).json()
+                data))
             users_map[email] = new_impersonation_token
             users_map[email]["user_id"] = uid
         return users_map[email]
@@ -207,12 +205,12 @@ class UsersClient(BaseClass):
 
     def build_suffix_username(self, username):
         # Concat the suffix
-        if self.config.username_suffix is not None:
-            return "{0}_{1}".format(username, self.config.username_suffix)
-        else:
-            self.log.error(
-                "Username suffix not set. Defaulting to a single underscore following the username")
-            return "{0}_".format(username)
+        suffix = str(self.config.username_suffix)
+        if suffix == "migrated":
+            self.log.warning(
+                f"Default username suffix '{suffix}' set")
+            return f"{username}_{suffix}"
+        return f"{username}_{suffix.lstrip('_')}"
 
     def add_users_to_parent_group(self, dry_run=True):
         user_results_path = f"{self.app_path}/data/results/user_migration_results.json"
@@ -324,27 +322,37 @@ class UsersClient(BaseClass):
         if data == "staged_users":
             staged = [u for u in staged if u.get("state") not in self.INACTIVE]
         else:
-            groups = data == "staged_groups"
+            is_group = data == "staged_groups"
             for s in staged:
-                spath = s.get("full_path") if groups else s.get(
+                spath = s.get("full_path") if is_group else s.get(
                     "path_with_namespace")
                 self.log.info(
                     f"{get_dry_log(dry_run)}Removing inactive users from {spath} members")
                 if (not dry_run) and membership:
-                    try:
-                        for m in s.get("members", []):
-                            if m.get("state") in self.INACTIVE:
-                                self.groups_api.remove_member(s.get("id"), m.get("id"), self.config.source_host, self.config.source_token) if groups else self.projects_api.remove_member(
-                                    s.get("id"), m.get("id"), self.config.source_host, self.config.source_token)
-                    except RequestException as re:
-                        self.log.error(
-                            f"Failed to remove {m.get('name')} from {spath}, with error:\n{re}")
+                    self.remove_members(s, is_group, spath)
                 s["members"] = [m for m in s.get("members", []) if m.get(
                     "state") not in self.INACTIVE]
         if not dry_run:
             write_json_to_file(
                 f"{self.app_path}/data/{data}.json", staged, log=self.log)
         return staged
+
+    def remove_members(self, staged, is_group, staged_path):
+        try:
+            host = self.config.source_host
+            token = self.config.source_token
+            sid = staged.get("id")
+            for m in staged.get("members", []):
+                if m.get("state") in self.INACTIVE:
+                    if is_group:
+                        self.groups_api.remove_member(
+                            sid, m.get("id"), host, token)
+                    else:
+                        self.projects_api.remove_member(
+                            sid, m.get("id"), host, token)
+        except RequestException as re:
+            self.log.error(
+                f"Failed to remove {m.get('name')} from {staged_path}, with error:\n{re}")
 
     def search_for_staged_users(self, table=False):
         """
@@ -375,7 +383,8 @@ class UsersClient(BaseClass):
                     "src_state": state,
                     "dest_state": new_user.get("state"),
                     "last_sign_in_at": new_user.get("last_sign_in_at"),
-                    "identities": new_user.get("identities")
+                    "identities": new_user.get("identities"),
+                    "public_email": new_user.get("public_email")
                 })
             else:
                 users_not_found[user.get("id")] = {
@@ -388,6 +397,9 @@ class UsersClient(BaseClass):
                     for u in users_found if not u.get("last_sign_in_at")]
         no_identities = [(u.get("email"), u.get("dest_state"))
                          for u in users_found if not u.get("identities")]
+        no_public_email = [(u.get("email"), u.get("public_email"))
+                           for u in users_found if u.get("email") != u.get("public_email")]
+
         found = f"Found ({len(users_found)})"
         blkd = f"Blocked ({len(blocked)})"
         mismatch = f"State mismatch ({len(state_mismatch)})"
@@ -395,6 +407,7 @@ class UsersClient(BaseClass):
         wo_ids = f"W/O identities ({len(no_identities)})"
         not_found = f"NOT found ({len(users_not_found)})"
         dupe = f"Duplicate ({len(duplicate_users)})"
+        pub_email = f"Incorrect or no public email: ({len(no_public_email)})"
         self.log.info(f"""
             {found}:\n{json_pretty(users_found)}
             {blkd}:\n{json_pretty(blocked)}
@@ -403,6 +416,7 @@ class UsersClient(BaseClass):
             {wo_ids}:\n{json_pretty(no_identities)}
             {not_found}:\n{json_pretty(users_not_found)}
             {dupe}:\n{json_pretty(duplicate_users)}
+            {pub_email}:\n{json_pretty(no_public_email)}
         """)
         if table:
             d = {
@@ -545,32 +559,30 @@ class UsersClient(BaseClass):
         :param user: The user entity (from staged_users.json) not the user_data that we generate
         :return: The ID of either the created user or the user found by email
         """
+        error_resp = f"{response} - {response.text}"
+        log_resp = f"User {user} creation failed, due to"
+        email = user.get("email")
         if response.status_code == 409:
-            self.log.info("User {0} already exists".format(user["email"]))
+            self.log.error(f"{log_resp} duplication:\n{error_resp}")
             try:
                 # Try to find the user by email. We either just created this,
                 # or it already existed
-                response = find_user_by_email_comparison_without_id(
-                    user["email"])
+                response = find_user_by_email_comparison_without_id(email)
                 return self.get_user_creation_id_and_email(response)
             except RequestException as e:
                 self.log.error(
-                    "Failed to retrieve user {0} status, due to:\n{1}".format(user, e))
+                    f"Failed to retrieve user {user} creation status, due to:\n{e}")
         elif response.status_code == 400:
-            return self.log_and_return_failed_user_creation(
-                f"Unable to create user due to improperly formatted request for user email {user['email']} :\n{response.text}", user["email"])
+            return self.log_and_return_failed_user_creation(f"{log_resp} improperly formatted request:\n{error_resp}", email)
         elif response.status_code == 500:
-            return self.log_and_return_failed_user_creation(
-                "Unable to create user due to internal server error:\n{}".format(response.text), user["email"])
+            return self.log_and_return_failed_user_creation(f"{log_resp} internal server error:\n{error_resp}", email)
         else:
             if resp := safe_json_response(response):
                 return {
-                    "email": resp["email"],
-                    "id": resp["id"]
+                    "email": resp.get("email"),
+                    "id": resp.get("id")
                 }
-            else:
-                return self.log_and_return_failed_user_creation(
-                    response.text, user["email"])
+            return self.log_and_return_failed_user_creation(error_resp, email)
 
     def log_and_return_failed_user_creation(self, message, email):
         self.log.error(message)
@@ -649,10 +661,11 @@ class UsersClient(BaseClass):
         return None
 
     def set_staged_users_public_email(self, dry_run=True, hide=False):
-        start = time()
-        rotate_logs()
         staged_users = get_staged_users()
         host = self.config.source_host
+        token = self.config.source_token
+        if is_gl_version_older_than(14, host, token, "SKIP: Not mandatory to set 'public_email' field for staged users"):
+            return
         for su in staged_users:
             # Assume primary email matches on dest
             email = su.get("email")
@@ -691,4 +704,3 @@ class UsersClient(BaseClass):
                 self.log.error(
                     f"Failed to set public email {msg}{set_email} for user:\n{su} with error:\n{re}")
                 continue
-        add_post_migration_stats(start, log=self.log)

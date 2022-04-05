@@ -1,40 +1,46 @@
-from congregate.migration.gitlab.diff.basediff import BaseDiffClient
-from congregate.migration.gitlab.api.users import UsersApi
+from os.path import getmtime
+from datetime import timedelta
 from gitlab_ps_utils.misc_utils import get_rollback_log
 from gitlab_ps_utils.json_utils import read_json_file_into_object
+
+from congregate.migration.gitlab.diff.basediff import BaseDiffClient
+from congregate.migration.gitlab.api.users import UsersApi
 
 
 class UserDiffClient(BaseDiffClient):
     '''
         Extension of BaseDiffClient focused on finding the differences between migrated users
     '''
+    KEYS_TO_IGNORE = [
+        "web_url",
+        "last_sign_in_at",
+        "last_activity_at",
+        "current_sign_in_at",
+        "created_at",
+        "confirmed_at",
+        "last_activity_on",
+        "current_sign_in_ip",
+        "last_sign_in_ip",
+        "source_id",
+        "id",
+        "author_id",
+        "project_id",
+        "target_id",
+        "bio",
+        "bio_html",
+        "sign_in_count",
+        "namespace_id"
+    ]
 
     def __init__(self, staged=False, rollback=False, processes=None):
         super().__init__()
         self.users_api = UsersApi()
-        self.results = read_json_file_into_object(
-            f"{self.app_path}/data/results/user_migration_results.json")
+        self.results_path = f"{self.app_path}/data/results/user_migration_results.json"
+        self.results = read_json_file_into_object(self.results_path)
+        self.results_mtime = getmtime(self.results_path)
         self.rollback = rollback
         self.processes = processes
-        self.keys_to_ignore = [
-            "web_url",
-            "last_sign_in_at",
-            "last_activity_at",
-            "current_sign_in_at",
-            "created_at",
-            "confirmed_at",
-            "last_activity_on",
-            "current_sign_in_ip",
-            "last_sign_in_ip",
-            "source_id",
-            "id",
-            "author_id",
-            "project_id",
-            "target_id",
-            "bio",
-            "bio_html",
-            "sign_in_count"
-        ]
+        self.keys_to_ignore = self.KEYS_TO_IGNORE
         if staged:
             self.source_data = read_json_file_into_object(
                 "%s/data/staged_users.json" % self.app_path)
@@ -42,10 +48,12 @@ class UserDiffClient(BaseDiffClient):
             self.source_data = read_json_file_into_object(
                 "%s/data/users.json" % self.app_path)
 
-    def generate_diff_report(self):
+    def generate_diff_report(self, start_time):
         diff_report = {}
-        self.log.info("{}Generating User Diff Report".format(
-            get_rollback_log(self.rollback)))
+        self.log.info(
+            f"{get_rollback_log(self.rollback)}Generating User Diff Report")
+        self.log.warning(
+            f"Passed since migration time: {timedelta(seconds=start_time - self.results_mtime)}")
         results = self.multi.handle_multi_process_write_to_file_and_return_results(
             self.generate_single_diff_report, self.return_only_accuracies, self.source_data, f"{self.app_path}/data/results/user_diff.json", processes=self.processes)
 

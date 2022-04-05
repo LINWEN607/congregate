@@ -1,4 +1,4 @@
-FROM centos:centos8.4.2105
+FROM rockylinux/rockylinux:8.5
 
 # Add ps-user and give them sudo privileges
 RUN adduser ps-user && \
@@ -32,7 +32,7 @@ RUN chown -R ps-user:wheel /data && \
 # Installing yum-installable libraries
 RUN yum update -y && \
     yum install -y less vim jq curl git mongodb-org-4.4.4 mongodb-org-server-4.4.4 mongodb-org-shell-4.4.4 mongodb-org-mongos-4.4.4 mongodb-org-tools-4.4.4 \
-    gcc openssl-devel bzip2-devel libffi-devel zlib-devel make epel-release xz-devel util-linux-user && \
+    gcc openssl-devel bzip2-devel libffi-devel zlib-devel make epel-release xz-devel util-linux-user sqlite-devel && \
     yum install -y screen
 
 # Install Python
@@ -107,9 +107,6 @@ RUN cd /opt/congregate && \
     python3.8 -m pip install --user poetry && \
     python3.8 -m poetry install
 
-# Initialize congregate directories
-RUN congregate init
-
 # Install node dependencies
 RUN npm install --no-optional && \
     npm run build
@@ -118,5 +115,9 @@ RUN npm install --no-optional && \
 RUN cd /opt/congregate && \
     chown -R ps-user:wheel dist && \
     chmod -R 750 dist
+
+# Initialize congregate directories
+WORKDIR /opt/congregate
+RUN export PATH=$PATH:/home/ps-user/.local/bin/ && ./congregate.sh init
 
 EXPOSE 8000

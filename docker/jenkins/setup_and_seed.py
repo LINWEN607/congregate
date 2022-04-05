@@ -1,5 +1,6 @@
 from time import sleep
 from os.path import exists
+from os import getenv
 import requests
 from jenkins import Jenkins
 
@@ -9,9 +10,11 @@ def formatted_message(message, resp):
         fmt_message = f"\n{message}\n{resp.status_code}: {resp.text}\n"
     return fmt_message
 
+
 def formatted_url(endpoint):
     url_base = "http://localhost:8080"
     return f"{url_base}/{endpoint}"
+
 
 def setup_jenkins():
     s = requests.Session()
@@ -46,26 +49,26 @@ def setup_jenkins():
 
     print(formatted_message("Logging in", login))
 
-    suggested_plugins =  [
-        "cloudbees-folder", 
-        "antisamy-markup-formatter", 
-        "build-timeout", 
-        "credentials-binding", 
-        "timestamper", 
-        "ws-cleanup", 
-        "ant", 
-        "gradle", 
-        "workflow-aggregator", 
-        "github-branch-source", 
-        "pipeline-github-lib", 
-        "pipeline-stage-view", 
-        "git", 
-        "subversion", 
-        "ssh-slaves", 
-        "matrix-auth", 
-        "pam-auth", 
-        "ldap", 
-        "email-ext", 
+    suggested_plugins = [
+        "cloudbees-folder",
+        "antisamy-markup-formatter",
+        "build-timeout",
+        "credentials-binding",
+        "timestamper",
+        "ws-cleanup",
+        "ant",
+        "gradle",
+        "workflow-aggregator",
+        "github-branch-source",
+        "pipeline-github-lib",
+        "pipeline-stage-view",
+        "git",
+        "subversion",
+        "ssh-slaves",
+        "matrix-auth",
+        "pam-auth",
+        "ldap",
+        "email-ext",
         "mailer",
         "multiple-scms",
         "gitlab-plugin"
@@ -78,14 +81,15 @@ def setup_jenkins():
     # Installing suggested list of plugins
     for plugin in suggested_plugins:
         plugin_name = f"plugin.{plugin}"
-        installPlugins = s.post(formatted_url(f"pluginManager/install?{plugin_name}=true"), 
-            data={
-                "dynamicLoad": True,
-                "Jenkins-Crumb": crumb
-            }
+        installPlugins = s.post(formatted_url(f"pluginManager/install?{plugin_name}=true"),
+                                data={
+            "dynamicLoad": True,
+            "Jenkins-Crumb": crumb
+        }
         )
 
-        print(formatted_message(f"Installing plugin {plugin_name}", installPlugins))
+        print(formatted_message(
+            f"Installing plugin {plugin_name}", installPlugins))
 
     # Since the plugin requests above just trigger the install, the actual install is not completed
     # before a response is returned
@@ -94,11 +98,11 @@ def setup_jenkins():
 
     # Create new admin user
     createAdmin = s.post(formatted_url('setupWizard/createAdminUser'), data={
-        "username": "test-admin", 
-        "password1": "password", 
-        "password2": "password", 
-        "fullname": "test admin", 
-        "email": "test@email.com", 
+        "username": "test-admin",
+        "password1": "password",
+        "password2": "password",
+        "fullname": "test admin",
+        "email": "test@email.com",
         "Jenkins-Crumb": crumb
     })
 
@@ -136,6 +140,7 @@ def setup_jenkins():
     # Write a file to check if jenkins is already set up
     with open("/var/jenkins_home/install-finished", "w") as f:
         f.write("install complete")
+
 
 def seed_data():
     print("Logging in to Jenkins to seed data")
@@ -175,7 +180,7 @@ def seed_data():
         <configVersion>2</configVersion>
         <userRemoteConfigs>
         <hudson.plugins.git.UserRemoteConfig>
-        <url>https://github.gitlab-proserv.net/firdaus/gitlab-jenkins.git</url>
+        <url>https://github.example.net/firdaus/gitlab-jenkins.git</url>
         <credentialsId>gitlabgithub</credentialsId>
         </hudson.plugins.git.UserRemoteConfig>
         </userRemoteConfigs>
@@ -199,7 +204,7 @@ def seed_data():
         <buildWrappers/>
         </project>
     """)
-    
+
     print("Creating job freestyle-job")
     j.create_job("freestyle-job", """
         <project>
@@ -235,7 +240,7 @@ def seed_data():
         <configVersion>2</configVersion>
         <userRemoteConfigs>
         <hudson.plugins.git.UserRemoteConfig>
-        <url>https://github.gitlab-proserv.net/firdaus/scm-info-repo.git</url>
+        <url>https://github.example.net/firdaus/scm-info-repo.git</url>
         <credentialsId>gitlabgithub</credentialsId>
         </hudson.plugins.git.UserRemoteConfig>
         </userRemoteConfigs>
@@ -260,89 +265,14 @@ def seed_data():
         </project>
     """)
 
-    # print("Creating folder tset-folder")
-    # j.create_folder("test-folder", """
-    #     <com.cloudbees.hudson.plugins.folder.Folder plugin="cloudbees-folder@6.14">
-    #     <description/>
-    #     <properties/>
-    #     <folderViews class="com.cloudbees.hudson.plugins.folder.views.DefaultFolderViewHolder">
-    #     <views>
-    #     <hudson.model.AllView>
-    #     <owner class="com.cloudbees.hudson.plugins.folder.Folder" reference="../../../.."/>
-    #     <name>All</name>
-    #     <filterExecutors>false</filterExecutors>
-    #     <filterQueue>false</filterQueue>
-    #     <properties class="hudson.model.View$PropertyList"/>
-    #     </hudson.model.AllView>
-    #     </views>
-    #     <tabBar class="hudson.views.DefaultViewsTabBar"/>
-    #     </folderViews>
-    #     <healthMetrics>
-    #     <com.cloudbees.hudson.plugins.folder.health.WorstChildHealthMetric>
-    #     <nonRecursive>false</nonRecursive>
-    #     </com.cloudbees.hudson.plugins.folder.health.WorstChildHealthMetric>
-    #     </healthMetrics>
-    #     <icon class="com.cloudbees.hudson.plugins.folder.icons.StockFolderIcon"/>
-    #     </com.cloudbees.hudson.plugins.folder.Folder>
-    # """)
-
-    # print("Creating job test-folder/nested-demo-job")
-    # j.create_job("test-folder/nested-demo-job", """
-    #     <project>
-    #     <actions/>
-    #     <description>Single job with unmased param</description>
-    #     <keepDependencies>false</keepDependencies>
-    #     <properties>
-    #     <com.dabsquared.gitlabjenkins.connection.GitLabConnectionProperty plugin="gitlab-plugin@1.5.13">
-    #     <gitLabConnection/>
-    #     </com.dabsquared.gitlabjenkins.connection.GitLabConnectionProperty>
-    #     <org.jenkinsci.plugins.gitlablogo.GitlabLogoProperty plugin="gitlab-logo@1.0.5">
-    #     <repositoryName/>
-    #     </org.jenkinsci.plugins.gitlablogo.GitlabLogoProperty>
-    #     <hudson.model.ParametersDefinitionProperty>
-    #     <parameterDefinitions>
-    #     <hudson.model.StringParameterDefinition>
-    #     <name>Unmasked parameter</name>
-    #     <description>Value is 'unmasked'</description>
-    #     <defaultValue>unmasked</defaultValue>
-    #     <trim>false</trim>
-    #     </hudson.model.StringParameterDefinition>
-    #     </parameterDefinitions>
-    #     </hudson.model.ParametersDefinitionProperty>
-    #     </properties>
-    #     <scm class="hudson.plugins.git.GitSCM" plugin="git@4.3.0">
-    #     <configVersion>2</configVersion>
-    #     <userRemoteConfigs>
-    #     <hudson.plugins.git.UserRemoteConfig>
-    #     <url>https://github.gitlab-proserv.net/Jenkins-Test-Org/Jenkins-Public-Repo.git</url>
-    #     <credentialsId>Jordan_PAT</credentialsId>
-    #     </hudson.plugins.git.UserRemoteConfig>
-    #     </userRemoteConfigs>
-    #     <branches>
-    #     <hudson.plugins.git.BranchSpec>
-    #     <name>*/master</name>
-    #     </hudson.plugins.git.BranchSpec>
-    #     </branches>
-    #     <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
-    #     <submoduleCfg class="list"/>
-    #     <extensions/>
-    #     </scm>
-    #     <canRoam>true</canRoam>
-    #     <disabled>false</disabled>
-    #     <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
-    #     <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
-    #     <triggers/>
-    #     <concurrentBuild>false</concurrentBuild>
-    #     <builders/>
-    #     <publishers/>
-    #     <buildWrappers/>
-    #     </project>
-    # """)
 
 
 if __name__ == "__main__":
     if not exists("/var/jenkins_home/install-finished"):
         setup_jenkins()
-        seed_data()
+        if getenv('SEED_DATA') == "true":
+            seed_data()
+        else:
+            print("Skipping seed_data")
     else:
         print("Jenkins is already setup. Skipping")

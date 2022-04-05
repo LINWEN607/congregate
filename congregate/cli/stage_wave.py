@@ -1,7 +1,7 @@
 """
 Congregate - GitLab instance migration utility
 
-Copyright (c) 2021 - GitLab
+Copyright (c) 2022 - GitLab
 """
 import os
 import sys
@@ -58,8 +58,9 @@ class WaveStageCLI(BaseStageClass):
         unable_to_find = []
 
         if not os.path.isfile(self.config.wave_spreadsheet_path):
-            sys.exit(
-                f"The spreadsheet {self.config.wave_spreadsheet_path} does not exist. Please create a spreasheet with the projects scheduled for migration")
+            self.log.error(
+                f"The spreadsheet {self.config.wave_spreadsheet_path} does not exist. Please create a spreadsheet with the projects scheduled for migration")
+            sys.exit(os.EX_CONFIG)
 
         wsh = WaveSpreadsheetHandler(
             self.config.wave_spreadsheet_path,
@@ -77,8 +78,9 @@ class WaveStageCLI(BaseStageClass):
             )
         )
         if not wave_data:
-            sys.exit(
+            self.log.error(
                 f"Wave name is empty in {self.config.wave_spreadsheet_path} spreadsheet or the spreadsheet is empty.")
+            sys.exit(os.EX_CONFIG)
 
         # Some basic sanity checks for reading in spreadsheet data
         self.check_spreadsheet_data()
@@ -165,8 +167,8 @@ class WaveStageCLI(BaseStageClass):
         if project["project_type"] == "group":
             group_to_stage = self.rewritten_groups[self.rewritten_projects.get(project["id"])[
                 "namespace"]["id"]].copy()
-            self.log.info("{0}Staging group {1} (ID: {2})".format(get_dry_log(
-                dry_run), group_to_stage["full_path"], group_to_stage["id"]))
+            self.log.info(
+                f"{get_dry_log(dry_run)}Staging group {group_to_stage['full_path']} (ID: {group_to_stage['id']})")
             group_to_stage.pop("projects", None)
             self.handle_parent_group(wave_row, group_to_stage)
             self.staged_groups.append(group_to_stage)
@@ -184,8 +186,8 @@ class WaveStageCLI(BaseStageClass):
     def append_group_data(self, group, groups_to_stage,
                           wave_row, p_range=0, dry_run=True):
         # Append all group projects to staged projects
-        for project in group.get("projects", []):
-            obj = self.get_project_metadata(project)
+        for pid in group.get("projects", []):
+            obj = self.get_project_metadata(pid, group=True)
             if parent_path := self.config.wave_spreadsheet_column_mapping.get(
                     "Parent Path"):
                 obj["target_namespace"] = wave_row[parent_path].strip("/")
@@ -200,8 +202,8 @@ class WaveStageCLI(BaseStageClass):
             # Append all project members to staged users
             for project_member in obj["members"]:
                 self.append_member_to_members_list([], project_member, dry_run)
-            self.log.info("{0}Staging project {1} (ID: {2})".format(
-                get_dry_log(dry_run), obj["path_with_namespace"], obj["id"]))
+            self.log.info(
+                f"{get_dry_log(dry_run)}Staging project {obj['path_with_namespace']} (ID: {obj['id']})")
             self.staged_projects.append(obj)
 
         self.log.info(
@@ -220,10 +222,9 @@ class WaveStageCLI(BaseStageClass):
                 "Parent Path"):
             if wave_row.get("Override"):
                 return wave_row[parent_path]
-            else:
-                if len(set(full_path.split("/")) -
-                       set(parent_path.split("/"))) <= 1:
-                    return f"{wave_row[parent_path]}/{full_path}"
+            if len(set(full_path.split("/")) -
+                    set(parent_path.split("/"))) <= 1:
+                return f"{wave_row[parent_path]}/{full_path}"
             return full_path
 
     def get_parent_id(self, wave_row, parent_path):

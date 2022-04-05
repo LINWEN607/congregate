@@ -18,7 +18,7 @@ A wave consists of users, groups, and projects slated to be migrated within a da
 
 Users i.e. their entire accounts with additional GitLab features (e.g. SSH and GPG keys) mentioned in the migration features matrix are migrated first. This, along with details mentioned [here](#q4) need to be in place before we migrate groups and projects. Only then can the user contribution mappings and permissions persist when we import groups and projects.
 
-Please see [project](https://docs.gitlab.com/ee/user/project/settings/import_export.html#important-notes) and [group](https://docs.gitlab.com/ee/api/group_import_export.html#important-notes) import API notes for more details.
+Please see [project](https://docs.gitlab.com/ee/user/project/settings/import_export.html) and [group](https://docs.gitlab.com/ee/user/group/settings/import_export.html#important-notes) import/export notes for more details.
 
 We require if you are migrating a group, it has to be at the top level due to how our group export/import works. We migrate a group and its subgroups and projects together. Breaking it apart over multiple waves complicates the process and is a time sink.
 
@@ -65,7 +65,7 @@ Certain GitLab features are migrated but not adapted to the destination instance
   * Group level runners can be manually (via UI - *Settings -> CI/CD -> Runners*) enabled/disabled as of 13.5
   * Enable project-level shared runners (default: `true`)
   * Disable AutoDevOps (default: `true`)
-* Update group and project permissions (default: `private`). See [project](https://docs.gitlab.com/ee/user/project/settings/import_export.html#important-notes) and [group](https://docs.gitlab.com/ee/api/group_import_export.html#important-notes) import API notes for more details.
+* Update group and project permissions (default: `private`). See [project](https://docs.gitlab.com/ee/user/project/settings/import_export.html) and [group](https://docs.gitlab.com/ee/user/group/settings/import_export.html#important-notes) import/export notes for more details.
 * Update paths (hostnames) for:
   * project, group and system hooks
     * **NOTE:** if they are pointing to a private instance or `localhost` gitlab.com will see them as invalid and fail creating them
@@ -96,7 +96,7 @@ Please see [Release Feature & Deprecation Overview](https://gitlab-com.gitlab.io
 
 They are inherited by the importer (import user).
 
-Please see [project import API notes](https://docs.gitlab.com/ee/user/project/settings/import_export.html#important-notes) for more details.
+Please see [project import/export notes on user mapping](https://docs.gitlab.com/ee/user/project/settings/import_export.html#map-users-for-import) for more details.
 
 ## <a name="q4"></a>Do user contributions and permissions propagate during migration?
 
@@ -110,9 +110,7 @@ Yes, if an Admin user does the import, and on both source and destination the us
 
 Otherwise the (Admin) import user will permanently inherit group/project mentions and contributions of those users.
 
-The inherited group/project mentions and contributions will show a supplementary comment of the original author (see [project import notes](https://docs.gitlab.com/ee/user/project/settings/import_export.html#important-notes) for more details). If you hard-delete the import user, they are inherited by the GitLab instance default (and public) *Ghost* user.
-
-Please see [project import API notes](https://docs.gitlab.com/ee/user/project/settings/import_export.html#important-notes) for more details.
+The inherited group/project mentions and contributions will show a supplementary comment of the original author (see [project import/export user mapping notes](https://docs.gitlab.com/ee/user/project/settings/import_export.html#map-users-for-import) for more details). If you hard-delete the import user, they are inherited by the GitLab instance default (and public) *Ghost* user.
 
 Users might be deliberately missing because on the source instance they are:
 
@@ -191,7 +189,7 @@ Additionally:
 
 ## Does the source instance need to be updated to latest in order to migrate?
 
-Not necessarily. Having the source instance align as close as possible with the destination version, while not surpassing, is preferable, as stated [here](https://docs.gitlab.com/ee/user/project/settings/import_export.html#important-notes).
+Following the [version history](https://docs.gitlab.com/ee/user/project/settings/import_export.html#version-history) it should be at most 2 minor versions behind the destination instance version, while not surpassing it.
 
 >Imports from a newer version of GitLab are not supported. The Importing GitLab version must be greater than or equal to the Exporting GitLab version.
 
@@ -200,7 +198,7 @@ Not necessarily. Having the source instance align as close as possible with the 
 * The GitLab Project export / import API versions need to match between instances and follow the [version history](https://docs.gitlab.com/ee/user/project/settings/import_export.html#version-history) requirements.
 * The GitLab Group export / import API versions need to match between instances and follow the [version history](https://docs.gitlab.com/ee/user/group/settings/import_export.html#version-history) requirements.
 * The source version should not be more than 2 minor versions behind
-  * [Project Import/Export Version History](https://docs.gitlab.com/ee/user/project/settings/import_export.html#130)
+  * [Project Import/Export Version History](https://docs.gitlab.com/ee/user/project/settings/import_export.html#version-history)
   * [Security Releases](https://docs.gitlab.com/ee/policy/maintenance.html#security-releases)
 
 When it comes to how old can the GitLab source instance be we come to the following milestones to take into account:

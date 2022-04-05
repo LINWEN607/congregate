@@ -2,7 +2,7 @@
 
 # Congregate - GitLab instance migration utility 
 #
-# Copyright (c) 2021 - GitLab
+# Copyright (c) 2022 - GitLab
 #
 # Master script for running congregate
 #
@@ -24,7 +24,14 @@ function is_running() {
 }
 
 function do_it() {
+    set -e
     CONGREGATE_PATH=$(pwd) APP_PATH=$(pwd) && poetry run python congregate/main.py $@
+    exit_code=$?
+    if [ "${exit_code}" -ne 0 ]; then
+        echo "exit ${exit_code}"
+    fi
+    echo "echo 0"
+    set +e
 }
 
 if [ ! -f "/tmp/congregate.pid" ]; then

@@ -1,5 +1,4 @@
 from congregate.migration.github.api.base import GitHubApi
-from congregate.helpers.conf import Config
 
 
 class UsersApi():
@@ -7,7 +6,6 @@ class UsersApi():
         self.host = host
         self.token = token
         self.api = GitHubApi(self.host, self.token)
-        self.config = Config()
 
     def get_all_users(self):
         """
@@ -19,11 +17,24 @@ class UsersApi():
 
     def get_user(self, username):
         """
-        Provides publicly available information about someone with a GitHub account.
+        Get the authenticated user.
 
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/users#get-a-user
         """
         return self.api.generate_v3_get_request(self.host, f"users/{username}")
 
     def get_import_user(self):
+        """
+        Provides publicly available information about someone with a GitHub account.
+
+        GitHub API v3 Doc: https://docs.github.com/en/rest/reference/users#get-the-authenticated-user
+        """
         return self.api.generate_v3_get_request(self.host, "user")
+
+    def get_rate_limit_status(self):
+        """
+        Get rate limit status for the authenticated user.
+
+        GitHub API v3 Doc: https://docs.github.com/en/rest/reference/rate-limit#get-rate-limit-status-for-the-authenticated-user
+        """
+        return self.api.generate_v3_get_request(self.host, "rate_limit")

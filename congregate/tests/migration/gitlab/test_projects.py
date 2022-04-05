@@ -1,6 +1,7 @@
 import warnings
 import unittest
 from unittest.mock import patch, PropertyMock, MagicMock
+from congregate.helpers.conf import Config
 from pytest import mark
 from requests.exceptions import RequestException
 
@@ -574,3 +575,51 @@ class ProjectsTests(unittest.TestCase):
         mock_find_id.side_effect = RequestException()
         with self.assertLogs(self.projects.log, level="ERROR"):
             self.projects.create_staged_projects_fork_relation()
+
+    @patch.object(Config, 'remapping_file_path', new_callable=PropertyMock)
+    def test_perform_url_rewrite_only_fails_when_no_remapping_file(self, mock_remapping_file_path):
+        mock_remapping_file_path.return_value = None
+        with self.assertLogs(self.projects.log, level="ERROR") as al:
+            self.projects.perform_url_rewrite_only()
+        self.assertEqual(al.output, ['ERROR:congregate.helpers.base_class:DRY-RUN: Remapping file path not set. Set remapping_file_path under [APP] in the congregate.conf'])
+
+    @patch.object(ProjectsClient, "handle_rewriting_project_yaml")
+    @patch("congregate.migration.gitlab.projects.check_for_staged_user_projects")
+    @patch("congregate.migration.gitlab.projects.get_staged_projects")
+    @patch.object(Config, 'remapping_file_path', new_callable=PropertyMock)
+    def test_perform_url_rewrite_only_fails_when_user_projects_staged(self, mock_remapping_file_path, mock_get_staged_projects, mock_check_for_staged_user_projects, mock_handle_rewriting_project_yaml):
+        mock_remapping_file_path.return_value = "some_path"
+        mock_get_staged_projects.return_value = [{"project_type": "user"}]
+        mock_check_for_staged_user_projects.return_value = ["pathwithnamespace"]        
+        assert self.projects.perform_url_rewrite_only() is None
+        mock_check_for_staged_user_projects.assert_called_once()
+        mock_handle_rewriting_project_yaml.assert_not_called()
+
+    @patch.object(ProjectsClient, "migrate_gitlab_variable_replace_ci_yml")
+    @patch.object(ProjectsApi, "get_project_import_status")
+    @patch("congregate.migration.gitlab.projects.ProjectsClient.find_project_by_path")
+    @patch("congregate.migration.gitlab.projects.get_dst_path_with_namespace")
+    @patch("congregate.migration.gitlab.projects.safe_json_response")
+    def test_handle_rewriting_project_yaml_return_success(self, mock_safe_json_response, mock_get_dst_path_with_namespace, mock_find_project_by_path, mock_get_project_import_status, mock_migrate_gitlab_variable_replace_ci_yml):
+        mock_safe_json_response.return_value = {"safe": "response"}
+        mock_get_dst_path_with_namespace.return_value = "some namespace"
+        mock_find_project_by_path.return_value = 123       
+        mock_get_project_import_status.return_value = {"message": "some message"}
+        mock_migrate_gitlab_variable_replace_ci_yml.return_value = True
+        returned = self.projects.handle_rewriting_project_yaml({"id": 345})
+        self.assertDictEqual(returned, {"id": 123, "path": "some namespace", "message": "success", "exception": None})
+
+    @patch("congregate.migration.gitlab.projects.get_dst_path_with_namespace")
+    def test_handle_rewriting_project_yaml_return_on_exception(self, mock_get_dst_path_with_namespace):
+        mock_get_dst_path_with_namespace.side_effect = KeyError("EXCEPTION GOES HERE")
+        returned = self.projects.handle_rewriting_project_yaml({"id": 345})
+        self.assertDictEqual(returned, {"id": None, "path": None, "message": "error", "exception": "'EXCEPTION GOES HERE'"})
+
+    @patch("congregate.migration.gitlab.projects.ProjectsClient.find_project_by_path")
+    @patch("congregate.migration.gitlab.projects.get_dst_path_with_namespace")
+    def test_handle_rewriting_project_yaml_data_error(self, mock_get_dst_path_with_namespace, mock_find_project_by_path):
+        mock_get_dst_path_with_namespace.return_value="some namespace"
+        mock_find_project_by_path.return_value = None
+        with self.assertLogs(self.projects.log, level="ERROR") as al:
+            returned = self.projects.handle_rewriting_project_yaml({"id": 345})
+            self.assertDictEqual(returned, {"id": None, "path": "some namespace", "message": "error", "exception": "Project some namespace not found"})

@@ -1,6 +1,6 @@
 """Congregate - GitLab instance migration utility
 
-Copyright (c) 2021 - GitLab
+Copyright (c) 2022 - GitLab
 
 Usage:
     congregate init
@@ -11,7 +11,7 @@ Usage:
     congregate stage-groups <groups>... [--skip-users] [--commit] [--scm-source=hostname]
     congregate stage-wave <wave> [--commit] [--scm-source=hostname]
     congregate create-stage-wave-csv [--commit]
-    congregate migrate [--processes=<n>] [--reporting] [--skip-users] [--remove-members] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostname] [--commit] [--reg-dry-run]
+    congregate migrate [--processes=<n>] [--reporting] [--skip-users] [--remove-members] [--stream-groups] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostname] [--commit] [--reg-dry-run]
     congregate rollback [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
     congregate ui
     congregate do-all [--commit]
@@ -26,6 +26,7 @@ Usage:
     # TODO: Refactor, project name matching does not seem correct
     congregate find-unimported-projects [--commit]
     congregate stage-unimported-projects [--commit] # TODO: Refactor, broken
+    congregate url-rewrite-only [--commit]
     congregate remove-users-from-parent-group [--commit]
     congregate migrate-variables-in-stage [--commit]
     congregate mirror-staged-projects [--commit]
@@ -77,6 +78,7 @@ Arguments:
     skip-users                              Stage: Skip staging users; Migrate: Skip migrating users; Rollback: Remove only groups and projects.
     remove-members                          Remove all members of created (GitHub) or imported (GitLab) groups. Skip adding any members of BitBucket imported repos.
     hard-delete                             Remove user contributions and solely owned groups
+    stream-groups                           Streamed approach of migrating staged groups in bulk
     skip-groups                             Rollback: Remove only users and projects
     skip-group-export                       Skip exporting groups from source instance
     skip-group-import                       Skip importing groups to destination instance
@@ -141,6 +143,7 @@ Commands:
     get-total-count                         Get total count of migrated projects. Used to compare exported projects to imported projects.
     find-unimported-projects                Return a list of projects that failed import.
     stage-unimported-projects               Stage unimported projects based on {CONGREGATE_PATH}/data/unimported_projects.txt.
+    url-rewrite-only                        Performs the URL rewrite portion of a migration as a stand-alone step, instead of as a post-migration step. Requires the projects to be staged, and to exist on destination
     remove-users-from-parent-group          Remove all users with at most reporter access from the parent group.
     migrate-variables-in-stage              Migrate CI variables for staged projects.
     mirror-staged-projects                  Set up project mirroring for staged projects.
@@ -237,7 +240,7 @@ def main():
             with open(f"{app_path}/pyproject.toml", "r") as f:
                 print(
                     f"Congregate {dig(load_toml(f), 'tool', 'poetry', 'version')}")
-            sys.exit()
+            sys.exit(os.EX_OK)
         DRY_RUN = not arguments["--commit"]
         STAGED = arguments["--staged"]
         ROLLBACK = arguments["--rollback"]
@@ -351,6 +354,7 @@ def main():
                     dry_run=DRY_RUN,
                     skip_users=SKIP_USERS,
                     remove_members=REMOVE_MEMBERS,
+                    stream_groups=arguments["--stream-groups"],
                     skip_group_export=bool(
                         arguments["--skip-group-export"] or ONLY_POST_MIGRATION_INFO),
                     skip_group_import=arguments["--skip-group-import"],
@@ -519,7 +523,7 @@ def main():
                         )
                         user_diff.generate_html_report(
                             "User",
-                            user_diff.generate_diff_report(),
+                            user_diff.generate_diff_report(start),
                             "/data/results/user_migration_results.html"
                         )
                     if not SKIP_GROUPS:
@@ -531,7 +535,7 @@ def main():
                         )
                         group_diff.generate_html_report(
                             "Group",
-                            group_diff.generate_diff_report(),
+                            group_diff.generate_diff_report(start),
                             "/data/results/group_migration_results.html"
                         )
                     if not SKIP_PROJECTS:
@@ -542,7 +546,7 @@ def main():
                         )
                         project_diff.generate_html_report(
                             "Project",
-                            project_diff.generate_diff_report(),
+                            project_diff.generate_diff_report(start),
                             "/data/results/project_migration_results.html"
                         )
                 elif config.source_type == "github" or SCM_SOURCE is not None:
@@ -567,7 +571,7 @@ def main():
                             processes=PROCESSES,
                             rollback=ROLLBACK
                         )
-                    repo_diff.generate_diff_report()
+                    repo_diff.generate_diff_report(start)
                     repo_diff.generate_split_html_report()
                 add_post_migration_stats(start, log=log)
 
@@ -608,16 +612,15 @@ def main():
                     dest=DEST,
                     dry_run=DRY_RUN)
             if arguments["ldap-group-sync"]:
-                if not DRY_RUN:
-                    ldap = LdapGroupSync()
-                    ldap.load_pdv(arguments['<file-path>'])
-                    ldap.synchronize_groups(dry_run=DRY_RUN)
-                else:
-                    print(
-                        "\nThis command will setup LDAP group sync based on the file passed in via <file-path>")
+                ldap = LdapGroupSync()
+                ldap.load_pdv(arguments['<file-path>'])
+                ldap.synchronize_groups(dry_run=DRY_RUN)
             if arguments["set-staged-users-public-email"]:
+                start = time()
+                rotate_logs()
                 users.set_staged_users_public_email(
                     dry_run=DRY_RUN, hide=arguments["--hide"])
+                add_post_migration_stats(start, log=log)
             if arguments["create-staged-projects-structure"]:
                 projects.create_staged_projects_structure(
                     dry_run=DRY_RUN, disable_cicd=arguments["--disable-cicd"])
@@ -639,6 +642,8 @@ def main():
                 print("Secret copied to clipboard (pbcopy)")
             else:
                 print(f"Secret: {data}")
+        if arguments["url-rewrite-only"]:
+            projects.perform_url_rewrite_only(dry_run=DRY_RUN)
 
 
 if __name__ == "__main__":

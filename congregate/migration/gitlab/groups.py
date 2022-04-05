@@ -1,18 +1,17 @@
 import json
-from time import sleep
 from requests.exceptions import RequestException
+from gitlab_ps_utils.misc_utils import get_timedelta, safe_json_response, strip_netloc
+from gitlab_ps_utils.list_utils import remove_dupes
+from gitlab_ps_utils.json_utils import json_pretty
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.mdbc import MongoConnector
-from gitlab_ps_utils.misc_utils import get_timedelta, safe_json_response, strip_netloc
-from gitlab_ps_utils.list_utils import remove_dupes
 from congregate.helpers.migrate_utils import get_full_path_with_parent_namespace, is_top_level_group, get_staged_groups, \
     find_user_by_email_comparison_without_id
-from gitlab_ps_utils.json_utils import json_pretty
-from congregate.helpers.utils import is_dot_com
 from congregate.migration.gitlab.variables import VariablesClient
 from congregate.migration.gitlab.badges import BadgesClient
 from congregate.migration.gitlab.api.groups import GroupsApi
+from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.namespaces import NamespacesApi
 
 
@@ -20,6 +19,7 @@ class GroupsClient(BaseClass):
     def __init__(self):
         self.vars = VariablesClient()
         self.groups_api = GroupsApi()
+        self.projects_api = ProjectsApi()
         self.badges = BadgesClient()
         self.namespaces_api = NamespacesApi()
         self.group_id_mapping = {}
@@ -27,7 +27,7 @@ class GroupsClient(BaseClass):
 
     def traverse_groups(self, host, token, group):
         mongo = MongoConnector()
-        if group_id := group.get("id"):
+        if gid := group.get("id"):
             keys_to_ignore = [
                 "web_url",
                 "full_name",
@@ -36,16 +36,28 @@ class GroupsClient(BaseClass):
             ]
             for k in keys_to_ignore:
                 group.pop(k, None)
-            # Avoid saving all SaaS parent group members
-            if is_dot_com(host) and group_id == self.config.src_parent_id:
-                group["members"] = []
-            else:
-                group["members"] = list(self.groups_api.get_all_group_members(
-                    group_id, host, token))
-            group["projects"] = list(self.groups_api.get_all_group_projects(
-                group_id, host, token, with_shared=False))
+
+            # Save all group members as part of group metadata
+            group["members"] = list(self.groups_api.get_all_group_members(
+                gid, host, token))
+
+            # Save all group projects ID references as part of group metadata
+            group["projects"] = []
+            # Only list direct projects to avoid overhead
+            for project in self.groups_api.get_all_group_projects(gid, host, token, include_subgroups=False, with_shared=False):
+                group["projects"].append(project["id"])
+
+                # Avoids having to also list all gitlab.com parent group projects
+                project["members"] = list(
+                    self.projects_api.get_members(project["id"], host, token))
+                mongo.insert_data(f"projects-{strip_netloc(host)}", project)
+
+            # Save all descendant groups ID references as part of group metadata
+            group["desc_groups"] = []
+            for g in self.groups_api.get_all_descendant_groups(gid, host, token):
+                group["desc_groups"].append(g["id"])
             for subgroup in self.groups_api.get_all_subgroups(
-                    group_id, host, token):
+                    gid, host, token):
                 self.log.debug("Traversing into subgroup")
                 self.traverse_groups(
                     host, token, subgroup)
@@ -53,8 +65,7 @@ class GroupsClient(BaseClass):
 
         mongo.close_connection()
 
-    def retrieve_group_info(
-            self, host, token, location="source", processes=None):
+    def retrieve_group_info(self, host, token, location="source", processes=None):
         prefix = location if location != "source" else ""
 
         if self.config.src_parent_group_path:
@@ -64,9 +75,8 @@ class GroupsClient(BaseClass):
             self.traverse_groups(host, token, safe_json_response(self.groups_api.get_group(
                 self.config.src_parent_id, host, token)))
         else:
-            self.multi.start_multi_process_stream_with_args(self.traverse_groups,
-                                                            self.groups_api.get_all_groups(
-                                                                host, token), host, token, processes=processes)
+            self.multi.start_multi_process_stream_with_args(self.traverse_groups, self.groups_api.get_all_groups(
+                host, token), host, token, processes=processes)
 
     def append_groups(self, groups):
         with open("{}/data/groups.json".format(self.app_path), "r") as f:
@@ -209,7 +219,7 @@ class GroupsClient(BaseClass):
             resp = self.namespaces_api.get_namespace_by_full_path(
                 full_path=full_name_with_parent_namespace, host=host, token=token)
         if resp.status_code == 200:
-            return resp.json()
+            return safe_json_response(resp)
         return None
 
     def add_members_to_destination_group(self, host, token, group_id, members):
@@ -217,11 +227,11 @@ class GroupsClient(BaseClass):
         self.log.info(
             f"Adding members to Group ID {group_id}:\n{json_pretty(members)}")
         for member in members:
-            if member.get("email", None):
+            if member.get("email"):
                 user_id_req = find_user_by_email_comparison_without_id(
                     member["email"])
                 member["user_id"] = user_id_req.get(
-                    "id", None) if user_id_req else None
+                    "id") if user_id_req else None
                 result[member["email"]] = False
                 if member.get("user_id"):
                     resp = safe_json_response(
@@ -230,22 +240,25 @@ class GroupsClient(BaseClass):
                         result[member["email"]] = True
         return result
 
-    def wait_for_parent_group_creation(self, group):
-        timeout = 0
-        wait_time = self.config.export_import_status_check_time
-        ppath = group["full_path"].rsplit("/", 1)[0]
-        name = group["name"]
-        pnamespace = self.namespaces_api.get_namespace_by_full_path(
-            ppath, self.config.destination_host, self.config.destination_token)
-        while pnamespace.status_code != 200:
-            self.log.info(
-                f"Waiting {self.config.export_import_status_check_time} seconds to create parent group {ppath} for group {name}")
-            timeout += wait_time
-            sleep(wait_time)
-            if timeout > wait_time * 10:
-                self.log.error(
-                    f"Time limit exceeded waiting for parent group {ppath} to create for group {name}")
-                return None
-            pnamespace = self.namespaces_api.get_namespace_by_full_path(
-                ppath, self.config.destination_host, self.config.destination_token)
-        return pnamespace
+    def find_and_stage_group_bulk_entities(self, groups):
+        entities, result = [], []
+        namespace = self.config.dstn_parent_group_path or ""
+        for g in groups:
+            full_path = g["full_path"]
+            full_path_with_parent_namespace = get_full_path_with_parent_namespace(
+                full_path)
+            dst_grp = self.find_group_by_path(
+                self.config.destination_host, self.config.destination_token, full_path_with_parent_namespace)
+            dst_gid = dst_grp.get("id") if dst_grp else None
+            if dst_gid:
+                self.log.info(
+                    f"Group {full_path} (ID: {dst_gid}) already exists on destination")
+                result.append({full_path_with_parent_namespace: dst_gid})
+            else:
+                result.append({full_path_with_parent_namespace: False})
+                entities.append({
+                    "source_full_path": full_path,
+                    "source_type": "group_entity",
+                    "destination_name": g["name"],
+                    "destination_namespace": namespace})
+        return entities, result

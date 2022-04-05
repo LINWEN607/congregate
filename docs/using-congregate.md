@@ -2,12 +2,12 @@
 
 ## Quick Start
 
-1. Download and install [docker desktop](https://www.docker.com/products/docker-desktop) or make sure `docker` is installed on the machine you will be working from.
+1. Download and install docker, podman, or any other application that can run docker containers
 1. Run `git clone git@gitlab.com:gitlab-org/professional-services-automation/tools/migration/congregate.git` to pull the congregate repo to your local environment.
-1. Generate a personal access token from your gitlab.com account that has the read_registry permission by clicking `User Icon (top right) > Settings > Access Tokens > Generate Access Token`.
+1. Generate a personal access token from your gitlab.com account that has the `read_registry` permission by clicking *User Icon (top right) > Settings > Access Tokens > Generate Access Token*.
 1. Then run `docker login registry.gitlab.com` and provide your username and paste the access token when prompted for a password.
-1. Pull the docker image from the container registry:
-    * :white_check_mark: For official versioned releases, `docker pull registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate:<version>` (or `:latest`)
+1. Pull the docker image from the [container registry](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/container_registry/2394823):
+    * :white_check_mark: For official versioned releases, `docker pull registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate:<version>` (or `:latest-<debian|centos>`)
     * :warning: For rolling releases, `docker pull registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate:rolling-debian` (or `:rolling-centos`)
 1. Run `docker images -a` to list and copy the `image-id` of the congregate image.
 1. Create and run the Congregate docker container:
@@ -40,7 +40,7 @@
 Follow the steps in [this issue template](./setup-dev-env.md) for a full guide on how to setup a source, destination and congregate system to test congregate functionality.
 
 <!--
-1. download and install [docker desktop](https://www.docker.com/products/docker-desktop) on your machine.
+1. Download and install docker, podman, or any other application that can run docker containers
 1. download  `congregate:<version>` using `docker pull registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate:<version>`
      - create personal access token and store the token in a file called `gl_token.txt`
      - login into registry.gitlab.com with docker, `cat gl_token.txt | docker login --username '<email-address>' --password-stdin registry.gitlab.com`

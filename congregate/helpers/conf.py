@@ -1,7 +1,7 @@
 """
 Congregate - GitLab instance migration utility
 
-Copyright (c) 2021 - GitLab
+Copyright (c) 2022 - GitLab
 """
 
 from gitlab_ps_utils.base_config import BaseConfig
@@ -43,7 +43,7 @@ class Config(BaseConfig):
     @property
     def shared_runners_enabled(self):
         return self.prop_bool(
-            "DESTINATION", "shared_runners_enabled", default=True)
+            "DESTINATION", "shared_runners_enabled", default=False)
 
     @property
     def append_project_suffix_on_existing_found(self):
@@ -86,7 +86,7 @@ class Config(BaseConfig):
 
     @property
     def username_suffix(self):
-        return self.prop("DESTINATION", "username_suffix")
+        return self.prop("DESTINATION", "username_suffix", default="migrated")
 
     @property
     def mirror_username(self):
@@ -109,17 +109,30 @@ class Config(BaseConfig):
         return self.prop_int("DESTINATION", "pmi_project_id")
 
     # LDAP Info
+    @property
     def ldap_group_link_provider(self):
         """
         The LDAP server label from the instance configuration.
-        In gitlab.rb: gitlab_rails['ldap_servers'].label
-        On the UI: Visible in the LDAP synchonizations page for a group
+        This is the type, "ldap" in this case, plus the gitlab_rails['ldap_servers']
+        section value in gitlab.rb. Using the below default from gitlab.rb as an example,
+        this value should be "ldapmain" as it is of type "ldap" and we want
+        to bind to the "main" server
+
+        gitlab_rails['ldap_servers'] = YAML.load <<-'EOS'                   
+            main: # 'main' is the GitLab 'provider ID' of this LDAP server
+                label: 'LDAP'                                                                              
+                host: 'openldap'                                         
+                port: 1389                                                                 
+                uid: 'uid'
         """
         return self.prop("DESTINATION", "ldap_group_link_provider", default="")
 
+    @property
     def ldap_group_link_group_access(self):
         """
-        The minimum access to give users via the sync. This maps directly to the values at https://docs.gitlab.com/ee/api/members.html#valid-access-levels
+        The minimum access to give users via the sync. This maps directly to the values at 
+        https://docs.gitlab.com/ee/api/members.html#valid-access-levels
+
         Defaults to no access
         """
         return self.prop_int(
@@ -160,6 +173,11 @@ class Config(BaseConfig):
     def source_token(self):
         return self.prop("SOURCE", "src_access_token",
                          default=None, obfuscated=True)
+
+    @property
+    def source_token_array(self):
+        return self.prop_array("SOURCE", "src_access_token",
+                               default=None, obfuscated=True)
 
     @property
     def src_parent_id(self):
@@ -292,33 +310,33 @@ class Config(BaseConfig):
     def keep_inactive_users(self):
         """
         Determines if we should keep inactive users.
-        :return: The set config value or False as default.
+        :return: The set config value or True as default.
         """
-        return self.prop_bool("USER", "keep_inactive_users", default=False)
+        return self.prop_bool("USER", "keep_inactive_users", default=True)
 
     @property
     def reset_password(self):
         """
         Whether or not we should send the reset password link on user creation. Note: The API defaults to false
-        :return: The set config value or True as default.
+        :return: The set config value or False as default.
         """
-        return self.prop_bool("USER", "reset_pwd", default=True)
+        return self.prop_bool("USER", "reset_pwd", default=False)
 
     @property
     def force_random_password(self):
         """
         This API flag for user creation is not well-documented, but can be used in combination with password and
         reset_password to generate a random password at create
-        :return: The set config value or False as default.
+        :return: The set config value or True as default.
         """
-        return self.prop_bool("USER", "force_rand_pwd", default=False)
+        return self.prop_bool("USER", "force_rand_pwd", default=True)
 
 # APP
     @property
     def export_import_status_check_time(self):
         """
         The frequency of checking a group or project export or import status.
-        Depending whether we are migrating during peak hours or not we should be able to adjust it.
+        We can adjust it depending whether we are migrating during peak hours or not.
         In general it should be increased when using multiple processes i.e. when the API cannot handle all the requests.
         :return: The set config value or 10 (seconds) as default.
         """
@@ -480,4 +498,4 @@ class Config(BaseConfig):
                 }
         which allows for multiple files with multiple changes.
         """
-        return self.prop("APP", "remapping_file")
+        return self.prop("APP", "remapping_file_path")

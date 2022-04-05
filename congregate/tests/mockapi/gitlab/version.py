@@ -2,6 +2,7 @@ class MockVersionApi():
     '''
         Simulates a /users request with no additional parameters
     '''
+
     def get_11_10_version(self):
         return {
             "version": "11.10.0",

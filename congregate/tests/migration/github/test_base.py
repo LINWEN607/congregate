@@ -55,7 +55,8 @@ class BaseTests(unittest.TestCase):
         with patch("congregate.migration.github.api.base.requests.Response") as mock_resp:
             with patch("congregate.migration.github.api.base.requests.get") as mock_get:
                 mock_get.return_value = mock_resp
-                resp = self.api.generate_v3_get_request("HOST", "API", "USERNAME", "PASSWORD")
+                resp = self.api.generate_v3_get_request(
+                    "HOST", "API", "USERNAME", "PASSWORD")
                 self.assertEqual(mock_resp, resp)
 
     def test_generate_v4_request_url(self):
@@ -73,12 +74,11 @@ class BaseTests(unittest.TestCase):
         self.assertEqual(resp, r)
 
     def test_create_dict_from_headers(self):
-        r = "https://github.gitlab-proserv.net/api/v3/organizations?since=12"
+        r = "https://github.example.net/api/v3/organizations?since=12"
         test_headers = self.mock_headers.get_linked_headers()
         resp = self.api.create_dict_from_headers(test_headers.get("Link"))
         self.assertEqual(resp["next"], r)
 
-    
     # pylint: disable=no-member
 
     @responses.activate
@@ -101,7 +101,7 @@ class BaseTests(unittest.TestCase):
     def test_list_all_multipage(self):
         responses.add(
             responses.GET,
-            "https://github.gitlab-proserv.net/api/v3/organizations",
+            "https://github.example.net/api/v3/organizations",
             headers=self.mock_headers.get_linked_headers(),
             status=200,
             json=self.mock_headers.get_data()[0],
@@ -110,7 +110,7 @@ class BaseTests(unittest.TestCase):
 
         responses.add(
             responses.GET,
-            "https://github.gitlab-proserv.net/api/v3/organizations?since=12",
+            "https://github.example.net/api/v3/organizations?since=12",
             headers=self.mock_headers.get_page_2_linked_headers(),
             status=200,
             json=self.mock_headers.get_data()[1],
@@ -119,7 +119,7 @@ class BaseTests(unittest.TestCase):
 
         responses.add(
             responses.GET,
-            "https://github.gitlab-proserv.net/api/v3/organizations?since=24",
+            "https://github.example.net/api/v3/organizations?since=24",
             headers=self.mock_headers.get_linkless_headers(),
             status=200,
             json=self.mock_headers.get_data()[2],
@@ -127,7 +127,7 @@ class BaseTests(unittest.TestCase):
             match_querystring=False)
 
         actual = list(self.api.list_all(
-            "https://github.gitlab-proserv.net", "organizations", limit=1))
+            "https://github.example.net", "organizations", limit=1))
         expected = self.mock_headers.get_data()
         self.assertEqual(expected, actual)
 

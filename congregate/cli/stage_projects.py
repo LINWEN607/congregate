@@ -1,14 +1,17 @@
 """
 Congregate - GitLab instance migration utility
 
-Copyright (c) 2021 - GitLab
+Copyright (c) 2022 - GitLab
 """
 
 import re
 import sys
+import os
 from gitlab_ps_utils.misc_utils import get_dry_log
 from gitlab_ps_utils.list_utils import remove_dupes
 from gitlab_ps_utils.dict_utils import rewrite_list_into_dict, dig
+from gitlab_ps_utils.json_utils import json_pretty
+
 from congregate.helpers.migrate_utils import get_staged_user_projects
 from congregate.cli.stage_base import BaseStageClass
 
@@ -27,8 +30,10 @@ class ProjectStageCLI(BaseStageClass):
         self.build_staging_data(projects_to_stage, dry_run, scm_source)
         if user_projects := get_staged_user_projects(
                 remove_dupes(self.staged_projects)):
-            self.log.warning("User projects staged:\n{}".format(
-                "\n".join(u for u in user_projects)))
+            self.log.warning(
+                f"User projects staged ({len(user_projects)}):\n{json_pretty(user_projects)}")
+        self.list_staged_users_without_public_email()
+
         if not dry_run:
             self.write_staging_files(skip_users=skip_users)
 
@@ -62,20 +67,18 @@ class ProjectStageCLI(BaseStageClass):
             if projects_to_stage[0] in ["all", "."] or len(
                     projects_to_stage) == len(projects):
                 for p in projects:
-                    self.log.info("{0}Staging project {1} (ID: {2})".format(
-                        get_dry_log(dry_run), p["path_with_namespace"], p["id"]))
+                    self.log.info(
+                        f"{get_dry_log(dry_run)}Staging project {p['path_with_namespace']} (ID: {p['id']})")
                     self.staged_projects.append(self.get_project_metadata(p))
 
                 for g in groups:
-                    self.log.info("{0}Staging group {1} (ID: {2})".format(
-                        get_dry_log(dry_run), g["full_path"], g["id"]))
-                    # Decrease size of self.staged_groups.json
-                    g.pop("projects", None)
-                    self.staged_groups.append(g)
+                    self.log.info(
+                        f"{get_dry_log(dry_run)}Staging group {g['full_path']} (ID: {g['id']})")
+                    self.staged_groups.append(self.format_group(g))
 
                 for u in users:
-                    self.log.info("{0}Staging user {1} (ID: {2})".format(
-                        get_dry_log(dry_run), u["username"], u["id"]))
+                    self.log.info(
+                        f"{get_dry_log(dry_run)}Staging user {u['username']} (ID: {u['id']})")
                     self.staged_users.append(u)
             # CLI range input
             elif re.search(r"\d+-\d+", projects_to_stage[0]) is not None:
@@ -99,10 +102,10 @@ class ProjectStageCLI(BaseStageClass):
                     except ValueError:
                         self.log.error(
                             f"Please use a space delimited list of integers (project IDs), NOT {d}")
-                        sys.exit()
+                        sys.exit(os.EX_IOERR)
                     except KeyError:
                         self.log.error(f"Unknown project ID {d}")
-                        sys.exit()
+                        sys.exit(os.EX_DATAERR)
                     self.append_data(
                         project, projects_to_stage, dry_run=dry_run)
         else:
@@ -120,10 +123,9 @@ class ProjectStageCLI(BaseStageClass):
             group_to_stage = self.rewritten_groups.get(
                 dig(project, 'namespace', 'id'))
             if group_to_stage:
-                self.log.info("{0}Staging group {1} (ID: {2})".format(get_dry_log(
-                    dry_run), group_to_stage["full_path"], group_to_stage["id"]))
-                group_to_stage.pop("projects", None)
-                self.staged_groups.append(group_to_stage)
+                self.log.info(
+                    f"{get_dry_log(dry_run)}Staging group {group_to_stage['full_path']} (ID: {group_to_stage['id']})")
+                self.staged_groups.append(self.format_group(group_to_stage))
 
                 # Append all group members to staged users
                 for member in group_to_stage.get("members", []):
@@ -132,6 +134,6 @@ class ProjectStageCLI(BaseStageClass):
                 self.log.warning(
                     f"Unable to stage group of {project.get('path_with_namespace')}")
 
-        self.log.info("{0}Staging project {1} (ID: {2}) [{3}/{4}]".format(get_dry_log(
-            dry_run), obj["path_with_namespace"], obj["id"], len(self.staged_projects) + 1, len(p_range) if p_range else len(projects_to_stage)))
+        self.log.info(
+            f"{get_dry_log(dry_run)}Staging project {obj['path_with_namespace']} (ID: {obj['id']}) [{len(self.staged_projects) + 1}/{len(p_range) if p_range else len(projects_to_stage)}]")
         self.staged_projects.append(obj)

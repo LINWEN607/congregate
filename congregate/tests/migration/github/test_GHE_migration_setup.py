@@ -16,8 +16,8 @@ Relevant environment variables:
     GITLAB_DESTINATION_TOKEN : (Admin) Token for doing auth against the destination GitLab instance
 
 Setting up for local
-    You will need a GitLab instance for the GITLAB_DESTINATION_URL and GITLAB_DESTIATION_TOKEN. Use docker-compose, or setup an instance in AWS via Proliferate (AWS_SingleNode_TF_Omnibus works)
-    Get your GHE tokens from our https://github.gitlab-proserv.net instance. Login info is in 1Password
+    You will need a GitLab instance for the GITLAB_DESTINATION_URL and GITLAB_DESTINATION_TOKEN. Use docker-compose, or setup an instance in AWS via Proliferate (AWS_SingleNode_TF_Omnibus works)
+    Get your GHE tokens from our https://github.example.net instance. Login info is in 1Password
     Run this test using the below methods to generate the CONF file
     After that, you should be able to congregate list, etc
     Don't forget to start mongo on your localhost:27017 (via docker run, compose, whatever)
@@ -26,9 +26,9 @@ Setting up for local
 Notes for making calls:
     GHE authorizations endpoint can only be used with basic auth
         curl -u "$GHE_USERNAME:$GHE_PASSWORD" -X POST -H "Accept: application/vnd.github.v3+json" https://api.github.com/authorizations -d '{"scopes":["read"], "note": "mine"}'
-        curl -u "$GHE_USERNAME:$GHE_PASSWORD" -H "Accept: application/vnd.github.v3+json" https://github.gitlab-proserv.net/api/v3/authorizations
+        curl -u "$GHE_USERNAME:$GHE_PASSWORD" -H "Accept: application/vnd.github.v3+json" https://github.example.net/api/v3/authorizations
     Other calls can be made using tokens:
-        curl -H "Accept: application/vnd.github.v3+json" -H "Authorization: token ${GHE_SRC_TOKEN}" https://github.gitlab-proserv.net/api/v3/users/gitlab
+        curl -H "Accept: application/vnd.github.v3+json" -H "Authorization: token ${GHE_SRC_TOKEN}" https://github.example.net/api/v3/users/gitlab
     To test this module in isolation, in a poetry shell, run
         poetry run pytest --cov-report html --cov-config=.coveragerc --cov=congregate congregate/tests/migration/github/test_GHE_migration_setup.py
     To see console output, turn off capture by appending a "-s" to the end of the poetry run command

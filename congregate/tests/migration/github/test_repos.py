@@ -1,3 +1,4 @@
+import enum
 import unittest
 import warnings
 from unittest.mock import patch, PropertyMock, MagicMock
@@ -95,7 +96,7 @@ class ReposTests(unittest.TestCase):
                 "path": "website",
                 "name": "website",
                 "ci_sources": {
-                    "Jenkins": ['test-job1', 'test-job2'],
+                    "Jenkins": [],
                     "TeamCity": []
                 },
                 "namespace": {
@@ -106,7 +107,7 @@ class ReposTests(unittest.TestCase):
                     "full_path": "gitlab"
                 },
                 "path_with_namespace": "gitlab/website",
-                "http_url_to_repo": "https://github.gitlab-proserv.net/gitlab/website.git",
+                "http_url_to_repo": "https://github.example.net/gitlab/website.git",
                 "visibility": "public",
                 "description": None,
                 "members": formatted_users1
@@ -116,7 +117,7 @@ class ReposTests(unittest.TestCase):
                 "path": "pprokic-public-repo",
                 "name": "pprokic-public-repo",
                 "ci_sources": {
-                    "Jenkins": ['test-job1', 'test-job2'],
+                    "Jenkins": [],
                     "TeamCity": []
                 },
                 "namespace": {
@@ -127,14 +128,14 @@ class ReposTests(unittest.TestCase):
                     "full_path": "pprokic"
                 },
                 "path_with_namespace": "pprokic/pprokic-public-repo",
-                "http_url_to_repo": "https://github.gitlab-proserv.net/pprokic/pprokic-public-repo.git",
+                "http_url_to_repo": "https://github.example.net/pprokic/pprokic-public-repo.git",
                 "visibility": "public",
                 "description": None,
                 "members": formatted_users2
             }
         ]
 
-        for i in range(len(expected_projects)):
+        for i, _ in enumerate(expected_projects):
             self.assertEqual(
                 actual_projects[i].items(), expected_projects[i].items())
 
@@ -198,7 +199,7 @@ class ReposTests(unittest.TestCase):
                 "path": "website",
                 "name": "website",
                 "ci_sources": {
-                    "Jenkins": ['test-job1', 'test-job2'],
+                    "Jenkins": [],
                     "TeamCity": []
                 },
                 "namespace": {
@@ -208,7 +209,7 @@ class ReposTests(unittest.TestCase):
                     "kind": "user",
                     "full_path": "gitlab"
                 },
-                "http_url_to_repo": "https://github.gitlab-proserv.net/gitlab/website.git",
+                "http_url_to_repo": "https://github.example.net/gitlab/website.git",
                 "path_with_namespace": "gitlab/website",
                 "visibility": "public",
                 "description": None,
@@ -219,7 +220,7 @@ class ReposTests(unittest.TestCase):
                 "path": "pprokic-public-repo",
                 "name": "pprokic-public-repo",
                 "ci_sources": {
-                    "Jenkins": ['test-job1', 'test-job2'],
+                    "Jenkins": [],
                     "TeamCity": []
                 },
                 "namespace": {
@@ -229,7 +230,7 @@ class ReposTests(unittest.TestCase):
                     "kind": "user",
                     "full_path": "pprokic"
                 },
-                "http_url_to_repo": "https://github.gitlab-proserv.net/pprokic/pprokic-public-repo.git",
+                "http_url_to_repo": "https://github.example.net/pprokic/pprokic-public-repo.git",
                 "path_with_namespace": "pprokic/pprokic-public-repo",
                 "visibility": "public",
                 "description": None,
@@ -237,10 +238,10 @@ class ReposTests(unittest.TestCase):
             }
         ]
 
-        self.assertLogs("Failed to get JSON for user {} repo {} ({})".format(
-            "pprokic", "pprokic-public-repo", json_404))
+        self.assertLogs(
+            f"Failed to get JSON for user pprokic repo pprokic-public-repo ({json_404})")
 
-        for i in range(len(expected_projects)):
+        for i, _ in enumerate(expected_projects):
             self.assertEqual(
                 actual_projects[i].items(), expected_projects[i].items())
 
@@ -344,7 +345,7 @@ class ReposTests(unittest.TestCase):
                 "path": "arrow",
                 "name": "arrow",
                 "ci_sources": {
-                    "Jenkins": ['test-job1', 'test-job2'],
+                    "Jenkins": [],
                     "TeamCity": []
                 },
                 "namespace": {
@@ -355,7 +356,7 @@ class ReposTests(unittest.TestCase):
                     "full_path": "org2"
                 },
                 "path_with_namespace": "org2/arrow",
-                "http_url_to_repo": "https://github.gitlab-proserv.net/org2/arrow.git",
+                "http_url_to_repo": "https://github.example.net/org2/arrow.git",
                 "visibility": "public",
                 "description": None,
                 "members": [],  # formatted_users1
@@ -365,7 +366,7 @@ class ReposTests(unittest.TestCase):
                 "path": "test-repo",
                 "name": "test-repo",
                 "ci_sources": {
-                    "Jenkins": ['test-job1', 'test-job2'],
+                    "Jenkins": [],
                     "TeamCity": []
                 },
                 "namespace": {
@@ -376,7 +377,7 @@ class ReposTests(unittest.TestCase):
                     "full_path": "org3"
                 },
                 "path_with_namespace": "org3/test-repo",
-                "http_url_to_repo": "https://github.gitlab-proserv.net/org3/test-repo.git",
+                "http_url_to_repo": "https://github.example.net/org3/test-repo.git",
                 "visibility": "public",
                 "description": None,
                 "members": [],  # formatted_users2
@@ -417,7 +418,7 @@ class ReposTests(unittest.TestCase):
                 "path": "arrow",
                 "name": "arrow",
                 "ci_sources": {
-                    "Jenkins": ['test-job1', 'test-job2'],
+                    "Jenkins": [],
                     "TeamCity": []
                 },
                 "namespace": {
@@ -428,7 +429,7 @@ class ReposTests(unittest.TestCase):
                     "full_path": "org2"
                 },
                 "path_with_namespace": "org2/arrow",
-                "http_url_to_repo": "https://github.gitlab-proserv.net/org2/arrow.git",
+                "http_url_to_repo": "https://github.example.net/org2/arrow.git",
                 "visibility": "public",
                 "description": None,
                 "members": []
@@ -438,7 +439,7 @@ class ReposTests(unittest.TestCase):
                 "path": "test-repo",
                 "name": "test-repo",
                 "ci_sources": {
-                    "Jenkins": ['test-job1', 'test-job2'],
+                    "Jenkins": [],
                     "TeamCity": []
                 },
                 "namespace": {
@@ -449,7 +450,7 @@ class ReposTests(unittest.TestCase):
                     "full_path": "org3"
                 },
                 "path_with_namespace": "org3/test-repo",
-                "http_url_to_repo": "https://github.gitlab-proserv.net/org3/test-repo.git",
+                "http_url_to_repo": "https://github.example.net/org3/test-repo.git",
                 "visibility": "public",
                 "description": None,
                 "members": []
@@ -482,15 +483,15 @@ class ReposTests(unittest.TestCase):
         data = [
             {
                 "name": "demo-job",
-                "url": "https://github.gitlab-proserv.net/firdaus/gitlab-jenkins.git"
+                "url": "https://github.example.net/firdaus/gitlab-jenkins.git"
             },
             {
                 "name": "test-job1",
-                "url": "https://github.gitlab-proserv.net/gitlab/website.git"
+                "url": "https://github.example.net/gitlab/website.git"
             },
             {
                 "name": "test-job2",
-                "url": "https://github.gitlab-proserv.net/gitlab/website.git"
+                "url": "https://github.example.net/gitlab/website.git"
             }
         ]
 
@@ -499,7 +500,7 @@ class ReposTests(unittest.TestCase):
 
         expected = ["test-job1", "test-job2"]
         actual = self.repos.list_ci_sources_jenkins(
-            "https://github.gitlab-proserv.net/gitlab/website.git", mongo_mock)
+            "https://github.example.net/gitlab/website.git", mongo_mock)
 
         self.assertListEqual(expected, actual)
 

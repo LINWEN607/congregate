@@ -26,7 +26,7 @@ alias drun='docker run \
               -it registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate:rolling-debian \
               /bin/bash'
 alias pyclean='find ./congregate -name "*.pyc" -delete'
-alias gendocs='./read-docs.sh'
+alias gendocs='poetry run mkdocs serve -a 0.0.0.0:8080'
 alias kc='kill $(get_congregate_pids)'
 alias kc9='kill -9 $(get_congregate_pids)'
 

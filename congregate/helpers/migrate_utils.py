@@ -2,6 +2,10 @@ import sys
 import os
 import errno
 import json
+
+from string import punctuation
+from re import sub
+from collections import Counter
 from pathlib import Path
 from shutil import copy
 from time import time
@@ -12,9 +16,11 @@ from gitlab_ps_utils.dict_utils import dig
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.utils import is_dot_com, get_congregate_path
 from congregate.migration.gitlab.api.users import UsersApi
+from congregate.migration.gitlab.api.instance import InstanceApi
 
 b = BaseClass()
 users_api = UsersApi()
+instance_api = InstanceApi()
 
 
 def get_failed_export_from_results(res):
@@ -54,7 +60,7 @@ def get_staged_groups_without_failed_export(staged_groups, failed_export):
 
         :param staged_groups: The current list of staged groups
         :param failed_export: A list of group export filenames
-        :return: A new staged_grups list removing those that failed export
+        :return: A new staged_groups list removing those that failed export
     """
     return [g for g in staged_groups if get_export_filename_from_namespace_and_name(
         g["full_path"]) not in failed_export]
@@ -86,11 +92,10 @@ def get_export_filename_from_namespace_and_name(namespace, name=""):
         :param name: Project name
         :return: Exported filename
     """
-    return "{0}{1}.tar.gz".format(
-        namespace, "/" + name if name else "").replace("/", "_").lower()
+    return f"{namespace}{'/' + name if name else ''}.tar.gz".replace("/", "_").lower()
 
 
-def get_project_namespace(p, mirror=False):
+def get_project_dest_namespace(p, mirror=False):
     """
     If this is a user project, the namespace == username
 
@@ -101,12 +106,8 @@ def get_project_namespace(p, mirror=False):
     p_namespace = dig(p, 'namespace', 'full_path') if isinstance(
         p.get("namespace"), dict) else p.get("namespace")
 
-    if not is_user_project(p):
-        if b.config.src_parent_id and b.config.src_parent_group_path:
-            single_group_name = b.config.src_parent_group_path.split("/")[-1]
-            p_namespace = f"{single_group_name}{p_namespace.split(b.config.src_parent_group_path)[-1]}"
-        if b.config.dstn_parent_id and not mirror:
-            return f"{b.config.dstn_parent_group_path}/{p_namespace}"
+    if not is_user_project(p) and b.config.dstn_parent_id and not mirror:
+        return f"{b.config.dstn_parent_group_path}/{p_namespace}"
     return p_namespace
 
 
@@ -145,6 +146,18 @@ def get_staged_user_projects(staged_projects):
         return [sp["path_with_namespace"]
                 for sp in staged_projects if is_user_project(sp)]
     return []
+
+
+def check_for_staged_user_projects(staged_projects):
+    """
+        Check if user projects are in the list of staged_projects. If they are, log a warning and return the list of namespaces, else return None
+        :param staged_projects: The JSON array of staged projects
+        :return: True if user projects are found in staged_projects, else False
+    """
+    if user_projects := get_staged_user_projects(staged_projects):
+        b.log.warning("User projects staged:\n{}".format(
+            "\n".join(u for u in user_projects)))
+    return user_projects
 
 
 def get_user_project_namespace(p):
@@ -195,7 +208,7 @@ def find_user_by_email_comparison_without_id(email, src=False):
                     f"Found user by matching primary email {email}")
                 return user
             # Allow secondary emails in user search (as of 13.7)
-            elif user and user.get("email"):
+            if user and user.get("email"):
                 b.log.warning(
                     f"Found user by email {email}, with primary set to {user['email']}")
             else:
@@ -214,7 +227,7 @@ def get_dst_path_with_namespace(p, mirror=False):
         :param mirror (bool): Whether we are mirroring a repo on destination
         :return: Destination project path with namespace
     """
-    return f"{get_user_project_namespace(p) if is_user_project(p) else get_project_namespace(p, mirror)}/{p.get('path')}"
+    return f"{get_user_project_namespace(p) if is_user_project(p) else get_project_dest_namespace(p, mirror)}/{p.get('path')}"
 
 
 def get_target_namespace(project):
@@ -222,8 +235,7 @@ def get_target_namespace(project):
         if (strip_netloc(target_namespace).lower() == project.get(
                 'namespace', '').lower()) or project.get("override_dstn_ns"):
             return target_namespace
-        else:
-            return f"{target_namespace}/{project.get('namespace')}"
+        return f"{target_namespace}/{project.get('namespace')}"
     return None
 
 
@@ -237,11 +249,11 @@ def get_results(res):
     c = 0
     for r in res:
         for v in r.values():
-            error, v = is_error_message_present(v)
-            if error or not v:
+            is_error, v = is_error_message_present(v)
+            if is_error or v == False:
                 c += 1
             repo_present = dig(v, 'repository')
-            if repo_present is not None and repo_present is False:
+            if repo_present == False:
                 c += 1
     return {
         "Total": len(res),
@@ -262,7 +274,8 @@ def is_top_level_group(g):
 
 def is_loc_supported(loc):
     if loc not in ["filesystem", "aws"]:
-        sys.exit(f"Unsupported export location: {loc}")
+        b.log.error(f"Unsupported export location: {loc}")
+        sys.exit(os.EX_CONFIG)
 
 
 def can_migrate_users(users):
@@ -317,7 +330,7 @@ def add_post_migration_stats(start, log=None):
         if log:
             log.info(f"Total number of POST/PUT/DELETE requests: {reqs_no}")
     if log:
-        log.info("Total time: {}".format(timedelta(seconds=time() - start)))
+        log.info(f"Total time: {timedelta(seconds=time() - start)}")
 
 
 def write_results_to_file(import_results, result_type="project", log=None):
@@ -335,3 +348,45 @@ def check_is_project_or_group_for_logging(is_project):
 def migration_dry_run(data_type, post_data):
     with open(f"{get_congregate_path()}/data/results/dry_run_{data_type}_migration.json", "a") as f:
         json.dump(post_data, f, indent=4)
+
+
+def get_external_path_with_namespace(path_with_namespace):
+    return f"{b.config.dstn_parent_group_path or ''}/{path_with_namespace}".strip("/")
+
+
+def validate_name(name, is_group=False):
+    """
+    Validate group and project names to satisfy the following criteria:
+    Name can only contain letters, digits, emojis, '_', '.', dash, space, parenthesis (groups only).
+    It must start with letter, digit, emoji or '_'.
+    """
+    # Remove leading and trailing special characters and spaces
+    stripped = name.strip(punctuation + " ")
+
+    # Validate naming convention in docstring
+    valid = " ".join(sub(
+        r"[^\U00010000-\U0010ffff\w\_\-\.\(\) ]" if is_group else r"[^\U00010000-\U0010ffff\w\_\-\. ]", " ", stripped).split())
+    if name != valid:
+        b.log.warning(
+            f"Renaming invalid {'group' if is_group else 'project'} name '{name}' -> '{valid}'")
+    return valid
+
+
+def get_duplicate_paths(data, are_projects=True):
+    """
+        Legacy GL versions had case insensitive paths, which on newer GL versions are seen as duplicates
+    """
+    paths = [x.get("path_with_namespace", "").lower() if are_projects else x.get(
+        "full_path", "").lower() for x in data]
+    return [i for i, c in Counter(paths).items() if c > 1]
+
+
+def is_gl_version_older_than(set_version, host, token, log):
+    """
+        Lookup GL instance version and throw custom log based
+    """
+    version = safe_json_response(instance_api.get_version(host, token))
+    if version and version.get("version") and int(version["version"].split(".")[0]) < set_version:
+        b.log.info(f"{log} on GitLab version {version}")
+        return True
+    return False

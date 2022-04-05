@@ -1,6 +1,7 @@
-from congregate.helpers.base_class import BaseClass
 from gitlab_ps_utils.misc_utils import safe_json_response, is_error_message_present, strip_netloc
 from gitlab_ps_utils.dict_utils import dig
+
+from congregate.helpers.base_class import BaseClass
 from congregate.helpers.utils import is_github_dot_com
 from congregate.helpers.mdbc import MongoConnector
 from congregate.migration.github.api.orgs import OrgsApi
@@ -62,8 +63,8 @@ class OrgsClient(BaseClass):
 
     def add_org_as_group(self, groups, org_name, mongo):
         org = safe_json_response(self.orgs_api.get_org(org_name))
-        error, org = is_error_message_present(org)
-        if groups is None or error or not org:
+        is_error, org = is_error_message_present(org)
+        if groups is None or is_error or not org:
             self.log.error(
                 f"Failed to append org {org_name} ({org}) to list {groups}")
         else:
@@ -71,7 +72,8 @@ class OrgsClient(BaseClass):
             for org_repo, _ in self.orgs_api.get_all_org_repos(
                     org_name, page_check=True):
                 formatted_repo = self.repos.format_repo(org_repo, mongo)
-                mongo.insert_data(f"projects-{self.host}", formatted_repo)
+                mongo.insert_data(
+                    f"projects-{self.host}", formatted_repo)
                 formatted_repo.pop("_id")
                 formatted_repo["members"] = []
                 org_repos.append(formatted_repo)
@@ -102,7 +104,8 @@ class OrgsClient(BaseClass):
                 team_repos = []
                 for team_repo in self.teams_api.get_team_repos(team["id"]):
                     formatted_repo = self.repos.format_repo(team_repo, mongo)
-                    mongo.insert_data(f"projects-{self.host}", formatted_repo)
+                    mongo.insert_data(
+                        f"projects-{self.host}", formatted_repo)
                     formatted_repo.pop("_id")
                     formatted_repo["members"] = []
                     team_repos.append(formatted_repo)

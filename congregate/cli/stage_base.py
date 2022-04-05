@@ -1,14 +1,18 @@
 """
 Congregate - GitLab instance migration utility
 
-Copyright (c) 2021 - GitLab
+Copyright (c) 2022 - GitLab
 """
 
 import json
-from gitlab_ps_utils.misc_utils import get_dry_log, strip_netloc, validate_name
+
+from gitlab_ps_utils.misc_utils import get_dry_log, strip_netloc
 from gitlab_ps_utils.list_utils import remove_dupes_with_keys, remove_dupes
 from gitlab_ps_utils.dict_utils import dig
+from gitlab_ps_utils.json_utils import json_pretty
+
 from congregate.helpers.base_class import BaseClass
+from congregate.helpers.migrate_utils import validate_name, is_gl_version_older_than
 
 
 class BaseStageClass(BaseClass):
@@ -91,17 +95,17 @@ class BaseStageClass(BaseClass):
             params: rewritten_users: object containing the specific member to be added to the group or project
         """
         if isinstance(member, dict):
-            if member.get("id", None) is not None:
+            if member.get("id") is not None:
                 self.log.info("{0}Staging user {1} (ID: {2})".format(
                     get_dry_log(dry_run), member["username"], member["id"]))
-                if self.rewritten_users.get(member['id'], None):
+                if self.rewritten_users.get(member['id']):
                     self.staged_users.append(
                         self.rewritten_users[member["id"]])
                     members_list.append(member)
         else:
             self.log.error(member)
 
-    def get_project_metadata(self, project):
+    def get_project_metadata(self, project, group=False):
         """
             Get the object data providing project information
 
@@ -109,9 +113,11 @@ class BaseStageClass(BaseClass):
             :return: obj object
         """
         try:
+            # If group=True a project IDs is passed
+            project = self.rewritten_projects[project] if group else project
             obj = {
                 "id": project["id"],
-                "name": validate_name(project["name"], log=self.log),
+                "name": validate_name(project["name"]),
                 "namespace": dig(project, 'namespace', 'full_path'),
                 "path": project["path"],
                 "path_with_namespace": project["path_with_namespace"],
@@ -120,8 +126,7 @@ class BaseStageClass(BaseClass):
                 # Will be deprecated in favor of builds_access_level
                 "jobs_enabled": project.get("jobs_enabled"),
                 "project_type": dig(project, 'namespace', 'kind'),
-                # Project members are not listed when listing group projects
-                "members": project["members"] if project.get("members") else self.rewritten_projects[project["id"]]["members"],
+                "members": project["members"],
                 "http_url_to_repo": project["http_url_to_repo"]
             }
             if project.get("ci_sources"):
@@ -151,3 +156,21 @@ class BaseStageClass(BaseClass):
                     single_source.get("src_hostname", "")):
                 return i
         return -1
+
+    def format_group(self, group):
+        # Decrease size of staged_groups.json
+        group.pop("projects", None)
+        group.pop("desc_groups", None)
+        group["name"] = validate_name(group["name"], is_group=True)
+        return group
+
+    def list_staged_users_without_public_email(self):
+        if is_gl_version_older_than(14, self.config.source_host, self.config.source_token, "SKIP: Not mandatory to set 'public_email' field for staged users"):
+            return
+        if self.staged_users:
+            no_public_email = [{
+                "email": u.get("email"),
+                "public_email": u.get("public_email")
+            } for u in self.staged_users if u.get("email") != u.get("public_email")]
+            self.log.warning(
+                f"Staged users with incorrect (not primary email) or no `public_email` field set ({len(no_public_email)}):\n{json_pretty(no_public_email)}")

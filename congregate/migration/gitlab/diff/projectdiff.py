@@ -1,8 +1,11 @@
 from copy import deepcopy
+from os.path import getmtime
+from datetime import timedelta
 from gitlab_ps_utils.misc_utils import get_rollback_log
 from gitlab_ps_utils.dict_utils import rewrite_json_list_into_dict
 from gitlab_ps_utils.json_utils import read_json_file_into_object
 from gitlab_ps_utils.api import GitLabApi
+
 from congregate.migration.gitlab.diff.basediff import BaseDiffClient
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.issues import IssuesApi
@@ -15,6 +18,37 @@ class ProjectDiffClient(BaseDiffClient):
     '''
         Extension of BaseDiffClient focused on finding the differences between migrated projects
     '''
+    KEYS_TO_IGNORE = [
+        "id",
+        "_links",
+        "last_activity_at",
+        "created_at",
+        "http_url_to_repo",
+        "readme_url",
+        "web_url",
+        "ssh_url_to_repo",
+        "project",
+        "forking_access_level",
+        "container_expiration_policy",
+        "approvals_before_merge",
+        "mirror",
+        "packages_enabled",
+        "external_authorization_classification_label",
+        "service_desk_address",
+        "service_desk_enabled",
+        "marked_for_deletion_at",
+        "marked_for_deletion_on",
+        "compliance_frameworks",
+        "requirements_enabled",
+        "forked_from_project",   # Handled as post-migration step
+        "parent_id",
+        "runners_token",
+        "container_registry_image_prefix",
+        "auto_devops_enabled",   # Because we deliberately disable it on destination
+        "import_status",
+        "import_type",
+        "import_url"
+    ]
 
     def __init__(self, staged=False, rollback=False, processes=None):
         super().__init__()
@@ -25,37 +59,12 @@ class ProjectDiffClient(BaseDiffClient):
         self.mr_api = MergeRequestsApi()
         self.repository_api = ProjectRepositoryApi()
         self.rollback = rollback
-        self.results = rewrite_json_list_into_dict(read_json_file_into_object(
-            f"{self.app_path}/data/results/project_migration_results.json"))
+        self.results_path = f"{self.app_path}/data/results/project_migration_results.json"
+        self.results = rewrite_json_list_into_dict(
+            read_json_file_into_object(self.results_path))
+        self.results_mtime = getmtime(self.results_path)
         self.processes = processes
-        self.keys_to_ignore = [
-            "id",
-            "_links",
-            "last_activity_at",
-            "created_at",
-            "http_url_to_repo",
-            "readme_url",
-            "web_url",
-            "ssh_url_to_repo",
-            "project",
-            "forking_access_level",
-            "container_expiration_policy",
-            "approvals_before_merge",
-            "mirror",
-            "packages_enabled",
-            "external_authorization_classification_label",
-            "service_desk_address",
-            "service_desk_enabled",
-            "marked_for_deletion_at",
-            "marked_for_deletion_on",
-            "compliance_frameworks",
-            "requirements_enabled",
-            "forked_from_project",   # Temporarily, until we add fork relationship feature
-            "parent_id",
-            "runners_token",
-            "container_registry_image_prefix",
-            "auto_devops_enabled"   # Because we deliberately disable it on destination
-        ]
+        self.keys_to_ignore = self.KEYS_TO_IGNORE
         if staged:
             self.source_data = read_json_file_into_object(
                 "%s/data/staged_projects.json" % self.app_path)
@@ -64,10 +73,12 @@ class ProjectDiffClient(BaseDiffClient):
                 "%s/data/projects.json" % self.app_path)
         self.source_data = [i for i in self.source_data if i]
 
-    def generate_diff_report(self):
+    def generate_diff_report(self, start_time):
         diff_report = {}
-        self.log.info("{}Generating Project Diff Report".format(
-            get_rollback_log(self.rollback)))
+        self.log.info(
+            f"{get_rollback_log(self.rollback)}Generating Project Diff Report")
+        self.log.warning(
+            f"Passed since migration time: {timedelta(seconds=start_time - self.results_mtime)}")
         results = self.multi.handle_multi_process_write_to_file_and_return_results(
             self.generate_single_diff_report, self.return_only_accuracies, self.source_data, f"{self.app_path}/data/results/project_diff.json", processes=self.processes)
 

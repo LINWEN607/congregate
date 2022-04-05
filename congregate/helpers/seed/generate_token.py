@@ -26,7 +26,7 @@ import sys
 from urllib.parse import urljoin
 import requests
 from bs4 import BeautifulSoup
-from gitlab_ps_utils.decorators import configurable_stable_retry
+from gitlab_ps_utils.decorators import stable_retry
 from gitlab_ps_utils.logger import myLogger
 
 
@@ -47,7 +47,7 @@ class token_generator():
         data = {param.get("content"): token.get("content")}
         return data
 
-    @configurable_stable_retry(retries=50, delay=10)
+    @stable_retry(retries=50, delay=10)
     def obtain_csrf_token(self):
         self.log.info("Obtaining CSRF token")
         r = requests.get(self.__get_root_route())

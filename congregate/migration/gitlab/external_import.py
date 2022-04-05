@@ -1,12 +1,16 @@
+import json
+
 from time import sleep
-from congregate.helpers.base_class import BaseClass
 from gitlab_ps_utils.misc_utils import is_error_message_present, safe_json_response
 from gitlab_ps_utils.dict_utils import dig
-from congregate.helpers.migrate_utils import migration_dry_run
+
+from congregate.helpers.base_class import BaseClass
+from congregate.helpers.migrate_utils import migration_dry_run, get_external_path_with_namespace
 from congregate.helpers.utils import is_dot_com, is_github_dot_com
 from congregate.migration.gitlab.api.external_import import ImportApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.instance import InstanceApi
+from congregate.migration.github.api.users import UsersApi as GitHubUsersApi
 
 
 class ImportClient(BaseClass):
@@ -19,16 +23,15 @@ class ImportClient(BaseClass):
     def trigger_import_from_bb_server(self, project, dry_run=True):
         project_path = project["path_with_namespace"]
         project_key, repo = self.get_project_repo_from_full_path(project_path)
+        tn = get_external_path_with_namespace(project_key)
         data = {
             "bitbucket_server_url": self.config.source_host,
             "bitbucket_server_username": self.config.source_username,
             "personal_access_token": self.config.source_token,
             "bitbucket_server_project": project_key,
-            "bitbucket_server_repo": repo
+            "bitbucket_server_repo": repo,
+            "target_namespace": tn
         }
-        tn = f"{self.config.dstn_parent_group_path or ''}/{project_key}".strip(
-            "/")
-        data["target_namespace"] = tn
 
         if self.config.lower_case_project_path:
             data["new_name"] = repo.lower()
@@ -42,16 +45,16 @@ class ImportClient(BaseClass):
                     error = resp.get("error")
                     self.log.error(
                         f"Project {project_path} import to {tn} failed with response {resp} and error {error}")
-                    return self.get_failed_result(tn, error)
-                return self.get_result_data(tn, resp)
+                    return self.get_failed_result(project_path, error)
+                return self.get_result_data(project_path, resp)
             except ValueError as ve:
                 self.log.error(
                     f"Failed to import project {project_path} to {tn} due to {ve}")
-                return self.get_failed_result(tn)
+                return self.get_failed_result(project_path)
         else:
             data.pop("personal_access_token", None)
             migration_dry_run("project", data)
-            return self.get_failed_result(tn, data)
+            return self.get_failed_result(project_path, data)
 
     def trigger_import_from_ghe(
             self, pid, path_with_namespace, tn, host, token, dry_run=True):
@@ -99,7 +102,7 @@ class ImportClient(BaseClass):
         total_time = 0
         wait_time = self.config.export_import_status_check_time
         timeout = self.config.export_import_timeout
-        success = False
+        imported, success = False, False
         while True:
             project_statistics = safe_json_response(
                 self.projects.get_project_statistics(
@@ -108,24 +111,29 @@ class ImportClient(BaseClass):
                     self.config.destination_token
                 )
             )
-            if project_statistics and project_statistics.get(
-                    "data", None) is not None:
-                if project_statistics["data"].get("project", None) is not None:
-                    if dig(project_statistics, 'data', 'project',
-                           'importStatus', default="") == "finished":
+            if project_statistics and project_statistics.get("data") is not None:
+                if project_statistics["data"].get("project") is not None:
+                    # Main criterion
+                    status = dig(project_statistics, 'data',
+                                 'project', 'importStatus', default="")
+                    if status == "finished":
                         self.log.info(
-                            f"Import Status is marked as finished for {full_path}. Import is complete")
-                        success = True
+                            f"Import status is marked as {status} for {full_path}")
+                        imported = True
+                    elif status == "failed":
+                        self.log.error(
+                            f"Import status is marked as {status} for {full_path}")
+                        success = False
                         break
+                    # Sub criteria
                     stats = dig(project_statistics, 'data',
                                 'project', 'statistics')
-                    if stats["commitCount"] > 0:
+                    if imported and stats["commitCount"] > 0:
                         self.log.info(
                             f"Git commits have been found for {full_path}. Import is complete")
                         success = True
                         break
-                    if (stats["storageSize"] > 0) or (
-                            stats['repositorySize'] > 0):
+                    if imported and ((stats["storageSize"] > 0) or (stats['repositorySize'] > 0)):
                         self.log.info(
                             f"Project storage is greater than 0 for {full_path}. Import is complete")
                         success = True
@@ -149,10 +157,32 @@ class ImportClient(BaseClass):
         repo = split[1]
         return project, repo
 
+    def get_external_repo_import_status(self, host, token, pid):
+        import_status = safe_json_response(
+            self.projects.get_project_import_status(host, token, pid))
+        if import_status:
+            # Save to file to avoid outputing long lists to log
+            failed_relations = import_status.pop("failed_relations")
+            # Exposed as of GitLab 14.6
+            stats = import_status.pop(
+                "stats") if import_status.get("stats") else None
+
+            # Save import_error, user rate_limit status, import stats and failed relations
+            with open(self.app_path + "/data/results/import_failed_relations.json", "a") as f:
+                import_error = import_status.get("import_error")
+                json.dump({import_status.get("path_with_namespace"): {
+                    "import_error": import_error,
+                    "gh_rate_limit_status": safe_json_response(GitHubUsersApi(self.config.source_host, self.config.source_token).get_rate_limit_status())
+                    if import_error else None,
+                    "stats": stats,
+                    "failed_relations": failed_relations
+                } if import_status else None}, f, indent=4)
+        return import_status
+
     def get_result_data(self, path_with_namespace, response):
         return {
             path_with_namespace: {
-                "repository": response.get("id", None) is not None,
+                "repository": response.get("id") is not None,
                 "response": response
             }
         }

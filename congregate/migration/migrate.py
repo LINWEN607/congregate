@@ -1,7 +1,7 @@
 """
     Congregate - GitLab instance migration utility
 
-    Copyright (c) 2021 - GitLab
+    Copyright (c) 2022 - GitLab
 """
 
 import os
@@ -12,9 +12,10 @@ from time import time
 from traceback import print_exc
 from requests.exceptions import RequestException
 
-from gitlab_ps_utils import json_utils, string_utils, dict_utils
+from gitlab_ps_utils import json_utils, string_utils, dict_utils, misc_utils
+
 import congregate.helpers.migrate_utils as mig_utils
-from congregate.helpers import misc_utils, utils
+from congregate.helpers.utils import rotate_logs, is_dot_com
 from congregate.helpers.reporting import Reporting
 from congregate.helpers.jobtemplategenerator import JobTemplateGenerator
 from congregate.cli.stage_projects import ProjectStageCLI
@@ -56,6 +57,7 @@ class MigrateClient(BaseClass):
         skip_users=False,
         remove_members=False,
         hard_delete=False,
+        stream_groups=False,
         skip_groups=False,
         skip_projects=False,
         skip_group_export=False,
@@ -97,6 +99,7 @@ class MigrateClient(BaseClass):
         self.only_post_migration_info = only_post_migration_info
         self.start = start
         self.skip_users = skip_users
+        self.stream_groups = stream_groups
         self.remove_members = remove_members
         self.hard_delete = hard_delete
         self.skip_groups = skip_groups
@@ -123,7 +126,7 @@ class MigrateClient(BaseClass):
         else:
             mig_utils.clean_data(dry_run=False, files=[
                 f"{self.app_path}/data/results/import_failed_relations.json"])
-        utils.rotate_logs()
+        rotate_logs()
 
         if self.config.source_type == "gitlab":
             self.migrate_from_gitlab()
@@ -139,7 +142,7 @@ class MigrateClient(BaseClass):
             f"{misc_utils.get_dry_log(self.dry_run)}Completed migrating from {self.config.source_host} to {self.config.destination_host}")
 
     def validate_groups_and_projects(self, staged, are_projects=False):
-        if dupes := misc_utils.get_duplicate_paths(
+        if dupes := mig_utils.get_duplicate_paths(
                 staged, are_projects=are_projects):
             self.log.warning("Duplicate {} paths:\n{}".format(
                 "project" if are_projects else "group", "\n".join(d for d in dupes)))
@@ -168,7 +171,7 @@ class MigrateClient(BaseClass):
 
         # Remove import user from parent group to avoid inheritance
         # (self-managed only)
-        if not self.dry_run and self.config.dstn_parent_id and not utils.is_dot_com(
+        if not self.dry_run and self.config.dstn_parent_id and not is_dot_com(
                 self.config.destination_host):
             self.remove_import_user(
                 self.config.dstn_parent_id, gl_type="group")
@@ -195,7 +198,7 @@ class MigrateClient(BaseClass):
             mig_utils.write_results_to_file(
                 results, result_type="group", log=self.log)
         else:
-            self.log.info("SKIP: No groups staged for migration")
+            self.log.warning("SKIP: No groups staged for migration")
         # Migrate GH repos to projects
         staged_projects = mig_utils.get_staged_projects()
         if staged_projects and not self.skip_project_import:
@@ -216,7 +219,7 @@ class MigrateClient(BaseClass):
                 f"### {dry_log}Project import results ###\n{json_utils.json_pretty(import_results)}")
             mig_utils.write_results_to_file(import_results, log=self.log)
         else:
-            self.log.info("SKIP: No projects staged for migration")
+            self.log.warning("SKIP: No projects staged for migration")
 
         # After all is said and done, run our reporting with the
         # staged_projects and results
@@ -271,36 +274,27 @@ class MigrateClient(BaseClass):
         group["full_path"] = mig_utils.get_full_path_with_parent_namespace(
             group["full_path"])
         if not self.dry_run:
+            host = self.config.destination_host
+            token = self.config.destination_token
             # Wait for parent group to create
             if self.config.dstn_parent_group_path:
-                pnamespace = self.groups.wait_for_parent_group_creation(group)
+                pnamespace = self.ie.wait_for_group_import(group["full_path"])
                 if not pnamespace:
                     return {
                         group["full_path"]: False
                     }
-                group["parent_id"] = misc_utils.safe_json_response(
-                    pnamespace)["id"] if group["parent_id"] else self.config.dstn_parent_id
-            if group.get("description") is None:
-                group["description"] = ""
-            result = misc_utils.safe_json_response(self.groups_api.create_group(
-                self.config.destination_host, self.config.destination_token, group))
-            error, result = misc_utils.is_error_message_present(result)
-            if result and not error:
+                group["parent_id"] = pnamespace.get(
+                    "id") if group["parent_id"] else self.config.dstn_parent_id
+            group["description"] = group.get("description") or ""
+            result = misc_utils.safe_json_response(
+                self.groups_api.create_group(host, token, group))
+            is_error, result = misc_utils.is_error_message_present(result)
+            if result and not is_error:
                 if group_id := result.get("id"):
-                    result["members"] = self.groups.add_members_to_destination_group(
-                        self.config.destination_host, self.config.destination_token, group_id, members)
+                    if not self.remove_members:
+                        result["members"] = self.groups.add_members_to_destination_group(
+                            host, token, group_id, members)
                     self.remove_import_user(group_id, gl_type="group")
-                    if self.remove_members:
-                        for member in members:
-                            if member.get("user_id"):
-                                resp = self.groups_api.remove_member(
-                                    group_id, member["user_id"],
-                                    self.config.destination_host,
-                                    self.config.destination_token
-                                )
-                                if resp and resp.status_code == 204:
-                                    result["members"][member["email"]
-                                                      ] = "removed"
         return {
             group["full_path"]: result
         }
@@ -311,27 +305,27 @@ class MigrateClient(BaseClass):
         src_pwn = project["path_with_namespace"]
         staged_tn = project.get("target_namespace")
 
+        # stage-wave staging, based on spreadsheet file
         if project.get("override_dstn_ns") and staged_tn:
             dstn_pwn = f"{staged_tn}/{project['path']}"
         elif staged_tn:
             dstn_pwn = f"{staged_tn}/{src_pwn}"
-        elif self.config.dstn_parent_group_path:
-            dstn_pwn = f"{self.config.dstn_parent_group_path}/{src_pwn}"
+        # Default config-based staging
         else:
-            self.log.error(
-                f"Neither 'target_namespace' or 'dstn_parent_group_path' set for project {src_pwn}")
-            return None
+            dstn_pwn = mig_utils.get_external_path_with_namespace(src_pwn)
 
+        # TODO: Make this target namespace lookup requirement configurable
         if target_namespace := mig_utils.get_target_namespace(project):
             tn = target_namespace
         else:
             tn = mig_utils.get_dst_path_with_namespace(
                 project).rsplit("/", 1)[0]
-        # TODO: Make this target namespace lookup requirement configurable
-        if self.groups.find_group_id_by_path(
-                self.config.destination_host, self.config.destination_token, tn):
-            if dst_pid := self.projects.find_project_by_path(
-                    self.config.destination_host, self.config.destination_token, dstn_pwn):
+
+        host = self.config.destination_host
+        token = self.config.destination_token
+        if self.groups.find_group_id_by_path(host, token, tn):
+            # Already imported
+            if dst_pid := self.projects.find_project_by_path(host, token, dstn_pwn):
                 result = self.ext_import.get_result_data(
                     dstn_pwn, {"id": dst_pid})
                 if self.only_post_migration_info:
@@ -340,12 +334,12 @@ class MigrateClient(BaseClass):
                 else:
                     self.log.warning(
                         f"Skipping import. Repo {dstn_pwn} has already been imported")
+            # New import
             else:
                 result = self.ext_import.trigger_import_from_ghe(
                     project["id"], dstn_pwn, tn, gh_host, gh_token, dry_run=self.dry_run)
                 result_response = result[dstn_pwn]["response"]
-                if (isinstance(result_response, dict)) and (
-                        project_id := result_response.get("id")):
+                if (isinstance(result_response, dict)) and (project_id := result_response.get("id")):
                     full_path = result_response.get("full_path").strip("/")
                     success = self.ext_import.wait_for_project_to_import(
                         full_path)
@@ -353,9 +347,18 @@ class MigrateClient(BaseClass):
                         result = self.handle_gh_post_migration(
                             result, dstn_pwn, project, project_id, members)
                     else:
-                        result = self.ext_import.get_failed_result(dstn_pwn, data={
-                            "error": "Import time limit exceeded. Unable to execute post migration phase"
-                        })
+                        result = self.ext_import.get_failed_result(
+                            dstn_pwn,
+                            data={"error": "Import failed or time limit exceeded. Unable to execute post migration phase"})
+                else:
+                    result = self.ext_import.get_failed_result(
+                        dstn_pwn,
+                        data={"error": f"Failed import, with response {result_response}. Unable to execute post migration phase"})
+
+            # Repo import status
+            if dst_pid or project_id:
+                result[dstn_pwn]["import_status"] = self.ext_import.get_external_repo_import_status(
+                    host, token, dst_pid or project_id)
         else:
             log = f"Target namespace {tn} does not exist"
             self.log.info("Skipping import. " + log +
@@ -381,24 +384,17 @@ class MigrateClient(BaseClass):
 
         return gh_host, gh_token
 
-    def handle_gh_post_migration(
-            self, result, path_with_namespace, project, pid, members):
-        result[path_with_namespace]["members"] = (
-            self.projects.add_members_to_destination_project(
-                self.config.destination_host,
-                self.config.destination_token,
-                pid,
-                members
-            )
-        )
+    def handle_gh_post_migration(self, result, path_with_namespace, project, pid, members):
+        host = self.config.destination_host
+        token = self.config.destination_token
+        result[path_with_namespace]["members"] = self.projects.add_members_to_destination_project(
+            host, token, pid, members)
+
         # Disable Shared CI
         self.disable_shared_ci(path_with_namespace, pid)
 
         # Migrate any external CI data
         self.handle_ext_ci_src_migration(result, project, pid)
-
-        # Remove import user from members
-        self.remove_import_user(pid)
 
         # Add pages file to repo
         result[path_with_namespace]["is_gh_pages"] = self.add_pipeline_for_github_pages(
@@ -409,18 +405,22 @@ class MigrateClient(BaseClass):
             self.gh_repos.migrate_gh_project_protected_branch(pid, project)
         )
 
-        # Add project level MR rules
+        # Add repo level MR rules
         result[path_with_namespace]["project_level_mr_approvals"] = (
             self.gh_repos.migrate_gh_project_level_mr_approvals(pid, project)
         )
 
-        # Archive migrated projects on destination
+        # Archive migrated repos on destination
         result[path_with_namespace]["archived"] = self.gh_repos.archive_migrated_repo(
             pid, project)
 
         # Determine whether to remove all repo members
         result[path_with_namespace]["members"]["email"] = self.handle_member_retention(
             members, pid)
+
+        # Remove import user; SKIP if removing all other members
+        if not self.remove_members:
+            self.remove_import_user(pid)
 
         return result
 
@@ -542,7 +542,7 @@ class MigrateClient(BaseClass):
             mig_utils.write_results_to_file(
                 results, result_type="group", log=self.log)
         else:
-            self.log.info("SKIP: No groups staged for migration")
+            self.log.warning("SKIP: No groups staged for migration")
 
         # Migrate BB repos as GL projects
         staged_projects = mig_utils.get_staged_projects()
@@ -565,7 +565,7 @@ class MigrateClient(BaseClass):
                           .format(dry_log, json_utils.json_pretty(import_results)))
             mig_utils.write_results_to_file(import_results, log=self.log)
         else:
-            self.log.info("SKIP: No projects staged for migration")
+            self.log.warning("SKIP: No projects staged for migration")
 
     def migrate_bitbucket_group(self, group):
         result = False
@@ -576,23 +576,26 @@ class MigrateClient(BaseClass):
             group["path"] = group["path"].lower()
         group["parent_id"] = self.config.dstn_parent_id
         group_id = None
-        if group_id := self.groups.find_group_id_by_path(
-                self.config.destination_host, self.config.destination_token, group["full_path"]):
+        host = self.config.destination_host
+        token = self.config.destination_token
+        if group_id := self.groups.find_group_id_by_path(host, token, group["full_path"]):
             self.log.info(
                 f"{group['full_path']} ({group_id}) found. Skipping import. Adding members")
         if not self.dry_run:
             if not group_id:
-                result = misc_utils.safe_json_response(self.groups_api.create_group(
-                    self.config.destination_host, self.config.destination_token, group))
-                error, result = misc_utils.is_error_message_present(result)
-                if result and not error:
-                    group_id = result.get("id", None)
+                result = misc_utils.safe_json_response(
+                    self.groups_api.create_group(host, token, group))
+                is_error, result = misc_utils.is_error_message_present(result)
+                if result and not is_error:
+                    group_id = result.get("id")
                 else:
-                    self.log.error(f"Unable to create group due to: {result}")
+                    self.log.error(
+                        f"Unable to create group {group['full_path']} due to: {result}")
             if group_id:
                 result = {}
-                result["members"] = self.groups.add_members_to_destination_group(
-                    self.config.destination_host, self.config.destination_token, group_id, members)
+                if not self.remove_members:
+                    result["members"] = self.groups.add_members_to_destination_group(
+                        host, token, group_id, members)
                 self.remove_import_user(group_id, gl_type="group")
         return {
             group["full_path"]: result
@@ -605,23 +608,22 @@ class MigrateClient(BaseClass):
                 project, dry_run=self.dry_run)
         except Exception as ex:
             project_path = project["path_with_namespace"]
-            project_key, _ = self.ext_import.get_project_repo_from_full_path(
-                project_path)
-            target_namespace = f"{self.config.dstn_parent_group_path or ''}/{project_key}".strip(
-                "/")
-            result = self.ext_import.get_failed_result(target_namespace, data={
+            result = self.ext_import.get_failed_result(project_path, data={
                 "error": f"Failed to trigger import with error: {ex}\nProject information follows: {project}"
             })
             return result
         path_with_namespace = next(iter(result))
         result_response = result[path_with_namespace]["response"]
-        if project_id := result_response.get("id", None):
+        if project_id := result_response.get("id"):
             full_path = result_response.get("full_path").strip("/")
             success = self.ext_import.wait_for_project_to_import(full_path)
+            host = self.config.destination_host
+            token = self.config.destination_token
             if success:
                 if not self.remove_members:
                     result[path_with_namespace]["members"] = self.projects.add_members_to_destination_project(
-                        self.config.destination_host, self.config.destination_token, project_id, members)
+                        host, token, project_id, members)
+
                 # Set default branch
                 self.branches.set_branch(
                     path_with_namespace, project_id, project.get("default_branch"))
@@ -635,20 +637,25 @@ class MigrateClient(BaseClass):
                 self.bbs_repos_client.correct_repo_description(
                     project, project_id)
 
-                # Remove import user
-                self.remove_import_user(project_id)
+                # Remove import user; SKIP if removing all other members
+                if not self.remove_members:
+                    self.remove_import_user(project_id)
             else:
-                result = self.ext_import.get_failed_result(path_with_namespace, data={
-                    "error": "Import time limit exceeded. Unable to execute post migration phase"
-                })
+                result = self.ext_import.get_failed_result(
+                    path_with_namespace,
+                    data={"error": "Import failed or time limit exceeded. Unable to execute post migration phase"})
+
+            # Repo import status
+            result[path_with_namespace]["import_status"] = self.ext_import.get_external_repo_import_status(
+                host, token, project_id)
         return result
 
     def are_results(self, results, var, stage):
         if not results:
             self.log.warning(
-                "Results from {0} {1} returned as empty. Aborting.".format(var, stage))
-            mig_utils.add_post_migration_stats(self.dry_run, log=self.log)
-            sys.exit()
+                f"Results from {var} {stage} returned as empty. Aborting.")
+            mig_utils.add_post_migration_stats(self.start, log=self.log)
+            sys.exit(os.EX_OK)
 
     def migrate_user_info(self):
         staged_users = mig_utils.get_staged_users()
@@ -681,7 +688,7 @@ class MigrateClient(BaseClass):
                 self.log.info(
                     "SKIP: Assuming staged users are already migrated")
         else:
-            self.log.info("SKIP: No users staged for migration")
+            self.log.warning("SKIP: No users staged for migration")
 
     def handle_user_creation(self, user):
         """
@@ -702,7 +709,7 @@ class MigrateClient(BaseClass):
         }
         old_user = {
             "email": email,
-            "id": user.get("id", None)
+            "id": user.get("id")
         }
         try:
             if not self.only_post_migration_info:
@@ -760,61 +767,143 @@ class MigrateClient(BaseClass):
         staged_subgroups = [
             g for g in staged_groups if not mig_utils.is_top_level_group(g)]
         dry_log = misc_utils.get_dry_log(self.dry_run)
-        if staged_groups:
+        if staged_top_groups or (staged_subgroups and self.subgroups_only):
             self.validate_groups_and_projects(staged_groups)
-            if not self.skip_group_export:
-                self.log.info(f"{dry_log}Exporting groups")
-                export_results = list(er for er in self.multi.start_multi_process(
-                    self.handle_exporting_groups,
-                    staged_subgroups if self.subgroups_only else staged_top_groups,
-                    processes=self.processes
-                ))
-
-                self.are_results(export_results, "group", "export")
-
-                # Create list of groups that failed export
-                if failed := mig_utils.get_failed_export_from_results(
-                        export_results):
-                    self.log.warning(
-                        f"SKIP: Groups that failed to export or already exist on destination:\n{json_utils.json_pretty(failed)}")
-
-                # Append total count of groups exported
-                export_results.append(mig_utils.get_results(export_results))
-                self.log.info(
-                    f"### {dry_log}Group export results ###\n{json_utils.json_pretty(export_results)}")
-
-                # Filter out the failed ones
-                staged_top_groups = mig_utils.get_staged_groups_without_failed_export(
-                    staged_top_groups, failed)
+            if self.stream_groups:
+                self.stream_import_groups(
+                    staged_top_groups, staged_subgroups, dry_log)
             else:
-                self.log.info(
-                    "SKIP: Assuming staged groups are already exported")
-            if not self.skip_group_import:
-                self.log.info(f"{dry_log}Importing groups")
-                import_results = list(ir for ir in self.multi.start_multi_process(
-                    self.handle_importing_groups,
-                    staged_subgroups if self.subgroups_only else staged_top_groups,
-                    processes=self.processes
-                ))
-
-                # Migrate sub-group info
-                if staged_subgroups:
-                    import_results += list(ir for ir in self.multi.start_multi_process(
-                        self.migrate_subgroup_info, staged_subgroups, processes=self.processes))
-
-                self.are_results(import_results, "group", "import")
-
-                # Append Total : Successful count of group migrations
-                import_results.append(mig_utils.get_results(import_results))
-                self.log.info(
-                    f"### {dry_log}Group import results ###\n{json_utils.json_pretty(import_results)}")
-                mig_utils.write_results_to_file(
-                    import_results, result_type="group", log=self.log)
-            else:
-                self.log.info(
-                    "SKIP: Assuming staged groups will be later imported")
+                self.export_import_groups(
+                    staged_top_groups, staged_subgroups, dry_log)
         else:
-            self.log.info("SKIP: No groups staged for migration")
+            self.log.warning(
+                "SKIP: No groups staged for migration. Migrating ONLY sub-groups without '--subgroups-only'?")
+
+    def export_import_groups(self, staged_top_groups, staged_subgroups, dry_log):
+        if not self.skip_group_export:
+            self.log.info(f"{dry_log}Exporting groups")
+            export_results = list(er for er in self.multi.start_multi_process(
+                self.handle_exporting_groups,
+                staged_subgroups if self.subgroups_only else staged_top_groups,
+                processes=self.processes
+            ))
+
+            self.are_results(export_results, "group", "export")
+
+            # Create list of groups that failed export
+            if failed := mig_utils.get_failed_export_from_results(
+                    export_results):
+                self.log.warning(
+                    f"SKIP: Groups that failed to export or already exist on destination:\n{json_utils.json_pretty(failed)}")
+
+            # Append total count of groups exported
+            export_results.append(mig_utils.get_results(export_results))
+            self.log.info(
+                f"### {dry_log}Group export results ###\n{json_utils.json_pretty(export_results)}")
+
+            # Filter out the failed ones
+            staged_top_groups = mig_utils.get_staged_groups_without_failed_export(
+                staged_top_groups, failed)
+        else:
+            self.log.info(
+                "SKIP: Assuming staged groups are already exported")
+        if not self.skip_group_import:
+            self.log.info(f"{dry_log}Importing groups")
+            import_results = list(ir for ir in self.multi.start_multi_process(
+                self.handle_importing_groups,
+                staged_subgroups if self.subgroups_only else staged_top_groups,
+                processes=self.processes
+            ))
+
+            # Migrate sub-group info
+            if staged_subgroups:
+                import_results += list(ir for ir in self.multi.start_multi_process(
+                    self.migrate_subgroup_info, staged_subgroups, processes=self.processes))
+
+            self.are_results(import_results, "group", "import")
+
+            # Append Total : Successful count of group migrations
+            import_results.append(mig_utils.get_results(import_results))
+            self.log.info(
+                f"### {dry_log}Group import results ###\n{json_utils.json_pretty(import_results)}")
+            mig_utils.write_results_to_file(
+                import_results, result_type="group", log=self.log)
+        else:
+            self.log.info(
+                "SKIP: Assuming staged groups will be later imported")
+
+    def stream_import_groups(self, staged_top_groups, staged_subgroups, dry_log):
+        self.log.info(f"{dry_log}Importing groups in bulk")
+
+        # Only import relevant groups, the rest will unpack
+        import_results = self.import_groups(
+            staged_subgroups if self.subgroups_only else staged_top_groups, dry_log)
+
+        if not self.dry_run:
+            # Match full_path against ALL staged groups
+            # Migrate single group features if import "finished" or group already exists
+            for ir in import_results:
+                ex_full_path = next(iter(ir))
+                full_path = ir.get("source_full_path") or ex_full_path
+                status = ir.get("status")
+                if status == "finished" or ir.get(ex_full_path):
+                    src_gid = next((g["id"] for g in (
+                        staged_top_groups + staged_subgroups) if g["full_path"] == full_path), None)
+                    dst_gid = ir.get("namespace_id") or ex_full_path
+                    self.migrate_single_group_features(
+                        src_gid, dst_gid, full_path)
+                else:
+                    self.log.error(
+                        f"Cannot migrate {full_path} single group features. Import status: {status}")
+
+        self.are_results(import_results, "group", "import")
+
+        # Append Total : Successful count of group migrations
+        import_results.append(mig_utils.get_results(import_results))
+        self.log.info(
+            f"### {dry_log}Group bulk import results ###\n{json_utils.json_pretty(import_results)}")
+        mig_utils.write_results_to_file(
+            import_results, result_type="group", log=self.log)
+
+    def import_groups(self, groups, dry_log):
+        data = {
+            "configuration": {
+                "url": self.config.source_host,
+                "access_token": self.config.source_token
+            },
+            "entities": []
+        }
+        host = self.config.destination_host
+        token = self.config.destination_token
+        imported = False
+        try:
+            # Prepare group entities and current result for destination
+            data["entities"], result = self.groups.find_and_stage_group_bulk_entities(
+                groups)
+            self.log.info(
+                f"{dry_log}Start bulk group import, with payload:\n{json_utils.json_pretty(data['entities'])} and destination state:\n{json_utils.json_pretty(result)}")
+
+            if data["entities"] and not self.dry_run:
+                bulk_import_resp = self.groups_api.bulk_group_import(
+                    host, token, data=data)
+                if bulk_import_resp.status_code != 201:
+                    self.log.error(
+                        f"Failed to trigger group bulk import, with response:\n{bulk_import_resp} - {bulk_import_resp.text}")
+                else:
+                    bid = misc_utils.safe_json_response(
+                        bulk_import_resp).get("id")
+                    imported = self.ie.wait_for_bulk_group_import(
+                        bulk_import_resp, bid)
+            if imported:
+                result = list(self.groups_api.get_all_bulk_group_import_entities(
+                    host, token, bid))
+        except (RequestException, KeyError, OverflowError) as oe:
+            self.log.error(
+                f"Failed to import bulk group groups with error:\n{oe}")
+        except Exception as e:
+            self.log.error(e)
+            self.log.error(print_exc())
+        return result
 
     def handle_exporting_groups(self, group):
         full_path = group["full_path"]
@@ -1004,7 +1093,7 @@ class MigrateClient(BaseClass):
                 self.log.info(
                     "SKIP: Assuming staged projects will be later imported")
         else:
-            self.log.info("SKIP: No projects staged for migration")
+            self.log.warning("SKIP: No projects staged for migration")
 
     def handle_exporting_projects(self, project):
         name = project["name"]
@@ -1296,7 +1385,7 @@ class MigrateClient(BaseClass):
         return is_result
 
     def rollback(self):
-        utils.rotate_logs()
+        rotate_logs()
         dry_log = misc_utils.get_dry_log(self.dry_run)
 
         # Remove groups and projects OR only empty groups
@@ -1435,7 +1524,7 @@ class MigrateClient(BaseClass):
     def toggle_maintenance_mode(
             self, off=False, msg=None, dest=False, dry_run=True):
         host = self.config.destination_host if dest else self.config.source_host
-        if utils.is_dot_com(host):
+        if is_dot_com(host):
             self.log.warning(
                 f"Not allowed to toggle maintenance mode on {host}")
         else:

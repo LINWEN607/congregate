@@ -21,6 +21,7 @@ This runbook covers the process of preparing and cleaning up after a migration f
 
 ### GitLab
 
+* [ ] For to-SaaS migrations, verify with the Account/Sales team that all licensing is setup for the `namespace` on `gitlab.com`
 * [ ] Setup the migration VM that will host the Professional Services (PS) migration tool’s (Congregate) Docker container.
   * It should have minimal port and IP access. See [VM Requirements](#vm) for more detail.
   * **NOTE:** If required the VM might be created, by the customer, within their environment. Make sure this approach is covered in the SoW.
@@ -50,6 +51,8 @@ This runbook covers the process of preparing and cleaning up after a migration f
     }
     ```
 
+    **NOTE:** The group needs to have SAML configured.
+
 * [ ] Create one-off Personal Access Tokens (PATs) for the Admin user account on the source and destination instance.
   * The PATs should have an expiry date of the estimated last day (wave) of the migration.
   * [ ] (gitlab.com) Inform SIRT about every Admin token creation and/or user impersonation.
@@ -75,7 +78,7 @@ This runbook covers the process of preparing and cleaning up after a migration f
 * [ ] Create a user-group-project migration schedule (waves)
   * [ ] All users are migrated first
   * [ ] Entire group structure next
-    * (gitlab.com) [Notes](https://docs.gitlab.com/ee/api/group_import_export.html#important-notes) around Group import/export when using the GitLab Group Export/Import
+    * (gitlab.com) [Notes](https://docs.gitlab.com/ee/user/group/settings/import_export.html#important-notes) around Group import/export when using the GitLab Group Export/Import
     * Consult with your engineer around restrictions for group movement and renaming, as it is dependent on your source system and migration requirements
   * Projects are migrated in waves (with their parent groups if the previous was not done)
   * (gitlab.com) GitLab support requires a 5-day lead on migrations to gitlab.com. Consider this when determining wave schedule
@@ -142,7 +145,7 @@ This runbook covers the process of preparing and cleaning up after a migration f
 
 ### Requisitioning a Migration VM (GitLab GCP Hosted)
 
-* [ ] (gitlab.com) Create a [GitLab Infra team issue](https://gitlab.com/groups/gitlab-com/gl-infra/-/issues) with labels `~"AssistingTeam::Infrastructure"` and `~"AssistType::CloudInfra"` and `/assign @gitlab-com/gl-infra/managers`. Examine [similar issues](https://gitlab.com/gitlab-com/gl-infra/infrastructure/-/issues) for examples.
+* [ ] (gitlab.com) Create a [GitLab Infra team issue](https://gitlab.com/groups/gitlab-com/gl-infra/-/issues) with labels `~"AssistingTeam::Infrastructure"` and `~"AssistType::CloudInfra"` and tag `@gitlab-com/gl-infra/managers`. Examine [similar issues](https://gitlab.com/gitlab-com/gl-infra/infrastructure/-/issues) for examples.
 * [ ] (gitlab.com) Create an MR in [Transient Imports project](https://gitlab.com/gitlab-com/gl-infra/transient-imports) by following the `README`
   * The lead PSE should add their gitlab.com `.pub` SSH key as `owner_key`
   * Make sure all PSEs running the migration have added their public IP to the `source_ranges_allowed` list (comma separated)
@@ -164,7 +167,7 @@ This runbook covers the process of preparing and cleaning up after a migration f
   * Test the access: `ssh -i ~/.ssh/<ssh_private_key> root@<public_ip>`
   * Update package manager: `apt update && apt upgrade -y && apt autoremove -y`
   * Install docker: `apt install docker.io`
-  * Follow `README.md#Installing and configuring Congregate (end-user)` for further steps
+  * Follow `./congregate/docs/full_setup.md#Installing and configuring Congregate (end-user)` for further steps
 
 ### Network; VM interaction
 
@@ -188,7 +191,7 @@ This runbook covers the process of preparing and cleaning up after a migration f
 ### Authentication (for gitlab.com)
 
 If possible, the VM should be setup with Okta Advanced Server Access (ASA).
-Due to time constraints, ASA costs and scaling limitations it may be necessary to provision only SSH key authenticaton.
+Due to time constraints, ASA costs and scaling limitations it may be necessary to provision only SSH key authentication.
 
 ## Migration post-requisites
 

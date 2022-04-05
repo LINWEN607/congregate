@@ -1,18 +1,16 @@
 import json
-
 from re import sub
 from urllib.parse import quote, quote_plus
 from time import sleep
 from os import remove
 from glob import glob
+from gitlab_ps_utils.misc_utils import get_dry_log, safe_json_response
+from gitlab_ps_utils.file_utils import download_file, is_gzip
+from gitlab_ps_utils.json_utils import json_pretty
+
 from requests.exceptions import RequestException
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 from congregate.helpers.base_class import BaseClass
-from gitlab_ps_utils.misc_utils import get_dry_log, \
-    safe_json_response
-from congregate.helpers.migrate_utils import check_is_project_or_group_for_logging, migration_dry_run
-from gitlab_ps_utils.file_utils import download_file
-from gitlab_ps_utils.json_utils import json_pretty
 from congregate.aws import AwsClient
 from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.groups import GroupsClient
@@ -20,8 +18,9 @@ from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.namespaces import NamespacesApi
-from congregate.helpers.migrate_utils import get_project_namespace, is_user_project, get_user_project_namespace, \
-    get_export_filename_from_namespace_and_name, get_dst_path_with_namespace, get_full_path_with_parent_namespace, is_loc_supported
+from congregate.helpers.migrate_utils import get_project_dest_namespace, is_user_project, get_user_project_namespace, \
+    get_export_filename_from_namespace_and_name, get_dst_path_with_namespace, get_full_path_with_parent_namespace, \
+    is_loc_supported, check_is_project_or_group_for_logging, migration_dry_run
 
 
 class ImportExportClient(BaseClass):
@@ -31,7 +30,7 @@ class ImportExportClient(BaseClass):
     COOL_OFF_MINUTES = 1.1
 
     def __init__(self):
-        super(ImportExportClient, self).__init__()
+        super().__init__()
         self.aws = self.get_AwsClient()
         self.projects = ProjectsClient()
         self.groups = GroupsClient()
@@ -68,14 +67,15 @@ class ImportExportClient(BaseClass):
         wait_time = self.config.export_import_status_check_time
         timeout = self.config.export_import_timeout
         export_type = check_is_project_or_group_for_logging(is_project)
-        response = self.get_export_response(src_id, is_project)
+        response = self.trigger_export_and_get_response(src_id, is_project)
         while True:
             # Wait until rate limit is resolved
             while response.status_code == 429:
                 self.log.info(
                     f"Re-exporting {export_type.lower()} {name} (ID: {src_id}), waiting {self.COOL_OFF_MINUTES} minutes due to:\n{response.text}")
                 sleep(self.COOL_OFF_MINUTES * 60)
-                response = self.get_export_response(src_id, is_project)
+                response = self.trigger_export_and_get_response(
+                    src_id, is_project)
             if response.status_code == 202:
                 status = self.get_export_status(src_id, is_project)
                 if status.status_code == 200:
@@ -86,19 +86,14 @@ class ImportExportClient(BaseClass):
                             f"{export_type} {name} has finished exporting, with response:\n{json_pretty(status_json)}")
                         exported = True
                         break
-                    if state == "failed":
+                    # We don't want to wait for queued exports
+                    if total_time > timeout/4 and state == "none":
                         self.log.error(
-                            f"{export_type} {name} export failed{' (re-exporting)' if retry else ''}, with response:\n{json_pretty(status_json)}")
-                        if retry:
-                            response = self.get_export_response(
-                                src_id, is_project)
-                            retry = False
-                            total_time = 0
-                        else:
-                            break
-                    elif total_time < timeout:
+                            f"SKIP: {export_type} {name} export with status '{state}' and response:\n{json_pretty(status_json)}")
+                        break
+                    if total_time < timeout:
                         self.log.info(
-                            f"{export_type} {name} export status ({state}) after {total_time}/{timeout} seconds")
+                            f"{export_type} {name} export status '{state}' after {total_time}/{timeout} seconds")
                         total_time += wait_time
                         sleep(wait_time)
                     else:
@@ -108,7 +103,8 @@ class ImportExportClient(BaseClass):
             elif retry:
                 self.log.error(
                     f"{export_type} {name} export trigger failed{' (re-exporting)' if retry else ''}, with response:\n{response.text}")
-                response = self.get_export_response(src_id, is_project)
+                response = self.trigger_export_and_get_response(
+                    src_id, is_project)
                 retry = False
                 total_time = 0
             else:
@@ -121,15 +117,16 @@ class ImportExportClient(BaseClass):
         exported = False
         total_time = 0
         wait_time = self.config.export_import_status_check_time
-        timeout = self.config.export_import_timeout
-        response = self.get_export_response(gid, is_project=False)
+        timeout = self.config.export_import_timeout/2
+        response = self.trigger_export_and_get_response(gid, is_project=False)
         while True:
             # Wait until rate limit is resolved
             while response.status_code == 429:
                 self.log.info(
                     f"Re-exporting group {gid}, waiting {self.COOL_OFF_MINUTES} minutes due to:\n{response.text}")
                 sleep(self.COOL_OFF_MINUTES * 60)
-                response = self.get_export_response(gid, is_project=False)
+                response = self.trigger_export_and_get_response(
+                    gid, is_project=False)
             if response.status_code == 202:
                 status = self.groups_api.get_group_download_status(
                     self.config.source_host, self.config.source_token, gid)
@@ -153,7 +150,8 @@ class ImportExportClient(BaseClass):
             elif retry:
                 self.log.error(
                     f"Group {gid} export failed (re-exporting), with response:\n{response.text}")
-                response = self.get_export_response(gid, is_project=False)
+                response = self.trigger_export_and_get_response(
+                    gid, is_project=False)
                 retry = False
                 total_time = 0
             else:
@@ -166,7 +164,8 @@ class ImportExportClient(BaseClass):
         group = {}
         timer = 0
         wait_time = self.config.export_import_status_check_time
-        timeout = self.config.export_import_timeout
+        # Lightweight and requires half the timeout at most
+        timeout = self.config.export_import_timeout/2
         while True:
             group = self.groups.find_group_by_path(
                 self.config.destination_host, self.config.destination_token, path)
@@ -184,26 +183,19 @@ class ImportExportClient(BaseClass):
                 break
         return group
 
-    def get_export_response(self, source_id, is_project,
-                            data=None, headers=None):
+    def trigger_export_and_get_response(self, source_id, is_project, data=None, headers=None):
         """
         Gets the export response for both project and group exports
         """
         response = None
+        host = self.config.source_host
+        token = self.config.source_token
         if is_project:
             response = self.projects_api.export_project(
-                self.config.source_host,
-                self.config.source_token,
-                source_id,
-                data=data,
-                headers=headers)
+                host, token, source_id, data=data, headers=headers)
         else:
             response = self.groups_api.export_group(
-                self.config.source_host,
-                self.config.source_token,
-                source_id,
-                data=data,
-                headers=headers)
+                host, token, source_id, data=data, headers=headers)
         return response
 
     def export_to_aws(self, source_id, filename, is_project=True):
@@ -218,7 +210,7 @@ class ImportExportClient(BaseClass):
         }
         data = "&".join(upload)
         try:
-            response = self.get_export_response(
+            response = self.trigger_export_and_get_response(
                 source_id, is_project, data=data, headers=headers)
             return response
         except RequestException as e:
@@ -246,45 +238,50 @@ class ImportExportClient(BaseClass):
         if is_user_project(project):
             self.log.info(
                 f"{dry}{name} is a USER project ({namespace}). Attempting to import into their namespace")
-            dst_namespace = get_user_project_namespace(project)
+            dest_namespace = get_user_project_namespace(project)
         else:
             self.log.info(
                 f"{dry}{name} is NOT a USER project. Attempting to import into a group namespace")
-            dst_namespace = get_project_namespace(project)
+            dest_namespace = get_project_dest_namespace(project)
 
         if not dry_run:
             import_response = self.attempt_import(
-                filename, name, path, dst_namespace, override_params, members)
+                filename, name, path, dest_namespace, override_params, members)
             # Use until group import status endpoint is available
             if import_response.status_code == 404:
                 total_time = 0
                 wait_time = self.config.export_import_status_check_time
                 timeout = self.COOL_OFF_MINUTES * 60
                 while self.namespaces_api.get_namespace_by_full_path(
-                        dst_namespace, self.config.destination_host, self.config.destination_token).status_code != 200:
+                        dest_namespace, self.config.destination_host, self.config.destination_token).status_code != 200:
                     self.log.info(
-                        f"Waited {total_time}/{timeout} seconds to create {dst_namespace} for project {name}")
+                        f"Waited {total_time}/{timeout} seconds to create {dest_namespace} for project {name}")
                     total_time += wait_time
                     sleep(wait_time)
                     if total_time > timeout:
                         self.log.error(
-                            f"Time limit exceeded waiting for project {name} to import to {dst_namespace}, with response:\n{import_response}")
+                            f"Time limit exceeded waiting for project {name} to import to {dest_namespace}, with response:\n{import_response}")
                         return None
                 import_response = self.attempt_import(
-                    filename, name, path, dst_namespace, override_params, members)
+                    filename, name, path, dest_namespace, override_params, members)
             elif import_response.status_code == 422:
                 self.log.error(
-                    f"Project {name} failed to import to {dst_namespace}, due to:\n{import_response.text}")
+                    f"Project {name} failed to import to {dest_namespace}, due to:\n{import_response.text}")
+                return None
+            elif import_response.status_code == 400:
+                self.log.error(
+                    f"Project {name} failed to import to {dest_namespace}, due to:\n{import_response.text}\n\t"
+                    "Double check your path. If your path seems correct, make sure you can manually create a project in the GL instance UI under the path")
                 return None
             import_id = self.get_import_id_from_response(
-                import_response, filename, name, path, dst_namespace, override_params, members)
+                import_response, filename, name, path, dest_namespace, override_params, members)
         else:
             self.log.info(
                 f"{dry}Outputing project {name} (file: {filename}) migration data to dry_run_project_migration.json")
             migration_dry_run("project", {
                 "filename": filename,
                 "name": name,
-                "namespace": dst_namespace,
+                "namespace": dest_namespace,
                 "override_params": override_params,
                 "project": project})
         return import_id
@@ -343,8 +340,7 @@ class ImportExportClient(BaseClass):
                         "Private-Token": self.config.destination_token,
                         "Content-Type": m.content_type
                     }
-                    message = "Importing project %s with the following payload %s and following members %s" % (
-                        name, m, members)
+                    message = f"Importing project {name} with the following payload {m} and following members {members}"
                     resp = self.projects_api.import_project(
                         self.config.destination_host, self.config.destination_token, data=m, headers=headers, message=message)
             except AttributeError as ae:
@@ -394,7 +390,7 @@ class ImportExportClient(BaseClass):
                 parent_id = found
             else:
                 self.log.warning(
-                    f"Parent group {parent_path} not found on destination")
+                    f"Parent group {parent_path} NOT found on destination")
                 return False
         if not dry_run:
             import_response = self.attempt_group_import(
@@ -437,12 +433,11 @@ class ImportExportClient(BaseClass):
                              path, members, parent_id=None):
         resp = None
         self.log.info("Importing group {} from filesystem".format(name))
-        # NOTE: Group export does not yet support (AWS/S3) user attributes
-        if self.config.location == "aws":
-            pass
-        elif self.config.location == "filesystem-aws":
-            pass
+        if self.config.location in ["aws", "filesystem-aws"]:
+            self.log.warning(
+                "NOTICE: Group export does not yet support (AWS/S3) user attributes")
         elif self.config.location == "filesystem":
+            token = self.config.destination_token
             with open("%s/downloads/%s" % (self.config.filesystem_path, filename), "rb") as f:
                 data = {
                     "path": path,
@@ -453,12 +448,12 @@ class ImportExportClient(BaseClass):
                     "file": (filename, f)
                 }
                 headers = {
-                    "Private-Token": self.config.destination_token
+                    "Private-Token": token
                 }
                 message = "Importing group %s with payload %s and members %s" % (
                     path, data, members)
                 resp = self.groups_api.import_group(
-                    self.config.destination_host, self.config.destination_token, data=data, files=files, headers=headers, message=message)
+                    self.config.destination_host, token, data=data, files=files, headers=headers, message=message)
         return resp
 
     def get_override_params(self, project):
@@ -519,17 +514,17 @@ class ImportExportClient(BaseClass):
                     host, token, import_id)
                 if status.status_code == 200:
                     status_json = safe_json_response(status)
-                    state = status_json.get("import_status", None)
+                    state = status_json.get(
+                        "import_status") if status_json else None
                     if state == "finished":
                         self.log.info(
                             f"Project {name} successfully imported to {dst_namespace}, with import status:\n{json_pretty(status_json)}")
                         with open(self.app_path + "/data/results/import_failed_relations.json", "a") as f:
-                            json.dump({status_json.get("path_with_namespace", None): status_json.get(
-                                "failed_relations", None)}, f, indent=4)
+                            json.dump({status_json.get("path_with_namespace"): status_json.get(
+                                "failed_relations")}, f, indent=4)
                         break
-                    elif state == "failed":
-                        if self.SAML_MSG in status_json.get(
-                                "import_error", None):
+                    if state == "failed":
+                        if self.SAML_MSG in status_json.get("import_error"):
                             self.log.error(
                                 f"Project {name} import to {dst_namespace} failed:\n{json_pretty(status_json)}")
                             return None
@@ -592,15 +587,10 @@ class ImportExportClient(BaseClass):
             if loc == "filesystem":
                 exported = self.wait_for_export_to_finish(pid, name)
                 if exported:
-                    url = "{0}/api/v4/projects/{1}/export/download".format(
-                        self.config.source_host, pid)
-                    self.log.info("Downloading project {0} (ID: {1}) as {2}".format(
-                        name, pid, filename))
-                    download_file(url, self.config.filesystem_path, filename, headers={
-                        "PRIVATE-TOKEN": self.config.source_token}, verify=self.config.ssl_verify)
+                    self.handle_gzip_download(name, pid, filename)
             # TODO: Refactor and sync with other scenarios (#119)
             elif loc == "filesystem-aws":
-                self.log.error(
+                self.log.warning(
                     "NOTICE: Filesystem-AWS exports are not currently supported")
                 # exported = self.export_thru_fs_aws(pid, name, namespace) if not dry_run else True
             elif loc == "aws":
@@ -618,6 +608,23 @@ class ImportExportClient(BaseClass):
         else:
             return True
         return exported
+
+    def handle_gzip_download(self, name, pid, filename):
+        '''
+        Attempt to download the export, if its not a valid export, try again.
+        '''
+        url = f"{self.config.source_host}/api/v4/projects/{pid}/export/download"
+        self.log.info(f"Downloading project {name} (ID: {pid}) as {filename}")
+        new_file = download_file(
+            url,
+            self.config.filesystem_path,
+            filename,
+            headers={"PRIVATE-TOKEN": self.config.source_token},
+            verify=self.config.ssl_verify)
+        if not is_gzip(f"{self.config.filesystem_path}/downloads/{new_file}"):
+            raise ValueError("Downloaded file is not a Gzip file.")
+        self.log.info(
+            f"{name} export file successfully downloaded. Verified {filename} is a gzip file.")
 
     def export_thru_fs_aws(self, pid, name, namespace):
         path_with_namespace = "%s_%s.tar.gz" % (namespace, name)
@@ -711,3 +718,31 @@ class ImportExportClient(BaseClass):
         else:
             return True
         return exported
+
+    def wait_for_bulk_group_import(self, resp, iid):
+        imported = False
+        total_time = 0
+        wait_time = self.config.export_import_status_check_time
+        timeout = self.config.export_import_timeout
+        while True:
+            details = safe_json_response(resp)
+            state = details.get("status")
+            log_string = f"Bulk group import {state}, with status response:\n{json_pretty(details)}"
+            if state == "finished":
+                self.log.info(log_string)
+                imported = True
+                break
+            if state == "failed":
+                self.log.error(log_string)
+                break
+            if total_time < timeout:
+                self.log.info(
+                    f"Bulk group import status after {total_time}/{timeout} seconds: {state}")
+                total_time += wait_time
+                sleep(wait_time)
+                resp = self.groups_api.get_bulk_group_import_status(
+                    self.config.destination_host, self.config.destination_token, iid)
+            else:
+                self.log.error(f"Time limit exceeded. {log_string}")
+                break
+        return imported

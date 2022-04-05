@@ -8,6 +8,7 @@ from congregate.tests.mockapi.gitlab.users import MockUsersApi
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.helpers.base_class import BaseClass
 
+
 @mark.unit_test
 class StageProjectsTests(unittest.TestCase):
     def setUp(self):
@@ -23,12 +24,11 @@ class StageProjectsTests(unittest.TestCase):
     @mock.patch.object(GroupStageCLI, 'open_projects_file')
     @mock.patch.object(GroupStageCLI, 'open_users_file')
     @mock.patch.object(GroupStageCLI, 'open_groups_file')
-    @mock.patch.object(GroupStageCLI, 'open_groups_file')
     @mock.patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=mock.PropertyMock)
     @mock.patch.object(ConfigurationValidator, 'source_type', new_callable=mock.PropertyMock)
     @mock.patch.object(ConfigurationValidator, 'source_token', new_callable=mock.PropertyMock)
     @mock.patch.object(ConfigurationValidator, 'source_host', new_callable=mock.PropertyMock)
-    def test_build_stage_data(self, mock_host, mock_token, mock_source_type, mock_parent_id, mock_descendat_groups, mock_groups, mock_users, mock_projects, mock_check, mock_open):
+    def test_build_stage_data(self, mock_host, mock_token, mock_source_type, mock_parent_id, mock_groups, mock_users, mock_projects, mock_check, mock_open):
         mock_host.return_value = self.config.config.source_host
         mock_token.return_value = self.config.config.source_token
         mock_source_type.return_value = "gitlab"
@@ -37,7 +37,6 @@ class StageProjectsTests(unittest.TestCase):
         mock_projects.return_value = self.projects_api.get_all_projects()
         mock_users.return_value = self.users_api.get_all_users_list()
         mock_groups.return_value = self.groups_api.get_all_groups_list()
-        mock_descendat_groups.return_value = self.groups_api.get_all_descendat_groups()
         mock_open.return_value = {}
 
         staged_projects, staged_users, staged_groups = self.gcli.build_staging_data([
@@ -181,11 +180,11 @@ class StageProjectsTests(unittest.TestCase):
         self.assertEqual(len(expected_groups), len(staged_groups))
         self.assertEqual(len(expected_users), len(staged_users))
 
-        for i in range(len(expected_projects)):
+        for i, _ in enumerate(expected_projects):
             self.assertEqual(
                 expected_projects[i].items(), staged_projects[i].items())
 
-        for i in range(len(expected_groups)):
+        for i, _ in enumerate(expected_groups):
             try:
                 self.assertEqual(
                     expected_groups[i].items(), staged_groups[i].items())
@@ -193,7 +192,7 @@ class StageProjectsTests(unittest.TestCase):
                 print("Expected: ", expected_groups[i])
                 print("Staged: ", staged_groups[i])
 
-        for i in range(len(expected_users)):
+        for i, _ in enumerate(expected_users):
             self.assertEqual(
                 expected_users[i].items(), staged_users[i].items())
 
@@ -415,13 +414,13 @@ class StageProjectsTests(unittest.TestCase):
         #self.assertEqual(len(expected_groups), len(staged_groups))
         self.assertEqual(len(expected_users), len(staged_users))
 
-        for i in range(len(expected_projects)):
+        for i, _ in enumerate(expected_projects):
             self.assertEqual(
                 expected_projects[i].items(), staged_projects[i].items())
-        for i in range(len(expected_groups)):
+        for i, _ in enumerate(expected_groups):
             self.assertEqual(
                 expected_groups[i].items(), staged_groups[i].items())
-        for i in range(len(expected_users)):
+        for i, _ in enumerate(expected_users):
             self.assertEqual(
                 expected_users[i].items(), staged_users[i].items())
 

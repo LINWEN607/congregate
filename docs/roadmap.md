@@ -52,4 +52,4 @@ We are currently working through migrating CI variables from TeamCity into GitLa
 - Add more support surrounding our BitBucket server migrations
 - If there is an API available, orchestrate mass SVN migrations to GitLab
 - See `~"congregate::New Feature"` for our list of existing new features we plan to implement into congregate
-- See our [category grooming board](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/boards/1912553) for more information
+- See our [category refinement board](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/boards/3404674) for more information

@@ -1,16 +1,17 @@
 import unittest
 from pytest import mark
 import responses
-from unittest.mock import patch, PropertyMock
+from unittest.mock import patch, PropertyMock, MagicMock
 
 from gitlab_ps_utils.api import GitLabApi
 import congregate.helpers.migrate_utils as mutils
+from congregate.migration.gitlab.api.instance import InstanceApi
 from congregate.tests.mockapi.gitlab.users import MockUsersApi
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
 from congregate.tests.mockapi.gitlab.projects import MockProjectsApi
+from congregate.tests.mockapi.gitlab.version import MockVersionApi
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.migration.gitlab.api.groups import GroupsApi
-from congregate.tests.helpers.mock_data.results import MockProjectResults
 
 
 @mark.unit_test
@@ -19,6 +20,7 @@ class MigrateTests(unittest.TestCase):
         self.mock_users = MockUsersApi()
         self.mock_groups = MockGroupsApi()
         self.mock_projects = MockProjectsApi()
+        self.mock_version = MockVersionApi()
 
     class ThingWithJson:
         def __init__(self, jsons):
@@ -251,47 +253,46 @@ class MigrateTests(unittest.TestCase):
                   "dstn_parent_group_path", new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, "dstn_parent_id",
                   new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, "src_parent_group_path",
-                  new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, "src_parent_id",
-                  new_callable=PropertyMock)
-    def test_get_project_namespace(
-            self, src_parent_id, src_parent_group_path, dstn_parent_id, dstn_parent_group_path):
+    def test_get_project_dest_namespace(self, dstn_parent_id, dstn_parent_group_path):
         dstn_parent_id.return_value = 4
         dstn_parent_group_path.return_value = "test"
-        src_parent_id.return_value = None
-        src_parent_group_path.return_value = None
-        self.assertEqual(mutils.get_project_namespace(
+        self.assertEqual(mutils.get_project_dest_namespace(
             self.mock_projects.get_staged_group_project()), "test/pmm-demo")
         dstn_parent_id.return_value = None
-        self.assertEqual(mutils.get_project_namespace(
+        self.assertEqual(mutils.get_project_dest_namespace(
             self.mock_projects.get_staged_group_project()), "pmm-demo")
         dstn_parent_id.return_value = 1
-        self.assertEqual(mutils.get_project_namespace(
+        self.assertEqual(mutils.get_project_dest_namespace(
             self.mock_projects.get_staged_user_project()), "pmm-demo")
 
     @patch.object(ConfigurationValidator,
                   "dstn_parent_group_path", new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, "dstn_parent_id",
                   new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, "src_parent_group_path",
-                  new_callable=PropertyMock)
-    @patch.object(ConfigurationValidator, "src_parent_id",
-                  new_callable=PropertyMock)
-    def test_get_project_namespace_with_src_group(
-            self, src_parent_id, src_parent_group_path, dstn_parent_id, dstn_parent_group_path):
+    def test_get_project_dest_namespace_with_src_group(self, dstn_parent_id, dstn_parent_group_path):
         dstn_parent_id.return_value = 4
         dstn_parent_group_path.return_value = "test"
-        src_parent_id.return_value = 1
-        src_parent_group_path.return_value = "marketing/pmm"
-        self.assertEqual(mutils.get_project_namespace(
-            self.mock_projects.get_staged_nested_group_project()), "test/pmm/pmm-demo")
+        self.assertEqual(mutils.get_project_dest_namespace(
+            self.mock_projects.get_staged_nested_group_project()), "test/marketing/pmm/pmm-demo")
         dstn_parent_id.return_value = None
-        self.assertEqual(mutils.get_project_namespace(
-            self.mock_projects.get_staged_nested_group_project()), "pmm/pmm-demo")
+        self.assertEqual(mutils.get_project_dest_namespace(
+            self.mock_projects.get_staged_nested_group_project()), "marketing/pmm/pmm-demo")
         dstn_parent_id.return_value = 1
-        self.assertEqual(mutils.get_project_namespace(
+        self.assertEqual(mutils.get_project_dest_namespace(
             self.mock_projects.get_staged_user_project()), "pmm-demo")
+
+    @patch.object(ConfigurationValidator,
+                  "dstn_parent_group_path", new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, "dstn_parent_id",
+                  new_callable=PropertyMock)
+    def test_get_project_dest_namespace_with_same_subgroup(self, dstn_parent_id, dstn_parent_group_path):
+        dstn_parent_id.return_value = 4
+        dstn_parent_group_path.return_value = "test/test"
+        self.assertEqual(mutils.get_project_dest_namespace(
+            self.mock_projects.get_staged_double_nested_group_project()), "test/test/marketing/pmm/pmm/pmm-demo")
+        dstn_parent_id.return_value = None
+        self.assertEqual(mutils.get_project_dest_namespace(
+            self.mock_projects.get_staged_double_nested_group_project()), "marketing/pmm/pmm/pmm-demo")
 
     # pylint: disable=no-member
     @responses.activate
@@ -765,3 +766,125 @@ class MigrateTests(unittest.TestCase):
     def test_check_is_project_or_group_for_logging_project(self):
         assert mutils.check_is_project_or_group_for_logging(True) is "Project"
         assert mutils.check_is_project_or_group_for_logging(False) is "Group"
+
+    @patch("congregate.helpers.migrate_utils.get_staged_user_projects")
+    def test_check_for_staged_user_projects_logs_on_true_and_returns_true(self, mock_get_staged_user_projects):
+        mock_get_staged_user_projects.return_value = ["path_with_namespace"]
+        with self.assertLogs(mutils.b.log, level="WARN") as al:
+            self.assertListEqual(mutils.check_for_staged_user_projects([{}]), [
+                                 "path_with_namespace"])
+            self.assertListEqual(al.output, [
+                                 'WARNING:congregate.helpers.base_class:User projects staged:\npath_with_namespace'])
+
+    @patch("congregate.helpers.migrate_utils.get_staged_user_projects")
+    def test_check_for_staged_user_projects_false_when_none_found(self, mock_get_staged_user_projects):
+        mock_get_staged_user_projects.return_value = None
+        # Looks like the self.assertNoLogs only exists in 3.10 and above, so just check the False
+        assert mutils.check_for_staged_user_projects([{}]) is None
+
+    @patch.object(ConfigurationValidator, "dstn_parent_group_path", new_callable=PropertyMock)
+    def test_get_external_path_with_namespace(self, dstn_path):
+        dstn_path.return_value = None
+        path_with_namespace = "test/repo"
+        self.assertEqual(mutils.get_external_path_with_namespace(
+            path_with_namespace), path_with_namespace)
+
+    @patch.object(ConfigurationValidator, "dstn_parent_group_path", new_callable=PropertyMock)
+    def test_get_external_path_with_namespace_with_parent(self, dstn_path):
+        dstn_path.return_value = "/parent/group"
+        path_with_namespace = "test/repo"
+        self.assertEqual(mutils.get_external_path_with_namespace(
+            path_with_namespace), f"parent/group/{path_with_namespace}")
+
+    def test_validate_name_project(self):
+        assert mutils.validate_name(
+            " !  _-:: This.is-how/WE do\n&it#? - šđžčć_  ? ") == "This.is-how WE do it - šđžčć"
+
+    def test_validate_name_group(self):
+        assert mutils.validate_name(
+            " !  _-:: This.is-how/WE do\n&it#? - (šđžčć)_  ? ", is_group=True) == "This.is-how WE do it - (šđžčć"
+
+    def test_get_duplicate_paths_projects(self):
+        data = [{
+            "path_with_namespace": "a/b"
+        },
+            {
+            "path_with_namespace": "d/b"
+        },
+            {
+            "path_with_namespace": "d/b"
+        },
+            {
+            "path_with_namespace": "d/b"
+        },
+            {
+            "path_with_namespace": "a/b"
+        },
+            {
+            "path_with_namespace": "b/c"
+        }]
+        expected = ["a/b", "d/b"]
+        actual = mutils.get_duplicate_paths(data)
+
+        self.assertEqual(expected, actual)
+
+    def test_get_duplicate_paths_groups(self):
+        data = [{
+            "full_path": "a/b"
+        },
+            {
+            "full_path": "d/b"
+        },
+            {
+            "full_path": "d/b"
+        },
+            {
+            "full_path": "d/b"
+        },
+            {
+            "full_path": "a/b"
+        },
+            {
+            "full_path": "b/c"
+        }]
+        expected = ["a/b", "d/b"]
+        actual = mutils.get_duplicate_paths(data, are_projects=False)
+
+        self.assertEqual(expected, actual)
+
+    @patch.object(InstanceApi, "get_version")
+    def test_is_gl_version_older_than_none_false(self, mock_version):
+        mock_get = MagicMock()
+        type(mock_get).status_code = PropertyMock(return_value=500)
+        mock_get.json.return_value = None
+        mock_version.return_value = mock_get
+        self.assertFalse(mutils.is_gl_version_older_than(
+            14, "host", "token", "log"))
+
+    @patch.object(InstanceApi, "get_version")
+    def test_is_gl_version_older_than_invalid_false(self, mock_version):
+        mock_get = MagicMock()
+        type(mock_get).status_code = PropertyMock(return_value=200)
+        mock_get.json.return_value = {}
+        mock_version.return_value = mock_get
+        self.assertFalse(mutils.is_gl_version_older_than(
+            14, "host", "token", "log"))
+
+    @patch.object(InstanceApi, "get_version")
+    def test_is_gl_version_older_than_newer_false(self, mock_version):
+        mock_get = MagicMock()
+        type(mock_get).status_code = PropertyMock(return_value=200)
+        mock_get.json.return_value = self.mock_version.get_12_0_version()
+        mock_version.return_value = mock_get
+        self.assertFalse(mutils.is_gl_version_older_than(
+            12, "host", "token", "log"))
+
+    @patch.object(InstanceApi, "get_version")
+    def test_is_gl_version_older_than_older_true(self, mock_version):
+        mock_get = MagicMock()
+        type(mock_get).status_code = PropertyMock(return_value=200)
+        mock_get.json.return_value = self.mock_version.get_12_0_version()
+        mock_version.return_value = mock_get
+        with self.assertLogs(mutils.b.log, level="INFO"):
+            self.assertTrue(mutils.is_gl_version_older_than(
+                13, "host", "token", "log"))

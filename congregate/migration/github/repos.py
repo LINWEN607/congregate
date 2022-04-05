@@ -1,5 +1,9 @@
 from time import time
 from requests.exceptions import RequestException
+from gitlab_ps_utils.misc_utils import get_dry_log, is_error_message_present, safe_json_response, strip_netloc
+from gitlab_ps_utils.json_utils import json_pretty
+from gitlab_ps_utils.dict_utils import dig
+
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.mdbc import MongoConnector
 from congregate.migration.github.api.repos import ReposApi
@@ -7,18 +11,22 @@ from congregate.migration.github.users import UsersClient
 from congregate.migration.github.api.users import UsersApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.projects import ProjectsClient
-from gitlab_ps_utils.misc_utils import get_dry_log, is_error_message_present, safe_json_response, strip_netloc
 from congregate.helpers.migrate_utils import get_staged_projects, add_post_migration_stats
 from congregate.helpers.utils import is_github_dot_com, rotate_logs
-from gitlab_ps_utils.json_utils import json_pretty
-from gitlab_ps_utils.dict_utils import dig
 
 
 class ReposClient(BaseClass):
+    # GitHub source - https://docs.github.com/en/organizations/managing-access-to-your-organizations-repositories/repository-roles-for-an-organization
     REPO_PERMISSIONS_MAP = {
-        ((u"admin", True), (u"push", True), (u"pull", True)): 40,  # Maintainer
-        ((u"admin", False), (u"push", True), (u"pull", True)): 30,  # Developer
-        ((u"admin", False), (u"push", False), (u"pull", True)): 20  # Reporter
+        # Maintainer
+        ((u"admin", True), (u"maintain", True), (u"push", True), (u"triage", True), (u"pull", True)): 40,
+        ((u"admin", True), (u"push", True), (u"pull", True)): 40,
+        # Developer
+        ((u"admin", False), (u"maintain", False), (u"push", True), (u"triage", True), (u"pull", True)): 30,
+        ((u"admin", False), (u"push", True), (u"pull", True)): 30,
+        # Reporter
+        ((u"admin", False), (u"maintain", False), (u"push", False), (u"triage", True), (u"pull", True)): 20,
+        ((u"admin", False), (u"push", False), (u"pull", True)): 20
     }
 
     GROUP_TYPE = ["Organization", "Enterprise"]
@@ -80,12 +88,8 @@ class ReposClient(BaseClass):
             "path": repo_name,
             "name": repo_name,
             "ci_sources": {
-                "Jenkins": self.list_ci_sources_jenkins(
-                    repo_url,
-                    mongo),
-                "TeamCity": self.list_ci_sources_teamcity(
-                    repo_url,
-                    mongo)},
+                "Jenkins": self.list_ci_sources_jenkins(repo_url, mongo) if self.config.jenkins_ci_source_host else [],
+                "TeamCity": self.list_ci_sources_teamcity(repo_url, mongo) if self.config.tc_ci_source_host else []},
             "namespace": {
                 "id": dig(repo, 'owner', 'id'),
                 "path": repo_path,
@@ -95,48 +99,48 @@ class ReposClient(BaseClass):
             "http_url_to_repo": repo_url,
             "path_with_namespace": repo.get("full_name"),
             "visibility": "private" if repo.get("private") else "public",
-            "description": repo.get(
-                "description",
-                ""),
+            "description": repo.get("description", ""),
             # This request is extremely slow at scale and needs a refactor
             # "members": []
             "members": [] if org else self.add_repo_members(
                 repo["owner"]["type"],
                 repo["owner"]["login"],
                 repo["name"],
-                mongo)
-        }
+                mongo)}
 
     def add_repo_members(self, kind, owner, repo, mongo):
         """
         User repos have a single owner and collaborators (requires a collaborator PAT).
         Org and team repos have collaborators (may require a collaborator PAT).
         """
-        if kind in self.GROUP_TYPE:
-            members = []
-            # TODO: Determine single PAT for retrieving repo/org/team
-            # collaborators
-            for c in self.repos_api.get_all_repo_collaborators(owner, repo):
-                if c:
-                    c["permissions"] = self.REPO_PERMISSIONS_MAP[tuple(
-                        c.get("permissions", None).items())]
-                    members.append(c)
-                else:
-                    break
-        elif kind == "User":
-            members = [{"login": owner}]
-            user_repo = safe_json_response(
-                self.repos_api.get_repo(owner, repo))
-            error, user_repo = is_error_message_present(user_repo)
-            if error or not user_repo:
-                self.log.error(
-                    "Failed to get JSON for user {} repo {} ({})".format(
-                        owner, repo, user_repo))
-                return []
-            else:
+        try:
+            if kind in self.GROUP_TYPE:
+                members = []
+                # TODO: Determine single PAT for retrieving repo/org/team
+                # collaborators
+                # for c in self.repos_api.get_all_repo_collaborators(owner, repo):
+                #     if c:
+                #         c["permissions"] = self.REPO_PERMISSIONS_MAP[tuple(
+                #             c.get("permissions").items())]
+                #         members.append(c)
+                #     else:
+                #         break
+            elif kind == "User":
+                members = [{"login": owner}]
+                user_repo = safe_json_response(
+                    self.repos_api.get_repo(owner, repo))
+                error, user_repo = is_error_message_present(user_repo)
+                if error or not user_repo:
+                    self.log.error(
+                        f"Failed to get JSON for user {owner} repo {repo}: {user_repo}")
+                    return []
                 members[0]["permissions"] = self.REPO_PERMISSIONS_MAP[tuple(
-                    user_repo.get("permissions", None).items())]
-        return self.users.format_users(members, mongo)
+                    user_repo.get("permissions").items())]
+            return self.users.format_users(members, mongo)
+        except KeyError as ke:
+            self.log.error(
+                f"Failed to map repo {repo} (type: {kind}) permission, with Key error:\n{ke}")
+            return []
 
     def list_ci_sources_jenkins(self, repo_url, mongo):
         data = []
@@ -456,7 +460,7 @@ class ReposClient(BaseClass):
     def archive_migrated_repo(self, new_id, repo):
         gh_repo = safe_json_response(
             self.repos_api.get_repo(repo["namespace"], repo["path"]))
-        if gh_repo and gh_repo.get("archived", None):
+        if gh_repo and gh_repo.get("archived"):
             self.gl_projects_api.archive_project(
                 self.config.destination_host, self.config.destination_token, new_id)
             return True

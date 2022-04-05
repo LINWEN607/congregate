@@ -81,7 +81,7 @@ class ReposApi():
         """
         return self.api.list_all(self.host, f"repos/{owner}/{repo}/releases")
 
-    def get_repo_pr_comments(self, owner, repo, issue):
+    def get_repo_issue_comments(self, owner, repo, issue):
         """
         List pull request comments.
 
@@ -172,13 +172,13 @@ class ReposApi():
         """
         return self.api.generate_v3_patch_request(self.host, f"repos/{owner}/{repo}", data, message)
 
-    def list_pull_requests(self, owner, repo):
+    def list_pull_requests(self, owner, repo, state="all"):
         """
         List pull requests.
 
         GitHub API v3 Doc: https://developer.github.com/v3/pulls/#list-pull-requests
         """
-        return self.api.generate_v3_get_request(self.host, f"repos/{owner}/{repo}/pulls")
+        return self.api.generate_v3_get_request(self.host, f"repos/{owner}/{repo}/pulls?state={state}")
 
     def get_a_single_pull_request(self, owner, repo, pull_number):
         """

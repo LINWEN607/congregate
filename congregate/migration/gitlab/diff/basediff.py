@@ -1,11 +1,11 @@
 import json
 import base64
 import re
-from types import GeneratorType
 from bs4 import BeautifulSoup as bs
 from gitlab_ps_utils.misc_utils import is_error_message_present, pretty_print_key
 from gitlab_ps_utils.dict_utils import rewrite_list_into_dict, is_nested_dict, dig, find as nested_find
 from gitlab_ps_utils.jsondiff import Comparator
+
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.mdbc import MongoConnector
 
@@ -155,34 +155,11 @@ class BaseDiffClient(BaseClass):
         if valid_source_endpoint:
             source_data = self.generate_cleaned_instance_data(source_data)
             if source_data:
-                identifier = "{0}/{1}".format(parent_group,
-                                              asset[key]) if parent_group else asset[key]
-                if self.results.get(identifier) is not None:
-                    if isinstance(self.results[identifier], dict):
-                        destination_id = self.results[identifier]["id"]
-                        # response = endpoint(
-                        #     destination_id, self.config.destination_host, self.config.destination_token, **kwargs)
-                        # if isinstance(response, GeneratorType):
-                        #     response = list(response)
-                        # valid_destination_endpoint, response = self.is_endpoint_valid(response)
-                        valid_destination_endpoint, response = self.is_endpoint_valid(endpoint(
-                            destination_id, self.config.destination_host, self.config.destination_token, **kwargs))
-                        if valid_destination_endpoint:
-                            destination_data = self.generate_cleaned_instance_data(
-                                response)
-                        else:
-                            destination_data = self.generate_empty_data(
-                                source_data)
-                    else:
-                        destination_data = {
-                            "error": "asset missing"
-                        }
-                else:
-                    destination_data = self.generate_empty_data(
-                        source_data)
+                identifier = f"{parent_group}/{asset[key]}" if parent_group else asset[key]
+                destination_data = self.validate_destination_data(
+                    identifier, endpoint, source_data, **kwargs)
                 return self.diff(source_data, destination_data, critical_key=critical_key,
                                  obfuscate=obfuscate, parent_group=parent_group)
-
         return self.empty_diff()
 
     def generate_count_diff(self, source_count, destination_count):
@@ -193,31 +170,38 @@ class BaseDiffClient(BaseClass):
 
     def generate_gh_diff(self, asset, key, sort_key, source_data, gl_endpoint,
                          critical_key=None, obfuscate=False, parent_group=None, **kwargs):
-        identifier = "{0}/{1}".format(parent_group,
-                                      asset[key]) if parent_group else asset[key]
-        if self.results.get(identifier) is not None:
-            if isinstance(self.results[identifier], dict):
-                destination_id = dig(
-                    self.results, identifier, 'response', 'id')
-                response = gl_endpoint(
-                    destination_id, self.config.destination_host, self.config.destination_token, **kwargs)
-                destination_data = self.generate_cleaned_instance_data(
-                    response)
-            else:
-                destination_data = {
-                    "error": "asset missing"
-                }
-        else:
-            destination_data = self.generate_empty_data(
-                source_data)
-
+        identifier = f"{parent_group}/{asset[key]}" if parent_group else asset[key]
+        destination_data = self.validate_destination_data(
+            identifier, gl_endpoint, source_data, github=True, **kwargs)
         if sort_key:
             source_data = rewrite_list_into_dict(source_data, sort_key)
             destination_data = rewrite_list_into_dict(
                 destination_data, sort_key)
-
         return self.diff(source_data, destination_data, critical_key=critical_key,
                          obfuscate=obfuscate, parent_group=parent_group)
+
+    def validate_destination_data(self, identifier, gl_endpoint, source_data, github=False, **kwargs):
+        if self.results.get(identifier) is not None:
+            if isinstance(self.results[identifier], dict):
+                destination_id = dig(self.results, identifier, 'response',
+                                     'id') if github else self.results[identifier]["id"]
+                valid_destination_endpoint, response = self.is_endpoint_valid(gl_endpoint(
+                    destination_id, self.config.destination_host, self.config.destination_token, **kwargs))
+                if valid_destination_endpoint:
+                    destination_data = self.generate_cleaned_instance_data(
+                        response)
+                else:
+                    destination_data = self.generate_empty_data(
+                        source_data, identifier)
+            else:
+                destination_data = {
+                    # identifier being the specific API endpoint
+                    "error": f"asset '{identifier}' is missing"
+                }
+        else:
+            destination_data = self.generate_empty_data(
+                source_data, identifier)
+        return destination_data
 
     def calculate_individual_dict_accuracy(
             self, diff, source_data, destination_data, critical_key, parent_group=None):
@@ -402,19 +386,20 @@ class BaseDiffClient(BaseClass):
                 f"Unable to generate cleaned instance data. Returning empty list, with error:\n{te}")
             return []
 
-    def generate_empty_data(self, source):
+    def generate_empty_data(self, source, identifier):
+        # identifier being the specific API endpoint
         if isinstance(source, list):
             return [
                 {
-                    'error': 'asset is missing'
+                    "error": f"asset '{identifier}' is missing"
                 }
             ]
         return {
-            'error': 'asset is missing'
+            "error": f"asset '{identifier}' is missing"
         }
 
     def generate_html_report(self, asset, diff, filepath, nested=False):
-        filepath = "{0}{1}".format(self.app_path, filepath)
+        filepath = f"{self.app_path}{filepath}"
         self.log.info(f"Writing HTML report to {filepath}")
         soup = bs(
             "<html><body><table class = 'content'></table></body></html>", features="lxml")
