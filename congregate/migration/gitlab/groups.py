@@ -27,7 +27,7 @@ class GroupsClient(BaseClass):
 
     def traverse_groups(self, host, token, group):
         mongo = MongoConnector()
-        if group_id := group.get("id"):
+        if gid := group.get("id"):
             keys_to_ignore = [
                 "web_url",
                 "full_name",
@@ -36,20 +36,30 @@ class GroupsClient(BaseClass):
             ]
             for k in keys_to_ignore:
                 group.pop(k, None)
+
             # Save all group members as part of group metadata
             group["members"] = list(self.groups_api.get_all_group_members(
-                group_id, host, token))
+                gid, host, token))
+
             # Save all group projects ID references as part of group metadata
-            group["projects"] = []
             # Only list direct projects to avoid overhead
-            for project in self.groups_api.get_all_group_projects(group_id, host, token, include_subgroups=False, with_shared=False):
+            group["projects"] = []
+            for project in self.groups_api.get_all_group_projects(gid, host, token, include_subgroups=False, with_shared=False):
                 group["projects"].append(project["id"])
+
                 # Avoids having to also list all gitlab.com parent group projects
                 project["members"] = list(
                     self.projects_api.get_members(project["id"], host, token))
                 mongo.insert_data(f"projects-{strip_netloc(host)}", project)
+
+            # Save all descendant groups ID references as part of group metadata
+            group["desc_groups"] = []
+            for g in self.groups_api.get_all_descendant_groups(gid, host, token):
+                group["desc_groups"].append(g["id"])
+
+            # Traverse subgroups
             for subgroup in self.groups_api.get_all_subgroups(
-                    group_id, host, token):
+                    gid, host, token):
                 self.log.debug("Traversing into subgroup")
                 self.traverse_groups(
                     host, token, subgroup)

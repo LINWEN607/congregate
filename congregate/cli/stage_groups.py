@@ -16,7 +16,6 @@ from congregate.cli.stage_base import BaseStageClass
 
 
 class GroupStageCLI(BaseStageClass):
-
     def stage_data(self, groups_to_stage, dry_run=True,
                    skip_users=False, scm_source=None):
         """
@@ -83,11 +82,11 @@ class GroupStageCLI(BaseStageClass):
                 end = int(match.split("-")[1])
                 for i in range(start, end):
                     # Retrieve group object from groups.json
-                    self.append_data(groups[i], groups_to_stage, p_range=range(
+                    self.append_data(groups[i], i, groups_to_stage, p_range=range(
                         start, end), dry_run=dry_run)
             # Random selection
             else:
-                for i, d in enumerate(groups_to_stage):
+                for i, g in enumerate(groups_to_stage):
                     # Hacky check for id or project name by explicitly checking
                     # variable type
                     try:
@@ -96,33 +95,61 @@ class GroupStageCLI(BaseStageClass):
                             re.sub("[^0-9]", "", groups_to_stage[i]))]
                     except ValueError:
                         self.log.error(
-                            f"Please use a space delimited list of integers (group IDs), NOT {d}")
+                            f"Please use a space delimited list of integers (group IDs), NOT {g}")
                         sys.exit(os.EX_IOERR)
                     except KeyError:
-                        self.log.error(f"Unknown group ID {d}")
+                        self.log.error(f"Unknown group ID {g}")
                         sys.exit(os.EX_DATAERR)
-                    self.append_data(group, groups_to_stage, dry_run=dry_run)
+                    self.append_data(
+                        group, i, groups_to_stage, dry_run=dry_run)
         else:
             self.log.info("Staging empty list")
             return self.staged_users, self.staged_groups, self.staged_projects
         return remove_dupes(self.staged_projects), remove_dupes(
             self.staged_users), remove_dupes(self.staged_groups)
 
-    def append_data(self, group, groups_to_stage, p_range=0, dry_run=True):
+    def append_data(self, group, group_index, groups_to_stage, p_range=0, dry_run=True):
+        dry = get_dry_log(dry_run)
+
         # Append all group projects to staged projects
         for pid in group.get("projects", []):
             obj = self.get_project_metadata(pid, group=True)
+
             # Append all project members to staged users
-            for project_member in obj.get("members", []):
-                self.append_member_to_members_list([], project_member, dry_run)
+            for pm in obj.get("members", []):
+                self.append_member_to_members_list([], pm, dry_run)
             self.log.info(
-                f"{get_dry_log(dry_run)}Staging project {obj.get('path_with_namespace')} (ID: {obj.get('id')})")
+                f"{dry}Staging project {obj.get('path_with_namespace')} (ID: {obj.get('id')})")
             self.staged_projects.append(obj)
 
-        self.log.info(
-            f"{get_dry_log(dry_run)}Staging group {group['full_path']} (ID: {group['id']}) [{len(self.staged_groups) + 1}/{len(p_range) if p_range else len(groups_to_stage)}]")
-        self.staged_groups.append(self.format_group(group))
+        # Append all descendant groups to staged groups
+        desc_groups = group.get("desc_groups", [])
+        for i, dgid in enumerate(desc_groups):
+            desc_group = self.rewritten_groups[dgid]
+
+            # Append all descendant group projects to staged projects
+            for pid in desc_group.get("projects", []):
+                obj = self.get_project_metadata(pid, group=True)
+
+                # Append all project members to staged users
+                for pm in obj.get("members", []):
+                    self.append_member_to_members_list([], pm, dry_run)
+                self.log.info(
+                    f"{dry}Staging project {obj.get('path_with_namespace')} (ID: {obj.get('id')})")
+                self.staged_projects.append(obj)
+
+            self.log.info(
+                f"{dry}Staging descendant group {desc_group['full_path']} (ID: {dgid}) [{i+1}/{len(desc_groups)}]")
+            self.staged_groups.append(self.format_group(desc_group))
+
+            # Append all descendant group members to staged users
+            for m in desc_group.get("members", []):
+                self.append_member_to_members_list([], m, dry_run)
 
         # Append all group members to staged users
-        for member in group.get("members", []):
-            self.append_member_to_members_list([], member, dry_run)
+        for m in group.get("members", []):
+            self.append_member_to_members_list([], m, dry_run)
+
+        self.log.info(
+            f"{dry}Staging group {group['full_path']} (ID: {group['id']}) [{group_index + 1}/{len(p_range) if p_range else len(groups_to_stage)}]")
+        self.staged_groups.append(self.format_group(group))

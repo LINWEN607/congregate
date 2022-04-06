@@ -157,9 +157,11 @@ class BaseStageClass(BaseClass):
                 return i
         return -1
 
-    def format_group(self, group):
+    @classmethod
+    def format_group(cls, group):
         # Decrease size of staged_groups.json
         group.pop("projects", None)
+        group.pop("desc_groups", None)
         group["name"] = validate_name(group["name"], is_group=True)
         return group
 
@@ -170,6 +172,7 @@ class BaseStageClass(BaseClass):
             no_public_email = [{
                 "email": u.get("email"),
                 "public_email": u.get("public_email")
-            } for u in self.staged_users if u.get("email") != u.get("public_email")]
-            self.log.warning(
-                f"Staged users with incorrect (not primary email) or no `public_email` field set ({len(no_public_email)}):\n{json_pretty(no_public_email)}")
+            } for u in remove_dupes(self.staged_users) if u.get("email") != u.get("public_email")]
+            if no_public_email:
+                self.log.warning(
+                    f"Staged users with incorrect (not primary email) or no `public_email` field set ({len(no_public_email)}):\n{json_pretty(no_public_email)}")
