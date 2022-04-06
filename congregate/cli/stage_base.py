@@ -117,7 +117,7 @@ class BaseStageClass(BaseClass):
             project = self.rewritten_projects[project] if group else project
             obj = {
                 "id": project["id"],
-                "name": validate_name(project["name"]),
+                "name": validate_name(project["name"], project["path_with_namespace"]),
                 "namespace": dig(project, 'namespace', 'full_path'),
                 "path": project["path"],
                 "path_with_namespace": project["path_with_namespace"],
@@ -162,7 +162,8 @@ class BaseStageClass(BaseClass):
         # Decrease size of staged_groups.json
         group.pop("projects", None)
         group.pop("desc_groups", None)
-        group["name"] = validate_name(group["name"], is_group=True)
+        group["name"] = validate_name(
+            group["name"], group["full_path"], is_group=True)
         return group
 
     def list_staged_users_without_public_email(self):

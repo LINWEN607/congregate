@@ -797,12 +797,14 @@ class MigrateTests(unittest.TestCase):
             path_with_namespace), f"parent/group/{path_with_namespace}")
 
     def test_validate_name_project(self):
-        assert mutils.validate_name(
-            " !  _-:: This.is-how/WE do\n&it#? - šđžčć_  ? ") == "This.is-how WE do it - šđžčć"
+        with self.assertLogs(mutils.b.log, level="WARNING"):
+            assert mutils.validate_name(
+                " !  _-:: This.is-how/WE do\n&it#? - šđžčć_  ? ", "full_path") == "This.is-how WE do it - šđžčć"
 
     def test_validate_name_group(self):
-        assert mutils.validate_name(
-            " !  _-:: This.is-how/WE do\n&it#? - (šđžčć)_  ? ", is_group=True) == "This.is-how WE do it - (šđžčć"
+        with self.assertLogs(mutils.b.log, level="ERROR"):
+            assert mutils.validate_name(" !  _-:: This.is-how/WE do\n&it#? - (šđžčć)_  ? ",
+                                        "full_path", is_group=True) == "This.is-how WE do it - (šđžčć"
 
     def test_get_duplicate_paths_projects(self):
         data = [{

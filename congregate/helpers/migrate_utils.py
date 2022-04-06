@@ -354,7 +354,7 @@ def get_external_path_with_namespace(path_with_namespace):
     return f"{b.config.dstn_parent_group_path or ''}/{path_with_namespace}".strip("/")
 
 
-def validate_name(name, is_group=False):
+def validate_name(name, full_path, is_group=False):
     """
     Validate group and project names to satisfy the following criteria:
     Name can only contain letters, digits, emojis, '_', '.', dash, space, parenthesis (groups only).
@@ -368,7 +368,10 @@ def validate_name(name, is_group=False):
         r"[^\U00010000-\U0010ffff\w\_\-\.\(\) ]" if is_group else r"[^\U00010000-\U0010ffff\w\_\-\. ]", " ", stripped).split())
     if name != valid:
         b.log.warning(
-            f"Renaming invalid {'group' if is_group else 'project'} name '{name}' -> '{valid}'")
+            f"Renaming invalid {'group' if is_group else 'project'} name '{name}' -> '{valid}' ({full_path})")
+        if is_group:
+            b.log.error(
+                "Sub-groups require a rename on source or direct import")
     return valid
 
 
