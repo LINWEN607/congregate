@@ -187,14 +187,16 @@ class SeedDataGenerator(BaseClass):
                 "email": "john@example.com",
                 "name": "John Smith",
                 "reset_password": True,
-                "skip_confirmation": True
+                "skip_confirmation": True,
+                "using_license_seat": True
             },
             {
                 "username": "jack_smith",
                 "email": "jack@example.com",
                 "name": "Jack Smith",
                 "reset_password": True,
-                "skip_confirmation": True
+                "skip_confirmation": True,
+                "using_license_seat": True
             },
             {
                 "username": "jane_doe",
@@ -202,8 +204,7 @@ class SeedDataGenerator(BaseClass):
                 "name": "Jane Doe",
                 "reset_password": True,
                 "skip_confirmation": True,
-                "theme_id": 3,
-                "color_scheme_id": 3
+                "using_license_seat": True
             }
         ]
         created_users = []
