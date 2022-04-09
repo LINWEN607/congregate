@@ -212,21 +212,30 @@ class UsersClient(BaseClass):
             return f"{username}_{suffix}"
         return f"{username}_{suffix.lstrip('_')}"
 
-    def add_users_to_parent_group(self, dry_run=True):
+    def add_users_to_parent_group(self, minimal_access =False, dry_run=True):
         user_results_path = f"{self.app_path}/data/results/user_migration_results.json"
         if path.exists(user_results_path):
             new_users = read_json_file_into_object(user_results_path)
             for user in new_users:
                 if new_users[user].get("id"):
-                    data = {
-                        "user_id": new_users[user]["id"],
-                        "access_level": 10
-                    }
-                    self.log.info("{0}Adding user {1} to parent group {3} (data: {2}) with guest permissions".format(
-                        get_dry_log(dry_run),
-                        new_users[user]["email"],
-                        data,
-                        self.config.dstn_parent_id))
+                    if minimal_access:
+                        data = {
+                            "user_id": new_users[user]["id"],
+                            "access_level": 5
+                        }
+                        log_string = "minimal access"
+                    else:
+                        data = {
+                            "user_id": new_users[user]["id"],
+                            "access_level": 10
+                        }
+                        log_string = "guest"
+
+                    self.log.info("{0}Adding user {1} to parent group {3} (data: {2}) with {log_string} permissions".format(
+                    get_dry_log(dry_run),
+                    new_users[user]["email"],
+                    data,
+                    self.config.dstn_parent_id))
 
                     if not dry_run:
                         try:

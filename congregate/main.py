@@ -19,7 +19,7 @@ Usage:
     congregate do-all-groups-and-projects [--commit]
     congregate search-for-staged-users [--table]
     congregate update-aws-creds
-    congregate add-users-to-parent-group [--commit]
+    congregate add-users-to-parent-group [--minimal_access] [--commit]
     congregate remove-inactive-users [--commit] [--membership]
     congregate update-user-permissions [--access-level=<level>] [--commit]
     congregate get-total-count
@@ -137,7 +137,7 @@ Commands:
     do-all*                                 Configure system, retrieve all projects, users, and groups, stage all information, and commence migration.
     search-for-staged-users                 Search for staged users on destination based on primary email
     update-aws-creds                        Run awscli commands based on the keys stored in the config. Useful for docker updates.
-    add-users-to-parent-group               If a parent group is set, all staged users will be added to the parent group with guest permissions.
+    add-users-to-parent-group               If a parent group is set, all staged users will be added to the parent group with guest permissions unless --minimal_access flag is thrown which adds staged users with minimal_access permissions to the parent group.
     remove-inactive-users                   Remove all inactive users from staged projects and groups.
     update-user-permissions                 Update parent group member access level. Mainly for lowering to Guest/Reporter.
     get-total-count                         Get total count of migrated projects. Used to compare exported projects to imported projects.
@@ -389,7 +389,9 @@ def main():
             if arguments["search-for-staged-users"]:
                 users.search_for_staged_users(table=arguments["--table"])
             if arguments["add-users-to-parent-group"]:
-                users.add_users_to_parent_group(dry_run=DRY_RUN)
+                MINIMAL_ACCESS = arguments["--minimal_access"]
+                users.add_users_to_parent_group(dry_run=DRY_RUN, minimal_access=MINIMAL_ACCESS)
+                
             if arguments["update-aws-creds"]:
                 if config.s3_access_key and config.s3_secret_key:
                     command = f"aws configure set aws_access_key_id {config.s3_access_key}"
