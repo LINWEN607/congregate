@@ -3,6 +3,7 @@ import json
 from time import sleep
 from gitlab_ps_utils.misc_utils import is_error_message_present, safe_json_response
 from gitlab_ps_utils.dict_utils import dig
+from gitlab_ps_utils.json_utils import json_pretty
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.migrate_utils import migration_dry_run, get_external_path_with_namespace
@@ -158,9 +159,7 @@ class ImportClient(BaseClass):
         return project, repo
 
     def get_external_repo_import_status(self, host, token, pid):
-        import_status = safe_json_response(
-            self.projects.get_project_import_status(host, token, pid))
-        if import_status:
+        if import_status := safe_json_response(self.projects.get_project_import_status(host, token, pid)):
             # Save to file to avoid outputing long lists to log
             failed_relations = import_status.pop("failed_relations")
             # Exposed as of GitLab 14.6
@@ -168,16 +167,40 @@ class ImportClient(BaseClass):
                 "stats") if import_status.get("stats") else None
 
             # Save import_error, user rate_limit status, import stats and failed relations
-            with open(self.app_path + "/data/results/import_failed_relations.json", "a") as f:
-                import_error = import_status.get("import_error")
-                json.dump({import_status.get("path_with_namespace"): {
-                    "import_error": import_error,
-                    "gh_rate_limit_status": safe_json_response(GitHubUsersApi(self.config.source_host, self.config.source_token).get_rate_limit_status())
-                    if import_error else None,
-                    "stats": stats,
-                    "failed_relations": failed_relations
-                } if import_status else None}, f, indent=4)
+            import_error = import_status.get("import_error")
+            key = import_status.get("path_with_namespace")
+            value = {
+                "import_error": import_error,
+                "gh_rate_limit_status": safe_json_response(GitHubUsersApi(self.config.source_host, self.config.source_token).get_rate_limit_status())
+                if import_error else None,
+                "stats": stats,
+                "failed_relations": failed_relations
+            }
+            output = {key: value}
+
+            self.log_repo_import_failure_or_diff(key, value)
+
+            with open(self.app_path + "/data/logs/import_failed_relations.json", "a") as f:
+                json.dump(output, f, indent=4)
         return import_status
+
+    def log_repo_import_failure_or_diff(self, repo, status):
+        '''
+            Capture BitBucket and GitHub repo import failures
+        '''
+        # Log only import failure and immediately return
+        if status.get("import_error") or status.get("failed_relations"):
+            status.pop("stats", None)
+            self.log.error(
+                f"Failed repo {repo} import:\n{json_pretty(status)}")
+            return
+        # Capture import stats only and log in case of diff
+        stats = status.get("stats")
+        if stats and stats.get("fetched") != stats.get("imported"):
+            for k in ["import_error", "gh_rate_limit_status", "failed_relations"]:
+                status.pop(k, None)
+            self.log.warning(
+                f"Diff in repo {repo} import 'stats':\n{json_pretty(status)}")
 
     def get_result_data(self, path_with_namespace, response):
         return {

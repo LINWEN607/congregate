@@ -29,6 +29,7 @@ def rotate_logs():
     if os.path.isdir(log_path):
         log = f"{log_path}/congregate.log"
         audit_log = f"{log_path}/audit.log"
+        import_json = f"{log_path}/import_failed_relations.json"
         end_time = str(datetime.now()).replace(" ", "_")
         print("Rotating and emptying:\n{}".format("\n".join([log, audit_log])))
         try:
@@ -37,6 +38,9 @@ def rotate_logs():
             copy(
                 audit_log, f"{log_path}/audit_{end_time}.log")
             open(audit_log, "w").close()
+            copy(
+                import_json, f"{log_path}/import_failed_relations_{end_time}.json")
+            open(import_json, "w").close()
         except OSError as e:
             if e.errno != errno.ENOENT:
                 raise
