@@ -180,7 +180,7 @@ class ImportClient(BaseClass):
 
             self.log_repo_import_failure_or_diff(key, value)
 
-            with open(self.app_path + "/data/logs/import_failed_relations.json", "a") as f:
+            with open(f"{self.app_path}/data/logs/import_failed_relations.json", "a") as f:
                 json.dump(output, f, indent=4)
         return import_status
 
