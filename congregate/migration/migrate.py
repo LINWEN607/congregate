@@ -123,9 +123,6 @@ class MigrateClient(BaseClass):
                 f"{self.app_path}/data/results/dry_run_user_migration.json",
                 f"{self.app_path}/data/results/dry_run_group_migration.json",
                 f"{self.app_path}/data/results/dry_run_project_migration.json"])
-        else:
-            mig_utils.clean_data(dry_run=False, files=[
-                f"{self.app_path}/data/results/import_failed_relations.json"])
         rotate_logs()
 
         if self.config.source_type == "gitlab":
@@ -231,7 +228,6 @@ class MigrateClient(BaseClass):
         Return true if congregate.conf is correct, log an error if not.
 
         '''
-
         if self.config.reporting:
             if all([
                 self.config.reporting,
@@ -242,11 +238,6 @@ class MigrateClient(BaseClass):
                     "Successfully got reporting config from congregate.conf. Proceeding to make our issues.")
                 return True
             self.log.error(
-                "Couldn't find a required REPORTING config in [DESTINATION] section of congregate.conf.\n"
-                "Issues will not be created."
-            )
-        else:
-            self.log.warning(
                 "Couldn't find a required REPORTING config in [DESTINATION] section of congregate.conf.\n"
                 "Issues will not be created."
             )
