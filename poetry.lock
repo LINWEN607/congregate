@@ -294,7 +294,7 @@ dev = ["twine", "markdown", "flake8", "wheel"]
 
 [[package]]
 name = "gitlab-ps-utils"
-version = "0.7.1"
+version = "0.8.0"
 description = "Shared python utilities used by GitLab Professional Services tooling"
 category = "main"
 optional = false
@@ -1187,7 +1187,7 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "1.1"
 python-versions = "3.8.12"
-content-hash = "64de08e35a306ad6447e257c04234dd7c1fa5ea086becec5dbbb75e2e71fb506"
+content-hash = "d8604a2f3164afc3fb8509edc02b88eeb7646a8a1167e395c79837733b052aba"
 
 [metadata.files]
 astroid = [
@@ -1399,8 +1399,8 @@ ghp-import = [
     {file = "ghp_import-2.0.2-py3-none-any.whl", hash = "sha256:5f8962b30b20652cdffa9c5a9812f7de6bcb56ec475acac579807719bf242c46"},
 ]
 gitlab-ps-utils = [
-    {file = "gitlab-ps-utils-0.7.1.tar.gz", hash = "sha256:068225f4ef9572971a6d14d03112a2edef0621e9e7aa47b395964150387703ae"},
-    {file = "gitlab_ps_utils-0.7.1-py3-none-any.whl", hash = "sha256:9c38b6abd37c1b6f57ef282e203b6ce7a50e74d8fb4209b7cb4a96acbf529154"},
+    {file = "gitlab-ps-utils-0.8.0.tar.gz", hash = "sha256:203e44dac23c078fa6e0b804d2df073587c8d6fa695c71823eb0286c9ade9b33"},
+    {file = "gitlab_ps_utils-0.8.0-py3-none-any.whl", hash = "sha256:7f8d8feb5ef1a7d9e4a938b95560c241feb0360b1a9fab97fb6abc8651e60680"},
 ]
 greenlet = [
     {file = "greenlet-1.1.2-cp27-cp27m-macosx_10_14_x86_64.whl", hash = "sha256:58df5c2a0e293bf665a51f8a100d3e9956febfbf1d9aaf8c0677cf70218910c6"},

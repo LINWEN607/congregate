@@ -19,9 +19,8 @@ Usage:
     congregate do-all-groups-and-projects [--commit]
     congregate search-for-staged-users [--table]
     congregate update-aws-creds
-    congregate add-users-to-parent-group [--minimal_access] [--commit]
+    congregate update-parent-group-members [--access-level=<level>] [--add-members] [--commit]
     congregate remove-inactive-users [--commit] [--membership]
-    congregate update-user-permissions [--access-level=<level>] [--commit]
     congregate get-total-count
     # TODO: Refactor, project name matching does not seem correct
     congregate find-unimported-projects [--commit]
@@ -91,7 +90,7 @@ Arguments:
     only-post-migration-info                Skips migrating all content except for post-migration information. Use when import is handled outside of congregate
     subgroups-only                          Expects that only sub-groups are staged and that their parent groups already exist on destination
     reg-dry-run                             If registry migration is configured, instead of doing the actual migration, write the tags to the logs for use in the brute force migration. Can also be useful when renaming targets
-    access-level                            Update parent group level user permissions (Guest/Reporter/Developer/Maintainer/Owner).
+    access-level                            Update parent group level user permissions (None/Minimal/Guest/Reporter/Developer/Maintainer/Owner).
     staged                                  Compare using staged data
     no-of-files                             Number of files used to go back when stitching JSON results
     result-type                             For stitching result files. Options are project, group, or user
@@ -137,9 +136,8 @@ Commands:
     do-all*                                 Configure system, retrieve all projects, users, and groups, stage all information, and commence migration.
     search-for-staged-users                 Search for staged users on destination based on primary email
     update-aws-creds                        Run awscli commands based on the keys stored in the config. Useful for docker updates.
-    add-users-to-parent-group               If a parent group is set, all staged users will be added to the parent group with guest permissions unless --minimal_access flag is thrown which adds staged users with minimal_access permissions to the parent group.
+    update-parent-group-members             Add (optional) and/or update permissions (to Guest by default) of all staged users for a configured parent group on destination.
     remove-inactive-users                   Remove all inactive users from staged projects and groups.
-    update-user-permissions                 Update parent group member access level. Mainly for lowering to Guest/Reporter.
     get-total-count                         Get total count of migrated projects. Used to compare exported projects to imported projects.
     find-unimported-projects                Return a list of projects that failed import.
     stage-unimported-projects               Stage unimported projects based on {CONGREGATE_PATH}/data/unimported_projects.txt.
@@ -388,10 +386,10 @@ def main():
                 spin_up_ui(app_path, config.ui_port)
             if arguments["search-for-staged-users"]:
                 users.search_for_staged_users(table=arguments["--table"])
-            if arguments["add-users-to-parent-group"]:
-                MINIMAL_ACCESS = arguments["--minimal_access"]
-                users.add_users_to_parent_group(dry_run=DRY_RUN, minimal_access=MINIMAL_ACCESS)
-                
+            if arguments["update-parent-group-members"]:
+                access_level = arguments["--access-level"] or "Guest"
+                users.update_parent_group_members(
+                    access_level, add_members=arguments["--add-members"], dry_run=DRY_RUN)
             if arguments["update-aws-creds"]:
                 if config.s3_access_key and config.s3_secret_key:
                     command = f"aws configure set aws_access_key_id {config.s3_access_key}"
@@ -406,13 +404,6 @@ def main():
             if arguments["remove-inactive-users"]:
                 users.remove_inactive_users(
                     membership=MEMBERSHIP, dry_run=DRY_RUN)
-            if arguments["update-user-permissions"]:
-                access_level = arguments["--access-level"]
-                if access_level:
-                    users.update_user_permissions(
-                        access_level, dry_run=DRY_RUN)
-                else:
-                    log.warning("Missing access-level argument")
             if arguments["get-total-count"]:
                 migrate = MigrateClient()
                 migrate.get_total_migrated_count()

@@ -1,8 +1,8 @@
 import unittest
 import json
-import responses
 import warnings
 from unittest.mock import patch, mock_open, PropertyMock, MagicMock
+import responses
 from pytest import mark
 from requests.exceptions import RequestException
 

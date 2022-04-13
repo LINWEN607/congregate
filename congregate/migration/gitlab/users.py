@@ -1,4 +1,5 @@
-from os import path
+import os
+import sys
 from requests.exceptions import RequestException
 from pandas import DataFrame, Series, set_option
 
@@ -212,40 +213,63 @@ class UsersClient(BaseClass):
             return f"{username}_{suffix}"
         return f"{username}_{suffix.lstrip('_')}"
 
-    def add_users_to_parent_group(self, minimal_access =False, dry_run=True):
-        user_results_path = f"{self.app_path}/data/results/user_migration_results.json"
-        if path.exists(user_results_path):
-            new_users = read_json_file_into_object(user_results_path)
-            for user in new_users:
-                if new_users[user].get("id"):
-                    if minimal_access:
-                        data = {
-                            "user_id": new_users[user]["id"],
-                            "access_level": 5
-                        }
-                        log_string = "minimal access"
-                    else:
-                        data = {
-                            "user_id": new_users[user]["id"],
-                            "access_level": 10
-                        }
-                        log_string = "guest"
-
-                    self.log.info("{0}Adding user {1} to parent group {3} (data: {2}) with {log_string} permissions".format(
-                    get_dry_log(dry_run),
-                    new_users[user]["email"],
-                    data,
-                    self.config.dstn_parent_id))
-
+    def update_parent_group_members(self, access_level, add_members=False, dry_run=True):
+        ROLES = {
+            "none": 0,
+            "minimal": 5,
+            "guest": 10,
+            "reporter": 20,
+            "developer": 30,
+            "maintainer": 40,
+            "owner": 50}
+        target_level = ROLES.get(access_level.lower())
+        if target_level is None:
+            self.log.error(
+                f"Invalid access level entry '{access_level}' ({[k for k, _ in ROLES.items()]})")
+            sys.exit(os.EX_DATAERR)
+        parent_id = self.config.dstn_parent_id
+        if not parent_id:
+            self.log.error(
+                f"Invalid parent group ID configured ('{parent_id}')")
+            sys.exit(os.EX_CONFIG)
+        host = self.config.destination_host
+        token = self.config.destination_token
+        members = {}
+        dry_log = get_dry_log(dry_run=dry_run)
+        try:
+            # List and extract parent member IDs
+            for m in self.groups_api.get_all_group_members(parent_id, host, token):
+                members[m.get("id")] = m.get("access_level")
+            mids = [k for k, _ in members.items()]
+            for su in get_staged_users():
+                user = find_user_by_email_comparison_without_id(
+                    su.get("email"))
+                if not user:
+                    continue
+                uid = user.get("id")
+                username = user.get("username")
+                # Invite member with required access level
+                if uid not in mids and add_members:
+                    self.log.info(
+                        f"{dry_log}Add user {username} (ID: {uid}) as {access_level}")
                     if not dry_run:
-                        try:
-                            self.groups_api.add_member_to_group(
-                                self.config.dstn_parent_id, self.config.destination_host, self.config.destination_token, data)
-                        except RequestException as e:
-                            self.log.error(
-                                "Failed to add user {0} to parent group, with error:\n{1}".format(user, e))
-        else:
-            self.log.error("%s not found" % user_results_path)
+                        self.groups_api.add_member_to_group(
+                            parent_id, host, token, {"user_id": uid, "access_level": target_level})
+                    continue
+                # Retrieve member parent access level and update
+                level = members.get(uid)
+                if uid in mids and level != target_level:
+                    self.log.info(
+                        f"{dry_log}Update member {user.get('username')} (ID: {uid}) access level {level} -> {target_level} ({access_level})")
+                    if not dry_run:
+                        self.groups_api.update_member_access_level(
+                            host, token, parent_id, uid, target_level)
+                    continue
+                self.log.warning(
+                    f"SKIP: Member {username} (ID: {uid}) not found. Missing '--add-members'?")
+        except RequestException as re:
+            self.log.error(
+                f"Failed to {'add or ' if add_members else ''}update parent group {parent_id} members, with error:\n{re}")
 
     def remove_users_from_parent_group(self, dry_run=True):
         count = 0
@@ -272,45 +296,6 @@ class UsersClient(BaseClass):
                     user["username"],
                     level))
         return count
-
-    def update_user_permissions(self, access_level, dry_run=True):
-        PERMISSIONS = {
-            "guest": 10,
-            "reporter": 20,
-            "developer": 30,
-            "maintainer": 40,
-            "owner": 50}
-        level = PERMISSIONS[access_level.lower()]
-        try:
-            users = list(self.groups_api.get_all_group_members(
-                self.config.dstn_parent_id,
-                self.config.destination_host,
-                self.config.destination_token))
-            for user in users:
-                self.log.info("{0}Updating {1}'s access level to {2} ({3})".format(
-                    get_dry_log(dry_run),
-                    user["username"],
-                    access_level,
-                    level))
-                if not dry_run:
-                    response = self.groups_api.update_member_access_level(
-                        self.config.destination_host,
-                        self.config.destination_token,
-                        self.config.dstn_parent_id,
-                        user["id"],
-                        level)
-                    if response.status_code != 200:
-                        self.log.warning("Failed to update {0}'s parent access level ({1})".format(
-                            user["username"],
-                            response.content))
-                    else:
-                        self.log.info("Updated {0}'s parent access level to {1} ({2})".format(
-                            user["username"],
-                            access_level,
-                            level))
-        except RequestException as e:
-            self.log.error(
-                "Failed to update user's parent access level, with error:\n{}".format(e))
 
     def remove_inactive_users(self, membership=False, dry_run=True):
         """
