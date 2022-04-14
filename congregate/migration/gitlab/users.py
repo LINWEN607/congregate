@@ -265,8 +265,9 @@ class UsersClient(BaseClass):
                         self.groups_api.update_member_access_level(
                             host, token, parent_id, uid, target_level)
                     continue
-                self.log.warning(
-                    f"SKIP: Member {username} (ID: {uid}) not found. Missing '--add-members'?")
+                if uid not in mids:
+                    self.log.warning(
+                        f"SKIP: Member {username} (ID: {uid}) not found. Missing '--add-members'?")
         except RequestException as re:
             self.log.error(
                 f"Failed to {'add or ' if add_members else ''}update parent group {parent_id} members, with error:\n{re}")
