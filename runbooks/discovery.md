@@ -13,6 +13,12 @@ The Ultimate Goal of this document is to have its contents converted into a road
 * Our migration host lives in GCP. Do we have firewall access to their instances?
 * Specific outbound IPs of the machine can be retrieved from the GCP console, so that they don't have to allow the entire GCP range through the wall
 * If you need to allow the entire GCP range (eg: for streaming imports) the range can be found [here](https://docs.gitlab.com/ee/user/gitlab_com/#ip-range)
+    * Streaming imports (BitBucket, GitHub, soon to be GitLab) currently require `http` *or* `trusted https`. Self-signed certificates will fail. Options:
+        * Disable `https` on the source instance
+        * Add an external signed certificate to the instance
+        * Use a `N (multi)-hop` migration
+        * Use a `reverse proxy` that trusts the internal certificate and forwards requests
+    * Note: The above options may require adjustments to the project scope and timeline
 * VPN usage is supported, but can limit migrations speeds
     * Make sure to remove any IP throttling that may be configured
 
