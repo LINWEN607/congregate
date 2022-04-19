@@ -117,7 +117,7 @@ Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/projects.json.
     init                                    Creates additional directories and files required by congregate
     configure                               Configure congregate for migrating between two instances and save it to {CONGREGATE_PATH}/data/congregate.conf.
-    generate-reporting                                  Run reporting on staged projects.
+    generate-reporting                      Run reporting on staged projects.
     stage-projects                          Stage projects to {CONGREGATE_PATH}/data/staged_projects.json,
                                                 their parent groups to {CONGREGATE_PATH}/data/staged_groups.json.
                                                 all project and group members to {CONGREGATE_PATH}/data/staged_users.json,
@@ -142,7 +142,7 @@ Commands:
     find-unimported-projects                Return a list of projects that failed import.
     stage-unimported-projects               Stage unimported projects based on {CONGREGATE_PATH}/data/unimported_projects.txt.
     url-rewrite-only                        Performs the URL rewrite portion of a migration as a stand-alone step, instead of as a post-migration step. Requires the projects to be staged, and to exist on destination
-    remove-users-from-parent-group          Remove all users with at most reporter access from the parent group.
+    remove-users-from-parent-group          Remove all users with at most Reporter access from the parent group.
     migrate-variables-in-stage              Migrate CI variables for staged projects.
     mirror-staged-projects                  Set up project mirroring for staged projects.
     push-mirror-staged-projects             Set up and enable (by default) project push mirroring for staged projects.
