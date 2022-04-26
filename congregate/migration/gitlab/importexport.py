@@ -586,11 +586,11 @@ class ImportExportClient(BaseClass):
                 f"Project {dst_path_with_namespace} NOT found on destination. Exporting from source...")
             if loc == "filesystem":
                 exported = self.wait_for_export_to_finish(pid, name)
-                if exported:
-                    self.log.info(
-                        f"Waiting {self.COOL_OFF_MINUTES} minutes to download project {name} (ID: {pid})")
-                    sleep(self.COOL_OFF_MINUTES * 60)
-                    self.handle_gzip_download(name, pid, filename)
+                # if exported:
+                self.log.info(
+                    f"Waiting {self.COOL_OFF_MINUTES} minutes to download project {name} (ID: {pid})")
+                sleep(self.COOL_OFF_MINUTES * 120)
+                self.handle_gzip_download(name, pid, filename)
             # TODO: Refactor and sync with other scenarios (#119)
             elif loc == "filesystem-aws":
                 self.log.warning(
@@ -625,9 +625,9 @@ class ImportExportClient(BaseClass):
             headers={"PRIVATE-TOKEN": self.config.source_token},
             verify=self.config.ssl_verify)
         if not is_gzip(f"{self.config.filesystem_path}/downloads/{new_file}"):
-            raise ValueError("Downloaded file is not a Gzip file.")
+            raise ValueError("Downloaded file is NOT a Gzip file.")
         self.log.info(
-            f"{name} export file successfully downloaded. Verified {filename} is a gzip file.")
+            f"Project '{name}' export file successfully downloaded. Verified {filename} is a gzip file.")
 
     def export_thru_fs_aws(self, pid, name, namespace):
         path_with_namespace = "%s_%s.tar.gz" % (namespace, name)

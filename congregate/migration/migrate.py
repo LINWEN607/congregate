@@ -1097,13 +1097,13 @@ class MigrateClient(BaseClass):
             filename: False
         }
         try:
-            self.log.info("{0}Exporting project {1} (ID: {2}) as {3}"
-                          .format(dry_log, project["path_with_namespace"], pid, filename))
+            self.log.info(
+                f"{dry_log}Exporting project {project['path_with_namespace']} (ID: {pid}) as {filename}")
             result[filename] = self.ie.export_project(
                 project, dry_run=self.dry_run)
         except (IOError, RequestException) as oe:
-            self.log.error("Failed to export project {0} (ID: {1}) as {2} with error:\n{3}".format(
-                name, pid, filename, oe))
+            self.log.error(
+                f"Failed to export/download project {name} (ID: {pid}) as {filename} with error:\n{oe}")
         except Exception as e:
             self.log.error(e)
             self.log.error(print_exc())
