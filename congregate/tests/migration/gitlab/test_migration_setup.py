@@ -67,6 +67,7 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
             # mongo_port
             # ui_port
             # processes
+            # ssl_verify
         ]
         tokens = [
             destination_token,

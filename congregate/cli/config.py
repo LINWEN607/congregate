@@ -314,7 +314,7 @@ def generate_config():
 
     # Default implied config
     config.set("APP", "ui_port", "8000")
-    config.set("APP", "processes", "4")
+    config.set("APP", "processes", "1")
     config.set("APP", "ssl_verify", "True")
 
     write_to_file(config)

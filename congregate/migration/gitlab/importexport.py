@@ -586,11 +586,8 @@ class ImportExportClient(BaseClass):
                 f"Project {dst_path_with_namespace} NOT found on destination. Exporting from source...")
             if loc == "filesystem":
                 exported = self.wait_for_export_to_finish(pid, name)
-                # if exported:
-                self.log.info(
-                    f"Waiting {self.COOL_OFF_MINUTES} minutes to download project {name} (ID: {pid})")
-                sleep(self.COOL_OFF_MINUTES * 120)
-                self.handle_gzip_download(name, pid, filename)
+                if exported:
+                    self.handle_gzip_download(name, pid, filename)
             # TODO: Refactor and sync with other scenarios (#119)
             elif loc == "filesystem-aws":
                 self.log.warning(

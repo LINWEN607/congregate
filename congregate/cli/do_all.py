@@ -79,7 +79,7 @@ def do_all(dry_run=True):
     # export
     users.set_staged_users_public_email(dry_run=dry_run)
 
-    migrate = MigrateClient(dry_run=dry_run)
+    migrate = MigrateClient(dry_run=dry_run, processes=1)
     migrate.migrate()
 
     # Reset public_email field after migration
