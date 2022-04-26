@@ -215,7 +215,7 @@ def find_user_by_email_comparison_without_id(email, src=False):
                 b.log.error(
                     f"Could NOT find user by primary email {email}")
     else:
-        b.log.error(f"User email '{email}' provided. Skipping")
+        b.log.error(f"User email NOT provided ({email}). Skipping")
     return None
 
 
