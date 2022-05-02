@@ -616,7 +616,10 @@ class ImportExportClient(BaseClass):
         url = f"{self.config.source_host}/api/v4/projects/{pid}/export/download"
         self.log.info(
             f"Downloading project '{name}' (ID: {pid}) as {filename}")
-        while True:
+        total_time = 0
+        timeout = self.config.export_import_timeout
+        wait_time = self.COOL_OFF_MINUTES * 60
+        while total_time < timeout:
             new_file = download_file(
                 url,
                 self.config.filesystem_path,
@@ -627,7 +630,8 @@ class ImportExportClient(BaseClass):
             if not new_file:
                 self.log.info(
                     f"Waiting {self.COOL_OFF_MINUTES} minutes to download project '{name}' (ID: {pid}) as {filename}")
-                sleep(self.COOL_OFF_MINUTES * 60)
+                total_time += wait_time
+                sleep(wait_time)
                 continue
             break
         if not is_gzip(f"{self.config.filesystem_path}/downloads/{new_file}"):
