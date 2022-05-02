@@ -614,13 +614,22 @@ class ImportExportClient(BaseClass):
             Attempt to download the export, if it's not a valid export, try again.
         '''
         url = f"{self.config.source_host}/api/v4/projects/{pid}/export/download"
-        self.log.info(f"Downloading project {name} (ID: {pid}) as {filename}")
-        new_file = download_file(
-            url,
-            self.config.filesystem_path,
-            filename,
-            headers={"PRIVATE-TOKEN": self.config.source_token},
-            verify=self.config.ssl_verify)
+        self.log.info(
+            f"Downloading project '{name}' (ID: {pid}) as {filename}")
+        while True:
+            new_file = download_file(
+                url,
+                self.config.filesystem_path,
+                filename,
+                headers={"PRIVATE-TOKEN": self.config.source_token},
+                verify=self.config.ssl_verify)
+            # If None i.e. exception, retry
+            if not new_file:
+                self.log.info(
+                    f"Waiting {self.COOL_OFF_MINUTES} minutes to download project '{name}' (ID: {pid}) as {filename}")
+                sleep(self.COOL_OFF_MINUTES * 60)
+                continue
+            break
         if not is_gzip(f"{self.config.filesystem_path}/downloads/{new_file}"):
             raise ValueError("Downloaded file is NOT a Gzip file.")
         self.log.info(
