@@ -367,6 +367,19 @@ class GroupsApi(GitLabApiWrapper):
         """
         return self.api.list_all(host, token, f"groups/{gid}/subgroups")
 
+    def get_all_descendant_groups(self, gid, host, token):
+        """
+        Get a list of visible descendant groups of this group.
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/groups.html#list-a-groups-descendant-groups
+
+            :param: gid: (int) GitLab group ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /groups/:id/descendant_groups
+        """
+        return self.api.list_all(host, token, f"groups/{gid}/descendant_groups")
+
     def get_all_group_audit_events(self, gid, host, token):
         """
         Get a list of audit events for this group

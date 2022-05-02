@@ -5,6 +5,7 @@ from gitlab_ps_utils.misc_utils import strip_netloc
 from gitlab_ps_utils.string_utils import deobfuscate
 
 from congregate.helpers.base_class import BaseClass
+from congregate.helpers.utils import is_dot_com
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.users import UsersClient
 from congregate.migration.gitlab.projects import ProjectsClient
@@ -32,21 +33,26 @@ def list_gitlab_data(processes=None, partial=False,
         List the projects information, and Retrieve user info, group info from source instance.
     """
     mongo, p, g, u = mongo_init(partial=partial)
+    host = b.config.source_host
+    token = b.config.source_token
 
     if not skip_users:
         users = UsersClient()
-        users.retrieve_user_info(b.config.source_host,
-                                 b.config.source_token, processes=processes)
+        users.retrieve_user_info(host, token, processes=processes)
         mongo.dump_collection_to_file(u, f"{b.app_path}/data/users.json")
+
     if not skip_groups:
         groups = GroupsClient()
-        groups.retrieve_group_info(
-            b.config.source_host, b.config.source_token, processes=processes)
+        groups.retrieve_group_info(host, token, processes=processes)
         mongo.dump_collection_to_file(g, f"{b.app_path}/data/groups.json")
-    if not skip_projects:
+
+    # When to list projects - Listing groups on gitlab.com will also list their projects
+    if not skip_projects and not is_dot_com(host):
         projects = ProjectsClient()
-        projects.retrieve_project_info(
-            b.config.source_host, b.config.source_token, processes=processes)
+        projects.retrieve_project_info(host, token, processes=processes)
+
+    # When to dump listed projects
+    if not skip_projects:
         mongo.dump_collection_to_file(p, f"{b.app_path}/data/projects.json")
 
     mongo.close_connection()

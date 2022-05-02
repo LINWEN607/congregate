@@ -17,6 +17,18 @@ class GroupDiffClient(BaseDiffClient):
     '''
         Extension of BaseDiffClient focused on finding the differences between migrated groups
     '''
+    KEYS_TO_IGNORE = [
+        "id",
+        "projects",
+        "runners_token",
+        "web_url",
+        "created_at",
+        "marked_for_deletion_on",
+        "prevent_forking_outside_group",
+        "shared_with_groups",   # Temporarily, until we add shared_with_groups feature
+        "file_template_project_id",
+        "visibility"   # Private on import, unless imported into a parent group
+    ]
 
     def __init__(self, staged=False, subgroups_only=False,
                  rollback=False, processes=None):
@@ -31,18 +43,7 @@ class GroupDiffClient(BaseDiffClient):
         self.results_mtime = getmtime(self.results_path)
         self.rollback = rollback
         self.processes = processes
-        self.keys_to_ignore = [
-            "id",
-            "projects",
-            "runners_token",
-            "web_url",
-            "created_at",
-            "marked_for_deletion_on",
-            "prevent_forking_outside_group",
-            "shared_with_groups",   # Temporarily, until we add shared_with_groups feature
-            "file_template_project_id",
-            "visibility"   # Private on import, unless imported into a parent group
-        ]
+        self.keys_to_ignore = self.KEYS_TO_IGNORE
         if is_dot_com(self.config.destination_host) or is_dot_com(
                 self.config.source_host):
             self.keys_to_ignore.append("ldap_group_links")

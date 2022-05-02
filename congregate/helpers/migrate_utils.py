@@ -3,6 +3,7 @@ import os
 import errno
 import json
 
+from string import punctuation
 from re import sub
 from collections import Counter
 from pathlib import Path
@@ -15,9 +16,11 @@ from gitlab_ps_utils.dict_utils import dig
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.utils import is_dot_com, get_congregate_path
 from congregate.migration.gitlab.api.users import UsersApi
+from congregate.migration.gitlab.api.instance import InstanceApi
 
 b = BaseClass()
 users_api = UsersApi()
+instance_api = InstanceApi()
 
 
 def get_failed_export_from_results(res):
@@ -351,17 +354,24 @@ def get_external_path_with_namespace(path_with_namespace):
     return f"{b.config.dstn_parent_group_path or ''}/{path_with_namespace}".strip("/")
 
 
-def validate_name(name, is_group=False):
+def validate_name(name, full_path, is_group=False):
     """
     Validate group and project names to satisfy the following criteria:
     Name can only contain letters, digits, emojis, '_', '.', dash, space, parenthesis (groups only).
     It must start with letter, digit, emoji or '_'.
     """
-    valid = " ".join(sub(r"[^\U00010000-\U0010ffff\w\_\-\.\(\) ]" if is_group else r"[^\U00010000-\U0010ffff\w\_\-\. ]",
-                     " ", name.lstrip("-").lstrip(".")).split())
+    # Remove leading and trailing special characters and spaces
+    stripped = name.strip(punctuation + " ")
+
+    # Validate naming convention in docstring
+    valid = " ".join(sub(
+        r"[^\U00010000-\U0010ffff\w\_\-\.\(\) ]" if is_group else r"[^\U00010000-\U0010ffff\w\_\-\. ]", " ", stripped).split())
     if name != valid:
         b.log.warning(
-            f"Renaming invalid {'group' if is_group else 'project'} name '{name}' -> '{valid}'")
+            f"Renaming invalid {'group' if is_group else 'project'} name '{name}' -> '{valid}' ({full_path})")
+        if is_group:
+            b.log.error(
+                "Sub-groups require a rename on source or direct import")
     return valid
 
 
@@ -372,3 +382,14 @@ def get_duplicate_paths(data, are_projects=True):
     paths = [x.get("path_with_namespace", "").lower() if are_projects else x.get(
         "full_path", "").lower() for x in data]
     return [i for i, c in Counter(paths).items() if c > 1]
+
+
+def is_gl_version_older_than(set_version, host, token, log):
+    """
+        Lookup GL instance version and throw custom log based
+    """
+    version = safe_json_response(instance_api.get_version(host, token))
+    if version and version.get("version") and int(version["version"].split(".")[0]) < set_version:
+        b.log.info(f"{log} on GitLab version {version}")
+        return True
+    return False

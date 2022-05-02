@@ -86,19 +86,14 @@ class ImportExportClient(BaseClass):
                             f"{export_type} {name} has finished exporting, with response:\n{json_pretty(status_json)}")
                         exported = True
                         break
-                    if state == "failed":
+                    # We don't want to wait for queued exports
+                    if total_time > timeout/4 and state == "none":
                         self.log.error(
-                            f"{export_type} {name} export failed{' (re-exporting)' if retry else ''}, with response:\n{json_pretty(status_json)}")
-                        if retry:
-                            response = self.trigger_export_and_get_response(
-                                src_id, is_project)
-                            retry = False
-                            total_time = 0
-                        else:
-                            break
-                    elif total_time < timeout:
+                            f"SKIP: {export_type} {name} export with status '{state}' and response:\n{json_pretty(status_json)}")
+                        break
+                    if total_time < timeout:
                         self.log.info(
-                            f"{export_type} {name} export status ({state}) after {total_time}/{timeout} seconds")
+                            f"{export_type} {name} export status '{state}' after {total_time}/{timeout} seconds")
                         total_time += wait_time
                         sleep(wait_time)
                     else:
@@ -395,7 +390,7 @@ class ImportExportClient(BaseClass):
                 parent_id = found
             else:
                 self.log.warning(
-                    f"Parent group {parent_path} not found on destination")
+                    f"Parent group {parent_path} NOT found on destination")
                 return False
         if not dry_run:
             import_response = self.attempt_group_import(
@@ -524,7 +519,7 @@ class ImportExportClient(BaseClass):
                     if state == "finished":
                         self.log.info(
                             f"Project {name} successfully imported to {dst_namespace}, with import status:\n{json_pretty(status_json)}")
-                        with open(self.app_path + "/data/results/import_failed_relations.json", "a") as f:
+                        with open(f"{self.app_path}/data/logs/import_failed_relations.json", "a") as f:
                             json.dump({status_json.get("path_with_namespace"): status_json.get(
                                 "failed_relations")}, f, indent=4)
                         break
@@ -614,7 +609,6 @@ class ImportExportClient(BaseClass):
             return True
         return exported
 
-
     def handle_gzip_download(self, name, pid, filename):
         '''
         Attempt to download the export, if its not a valid export, try again.
@@ -629,7 +623,8 @@ class ImportExportClient(BaseClass):
             verify=self.config.ssl_verify)
         if not is_gzip(f"{self.config.filesystem_path}/downloads/{new_file}"):
             raise ValueError("Downloaded file is not a Gzip file.")
-        self.log.info(f"{name} export file successfully downloaded. Verified {filename} is a gzip file.")
+        self.log.info(
+            f"{name} export file successfully downloaded. Verified {filename} is a gzip file.")
 
     def export_thru_fs_aws(self, pid, name, namespace):
         path_with_namespace = "%s_%s.tar.gz" % (namespace, name)

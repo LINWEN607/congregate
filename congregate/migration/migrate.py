@@ -1,7 +1,7 @@
 """
     Congregate - GitLab instance migration utility
 
-    Copyright (c) 2021 - GitLab
+    Copyright (c) 2022 - GitLab
 """
 
 import os
@@ -123,9 +123,6 @@ class MigrateClient(BaseClass):
                 f"{self.app_path}/data/results/dry_run_user_migration.json",
                 f"{self.app_path}/data/results/dry_run_group_migration.json",
                 f"{self.app_path}/data/results/dry_run_project_migration.json"])
-        else:
-            mig_utils.clean_data(dry_run=False, files=[
-                f"{self.app_path}/data/results/import_failed_relations.json"])
         rotate_logs()
 
         if self.config.source_type == "gitlab":
@@ -198,7 +195,7 @@ class MigrateClient(BaseClass):
             mig_utils.write_results_to_file(
                 results, result_type="group", log=self.log)
         else:
-            self.log.info("SKIP: No groups staged for migration")
+            self.log.warning("SKIP: No groups staged for migration")
         # Migrate GH repos to projects
         staged_projects = mig_utils.get_staged_projects()
         if staged_projects and not self.skip_project_import:
@@ -219,7 +216,7 @@ class MigrateClient(BaseClass):
                 f"### {dry_log}Project import results ###\n{json_utils.json_pretty(import_results)}")
             mig_utils.write_results_to_file(import_results, log=self.log)
         else:
-            self.log.info("SKIP: No projects staged for migration")
+            self.log.warning("SKIP: No projects staged for migration")
 
         # After all is said and done, run our reporting with the
         # staged_projects and results
@@ -231,7 +228,6 @@ class MigrateClient(BaseClass):
         Return true if congregate.conf is correct, log an error if not.
 
         '''
-
         if self.config.reporting:
             if all([
                 self.config.reporting,
@@ -242,11 +238,6 @@ class MigrateClient(BaseClass):
                     "Successfully got reporting config from congregate.conf. Proceeding to make our issues.")
                 return True
             self.log.error(
-                "Couldn't find a required REPORTING config in [DESTINATION] section of congregate.conf.\n"
-                "Issues will not be created."
-            )
-        else:
-            self.log.warning(
                 "Couldn't find a required REPORTING config in [DESTINATION] section of congregate.conf.\n"
                 "Issues will not be created."
             )
@@ -542,7 +533,7 @@ class MigrateClient(BaseClass):
             mig_utils.write_results_to_file(
                 results, result_type="group", log=self.log)
         else:
-            self.log.info("SKIP: No groups staged for migration")
+            self.log.warning("SKIP: No groups staged for migration")
 
         # Migrate BB repos as GL projects
         staged_projects = mig_utils.get_staged_projects()
@@ -565,7 +556,7 @@ class MigrateClient(BaseClass):
                           .format(dry_log, json_utils.json_pretty(import_results)))
             mig_utils.write_results_to_file(import_results, log=self.log)
         else:
-            self.log.info("SKIP: No projects staged for migration")
+            self.log.warning("SKIP: No projects staged for migration")
 
     def migrate_bitbucket_group(self, group):
         result = False
@@ -652,11 +643,9 @@ class MigrateClient(BaseClass):
 
     def are_results(self, results, var, stage):
         if not results:
-            sub_only = " Migrating ONLY sub-groups without '--subgroups-only'?" if var == "group" and stage in [
-                "export", "import"] else ""
             self.log.warning(
-                f"Results from {var} {stage} returned as empty.{sub_only} Aborting.")
-            mig_utils.add_post_migration_stats(self.dry_run, log=self.log)
+                f"Results from {var} {stage} returned as empty. Aborting.")
+            mig_utils.add_post_migration_stats(self.start, log=self.log)
             sys.exit(os.EX_OK)
 
     def migrate_user_info(self):
@@ -690,7 +679,7 @@ class MigrateClient(BaseClass):
                 self.log.info(
                     "SKIP: Assuming staged users are already migrated")
         else:
-            self.log.info("SKIP: No users staged for migration")
+            self.log.warning("SKIP: No users staged for migration")
 
     def handle_user_creation(self, user):
         """
@@ -769,7 +758,7 @@ class MigrateClient(BaseClass):
         staged_subgroups = [
             g for g in staged_groups if not mig_utils.is_top_level_group(g)]
         dry_log = misc_utils.get_dry_log(self.dry_run)
-        if staged_groups:
+        if staged_top_groups or (staged_subgroups and self.subgroups_only):
             self.validate_groups_and_projects(staged_groups)
             if self.stream_groups:
                 self.stream_import_groups(
@@ -778,7 +767,8 @@ class MigrateClient(BaseClass):
                 self.export_import_groups(
                     staged_top_groups, staged_subgroups, dry_log)
         else:
-            self.log.info("SKIP: No groups staged for migration")
+            self.log.warning(
+                "SKIP: No groups staged for migration. Migrating ONLY sub-groups without '--subgroups-only'?")
 
     def export_import_groups(self, staged_top_groups, staged_subgroups, dry_log):
         if not self.skip_group_export:
@@ -847,7 +837,7 @@ class MigrateClient(BaseClass):
                 ex_full_path = next(iter(ir))
                 full_path = ir.get("source_full_path") or ex_full_path
                 status = ir.get("status")
-                if not self.dry_run and (status == "finished" or ir.get(ex_full_path)):
+                if status == "finished" or ir.get(ex_full_path):
                     src_gid = next((g["id"] for g in (
                         staged_top_groups + staged_subgroups) if g["full_path"] == full_path), None)
                     dst_gid = ir.get("namespace_id") or ex_full_path
@@ -1094,7 +1084,7 @@ class MigrateClient(BaseClass):
                 self.log.info(
                     "SKIP: Assuming staged projects will be later imported")
         else:
-            self.log.info("SKIP: No projects staged for migration")
+            self.log.warning("SKIP: No projects staged for migration")
 
     def handle_exporting_projects(self, project):
         name = project["name"]

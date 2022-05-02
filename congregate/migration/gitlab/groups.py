@@ -8,10 +8,10 @@ from congregate.helpers.base_class import BaseClass
 from congregate.helpers.mdbc import MongoConnector
 from congregate.helpers.migrate_utils import get_full_path_with_parent_namespace, is_top_level_group, get_staged_groups, \
     find_user_by_email_comparison_without_id
-from congregate.helpers.utils import is_dot_com
 from congregate.migration.gitlab.variables import VariablesClient
 from congregate.migration.gitlab.badges import BadgesClient
 from congregate.migration.gitlab.api.groups import GroupsApi
+from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.namespaces import NamespacesApi
 
 
@@ -19,6 +19,7 @@ class GroupsClient(BaseClass):
     def __init__(self):
         self.vars = VariablesClient()
         self.groups_api = GroupsApi()
+        self.projects_api = ProjectsApi()
         self.badges = BadgesClient()
         self.namespaces_api = NamespacesApi()
         self.group_id_mapping = {}
@@ -26,7 +27,7 @@ class GroupsClient(BaseClass):
 
     def traverse_groups(self, host, token, group):
         mongo = MongoConnector()
-        if group_id := group.get("id"):
+        if gid := group.get("id"):
             keys_to_ignore = [
                 "web_url",
                 "full_name",
@@ -35,16 +36,30 @@ class GroupsClient(BaseClass):
             ]
             for k in keys_to_ignore:
                 group.pop(k, None)
-            # Avoid saving all SaaS parent group members
-            if is_dot_com(host) and group_id == self.config.src_parent_id:
-                group["members"] = []
-            else:
-                group["members"] = list(self.groups_api.get_all_group_members(
-                    group_id, host, token))
-            group["projects"] = list(self.groups_api.get_all_group_projects(
-                group_id, host, token, with_shared=False))
+
+            # Save all group members as part of group metadata
+            group["members"] = list(self.groups_api.get_all_group_members(
+                gid, host, token))
+
+            # Save all group projects ID references as part of group metadata
+            # Only list direct projects to avoid overhead
+            group["projects"] = []
+            for project in self.groups_api.get_all_group_projects(gid, host, token, include_subgroups=False, with_shared=False):
+                group["projects"].append(project["id"])
+
+                # Avoids having to also list all gitlab.com parent group projects
+                project["members"] = list(
+                    self.projects_api.get_members(project["id"], host, token))
+                mongo.insert_data(f"projects-{strip_netloc(host)}", project)
+
+            # Save all descendant groups ID references as part of group metadata
+            group["desc_groups"] = []
+            for g in self.groups_api.get_all_descendant_groups(gid, host, token):
+                group["desc_groups"].append(g["id"])
+
+            # Traverse subgroups
             for subgroup in self.groups_api.get_all_subgroups(
-                    group_id, host, token):
+                    gid, host, token):
                 self.log.debug("Traversing into subgroup")
                 self.traverse_groups(
                     host, token, subgroup)
@@ -52,8 +67,7 @@ class GroupsClient(BaseClass):
 
         mongo.close_connection()
 
-    def retrieve_group_info(
-            self, host, token, location="source", processes=None):
+    def retrieve_group_info(self, host, token, location="source", processes=None):
         prefix = location if location != "source" else ""
 
         if self.config.src_parent_group_path:
@@ -63,9 +77,8 @@ class GroupsClient(BaseClass):
             self.traverse_groups(host, token, safe_json_response(self.groups_api.get_group(
                 self.config.src_parent_id, host, token)))
         else:
-            self.multi.start_multi_process_stream_with_args(self.traverse_groups,
-                                                            self.groups_api.get_all_groups(
-                                                                host, token), host, token, processes=processes)
+            self.multi.start_multi_process_stream_with_args(self.traverse_groups, self.groups_api.get_all_groups(
+                host, token), host, token, processes=processes)
 
     def append_groups(self, groups):
         with open("{}/data/groups.json".format(self.app_path), "r") as f:

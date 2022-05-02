@@ -15,7 +15,7 @@ class StageProjectsTests(unittest.TestCase):
         self.groups_api = MockGroupsApi()
         self.users_api = MockUsersApi()
         self.mock = mock.MagicMock()
-        self.gcli = GroupStageCLI()
+        self.gs_cli = GroupStageCLI()
 
     @mock.patch('builtins.open')
     @mock.patch('os.path.isfile')
@@ -33,7 +33,7 @@ class StageProjectsTests(unittest.TestCase):
         mock_groups.return_value = self.groups_api.get_all_groups_list()
         mock_open.return_value = {}
 
-        staged_projects, staged_users, staged_groups = self.gcli.build_staging_data([
+        staged_projects, staged_users, staged_groups = self.gs_cli.build_staging_data([
             "2", "3"])
 
         expected_projects = [
@@ -174,11 +174,11 @@ class StageProjectsTests(unittest.TestCase):
         self.assertEqual(len(expected_groups), len(staged_groups))
         self.assertEqual(len(expected_users), len(staged_users))
 
-        for i in range(len(expected_projects)):
+        for i, _ in enumerate(expected_projects):
             self.assertEqual(
                 expected_projects[i].items(), staged_projects[i].items())
 
-        for i in range(len(expected_groups)):
+        for i, _ in enumerate(expected_groups):
             try:
                 self.assertEqual(
                     expected_groups[i].items(), staged_groups[i].items())
@@ -186,7 +186,7 @@ class StageProjectsTests(unittest.TestCase):
                 print("Expected: ", expected_groups[i])
                 print("Staged: ", staged_groups[i])
 
-        for i in range(len(expected_users)):
+        for i, _ in enumerate(expected_users):
             self.assertEqual(
                 expected_users[i].items(), staged_users[i].items())
 
@@ -206,7 +206,7 @@ class StageProjectsTests(unittest.TestCase):
         mock_groups.return_value = self.groups_api.get_all_groups_list()
         mock_open.return_value = {}
 
-        staged_projects, staged_users, staged_groups = self.gcli.build_staging_data([
+        staged_projects, staged_users, staged_groups = self.gs_cli.build_staging_data([
             "2-4"])
 
         expected_projects = [
@@ -408,13 +408,13 @@ class StageProjectsTests(unittest.TestCase):
         self.assertEqual(len(expected_groups), len(staged_groups))
         self.assertEqual(len(expected_users), len(staged_users))
 
-        for i in range(len(expected_projects)):
+        for i, _ in enumerate(expected_projects):
             self.assertEqual(
                 expected_projects[i].items(), staged_projects[i].items())
-        for i in range(len(expected_groups)):
+        for i, _ in enumerate(expected_groups):
             self.assertEqual(
                 expected_groups[i].items(), staged_groups[i].items())
-        for i in range(len(expected_users)):
+        for i, _ in enumerate(expected_users):
             self.assertEqual(
                 expected_users[i].items(), staged_users[i].items())
 
@@ -432,7 +432,7 @@ class StageProjectsTests(unittest.TestCase):
         mock_groups.return_value = self.groups_api.get_all_groups_list()
         mock_open.return_value = {}
 
-        staged_projects, staged_users, staged_groups = self.gcli.build_staging_data([
+        staged_projects, staged_users, staged_groups = self.gs_cli.build_staging_data([
             "all"])
 
         self.assertEqual(
@@ -457,4 +457,4 @@ class StageProjectsTests(unittest.TestCase):
         mock_open.return_value = {}
 
         with self.assertRaises(SystemExit) as ex:
-            self.gcli.build_staging_data(["bogus"])
+            self.gs_cli.build_staging_data(["bogus"])

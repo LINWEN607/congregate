@@ -1,5 +1,4 @@
 from os import path
-from time import time
 from requests.exceptions import RequestException
 from pandas import DataFrame, Series, set_option
 
@@ -10,13 +9,12 @@ from gitlab_ps_utils.dict_utils import rewrite_list_into_dict
 from gitlab_ps_utils.list_utils import remove_dupes
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.migrate_utils import get_staged_users, find_user_by_email_comparison_without_id, add_post_migration_stats
+from congregate.helpers.migrate_utils import get_staged_users, find_user_by_email_comparison_without_id, is_gl_version_older_than
 from congregate.helpers.utils import is_dot_com
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.helpers.mdbc import MongoConnector
-from congregate.helpers.utils import rotate_logs
 
 
 class UsersClient(BaseClass):
@@ -214,21 +212,30 @@ class UsersClient(BaseClass):
             return f"{username}_{suffix}"
         return f"{username}_{suffix.lstrip('_')}"
 
-    def add_users_to_parent_group(self, dry_run=True):
+    def add_users_to_parent_group(self, minimal_access =False, dry_run=True):
         user_results_path = f"{self.app_path}/data/results/user_migration_results.json"
         if path.exists(user_results_path):
             new_users = read_json_file_into_object(user_results_path)
             for user in new_users:
                 if new_users[user].get("id"):
-                    data = {
-                        "user_id": new_users[user]["id"],
-                        "access_level": 10
-                    }
-                    self.log.info("{0}Adding user {1} to parent group {3} (data: {2}) with guest permissions".format(
-                        get_dry_log(dry_run),
-                        new_users[user]["email"],
-                        data,
-                        self.config.dstn_parent_id))
+                    if minimal_access:
+                        data = {
+                            "user_id": new_users[user]["id"],
+                            "access_level": 5
+                        }
+                        log_string = "minimal access"
+                    else:
+                        data = {
+                            "user_id": new_users[user]["id"],
+                            "access_level": 10
+                        }
+                        log_string = "guest"
+
+                    self.log.info("{0}Adding user {1} to parent group {3} (data: {2}) with {log_string} permissions".format(
+                    get_dry_log(dry_run),
+                    new_users[user]["email"],
+                    data,
+                    self.config.dstn_parent_id))
 
                     if not dry_run:
                         try:
@@ -359,13 +366,14 @@ class UsersClient(BaseClass):
     def search_for_staged_users(self, table=False):
         """
         Read the information in staged_users.json and output users that are:
-            - found
+            - Found on destination
                 - State mismatch
                 - NOT logged in
                 - W/O identities
-                - blocked
-            - NOT found
-            - duplicate (emails)
+                - Blocked
+            - NOT found on destination
+            - Public email NOT set or incorrect on source
+            - Duplicate (emails)
         Does the search based on the primary email address and *NOT* username
         :return:
         """
@@ -385,12 +393,11 @@ class UsersClient(BaseClass):
                     "src_state": state,
                     "dest_state": new_user.get("state"),
                     "last_sign_in_at": new_user.get("last_sign_in_at"),
-                    "identities": new_user.get("identities"),
-                    "public_email": new_user.get("public_email")
+                    "identities": new_user.get("identities")
                 })
             else:
                 users_not_found[user.get("id")] = {
-                    "email": email, "state": state}
+                    "email": email, "src_state": state}
         blocked = [u.get("email")
                    for u in users_found if u.get("dest_state") == "blocked"]
         state_mismatch = [(u.get("email"), f"{u.get('src_state')} -> {u.get('dest_state')}")
@@ -400,7 +407,7 @@ class UsersClient(BaseClass):
         no_identities = [(u.get("email"), u.get("dest_state"))
                          for u in users_found if not u.get("identities")]
         no_public_email = [(u.get("email"), u.get("public_email"))
-                           for u in users_found if u.get("email") != u.get("public_email")]
+                           for u in staged_users if u.get("email") != u.get("public_email")]
 
         found = f"Found ({len(users_found)})"
         blkd = f"Blocked ({len(blocked)})"
@@ -408,8 +415,8 @@ class UsersClient(BaseClass):
         no_log = f"NOT logged in ({len(no_login)})"
         wo_ids = f"W/O identities ({len(no_identities)})"
         not_found = f"NOT found ({len(users_not_found)})"
+        pub_email = f"Public email NOT set or incorrect ({len(no_public_email)})"
         dupe = f"Duplicate ({len(duplicate_users)})"
-        pub_email = f"Incorrect or no public email: ({len(no_public_email)})"
         self.log.info(f"""
             {found}:\n{json_pretty(users_found)}
             {blkd}:\n{json_pretty(blocked)}
@@ -417,8 +424,8 @@ class UsersClient(BaseClass):
             {no_log}:\n{json_pretty(no_login)}
             {wo_ids}:\n{json_pretty(no_identities)}
             {not_found}:\n{json_pretty(users_not_found)}
-            {dupe}:\n{json_pretty(duplicate_users)}
             {pub_email}:\n{json_pretty(no_public_email)}
+            {dupe}:\n{json_pretty(duplicate_users)}
         """)
         if table:
             d = {
@@ -428,6 +435,7 @@ class UsersClient(BaseClass):
                 no_log: Series(no_login, dtype=str),
                 wo_ids: Series(no_identities, dtype=str),
                 not_found: Series([(u.get("email"), u.get("src_state")) for u in users_not_found.values()], dtype=str),
+                pub_email: Series(no_public_email, dtype=str),
                 dupe: Series([(u.get("email"), u.get("state"))
                              for u in duplicate_users], dtype=str)
             }
@@ -663,10 +671,11 @@ class UsersClient(BaseClass):
         return None
 
     def set_staged_users_public_email(self, dry_run=True, hide=False):
-        start = time()
-        rotate_logs()
         staged_users = get_staged_users()
         host = self.config.source_host
+        token = self.config.source_token
+        if is_gl_version_older_than(14, host, token, "SKIP: Not mandatory to set 'public_email' field for staged users"):
+            return
         for su in staged_users:
             # Assume primary email matches on dest
             email = su.get("email")
@@ -705,4 +714,3 @@ class UsersClient(BaseClass):
                 self.log.error(
                     f"Failed to set public email {msg}{set_email} for user:\n{su} with error:\n{re}")
                 continue
-        add_post_migration_stats(start, log=self.log)

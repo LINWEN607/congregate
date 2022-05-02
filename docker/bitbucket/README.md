@@ -103,7 +103,7 @@ Waiting for BitBucket to start
 Waiting for BitBucket to start
 ```
 
-Once you confirm this is your problem, ssh into the postgres container (can be done easily through docker desktop UI) and run the following command:
+Once you confirm this is your problem, ssh into the postgres container and run the following command:
 
 ```bash
 sql -c 'UPDATE DATABASECHANGELOGLOCK SET LOCKED=false, LOCKGRANTED=null, LO

@@ -96,7 +96,7 @@ class ReposTests(unittest.TestCase):
                 "path": "website",
                 "name": "website",
                 "ci_sources": {
-                    "Jenkins": ['test-job1', 'test-job2'],
+                    "Jenkins": [],
                     "TeamCity": []
                 },
                 "namespace": {
@@ -117,7 +117,7 @@ class ReposTests(unittest.TestCase):
                 "path": "pprokic-public-repo",
                 "name": "pprokic-public-repo",
                 "ci_sources": {
-                    "Jenkins": ['test-job1', 'test-job2'],
+                    "Jenkins": [],
                     "TeamCity": []
                 },
                 "namespace": {
@@ -199,7 +199,7 @@ class ReposTests(unittest.TestCase):
                 "path": "website",
                 "name": "website",
                 "ci_sources": {
-                    "Jenkins": ['test-job1', 'test-job2'],
+                    "Jenkins": [],
                     "TeamCity": []
                 },
                 "namespace": {
@@ -220,7 +220,7 @@ class ReposTests(unittest.TestCase):
                 "path": "pprokic-public-repo",
                 "name": "pprokic-public-repo",
                 "ci_sources": {
-                    "Jenkins": ['test-job1', 'test-job2'],
+                    "Jenkins": [],
                     "TeamCity": []
                 },
                 "namespace": {
@@ -345,7 +345,7 @@ class ReposTests(unittest.TestCase):
                 "path": "arrow",
                 "name": "arrow",
                 "ci_sources": {
-                    "Jenkins": ['test-job1', 'test-job2'],
+                    "Jenkins": [],
                     "TeamCity": []
                 },
                 "namespace": {
@@ -366,7 +366,7 @@ class ReposTests(unittest.TestCase):
                 "path": "test-repo",
                 "name": "test-repo",
                 "ci_sources": {
-                    "Jenkins": ['test-job1', 'test-job2'],
+                    "Jenkins": [],
                     "TeamCity": []
                 },
                 "namespace": {
@@ -418,7 +418,7 @@ class ReposTests(unittest.TestCase):
                 "path": "arrow",
                 "name": "arrow",
                 "ci_sources": {
-                    "Jenkins": ['test-job1', 'test-job2'],
+                    "Jenkins": [],
                     "TeamCity": []
                 },
                 "namespace": {
@@ -439,7 +439,7 @@ class ReposTests(unittest.TestCase):
                 "path": "test-repo",
                 "name": "test-repo",
                 "ci_sources": {
-                    "Jenkins": ['test-job1', 'test-job2'],
+                    "Jenkins": [],
                     "TeamCity": []
                 },
                 "namespace": {

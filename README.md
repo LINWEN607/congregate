@@ -1,8 +1,9 @@
 # Congregate
 
 [![lint score](https://user-content.gitlab-static.net/4ea5cdfa13fa28766d712c48e04ee724de3b84aa/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f6c696e7425323073636f72652d382e39382d626c75652e737667)](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/tree/master)
-[![pipeline status](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/badges/master/pipeline.svg)](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/commits/master)
-[![coverage](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/badges/master/coverage.svg)](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/commits/master)
+[![pipeline status](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/badges/master/pipeline.svg)](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/pipelines?page=1&scope=all&ref=master)
+[![coverage](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/badges/master/coverage.svg)](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/tree/master/congregate/tests)
+[![latest release](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/badges/release.svg)](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/releases)
 
 >>>
 Requires [GitLab Premium](https://about.gitlab.com/pricing/) or above.
@@ -28,7 +29,8 @@ Congregate gathers (meta)data from source system(s), transforms and down-selects
 - [Migration Service Delivery Kit](https://gitlab.com/gitlab-org/professional-services-automation/delivery-kits/migration-template)
 - [GitLab Partner Program](https://partners.gitlab.com/English/?ReturnUrl=/prm/English/c/Training)
 
-For support questions please create an issue from our [Congregate support issue template](./.gitlab/issue_templates/congregate-support.md).
+For support questions please [create an issue](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/issues/new?issuable_template=congregate-support)
+from our Congregate support [issue template](./.gitlab/issue_templates/congregate-support.md).
 
 <!--
 ## About

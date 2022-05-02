@@ -1,7 +1,7 @@
 """
 Congregate - GitLab instance migration utility
 
-Copyright (c) 2021 - GitLab
+Copyright (c) 2022 - GitLab
 """
 
 import re
@@ -10,6 +10,8 @@ import os
 from gitlab_ps_utils.misc_utils import get_dry_log
 from gitlab_ps_utils.list_utils import remove_dupes
 from gitlab_ps_utils.dict_utils import rewrite_list_into_dict, dig
+from gitlab_ps_utils.json_utils import json_pretty
+
 from congregate.helpers.migrate_utils import get_staged_user_projects
 from congregate.cli.stage_base import BaseStageClass
 
@@ -28,8 +30,10 @@ class ProjectStageCLI(BaseStageClass):
         self.build_staging_data(projects_to_stage, dry_run, scm_source)
         if user_projects := get_staged_user_projects(
                 remove_dupes(self.staged_projects)):
-            self.log.warning("User projects staged:\n{}".format(
-                "\n".join(u for u in user_projects)))
+            self.log.warning(
+                f"User projects staged ({len(user_projects)}):\n{json_pretty(user_projects)}")
+        self.list_staged_users_without_public_email()
+
         if not dry_run:
             self.write_staging_files(skip_users=skip_users)
 

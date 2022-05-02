@@ -177,7 +177,7 @@ class ReposClient(BaseClass):
                 "kind": "group",
                 "full_path": dig(repo, 'project', 'key')
             },
-            "path_with_namespace": repo_path + "/" + repo.get("slug"),
+            "path_with_namespace": f"{repo_path}/{repo.get('slug')}",
             "visibility": "public" if repo.get("public") else "private",
             "description": repo.get("description", ""),
             "members": [] if project else self.add_repo_users([], repo_path, repo.get("slug")),

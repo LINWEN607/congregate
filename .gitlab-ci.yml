@@ -100,6 +100,8 @@ workflow:
   services:
     - name: "$JENKINS_SEED_IMAGE_NAME"
       alias: jenkins-test
+      variables:
+        SEED_DATA: "true"
 
 code_quality:
   artifacts:
@@ -322,8 +324,10 @@ test:end-to-end single group:
 test:failed-e2e-full-cleanup:
   variables:
     INSTANCE_ID_FILE: full_instance_id
-  needs: ["test:end-to-end full"]
-  extends: 
+  needs:
+    - job: test:end-to-end full
+      optional: true
+  extends:
     - .fallback-e2e-cleanup
     - .aws-creds
   when: on_failure
@@ -338,8 +342,10 @@ test:failed-e2e-full-cleanup:
 test:failed-e2e-single-group-cleanup:
   variables:
     INSTANCE_ID_FILE: sg_instance_id
-  needs: ["test:end-to-end single group"]
-  extends: 
+  needs:
+    - job: test:end-to-end single group
+      optional: true
+  extends:
     - .fallback-e2e-cleanup
     - .aws-creds
   rules:
@@ -547,7 +553,6 @@ mvc:
       changes:
         - ./**/*.md
         - ./*.md
-        - README.md
         - docker/release/*
         - .gitlab-ci.yml
 
@@ -556,9 +561,8 @@ pages:
   rules:
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
       changes:
-        - runbooks/*
-        - ./docs/*
         - ./**/*.md
+        - ./*.md
         - mkdocs.yml
   dependencies:
     - code_quality
@@ -596,4 +600,3 @@ test:GitHub Enterprise end to end:
       when: manual
       allow_failure: true
     - when: never
-

@@ -3,6 +3,7 @@
 ## From docker
 
 1. From local machine, login to Congregate VM using `ssh -L 8000:localhost:8000 <vm_alias_ip_or_hostname>` to expose the Congregate UI outside of the docker container.
+1. Generate a personal access token from your gitlab.com account that has the `read_registry` permission by clicking *User Icon (top right) > Settings > Access Tokens > Generate Access Token*.
 1. From Congregate VM, login to container registry
 
     ```bash

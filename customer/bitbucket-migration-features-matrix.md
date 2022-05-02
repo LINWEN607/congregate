@@ -26,7 +26,7 @@ NOTE: Features not listed in the matrix should be presumed to be not yet support
 |                  | User creation              |             | :x:                  | :white_check_mark:   |
 |                  | SSH Keys                   |             | :x:                  | :heavy_minus_sign:   |
 
-*See [limitations](https://docs.gitlab.com/ee/user/project/import/bitbucket_server.html#limitations) of the BB server importer
+*See [limitations](https://docs.gitlab.com/ee/user/project/import/bitbucket_server.html#items-that-are-not-imported) of the BB server importer
 
 ## BitBucket Cloud
 

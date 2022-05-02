@@ -16,6 +16,10 @@ docker build -t jenkins-test .
 ### Spin up the local container
 
 ```bash
+# With test data
+docker run --name jenkins -p 8080:8080 -it jenkins-test --env SEED_DATA=true /bin/bash
+
+# Without test data
 docker run --name jenkins -p 8080:8080 -it jenkins-test /bin/bash
 ```
 

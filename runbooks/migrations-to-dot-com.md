@@ -197,9 +197,9 @@ Copy the following data and add subsequent rows for single group migration
   * `data/logs/audit.log`
   * `data/results/group_migration_results.json`
   * `data/results/project_migration_results.json`
-  * `data/results/import_failed_relations.json`
+  * `data/logs/import_failed_relations.json`
   * `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log`congregate/data/waves/wave_<insert_wave_number>/`
-* [ ] Inspect `data/results/import_failed_relations` for any project import failed relations (missing feature info)
+* [ ] Inspect `data/logs/import_failed_relations.json` for any project import failed relations (missing feature info)
   * In case of missing MRs, Piplines, etc. that are critical to the customer and business:
     * [ ] Stage and rollback projects with critical failed relations
       * **NOTE:** `--skip-users` and `--skip-groups`
@@ -258,7 +258,7 @@ For each migration attempt check if any project or group imports failed or have 
   * `data/logs/audit.log`
   * `data/results/group_migration_results.json`
   * `data/results/project_migration_results.json`
-  * `data/results/import_failed_relations.json`
+  * `data/logs/import_failed_relations.json`
   * `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log`
 
 #### SRE Support Import of Failed Groups and Projects
