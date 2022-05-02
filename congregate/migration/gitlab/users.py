@@ -232,45 +232,51 @@ class UsersClient(BaseClass):
             self.log.error(
                 f"Invalid parent group ID configured ('{parent_id}')")
             sys.exit(os.EX_CONFIG)
-        host = self.config.destination_host
-        token = self.config.destination_token
-        members = {}
-        dry_log = get_dry_log(dry_run=dry_run)
         try:
-            # List and extract parent member IDs
-            for m in self.groups_api.get_all_group_members(parent_id, host, token):
-                members[m.get("id")] = m.get("access_level")
-            mids = [k for k, _ in members.items()]
-            for su in get_staged_users():
-                user = find_user_by_email_comparison_without_id(
-                    su.get("email"))
-                if not user:
-                    continue
-                uid = user.get("id")
-                username = user.get("username")
-                # Invite member with required access level
-                if uid not in mids and add_members:
-                    self.log.info(
-                        f"{dry_log}Add user {username} (ID: {uid}) as {access_level}")
-                    if not dry_run:
-                        self.groups_api.add_member_to_group(
-                            parent_id, host, token, {"user_id": uid, "access_level": target_level})
-                    continue
-                # Retrieve member parent access level and update
-                level = members.get(uid)
-                if uid in mids and level != target_level:
-                    self.log.info(
-                        f"{dry_log}Update member {user.get('username')} (ID: {uid}) access level {level} -> {target_level} ({access_level})")
-                    if not dry_run:
-                        self.groups_api.update_member_access_level(
-                            host, token, parent_id, uid, target_level)
-                    continue
-                if uid not in mids:
-                    self.log.warning(
-                        f"SKIP: Member {username} (ID: {uid}) not found. Missing '--add-members'?")
+            self.__handle_parent_group_members(
+                dry_run, add_members, access_level, target_level)
         except RequestException as re:
             self.log.error(
                 f"Failed to {'add or ' if add_members else ''}update parent group {parent_id} members, with error:\n{re}")
+
+    def __handle_parent_group_members(self, dry_run, add_members, access_level, target_level):
+        host = self.config.destination_host
+        token = self.config.destination_token
+        parent_id = self.config.dstn_parent_id
+        dry_log = get_dry_log(dry_run=dry_run)
+        members = {}
+
+        # List and extract parent member IDs
+        for m in self.groups_api.get_all_group_members(parent_id, host, token):
+            members[m.get("id")] = m.get("access_level")
+        mids = [k for k, _ in members.items()]
+        for su in get_staged_users():
+            user = find_user_by_email_comparison_without_id(
+                su.get("email"))
+            if not user:
+                continue
+            uid = user.get("id")
+            username = user.get("username")
+            # Invite member with required access level
+            if uid not in mids and add_members:
+                self.log.info(
+                    f"{dry_log}Add user {username} (ID: {uid}) as {access_level}")
+                if not dry_run:
+                    self.groups_api.add_member_to_group(
+                        parent_id, host, token, {"user_id": uid, "access_level": target_level})
+                continue
+            # Retrieve member parent access level and update
+            level = members.get(uid)
+            if uid in mids and level != target_level:
+                self.log.info(
+                    f"{dry_log}Update member {user.get('username')} (ID: {uid}) access level {level} -> {target_level} ({access_level})")
+                if not dry_run:
+                    self.groups_api.update_member_access_level(
+                        host, token, parent_id, uid, target_level)
+                continue
+            if uid not in mids:
+                self.log.warning(
+                    f"SKIP: Member {username} (ID: {uid}) not found. Missing '--add-members'?")
 
     def remove_users_from_parent_group(self, dry_run=True):
         count = 0
