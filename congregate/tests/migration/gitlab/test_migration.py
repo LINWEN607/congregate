@@ -16,18 +16,18 @@ class MigrationEndToEndTest(unittest.TestCase):
     DELAY = BaseClass().config.export_import_status_check_time * 10
 
     @classmethod
-    def setUpClass(self):
-        self.migrate = MigrateClient(dry_run=False, hard_delete=True)
-        # Give the instance and seed data time to 'settle'
-        sleep(self.DELAY)
+    def setUpClass(cls):
+        cls.migrate = MigrateClient(dry_run=False, hard_delete=True)
+        # Source instance seed data creation buffer
+        sleep(cls.DELAY)
         do_all.list_all()
         do_all.do_all(dry_run=False)
 
     @classmethod
-    def tearDownClass(self):
-        self.migrate.rollback()
+    def tearDownClass(cls):
+        cls.migrate.rollback()
         # Allow users/groups/projects to fully delete
-        sleep(self.DELAY)
+        sleep(cls.DELAY)
         rollback_diff()
 
     def test_user_migration_diff(self):
