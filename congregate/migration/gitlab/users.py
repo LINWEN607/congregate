@@ -165,11 +165,12 @@ class UsersClient(BaseClass):
 
     def generate_extern_uid(self, user, identities):
         if self.config.group_sso_provider_pattern == "email":
-            return user.get("email", None)
-        elif self.config.group_sso_provider_pattern == "hash":
-            if email := user.get("email", None):
-                if map_user := self.sso_hash_map.get(email, None):
-                    return map_user["externalid"]
+            return user.get("email")
+        if self.config.group_sso_provider_pattern == "hash":
+            email = user.get("email")
+            map_user = self.sso_hash_map.get(email)
+            if email and map_user:
+                return map_user["externalid"]
         else:
             return self.find_extern_uid_by_provider(
                 identities, self.config.group_sso_provider)

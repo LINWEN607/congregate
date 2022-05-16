@@ -27,7 +27,6 @@ class UsersApi(GitLabApiWrapper):
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/users.html#list-current-user-for-admins
 
-            :param: id: (int) GitLab user ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing the response to GET /user
@@ -40,7 +39,7 @@ class UsersApi(GitLabApiWrapper):
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/users.html#user-modification
 
-            :param: id: (int) GitLab user ID
+            :param: uid: (int) GitLab user ID
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing the response to PUT /users/:id
