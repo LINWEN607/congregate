@@ -332,7 +332,7 @@ class MigrateClient(BaseClass):
                 else:
                     result = self.ext_import.get_failed_result(
                         dstn_pwn,
-                        data={"error": f"Failed import, with response {result_response}. Unable to execute post migration phase"})
+                        data={"error": f"Failed import, with response/payload {result_response}. Unable to execute post migration phase"})
 
             # Repo import status
             if dst_pid or project_id:
@@ -340,8 +340,8 @@ class MigrateClient(BaseClass):
                     host, token, dst_pid or project_id)
         else:
             log = f"Target namespace {tn} does not exist"
-            self.log.info("Skipping import. " + log +
-                          f" for {project['path']}")
+            self.log.warning("Skipping import. " + log +
+                             f" for {project['path']}")
             result = self.ext_import.get_result_data(dstn_pwn, {
                 "error": log
             })
@@ -625,8 +625,8 @@ class MigrateClient(BaseClass):
                     host, token, dst_pid or project_id)
         else:
             log = f"Target namespace {tn} does not exist"
-            self.log.info("Skipping import. " + log +
-                          f" for {project['path']}")
+            self.log.warning("Skipping import. " + log +
+                             f" for {project['path']}")
             result = self.ext_import.get_result_data(dstn_pwn, {
                 "error": log
             })

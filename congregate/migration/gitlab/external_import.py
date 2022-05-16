@@ -227,7 +227,7 @@ class ImportClient(BaseClass):
     def get_failed_result(self, path_with_namespace, data=None):
         return {
             path_with_namespace: {
-                "repository": bool(data) if not data.get("error") else False,
+                "repository": bool(data) if isinstance(data, dict) else False,
                 "response": data
             }
         }
