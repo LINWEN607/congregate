@@ -1,6 +1,5 @@
 import json
 import base64
-from os import linesep
 from os.path import dirname
 import datetime
 from sqlite3 import DataError
@@ -20,7 +19,7 @@ from congregate.migration.gitlab.users import UsersClient
 from congregate.helpers.mdbc import MongoConnector
 from congregate.helpers.migrate_utils import get_dst_path_with_namespace,  get_full_path_with_parent_namespace, \
     dig, get_staged_projects, get_staged_groups, find_user_by_email_comparison_without_id, add_post_migration_stats, is_user_project, \
-        check_for_staged_user_projects
+    check_for_staged_user_projects, get_stage_wave_paths
 from congregate.helpers.utils import rotate_logs
 from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
 
@@ -129,36 +128,34 @@ class ProjectsClient(BaseClass):
 
     def delete_projects(self, dry_run=True):
         staged_projects = get_staged_projects()
+        host = self.config.destination_host
+        token = self.config.destination_token
         for sp in staged_projects:
             # SaaS destination instances have a parent group
-            path_with_namespace = get_dst_path_with_namespace(sp)
-            self.log.info("Removing project {}".format(path_with_namespace))
+            path_with_namespace, _ = get_stage_wave_paths(sp)
+            self.log.info(f"Removing project {path_with_namespace}")
             resp = self.projects_api.get_project_by_path_with_namespace(
-                path_with_namespace,
-                self.config.destination_host,
-                self.config.destination_token)
+                path_with_namespace, host, token)
             if resp is not None:
                 if resp.status_code != 200:
-                    self.log.info("Project {0} does not exist (status: {1})".format(
-                        path_with_namespace, resp.status_code))
+                    self.log.info(
+                        f"Project {path_with_namespace} does not exist (status: {resp.status_code})")
                 elif not dry_run:
                     try:
                         project = resp.json()
                         if get_timedelta(
                                 project["created_at"]) < self.config.max_asset_expiration_time:
                             self.projects_api.delete_project(
-                                self.config.destination_host,
-                                self.config.destination_token,
-                                project["id"])
+                                host, token, project["id"])
                         else:
-                            self.log.info("Ignoring {0}. Project existed before {1} hours".format(
-                                project["name_with_namespace"], self.config.max_asset_expiration_time))
+                            self.log.info(
+                                f"Ignoring {project['name_with_namespace']}. Project existed before {self.config.max_asset_expiration_time} hours")
                     except RequestException as re:
                         self.log.error(
-                            "Failed to remove project\n{0}\nwith error:\n{1}".format(json_pretty(sp), re))
+                            f"Failed to remove project\n{json_pretty(sp)}\nwith error:\n{re}")
             else:
                 self.log.error(
-                    "Failed to GET project {} by path_with_namespace".format(path_with_namespace))
+                    f"Failed to GET project {path_with_namespace} by path_with_namespace")
 
     def count_unarchived_projects(self, local=False):
         unarchived_user_projects = []
@@ -862,17 +859,19 @@ class ProjectsClient(BaseClass):
         """
         self.dry_run = dry_run
         if not self.config.remapping_file_path:
-            self.log.error(f"{get_dry_log(dry_run)}Remapping file path not set. Set remapping_file_path under [APP] in the congregate.conf")
+            self.log.error(
+                f"{get_dry_log(dry_run)}Remapping file path not set. Set remapping_file_path under [APP] in the congregate.conf")
             return
         staged_projects = get_staged_projects()
-        
+
         if staged_projects:
-            if check_for_staged_user_projects(staged_projects):                
+            if check_for_staged_user_projects(staged_projects):
                 return
             rewrite_results = list(rr for rr in self.multi.start_multi_process(
-                    self.handle_rewriting_project_yaml, staged_projects, processes=self.config.processes))
-            
-            self.log.info(f"### {get_dry_log(dry_run)}Project URL rewrite results ###\n{json_pretty(rewrite_results)}")
+                self.handle_rewriting_project_yaml, staged_projects, processes=self.config.processes))
+
+            self.log.info(
+                f"### {get_dry_log(dry_run)}Project URL rewrite results ###\n{json_pretty(rewrite_results)}")
 
     def handle_rewriting_project_yaml(self, project):
         """
@@ -886,28 +885,32 @@ class ProjectsClient(BaseClass):
             but will not attempt to do the rewrite. A good way to make sure all expected projects are created.
         """
         try:
-            import_id = None     
+            import_id = None
             dst_path_with_namespace = None
             return_dict = None
             dst_path_with_namespace = get_dst_path_with_namespace(project)
             self.log.info(f"{dst_path_with_namespace}")
-            dst_pid = self.find_project_by_path(self.config.destination_host, self.config.destination_token, dst_path_with_namespace)
+            dst_pid = self.find_project_by_path(
+                self.config.destination_host, self.config.destination_token, dst_path_with_namespace)
             if dst_pid:
                 # As this is a stand-alone run, we will make an assumption that the project is imported, and skip the import check
-                self.log.info(f"{get_dry_log(self.dry_run)}Project {dst_path_with_namespace} (ID: {dst_pid}) found on destination.")
+                self.log.info(
+                    f"{get_dry_log(self.dry_run)}Project {dst_path_with_namespace} (ID: {dst_pid}) found on destination.")
                 import_id = dst_pid
             else:
                 self.log.error(
                     f"{get_dry_log(self.dry_run)}Project {dst_path_with_namespace} NOT found on destination. URL rewrite will not be performed.")
                 raise DataError(f"Project {dst_path_with_namespace} not found")
-            
+
             # Always log
-            self.log.info(f"{get_dry_log(self.dry_run)}Performing rewrite for project {dst_path_with_namespace} with ID {import_id}")
+            self.log.info(
+                f"{get_dry_log(self.dry_run)}Performing rewrite for project {dst_path_with_namespace} with ID {import_id}")
 
             # Perform the replacement using the existing code
             if import_id and not self.dry_run:
                 self.migrate_gitlab_variable_replace_ci_yml(import_id)
         except Exception as ex:
-            return_dict = {"id": import_id, "path": dst_path_with_namespace, "message": "error", "exception": str(ex)}
+            return_dict = {"id": import_id, "path": dst_path_with_namespace,
+                           "message": "error", "exception": str(ex)}
         finally:
             return return_dict or {"id": import_id, "path": dst_path_with_namespace, "message": "success", "exception": None}

@@ -6,7 +6,7 @@ from gitlab_ps_utils.dict_utils import dig
 from gitlab_ps_utils.json_utils import json_pretty
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.migrate_utils import migration_dry_run, get_external_path_with_namespace
+from congregate.helpers.migrate_utils import migration_dry_run
 from congregate.helpers.utils import is_dot_com, is_github_dot_com
 from congregate.migration.gitlab.api.external_import import ImportApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
@@ -21,21 +21,27 @@ class ImportClient(BaseClass):
         self.projects = ProjectsApi()
         self.instance = InstanceApi()
 
-    def trigger_import_from_bb_server(self, project, dry_run=True):
-        project_path = project["path_with_namespace"]
-        project_key, repo = self.get_project_repo_from_full_path(project_path)
-        tn = get_external_path_with_namespace(project_key)
+    def trigger_import_from_bb_server(self, pwn, dst_pwn, tn, dry_run=True):
+        """
+        Use the built-in GitLab importer to start a BitBucket Server import.
+
+            :param pwn: (str) Source path with namespace
+            :param dst_pwn: (str) Destination path with namespace
+            :param tn: (str) Full destination target namespace
+            :return: (dict) Successful or failed result data
+        """
+        bbs_project_key, bbs_repo = self.get_project_repo_from_full_path(pwn)
         data = {
             "bitbucket_server_url": self.config.source_host,
             "bitbucket_server_username": self.config.source_username,
             "personal_access_token": self.config.source_token,
-            "bitbucket_server_project": project_key,
-            "bitbucket_server_repo": repo,
+            "bitbucket_server_project": bbs_project_key,
+            "bitbucket_server_repo": bbs_repo,
             "target_namespace": tn
         }
 
         if self.config.lower_case_project_path:
-            data["new_name"] = repo.lower()
+            data["new_name"] = bbs_repo.lower()
 
         if not dry_run:
             try:
@@ -43,36 +49,41 @@ class ImportClient(BaseClass):
                     self.config.destination_host, self.config.destination_token, data)
                 error, resp = is_error_message_present(resp)
                 if error or not resp:
-                    error = resp.get("error")
+                    error = resp.get("message")
                     self.log.error(
-                        f"Project {project_path} import to {tn} failed with response {resp} and error {error}")
-                    return self.get_failed_result(project_path, error)
-                return self.get_result_data(project_path, resp)
+                        f"Repo {bbs_repo} import to {tn} failed with response {resp} and error {error}")
+                    return self.get_failed_result(dst_pwn, error)
+                return self.get_result_data(dst_pwn, resp)
             except ValueError as ve:
                 self.log.error(
-                    f"Failed to import project {project_path} to {tn} due to {ve}")
-                return self.get_failed_result(project_path)
+                    f"Failed to import repo {bbs_repo} to {tn} due to {ve}")
+                return self.get_failed_result(dst_pwn)
         else:
             data.pop("personal_access_token", None)
             migration_dry_run("project", data)
-            return self.get_failed_result(project_path, data)
+            return self.get_failed_result(dst_pwn, data)
 
-    def trigger_import_from_ghe(
-            self, pid, path_with_namespace, tn, host, token, dry_run=True):
-        '''
-        Use the GitLab built in importers to start a GitHub Enterprise import.
+    def trigger_import_from_ghe(self, project, dst_pwn, tn, host, token, dry_run=True):
+        """
+        Use the built-in GitLab importer to start a GitHub Enterprise import.
 
-            :param project: (dict)? This should be a dictionary representing a project
-            :param host: (str)
-            :param token: (str)
-            :return: (dict) Project and its response code
-
-        '''
+            :param project: (int) GitHub repository metadata
+            :param dst_pwn: (str) Destination path with namespace
+            :param tn: (str) Full destination target namespace
+            :param host: (str) GitHub hostname
+            :param token: (str) GitHub personal access token
+            :return: (dict) Successful or failed result data
+        """
         data = {
             "personal_access_token": token,
-            "repo_id": pid,
+            "repo_id": project.get("id"),
             "target_namespace": tn
         }
+
+        _, gh_repo = self.get_project_repo_from_full_path(
+            project.get("path_with_namespace"))
+        if self.config.lower_case_project_path:
+            data["new_name"] = gh_repo.lower()
 
         # TODO: This condition needs to be moved to the __init__ function of this class
         # and properly handle non standard GitLab versions like RCs
@@ -85,19 +96,19 @@ class ImportClient(BaseClass):
                     self.config.destination_host, self.config.destination_token, data)
                 error, resp = is_error_message_present(resp)
                 if error or not resp:
-                    errors = resp.get("errors")
+                    errors = resp.get("message")
                     self.log.error(
-                        f"Project {path_with_namespace} import to {tn} failed with response {resp} and error {errors}")
-                    return self.get_failed_result(path_with_namespace, errors)
-                return self.get_result_data(path_with_namespace, resp)
+                        f"Repo {gh_repo} import to {tn} failed with response {resp} and error {errors}")
+                    return self.get_failed_result(dst_pwn, errors)
+                return self.get_result_data(dst_pwn, resp)
             except ValueError as ve:
                 self.log.error(
-                    f"Failed to import project {path_with_namespace} to {tn} due to {ve}")
-                return self.get_failed_result(path_with_namespace)
+                    f"Failed to import repo {gh_repo} to {tn} due to {ve}")
+                return self.get_failed_result(dst_pwn)
         else:
             data.pop("personal_access_token", None)
             migration_dry_run("project", data)
-            return self.get_failed_result(path_with_namespace, data)
+            return self.get_failed_result(dst_pwn, data)
 
     def wait_for_project_to_import(self, full_path):
         total_time = 0
@@ -151,7 +162,10 @@ class ImportClient(BaseClass):
         return success
 
     def get_project_repo_from_full_path(self, full_path):
-        split = full_path.split("/")
+        """
+        Split GitHib and BitBucket Server repo full path by project and repo
+        """
+        split = full_path.rsplit("/", 1)
         project = split[0]
         if self.config.lower_case_group_path:
             project = project.lower()
@@ -162,7 +176,7 @@ class ImportClient(BaseClass):
         if import_status := safe_json_response(self.projects.get_project_import_status(host, token, pid)):
             # Save to file to avoid outputing long lists to log
             failed_relations = import_status.pop("failed_relations")
-            # Exposed as of GitLab 14.6
+            # Added to GitHub repo import responses as of GitLab 14.6
             stats = import_status.pop(
                 "stats") if import_status.get("stats") else None
 
@@ -186,7 +200,7 @@ class ImportClient(BaseClass):
 
     def log_repo_import_failure_or_diff(self, repo, status):
         '''
-            Capture BitBucket and GitHub repo import failures
+        Capture BitBucket Server and GitHub repo import failures
         '''
         # Log only import failure and immediately return
         if status.get("import_error") or status.get("failed_relations"):

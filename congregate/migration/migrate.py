@@ -66,7 +66,8 @@ class MigrateClient(BaseClass):
         skip_project_import=False,
         subgroups_only=False,
         scm_source=None,
-        reg_dry_run=False
+        reg_dry_run=False,
+        group_structure=False
     ):
         self.ie = ImportExportClient()
         self.mirror = MirrorClient()
@@ -110,6 +111,7 @@ class MigrateClient(BaseClass):
         self.skip_project_import = skip_project_import
         self.subgroups_only = subgroups_only
         self.scm_source = scm_source
+        self.group_structure = group_structure
 
     def migrate(self):
         self.log.info(
@@ -182,7 +184,7 @@ class MigrateClient(BaseClass):
 
         # Migrate GH orgs/teams to groups/sub-groups
         staged_groups = mig_utils.get_staged_groups()
-        if staged_groups and not self.skip_group_import:
+        if staged_groups and not self.skip_group_import and not self.group_structure:
             self.validate_groups_and_projects(staged_groups)
             self.log.info(
                 f"{dry_log}Migrating GitHub orgs/teams to GitLab groups/sub-groups")
@@ -194,8 +196,12 @@ class MigrateClient(BaseClass):
                 f"### {dry_log}Group import results ###\n{json_utils.json_pretty(results)}")
             mig_utils.write_results_to_file(
                 results, result_type="group", log=self.log)
+        elif self.group_structure:
+            self.log.info(
+                "Skipping group import and relying on GitHub importer to create missing sub-group layers")
         else:
             self.log.warning("SKIP: No groups staged for migration")
+
         # Migrate GH repos to projects
         staged_projects = mig_utils.get_staged_projects()
         if staged_projects and not self.skip_project_import:
@@ -291,44 +297,26 @@ class MigrateClient(BaseClass):
         }
 
     def import_github_project(self, project):
-        gh_host, gh_token = self.get_host_and_token()
-        members = project.pop("members")
-        src_pwn = project["path_with_namespace"]
-        staged_tn = project.get("target_namespace")
-
-        # stage-wave staging, based on spreadsheet file
-        if project.get("override_dstn_ns") and staged_tn:
-            dstn_pwn = f"{staged_tn}/{project['path']}"
-        elif staged_tn:
-            dstn_pwn = f"{staged_tn}/{src_pwn}"
-        # Default config-based staging
-        else:
-            dstn_pwn = mig_utils.get_external_path_with_namespace(src_pwn)
-
-        # TODO: Make this target namespace lookup requirement configurable
-        if target_namespace := mig_utils.get_target_namespace(project):
-            tn = target_namespace
-        else:
-            tn = mig_utils.get_dst_path_with_namespace(
-                project).rsplit("/", 1)[0]
-
+        dstn_pwn, tn = mig_utils.get_stage_wave_paths(project)
         host = self.config.destination_host
         token = self.config.destination_token
-        if self.groups.find_group_id_by_path(host, token, tn):
+        project_id = None
+        if self.group_structure or self.groups.find_group_id_by_path(host, token, tn):
             # Already imported
             if dst_pid := self.projects.find_project_by_path(host, token, dstn_pwn):
                 result = self.ext_import.get_result_data(
                     dstn_pwn, {"id": dst_pid})
                 if self.only_post_migration_info:
                     result = self.handle_gh_post_migration(
-                        result, dstn_pwn, project, dst_pid, members)
+                        result, dstn_pwn, project, dst_pid)
                 else:
                     self.log.warning(
                         f"Skipping import. Repo {dstn_pwn} has already been imported")
             # New import
             else:
+                gh_host, gh_token = self.get_host_and_token()
                 result = self.ext_import.trigger_import_from_ghe(
-                    project["id"], dstn_pwn, tn, gh_host, gh_token, dry_run=self.dry_run)
+                    project, dstn_pwn, tn, gh_host, gh_token, dry_run=self.dry_run)
                 result_response = result[dstn_pwn]["response"]
                 if (isinstance(result_response, dict)) and (project_id := result_response.get("id")):
                     full_path = result_response.get("full_path").strip("/")
@@ -336,7 +324,7 @@ class MigrateClient(BaseClass):
                         full_path)
                     if success:
                         result = self.handle_gh_post_migration(
-                            result, dstn_pwn, project, project_id, members)
+                            result, dstn_pwn, project, project_id)
                     else:
                         result = self.ext_import.get_failed_result(
                             dstn_pwn,
@@ -375,11 +363,10 @@ class MigrateClient(BaseClass):
 
         return gh_host, gh_token
 
-    def handle_gh_post_migration(self, result, path_with_namespace, project, pid, members):
-        host = self.config.destination_host
-        token = self.config.destination_token
+    def handle_gh_post_migration(self, result, path_with_namespace, project, pid):
+        members = project.pop("members")
         result[path_with_namespace]["members"] = self.projects.add_members_to_destination_project(
-            host, token, pid, members)
+            self.config.destination_host, self.config.destination_token, pid, members)
 
         # Disable Shared CI
         self.disable_shared_ci(path_with_namespace, pid)
@@ -518,7 +505,7 @@ class MigrateClient(BaseClass):
 
         # Migrate BB projects as GL groups
         staged_groups = mig_utils.get_staged_groups()
-        if staged_groups and not self.skip_group_import:
+        if staged_groups and not self.skip_group_import and not self.group_structure:
             self.validate_groups_and_projects(staged_groups)
             self.log.info(
                 f"{dry_log}Migrating BitBucket projects to GitLab groups")
@@ -528,10 +515,13 @@ class MigrateClient(BaseClass):
             self.are_results(results, "group", "import")
 
             results.append(mig_utils.get_results(results))
-            self.log.info("### {0}Group import results ###\n{1}"
-                          .format(dry_log, json_utils.json_pretty(results)))
+            self.log.info(
+                f"### {dry_log}Group import results ###\n{json_utils.json_pretty(results)}")
             mig_utils.write_results_to_file(
                 results, result_type="group", log=self.log)
+        elif self.group_structure:
+            self.log.info(
+                "Skipping group import and relying on BitBucket Server importer to create missing sub-group layers")
         else:
             self.log.warning("SKIP: No groups staged for migration")
 
@@ -552,8 +542,8 @@ class MigrateClient(BaseClass):
 
             # append Total : Successful count of project imports
             import_results.append(mig_utils.get_results(import_results))
-            self.log.info("### {0}Project import results ###\n{1}"
-                          .format(dry_log, json_utils.json_pretty(import_results)))
+            self.log.info(
+                f"### {dry_log}Project import results ###\n{json_utils.json_pretty(import_results)}")
             mig_utils.write_results_to_file(import_results, log=self.log)
         else:
             self.log.warning("SKIP: No projects staged for migration")
@@ -593,52 +583,77 @@ class MigrateClient(BaseClass):
         }
 
     def import_bitbucket_project(self, project):
-        members = project.pop("members")
-        try:
-            result = self.ext_import.trigger_import_from_bb_server(
-                project, dry_run=self.dry_run)
-        except Exception as ex:
-            project_path = project["path_with_namespace"]
-            result = self.ext_import.get_failed_result(project_path, data={
-                "error": f"Failed to trigger import with error: {ex}\nProject information follows: {project}"
-            })
-            return result
-        path_with_namespace = next(iter(result))
-        result_response = result[path_with_namespace]["response"]
-        if project_id := result_response.get("id"):
-            full_path = result_response.get("full_path").strip("/")
-            success = self.ext_import.wait_for_project_to_import(full_path)
-            host = self.config.destination_host
-            token = self.config.destination_token
-            if success:
-                if not self.remove_members:
-                    result[path_with_namespace]["members"] = self.projects.add_members_to_destination_project(
-                        host, token, project_id, members)
-
-                # Set default branch
-                self.branches.set_branch(
-                    path_with_namespace, project_id, project.get("default_branch"))
-
-                # Set branch permissions
-                self.bbs_repos_client.migrate_permissions(
-                    project, project_id)
-
-                # Correcting bug where group's description is persisted to
-                # project's description
-                self.bbs_repos_client.correct_repo_description(
-                    project, project_id)
-
-                # Remove import user; SKIP if removing all other members
-                if not self.remove_members:
-                    self.remove_import_user(project_id)
+        pwn = project.get("path_with_namespace")
+        dstn_pwn, tn = mig_utils.get_stage_wave_paths(project)
+        host = self.config.destination_host
+        token = self.config.destination_token
+        project_id = None
+        if self.group_structure or self.groups.find_group_id_by_path(host, token, tn):
+            # Already imported
+            if dst_pid := self.projects.find_project_by_path(host, token, dstn_pwn):
+                result = self.ext_import.get_result_data(
+                    dstn_pwn, {"id": dst_pid})
+                if self.only_post_migration_info:
+                    result = self.handle_bb_post_migration(
+                        result, dstn_pwn, project, dst_pid)
+                else:
+                    self.log.warning(
+                        f"Skipping import. Repo {dstn_pwn} has already been imported")
+            # New import
             else:
-                result = self.ext_import.get_failed_result(
-                    path_with_namespace,
-                    data={"error": "Import failed or time limit exceeded. Unable to execute post migration phase"})
-
+                result = self.ext_import.trigger_import_from_bb_server(
+                    pwn, dstn_pwn, tn, dry_run=self.dry_run)
+                result_response = result[dstn_pwn]["response"]
+                if (isinstance(result_response, dict)) and (project_id := result_response.get("id")):
+                    full_path = result_response.get("full_path").strip("/")
+                    success = self.ext_import.wait_for_project_to_import(
+                        full_path)
+                    if success:
+                        result = self.handle_bb_post_migration(
+                            result, dstn_pwn, project, project_id)
+                    else:
+                        result = self.ext_import.get_failed_result(
+                            dstn_pwn,
+                            data={"error": "Import failed or time limit exceeded. Unable to execute post migration phase"})
+                else:
+                    result = self.ext_import.get_failed_result(
+                        dstn_pwn,
+                        data={"error": f"Failed import, with response {result_response}. Unable to execute post migration phase"})
             # Repo import status
-            result[path_with_namespace]["import_status"] = self.ext_import.get_external_repo_import_status(
-                host, token, project_id)
+            if dst_pid or project_id:
+                result[dstn_pwn]["import_status"] = self.ext_import.get_external_repo_import_status(
+                    host, token, dst_pid or project_id)
+        else:
+            log = f"Target namespace {tn} does not exist"
+            self.log.info("Skipping import. " + log +
+                          f" for {project['path']}")
+            result = self.ext_import.get_result_data(dstn_pwn, {
+                "error": log
+            })
+        return result
+
+    def handle_bb_post_migration(self, result, path_with_namespace, project, pid):
+        members = project.pop("members")
+        if not self.remove_members:
+            result[path_with_namespace]["members"] = self.projects.add_members_to_destination_project(
+                self.config.destination_host, self.config.destination_token, pid, members)
+
+        # Set default branch
+        self.branches.set_branch(
+            path_with_namespace, pid, project.get("default_branch"))
+
+        # Set branch permissions
+        self.bbs_repos_client.migrate_permissions(
+            project, pid)
+
+        # Correcting bug where group's description is persisted to
+        # project's description
+        self.bbs_repos_client.correct_repo_description(
+            project, pid)
+
+        # Remove import user; SKIP if removing all other members
+        if not self.remove_members:
+            self.remove_import_user(pid)
         return result
 
     def are_results(self, results, var, stage):

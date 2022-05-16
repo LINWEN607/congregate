@@ -11,7 +11,7 @@ Usage:
     congregate stage-groups <groups>... [--skip-users] [--commit] [--scm-source=hostname]
     congregate stage-wave <wave> [--commit] [--scm-source=hostname]
     congregate create-stage-wave-csv [--commit]
-    congregate migrate [--processes=<n>] [--reporting] [--skip-users] [--remove-members] [--stream-groups] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostname] [--commit] [--reg-dry-run]
+    congregate migrate [--processes=<n>] [--reporting] [--skip-users] [--remove-members] [--stream-groups] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostname] [--commit] [--reg-dry-run] [--group-structure]
     congregate rollback [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
     congregate ui
     congregate do-all [--commit]
@@ -75,7 +75,7 @@ Arguments:
     src_instances                           Present if there are multiple GH source instances
     scm_source                              Specific SCM source hostname
     skip-users                              Stage: Skip staging users; Migrate: Skip migrating users; Rollback: Remove only groups and projects.
-    remove-members                          Remove all members of created (GitHub) or imported (GitLab) groups. Skip adding any members of BitBucket imported repos.
+    remove-members                          Remove all members of created (GitHub) or imported (GitLab) groups. Skip adding any members of BitBucket Server imported repos.
     hard-delete                             Remove user contributions and solely owned groups
     stream-groups                           Streamed approach of migrating staged groups in bulk
     skip-groups                             Rollback: Remove only users and projects
@@ -90,6 +90,7 @@ Arguments:
     only-post-migration-info                Skips migrating all content except for post-migration information. Use when import is handled outside of congregate
     subgroups-only                          Expects that only sub-groups are staged and that their parent groups already exist on destination
     reg-dry-run                             If registry migration is configured, instead of doing the actual migration, write the tags to the logs for use in the brute force migration. Can also be useful when renaming targets
+    group-structure                         Let the GitHub and BitBucket Server importers create the missing sub-group layers.
     access-level                            Update parent group level user permissions (None/Minimal/Guest/Reporter/Developer/Maintainer/Owner).
     staged                                  Compare using staged data
     no-of-files                             Number of files used to go back when stitching JSON results
@@ -128,7 +129,9 @@ Commands:
                                                 all project and group members to {CONGREGATE_PATH}/data/staged_users.json,
                                                 All groups can be staged with '.' or 'all'.
                                                 Individual ones can be staged as a space delimited list of integers (group IDs).
-    stage-wave                              Stage wave of projects based on migration wave spreadsheet. This only takes a single wave for input
+    stage-wave                              Stage wave of projects based on migration wave spreadsheet. This only takes a single wave for input.
+                                                Add '--skip-group-import' to avoid creating groups.
+                                                Add '--group-structure' to allow the GitHub and BitBucket Server importers to create the missing sub-group layers.
     create-stage-wave-csv                   Generate a baseline version of the CSV for stage wave from the listed data
     migrate                                 Commence migration based on configuration and staged assets.
     rollback                                Remove staged users/groups/projects on destination.
@@ -254,7 +257,6 @@ def main():
         ARCHIVED = arguments["--archived"]
         MEMBERSHIP = arguments["--membership"]
         SUBGROUPS_ONLY = arguments["--subgroups-only"]
-        REG_DRY_RUN = arguments["--reg-dry-run"]
         DEST = arguments["--dest"]
 
         if SCM_SOURCE:
@@ -362,7 +364,8 @@ def main():
                     only_post_migration_info=ONLY_POST_MIGRATION_INFO,
                     subgroups_only=SUBGROUPS_ONLY,
                     scm_source=SCM_SOURCE,
-                    reg_dry_run=REG_DRY_RUN
+                    reg_dry_run=arguments["--reg-dry-run"],
+                    group_structure=arguments["--group-structure"]
                 )
                 migrate.migrate()
 

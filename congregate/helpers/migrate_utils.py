@@ -150,7 +150,8 @@ def get_staged_user_projects(staged_projects):
 
 def check_for_staged_user_projects(staged_projects):
     """
-        Check if user projects are in the list of staged_projects. If they are, log a warning and return the list of namespaces, else return None
+    Check if user projects are in the list of staged_projects. If they are, log a warning and return the list of namespaces, else return None
+
         :param staged_projects: The JSON array of staged projects
         :return: True if user projects are found in staged_projects, else False
     """
@@ -190,9 +191,10 @@ def get_user_project_namespace(p):
 def find_user_by_email_comparison_without_id(email, src=False):
     """
     Find a user by email address in the destination system
-    :param email: the email address to check for
-    :param src: Is this the source or destination system? True if source else False. Defaults to False.
-    :return: The user entity found or None
+
+        :param email: the email address to check for
+        :param src: Is this the source or destination system? True if source else False. Defaults to False.
+        :return: The user entity found or None
     """
     if email:
         host = b.config.source_host if src else b.config.destination_host
@@ -316,9 +318,9 @@ def clean_data(dry_run=True, files=None):
 
 def add_post_migration_stats(start, log=None):
     """
-        Print all POST/PUT/DELETE requests and their total number
-        Assuming you've started the migration with an empty congregate.log
-        Print total migration time
+    Print all POST/PUT/DELETE requests and their total number
+    Assuming you've started the migration with an empty congregate.log
+    Print total migration time
     """
     reqs = ["POST request to", "PUT request to",
             "DELETE request to", "PATCH request to"]
@@ -377,7 +379,7 @@ def validate_name(name, full_path, is_group=False):
 
 def get_duplicate_paths(data, are_projects=True):
     """
-        Legacy GL versions had case insensitive paths, which on newer GL versions are seen as duplicates
+    Legacy GL versions had case insensitive paths, which on newer GL versions are seen as duplicates
     """
     paths = [x.get("path_with_namespace", "").lower() if are_projects else x.get(
         "full_path", "").lower() for x in data]
@@ -386,10 +388,35 @@ def get_duplicate_paths(data, are_projects=True):
 
 def is_gl_version_older_than(set_version, host, token, log):
     """
-        Lookup GL instance version and throw custom log based
+    Lookup GL instance version and throw custom log based
     """
     version = safe_json_response(instance_api.get_version(host, token))
     if version and version.get("version") and int(version["version"].split(".")[0]) < set_version:
         b.log.info(f"{log} on GitLab version {version}")
         return True
     return False
+
+
+def get_stage_wave_paths(project):
+    """
+    Construct stage_wave destination namespace and path_with_namespace
+    """
+    src_pwn = project.get("path_with_namespace")
+    staged_tn = project.get("target_namespace")
+
+    # stage-wave staging, based on spreadsheet file
+    if project.get("override_dstn_ns") and staged_tn:
+        dstn_pwn = f"{staged_tn}/{project['path']}"
+    elif staged_tn:
+        dstn_pwn = f"{staged_tn}/{src_pwn}"
+    # Default config-based staging
+    else:
+        dstn_pwn = get_external_path_with_namespace(src_pwn)
+
+    # TODO: Make this target namespace lookup requirement configurable
+    if target_namespace := get_target_namespace(project):
+        tn = target_namespace
+    else:
+        tn = get_dst_path_with_namespace(
+            project).rsplit("/", 1)[0]
+    return dstn_pwn, tn
