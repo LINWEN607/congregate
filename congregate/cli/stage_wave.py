@@ -86,10 +86,9 @@ class WaveStageCLI(BaseStageClass):
         self.check_spreadsheet_data()
         # Iterating over a spreadsheet row
         for row in wave_data:
-            url_key = column_mapping["Source Url"]
-            repo_url = row.get(url_key, "").lower()
+            repo_url = row.get(column_mapping["Source Url"], "").lower()
             if project := (self.project_urls.get(repo_url) or (self.project_urls.get(
-                    repo_url + 'git')) or self.project_paths.get(self.sanitize_project_path(repo_url, host=scm_source))):
+                    repo_url + '.git')) or self.project_paths.get(self.sanitize_project_path(repo_url, host=scm_source))):
                 obj = self.get_project_metadata(project)
                 if parent_path := column_mapping.get("Parent Path"):
                     obj["target_namespace"] = row.get(
@@ -101,7 +100,7 @@ class WaveStageCLI(BaseStageClass):
                         obj['swc_id'] = row.get('SWC AA ID')
                     else:
                         self.log.warning(
-                            f"No SWC_ID for {obj['target_namespace']}")
+                            f"No 'SWC AA ID' (SWC_ID) provided for {obj['target_namespace']}")
                 else:
                     self.log.warning(
                         "The parent path doesn't exist or the parent path name has been misspelled.")
