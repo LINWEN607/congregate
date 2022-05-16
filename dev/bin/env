@@ -47,6 +47,6 @@ alias pyclean
 alias gendocs
 alias kc
 alias kc9
-printf '# wave setup and archiving management'
+printf '\n# wave setup and archiving management\n'
 alias wave_setup
 alias wave_archive

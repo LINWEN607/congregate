@@ -5,7 +5,7 @@ This directory contains a Dockerfile and docker-compose file for standing up a t
 To spin all of this up, perform the following actions:
 
 Retrieve the bitbucket evaluation license and root password from the project variables (congregate -> settings -> CI/CD -> variables).
-If you do not have maintainer privileges, reach out to @leopardm or @pprokic for the license.
+If you do not have maintainer privileges, reach out to @gitlab-org/professional-services-automation/tools/migration for the license.
 
 ## Save the bitbucket license and bitbucket as environment variables
 
