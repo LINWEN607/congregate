@@ -99,7 +99,7 @@ class WaveStageCLI(BaseStageClass):
                         obj['swc_manager_email'] = row.get('SWC Manager Email')
                         obj['swc_id'] = row.get('SWC AA ID')
                     else:
-                        self.log.warning(
+                        self.log.info(
                             f"No 'SWC AA ID' (SWC_ID) provided for {obj['target_namespace']}")
                 else:
                     self.log.warning(
@@ -196,8 +196,8 @@ class WaveStageCLI(BaseStageClass):
                         'SWC Manager Email')
                     obj['swc_id'] = wave_row.get('SWC AA ID')
                 else:
-                    self.log.warning(
-                        f"No SWC_ID for {obj['target_namespace']}")
+                    self.log.info(
+                        f"No 'SWC AA ID' (SWC_ID) provided for {obj['target_namespace']}")
             # Append all project members to staged users
             for project_member in obj["members"]:
                 self.append_member_to_members_list([], project_member, dry_run)
