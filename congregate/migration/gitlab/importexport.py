@@ -739,13 +739,13 @@ class ImportExportClient(BaseClass):
         timeout = self.config.export_import_timeout
         while True:
             details = safe_json_response(resp)
-            state = details.get("status")
+            state = details.get("status") if details else None
             log_string = f"Bulk group import {state}, with status response:\n{json_pretty(details)}"
             if state == "finished":
                 self.log.info(log_string)
                 imported = True
                 break
-            if state == "failed":
+            if not state or state == "failed":
                 self.log.error(log_string)
                 break
             if total_time < timeout:

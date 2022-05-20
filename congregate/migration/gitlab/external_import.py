@@ -67,7 +67,7 @@ class ImportClient(BaseClass):
         """
         Use the built-in GitLab importer to start a GitHub Enterprise import.
 
-            :param project: (int) GitHub repository metadata
+            :param project: (dict) GitHub repository metadata
             :param dst_pwn: (str) Destination path with namespace
             :param tn: (str) Full destination target namespace
             :param host: (str) GitHub hostname
