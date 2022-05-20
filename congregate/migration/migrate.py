@@ -519,6 +519,7 @@ class MigrateClient(BaseClass):
                 f"### {dry_log}Group import results ###\n{json_utils.json_pretty(results)}")
             mig_utils.write_results_to_file(
                 results, result_type="group", log=self.log)
+        # Allow BitBucket Server importer to create missing sub-group layers on repo import
         elif self.group_structure:
             self.log.info(
                 "Skipping group import and relying on BitBucket Server importer to create missing sub-group layers")
