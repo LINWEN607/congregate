@@ -8,9 +8,10 @@ stages:
 include:
   - template: Security/SAST.gitlab-ci.yml
   - template: Security/Secret-Detection.gitlab-ci.yml
-  - template: Code-Quality.gitlab-ci.yml
   - template: Security/Container-Scanning.gitlab-ci.yml
   - template: Security/License-Scanning.gitlab-ci.yml
+  - template: Security/Dependency-Scanning.gitlab-ci.yml
+  - template: Code-Quality.gitlab-ci.yml
   - local: ci/vault.yml
 
 variables:
@@ -521,6 +522,13 @@ debian_container_scanning:
         - pyproject.toml
         - package.json
         - docker/release/debian.Dockerfile
+
+dependency_scanning:
+  rules:
+    - if: "$CI_PIPELINE_SOURCE != 'schedule'"
+      changes:
+        - pyproject.toml
+        - poetry.lock
 
 docs update:
   stage: deploy
