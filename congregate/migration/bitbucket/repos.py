@@ -183,5 +183,5 @@ class ReposClient(BaseClass):
             "members": [] if project else self.add_repo_users([], repo_path, repo.get("slug")),
             "default_branch": self.get_default_branch(repo_path, repo["slug"]),
             # Assuming http is on index 0
-            "http_url_to_repo": dig(repo, 'links', 'clone', default=[{"href": ""}])[0]["href"]
+            "http_url_to_repo": dig(repo, 'links', 'self', default=[{"href": ""}])[0]["href"]
         }

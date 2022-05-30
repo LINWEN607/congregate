@@ -64,45 +64,6 @@ class ProjectsTests(unittest.TestCase):
                 "state": "active",
             }
         ]
-        expected_repos = [
-            {
-                "id": 3,
-                "path": "node",
-                "name": "node",
-                "namespace": {
-                    "kind": "group",
-                    "name": "test-group",
-                    "path": "TGP",
-                    "id": 1,
-                    "full_path": "TGP"
-                },
-                "path_with_namespace": "TGP/node",
-                "visibility": "private",
-                "description": "",
-                "members": [],
-                "default_branch": "main",
-                "http_url_to_repo": "http://localhost:7990/scm/tgp/node.git"
-            },
-            {
-                "id": 6,
-                "path": "android",
-                "name": "android",
-                "namespace": {
-                    "kind": "group",
-                    "name": "test-group",
-                    "path": "TGP",
-                    "id": 1,
-                    "full_path": "TGP"
-                },
-                "path_with_namespace": "TGP/android",
-                "visibility": "private",
-                "description": "Android project",
-                "members": [],
-                "default_branch": "main",
-                "http_url_to_repo": "http://localhost:7990/scm/tgp/android.git"
-            }
-        ]
-        repo_ids = [ep["id"] for ep in expected_repos]
         expected_projects = [
             {
                 "id": 1,
@@ -112,7 +73,7 @@ class ProjectsTests(unittest.TestCase):
                 "visibility": "private",
                 "description": "test",
                 "members": expected_members,
-                "projects": repo_ids
+                "projects": [3, 6]
             },
             {
                 "id": 2,
@@ -122,7 +83,7 @@ class ProjectsTests(unittest.TestCase):
                 "visibility": "private",
                 "description": "test",
                 "members": expected_members,
-                "projects": repo_ids
+                "projects": [3, 6]
             }
         ]
 
@@ -171,45 +132,6 @@ class ProjectsTests(unittest.TestCase):
         groups = {
             "test-group": self.mock_groups.get_all_group_members()
         }
-        expected_repos = [
-            {
-                "id": 3,
-                "path": "node",
-                "name": "node",
-                "namespace": {
-                    "id": 1,
-                    "path": "TGP",
-                    "name": "test-group",
-                    "kind": "group",
-                    "full_path": "TGP"
-                },
-                "path_with_namespace": "TGP/node",
-                "visibility": "private",
-                "description": "",
-                "members": [],
-                "default_branch": "master",
-                "http_url_to_repo": "http://localhost:7990/scm/tgp/node.git"
-            },
-            {
-                "id": 6,
-                "path": "android",
-                "name": "android",
-                "namespace": {
-                    "id": 1,
-                    "path": "TGP",
-                    "name": "test-group",
-                    "kind": "group",
-                    "full_path": "TGP"
-                },
-                "path_with_namespace": "TGP/android",
-                "visibility": "private",
-                "description": "Android project",
-                "members": [],
-                "default_branch": "master",
-                "http_url_to_repo": "http://localhost:7990/scm/tgp/android.git"
-            }
-        ]
-        repo_ids = [ep["id"] for ep in expected_repos]
         expected_projects = [
             {
                 "name": "test-group",
@@ -270,7 +192,7 @@ class ProjectsTests(unittest.TestCase):
                         "access_level": 30
                     }
                 ],
-                "projects": repo_ids
+                "projects": [3, 6]
             },
             {
                 "name": "another-test-group",
@@ -297,7 +219,7 @@ class ProjectsTests(unittest.TestCase):
                         "access_level": 20
                     }
                 ],
-                "projects": repo_ids
+                "projects": [3, 6]
             }
         ]
 
