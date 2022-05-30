@@ -76,7 +76,8 @@ class OrgsClient(BaseClass):
                     f"projects-{self.host}", formatted_repo)
                 formatted_repo.pop("_id")
                 formatted_repo["members"] = []
-                org_repos.append(formatted_repo)
+                # Save all org repos ID references as part of group metadata
+                org_repos.append(formatted_repo.get("id"))
             members = self.add_org_members([], org, mongo)
             mongo.insert_data(f"groups-{self.host}", {
                 "name": org["login"],
@@ -96,19 +97,15 @@ class OrgsClient(BaseClass):
     def add_team_as_subgroup(self, org, team, mongo):
         error, team = is_error_message_present(team)
         if error or not team:
-            self.log.error(
-                "Failed to store team {}".format(team))
+            self.log.error(f"Failed to store team '{team}'")
         else:
             org_name = org.get("login")
             if self.get_team_full_path(org_name, team):
-                team_repos = []
                 for team_repo in self.teams_api.get_team_repos(team["id"]):
                     formatted_repo = self.repos.format_repo(team_repo, mongo)
                     mongo.insert_data(
                         f"projects-{self.host}", formatted_repo)
-                    formatted_repo.pop("_id")
-                    formatted_repo["members"] = []
-                    team_repos.append(formatted_repo)
+                    # TODO: Actually add teams as subgroups to "groups-" in mongo?
 
     def get_team_full_path(self, org_name, team):
         """

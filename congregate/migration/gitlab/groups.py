@@ -45,7 +45,7 @@ class GroupsClient(BaseClass):
             # Only list direct projects to avoid overhead
             group["projects"] = []
             for project in self.groups_api.get_all_group_projects(gid, host, token, include_subgroups=False, with_shared=False):
-                group["projects"].append(project["id"])
+                group["projects"].append(project.get("id"))
 
                 # Avoids having to also list all gitlab.com parent group projects
                 project["members"] = list(
@@ -55,7 +55,7 @@ class GroupsClient(BaseClass):
             # Save all descendant groups ID references as part of group metadata
             group["desc_groups"] = []
             for g in self.groups_api.get_all_descendant_groups(gid, host, token):
-                group["desc_groups"].append(g["id"])
+                group["desc_groups"].append(g.get("id"))
 
             # Traverse subgroups
             for subgroup in self.groups_api.get_all_subgroups(

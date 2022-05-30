@@ -81,7 +81,7 @@ class ProjectsClient(BaseClass):
             self.users.format_users(users))
 
     def add_project_repos(self, repos, project_key):
-        repos = []
         for repo in self.projects_api.get_all_project_repos(project_key):
-            repos.append(self.repos.format_repo(repo, project=True))
-        return remove_dupes(repos)
+            # Save all project repos ID references as part of group metadata
+            repos.append(repo.get("id"))
+        return repos
