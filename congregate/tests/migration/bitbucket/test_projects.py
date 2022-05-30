@@ -102,6 +102,7 @@ class ProjectsTests(unittest.TestCase):
                 "http_url_to_repo": "http://localhost:7990/scm/tgp/android.git"
             }
         ]
+        repo_ids = [ep["id"] for ep in expected_repos]
         expected_projects = [
             {
                 "id": 1,
@@ -111,7 +112,7 @@ class ProjectsTests(unittest.TestCase):
                 "visibility": "private",
                 "description": "test",
                 "members": expected_members,
-                "projects": expected_repos
+                "projects": repo_ids
             },
             {
                 "id": 2,
@@ -121,7 +122,7 @@ class ProjectsTests(unittest.TestCase):
                 "visibility": "private",
                 "description": "test",
                 "members": expected_members,
-                "projects": expected_repos
+                "projects": repo_ids
             }
         ]
 
@@ -208,6 +209,7 @@ class ProjectsTests(unittest.TestCase):
                 "http_url_to_repo": "http://localhost:7990/scm/tgp/android.git"
             }
         ]
+        repo_ids = [ep["id"] for ep in expected_repos]
         expected_projects = [
             {
                 "name": "test-group",
@@ -268,7 +270,7 @@ class ProjectsTests(unittest.TestCase):
                         "access_level": 30
                     }
                 ],
-                "projects": expected_repos
+                "projects": repo_ids
             },
             {
                 "name": "another-test-group",
@@ -295,7 +297,7 @@ class ProjectsTests(unittest.TestCase):
                         "access_level": 20
                     }
                 ],
-                "projects": expected_repos
+                "projects": repo_ids
             }
         ]
 
