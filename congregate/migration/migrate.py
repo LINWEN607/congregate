@@ -182,47 +182,47 @@ class MigrateClient(BaseClass):
         # Migrate users
         self.migrate_user_info()
 
-        # Migrate GH orgs/teams to groups/sub-groups
+        # Migrate GH orgs as groups
         staged_groups = mig_utils.get_staged_groups()
         if staged_groups and not self.skip_group_import and not self.group_structure:
             self.validate_groups_and_projects(staged_groups)
             self.log.info(
-                f"{dry_log}Migrating GitHub orgs/teams to GitLab groups/sub-groups")
+                f"{dry_log}Migrating GitHub orgs as GitLab groups")
             results = list(r for r in self.multi.start_multi_process(
-                self.migrate_github_group, staged_groups, processes=self.processes, nestable=True))
+                self.migrate_github_org, staged_groups, processes=self.processes, nestable=True))
             self.are_results(results, "group", "import")
             results.append(mig_utils.get_results(results))
             self.log.info(
-                f"### {dry_log}Group import results ###\n{json_utils.json_pretty(results)}")
+                f"### {dry_log}GitHub orgs migration result ###\n{json_utils.json_pretty(results)}")
             mig_utils.write_results_to_file(
                 results, result_type="group", log=self.log)
         elif self.group_structure:
             self.log.info(
-                "Skipping group import and relying on GitHub importer to create missing sub-group layers")
+                "Skipping GitHub orgs migration and relying on GitHub importer to create missing GitLab sub-group layers")
         else:
-            self.log.warning("SKIP: No groups staged for migration")
+            self.log.warning("SKIP: No GitHub orgs staged for migration")
 
-        # Migrate GH repos to projects
+        # Migrate GH repos as projects
         staged_projects = mig_utils.get_staged_projects()
         if staged_projects and not self.skip_project_import:
             self.validate_groups_and_projects(
                 staged_projects, are_projects=True)
             if user_projects := mig_utils.get_staged_user_projects(
                     staged_projects):
-                self.log.warning("User projects staged:\n{}".format(
+                self.log.warning("User repos staged:\n{}".format(
                     "\n".join(u for u in user_projects)))
-            self.log.info("Importing projects from GitHub")
+            self.log.info("Importing repos from GitHub")
             import_results = list(ir for ir in self.multi.start_multi_process(
-                self.import_github_project, staged_projects, processes=self.processes, nestable=True))
+                self.import_github_repo, staged_projects, processes=self.processes, nestable=True))
 
             self.are_results(import_results, "project", "import")
             # append Total : Successful count of project imports
             import_results.append(mig_utils.get_results(import_results))
             self.log.info(
-                f"### {dry_log}Project import results ###\n{json_utils.json_pretty(import_results)}")
+                f"### {dry_log}GitHub repos import result ###\n{json_utils.json_pretty(import_results)}")
             mig_utils.write_results_to_file(import_results, log=self.log)
         else:
-            self.log.warning("SKIP: No projects staged for migration")
+            self.log.warning("SKIP: No GitHub repos staged for migration")
 
         # After all is said and done, run our reporting with the
         # staged_projects and results
@@ -265,7 +265,7 @@ class MigrateClient(BaseClass):
                 self.log.warning(
                     "REPORTING: Failed to instantiate the reporting module")
 
-    def migrate_github_group(self, group):
+    def migrate_github_org(self, group):
         result = False
         members = group.pop("members")
         group["full_path"] = mig_utils.get_full_path_with_parent_namespace(
@@ -296,7 +296,7 @@ class MigrateClient(BaseClass):
             group["full_path"]: result
         }
 
-    def import_github_project(self, project):
+    def import_github_repo(self, project):
         dstn_pwn, tn = mig_utils.get_stage_wave_paths(project)
         host = self.config.destination_host
         token = self.config.destination_token
@@ -508,23 +508,24 @@ class MigrateClient(BaseClass):
         if staged_groups and not self.skip_group_import and not self.group_structure:
             self.validate_groups_and_projects(staged_groups)
             self.log.info(
-                f"{dry_log}Migrating BitBucket projects to GitLab groups")
+                f"{dry_log}Migrating BitBucket projects as GitLab groups")
             results = list(r for r in self.multi.start_multi_process(
-                self.migrate_bitbucket_group, staged_groups, processes=self.processes, nestable=True))
+                self.migrate_bitbucket_project, staged_groups, processes=self.processes, nestable=True))
 
             self.are_results(results, "group", "import")
 
             results.append(mig_utils.get_results(results))
             self.log.info(
-                f"### {dry_log}Group import results ###\n{json_utils.json_pretty(results)}")
+                f"### {dry_log}BitBucket projects migration result ###\n{json_utils.json_pretty(results)}")
             mig_utils.write_results_to_file(
                 results, result_type="group", log=self.log)
         # Allow BitBucket Server importer to create missing sub-group layers on repo import
         elif self.group_structure:
             self.log.info(
-                "Skipping group import and relying on BitBucket Server importer to create missing sub-group layers")
+                "Skipping BitBucket projects migration and relying on BitBucket Server importer to create missing GitLab sub-group layers")
         else:
-            self.log.warning("SKIP: No groups staged for migration")
+            self.log.warning(
+                "SKIP: No BitBucket projects staged for migration")
 
         # Migrate BB repos as GL projects
         staged_projects = mig_utils.get_staged_projects()
@@ -533,23 +534,23 @@ class MigrateClient(BaseClass):
                 staged_projects, are_projects=True)
             if user_projects := mig_utils.get_staged_user_projects(
                     staged_projects):
-                self.log.warning("User projects staged:\n{}".format(
+                self.log.warning("User repos staged:\n{}".format(
                     "\n".join(u for u in user_projects)))
-            self.log.info("Importing projects from BitBucket Server")
+            self.log.info("Importing BitBucket repos")
             import_results = list(ir for ir in self.multi.start_multi_process(
-                self.import_bitbucket_project, staged_projects, processes=self.processes, nestable=True))
+                self.import_bitbucket_repo, staged_projects, processes=self.processes, nestable=True))
 
             self.are_results(import_results, "project", "import")
 
             # append Total : Successful count of project imports
             import_results.append(mig_utils.get_results(import_results))
             self.log.info(
-                f"### {dry_log}Project import results ###\n{json_utils.json_pretty(import_results)}")
+                f"### {dry_log}BitBucket repos import result ###\n{json_utils.json_pretty(import_results)}")
             mig_utils.write_results_to_file(import_results, log=self.log)
         else:
-            self.log.warning("SKIP: No projects staged for migration")
+            self.log.warning("SKIP: No BitBucket repos staged for migration")
 
-    def migrate_bitbucket_group(self, group):
+    def migrate_bitbucket_project(self, group):
         result = False
         members = group.pop("members")
         group["full_path"] = mig_utils.get_full_path_with_parent_namespace(
@@ -583,7 +584,7 @@ class MigrateClient(BaseClass):
             group["full_path"]: result
         }
 
-    def import_bitbucket_project(self, project):
+    def import_bitbucket_repo(self, project):
         pwn = project.get("path_with_namespace")
         dstn_pwn, tn = mig_utils.get_stage_wave_paths(project)
         host = self.config.destination_host
