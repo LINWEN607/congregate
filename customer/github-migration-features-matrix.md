@@ -11,8 +11,7 @@ NOTE: Features not listed in the matrix should be presumed to be not yet support
 | Main             | Feature                   | Sub-feature                                                      | GitLab             | Congregate         |
 | ---------------- | ------------------------- | ---------------------------------------------------------------- | ------------------ | ------------------ |
 | **Organization** |
-|                  | Members                   |                                                                  | :x:                | :white_check_mark: |
-|                  | Teams                     |                                                                  | :x:                | :white_check_mark: |
+|                  | Members (org, repo)       |                                                                  | :x:                | :white_check_mark: |
 | **Repository**   |
 |                  | Description               |                                                                  | :white_check_mark: | :white_check_mark: |
 |                  | Git repository data       |                                                                  | :white_check_mark: | :white_check_mark: |
