@@ -435,7 +435,8 @@ def main():
                 projects.toggle_staged_projects_push_mirror(
                     disable=arguments["--disable"], dry_run=DRY_RUN)
             if arguments["verify-staged-projects-remote-mirror"]:
-                projects.verify_staged_projects_remote_mirror()
+                projects.verify_staged_projects_remote_mirror(
+                    disabled=arguments["--disabled"], overwrite=arguments["--overwrite"])
             if arguments["set-default-branch"]:
                 branches.set_default_branch(
                     name=arguments["--name"], dry_run=DRY_RUN)

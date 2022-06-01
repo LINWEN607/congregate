@@ -747,31 +747,32 @@ class ProjectsClient(BaseClass):
                 continue
         add_post_migration_stats(start, log=self.log)
 
-    def verify_staged_projects_remote_mirror(self):
+    def verify_staged_projects_remote_mirror(self, disabled=False, overwrite=False):
         """Verify that remote project push mirror exists and is not failing"""
         start = time()
         rotate_logs()
         staged_projects = get_staged_projects()
         host = self.config.destination_host
         token = self.config.destination_token
-        for s in staged_projects:
+        for sp in staged_projects:
             try:
-                self.verify_staged_projects(host, token, s)
+                self.verify_staged_projects(
+                    host, token, sp, disabled, overwrite)
             except RequestException as re:
                 self.log.error(
-                    f"Failed to verify project {s.get('path_with_namespace')} remote mirror, with error:\n{re}")
+                    f"Failed to verify project {sp.get('path_with_namespace')} remote mirror, with error:\n{re}")
                 continue
         add_post_migration_stats(start, log=self.log)
 
-    def verify_staged_projects(self, host, token, s):
-        dst_pid, mirror_path = self.find_mirror_project(s, host, token)
-        project = f"project {s.get('path_with_namespace')} (ID: {dst_pid})"
+    def verify_staged_projects(self, host, token, sp, disabled, overwrite):
+        dst_pid, mirror_path = self.find_mirror_project(sp, host, token)
+        project = f"project {sp.get('path_with_namespace')} (ID: {dst_pid})"
         if dst_pid and mirror_path:
             url = f"{strip_netloc(host)}/{mirror_path}.git"
             self.verify_remote_mirror(self.projects_api.get_all_remote_push_mirrors(
-                dst_pid, host, token), project, url)
+                dst_pid, host, token), project, url, disabled, overwrite)
 
-    def verify_remote_mirror(self, mirrors, project, url):
+    def verify_remote_mirror(self, mirrors, project, url, disabled, overwrite):
         """Loop over project push mirrors, match based on URL and verify its state"""
         missing = True
         for m in mirrors:
@@ -784,7 +785,15 @@ class ProjectsClient(BaseClass):
                 missing = False
                 if m.get("update_status") == "failed":
                     self.log.error(
-                        f"Failed {project} remote mirror, with status:\n{json_pretty(m)}")
+                        f"Failed '{project}' remote mirror, with status:\n{json_pretty(m)}")
+                keep_div_refs = m.get("keep_divergent_refs")
+                if keep_div_refs != (not overwrite):
+                    self.log.error(
+                        f"Project '{project}' remote mirror 'keep_divergent_refs' set to: {keep_div_refs}")
+                enabled = m.get("enabled")
+                if enabled != (not disabled):
+                    self.log.error(
+                        f"Project '{project}' remote mirror 'enabled' set to: {enabled}")
                 break
         if missing:
             self.log.error(f"Missing {project} remote mirror {url}")
