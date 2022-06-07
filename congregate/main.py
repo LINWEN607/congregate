@@ -29,9 +29,9 @@ Usage:
     congregate remove-users-from-parent-group [--commit]
     congregate migrate-variables-in-stage [--commit]
     congregate mirror-staged-projects [--commit]
-    congregate push-mirror-staged-projects [--disabled] [--overwrite] [--force] [--commit]
+    congregate push-mirror-staged-projects [--disabled] [--keep_div_refs] [--force] [--commit]
     congregate toggle-staged-projects-push-mirror [--disable] [--commit]
-    congregate verify-staged-projects-remote-mirror
+    congregate verify-staged-projects-remote-mirror [--disabled] [--keep_div_refs]
     congregate remove-all-mirrors [--commit]
     # TODO: Add dry-run, potentially remove
     congregate update-projects-visibility
@@ -110,7 +110,7 @@ Arguments:
     disable-cicd                            Disable CI/CD when creating empty GitLab project structures
     disabled                                Disable project push mirror when creating it
     disable                                 Disable staged project push mirror
-    overwrite                               Disable keep_divergent_refs (True by default) and overwrite mirror repo on next push
+    keep_div_refs                           Set keep_divergent_refs to True (False by default) and avoid overwriting changes on the mirror repo
     force                                   Immediately trigger push mirroring with a repo change e.g. new branch
     name                                    Project branch name
 
@@ -153,7 +153,7 @@ Commands:
                                                 NOTE: Destination instance only mirroring.
     toggle-staged-projects-push-mirror      Enable/disable push mirror created via command push-mirror-staged-projects.
                                                 NOTE: Destination instance only mirroring.
-    verify-staged-projects-remote-mirror    Verify that each staged project remote push mirror exists and is not failing.
+    verify-staged-projects-remote-mirror    Verify that each staged project remote push mirror exists and is not failing. Preferably run a few minutes after creating push mirrors.
     remove-all-mirrors                      Remove all project mirrors for staged projects.
     update-projects-visibility              Return list of all migrated projects' visibility.
     set-default-branch                      Set default branch for staged projects on destination.
@@ -430,13 +430,13 @@ def main():
                 migrate.mirror_staged_projects()
             if arguments["push-mirror-staged-projects"]:
                 projects.push_mirror_staged_projects(
-                    disabled=arguments["--disabled"], overwrite=arguments["--overwrite"], force=arguments["--force"], dry_run=DRY_RUN)
+                    disabled=arguments["--disabled"], keep_div_refs=arguments["--keep_div_refs"], force=arguments["--force"], dry_run=DRY_RUN)
             if arguments["toggle-staged-projects-push-mirror"]:
                 projects.toggle_staged_projects_push_mirror(
                     disable=arguments["--disable"], dry_run=DRY_RUN)
             if arguments["verify-staged-projects-remote-mirror"]:
                 projects.verify_staged_projects_remote_mirror(
-                    disabled=arguments["--disabled"], overwrite=arguments["--overwrite"])
+                    disabled=arguments["--disabled"], keep_div_refs=arguments["--keep_div_refs"])
             if arguments["set-default-branch"]:
                 branches.set_default_branch(
                     name=arguments["--name"], dry_run=DRY_RUN)
