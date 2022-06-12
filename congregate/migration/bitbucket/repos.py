@@ -1,18 +1,24 @@
+from time import time
 from urllib.parse import quote_plus
+from requests.exceptions import RequestException
 
-from gitlab_ps_utils.misc_utils import safe_json_response, remove_dupes_but_take_higher_access, strip_netloc, is_error_message_present
+from gitlab_ps_utils.misc_utils import get_dry_log, safe_json_response, remove_dupes_but_take_higher_access, strip_netloc, is_error_message_present
 from gitlab_ps_utils.dict_utils import dig
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.mdbc import MongoConnector
+from congregate.migration.bitbucket.api.projects import ProjectsApi
 from congregate.migration.bitbucket.api.repos import ReposApi
 from congregate.migration.bitbucket.api.users import UsersApi
 from congregate.migration.bitbucket.users import UsersClient
 from congregate.migration.bitbucket.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi as GLProjectsApi
+from congregate.helpers.migrate_utils import get_staged_projects, add_post_migration_stats, get_staged_groups
+from congregate.helpers.utils import rotate_logs
 
 
 class ReposClient(BaseClass):
     def __init__(self):
+        self.projects_api = ProjectsApi()
         self.repos_api = ReposApi()
         self.users_api = UsersApi()
         self.users = UsersClient()
@@ -81,7 +87,7 @@ class ReposClient(BaseClass):
         return resp.get("displayId", "master") if resp else "master"
 
     def migrate_permissions(self, project, pid):
-        perms = list(self.repos_api.get_repo_branch_permissions(
+        perms = list(self.repos_api.get_all_repo_branch_permissions(
             project["namespace"], project["path"]))
         for p in perms:
             scope_type = dig(p, 'scope', 'type')
@@ -185,3 +191,80 @@ class ReposClient(BaseClass):
             # Assuming http is on index 0
             "http_url_to_repo": dig(repo, 'links', 'self', default=[{"href": ""}])[0]["href"]
         }
+
+    def update_branch_permissions(self, restrict=True, is_project=False, dry_run=True):
+        start = time()
+        rotate_logs()
+        staged = get_staged_groups() if is_project else get_staged_projects()
+        object_type = "project" if is_project else "repo"
+        self.log.info(f"BitBucket {object_type} count: {len(staged)}")
+        try:
+            for s in staged:
+                s_path = s.get("path") if is_project else s.get(
+                    "path_with_namespace")
+                self.log.info(
+                    f"{get_dry_log(dry_run)}{'Add' if restrict else 'Remove'} BitBucket {object_type} '{s_path}' branch permissions")
+                if not dry_run:
+                    self.add_branch_permissions(
+                        s, s_path, is_project) if restrict else self.remove_branch_permissions(s, s_path, is_project)
+        except RequestException as re:
+            self.log.error(
+                f"Failed to {'add' if restrict else 'remove'} BitBucket {object_type} '{s_path}' branch permissions, with error:\n{re}")
+        finally:
+            add_post_migration_stats(start, log=self.log)
+
+    def add_branch_permissions(self, staged, s_path, is_project):
+        matcher = {
+            "id": "*",
+            "type": {
+                "id": "PATTERN",
+                "name": "Pattern"
+            }
+        }
+        data = [
+            {
+                "type": "fast-forward-only",
+                "matcher": matcher
+            },
+            {
+                "type": "no-deletes",
+                "matcher": matcher
+            },
+            {
+                "type": "pull-request-only",
+                "matcher": matcher
+            },
+            {
+                "type": "read-only",
+                "matcher": matcher
+            }
+        ]
+        if is_project:
+            resp = self.projects_api.create_project_branch_permissions(
+                staged["path"], data=data)
+        else:
+            resp = self.repos_api.create_repo_branch_permissions(
+                staged["namespace"], staged["path"], data=data)
+        if resp.status_code != 200:
+            self.log.error(
+                f"Failed to add {'project' if is_project else 'repo'} '{s_path}' branch permissions:\n{resp} - {resp.text}")
+
+    def remove_branch_permissions(self, staged, s_path, is_project):
+        if is_project:
+            restrictions = self.projects_api.get_all_project_branch_permissions(
+                staged["path"])
+        else:
+            restrictions = self.repos_api.get_all_repo_branch_permissions(
+                staged["namespace"], staged["path"])
+        for r in restrictions:
+            # Remove all wildcard (*) branch permissions
+            if r.get("matcher") and r["matcher"].get("id") == "*":
+                if is_project:
+                    resp = self.projects_api.delete_project_branch_permission(
+                        staged["path"], r["id"])
+                else:
+                    resp = self.repos_api.delete_repo_branch_permission(
+                        staged["namespace"], staged["path"], r["id"])
+            if resp.status_code != 204:
+                self.log.error(
+                    f"Failed to remove {'project' if is_project else 'repo'} '{s_path}' branch permission:\n{r}\n{resp} - {resp.text}")
