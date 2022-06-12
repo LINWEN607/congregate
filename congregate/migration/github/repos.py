@@ -466,21 +466,21 @@ class ReposClient(BaseClass):
             return True
         return False
 
-    def archive_staged_repos(self, dry_run=True):
+    def update_staged_repos_archive_state(self, archived=True, dry_run=True):
         start = time()
         rotate_logs()
         staged_projects = get_staged_projects()
-        self.log.info(f"Project count: {len(staged_projects)}")
+        self.log.info(f"GitHub repo count: {len(staged_projects)}")
         try:
             for sp in staged_projects:
                 self.log.info(
-                    f"{get_dry_log(dry_run)}Archiving source project {sp['path_with_namespace']}")
+                    f"{get_dry_log(dry_run)}{'Archiving' if archived else 'Unarchiving'} GitHub repo '{sp['path_with_namespace']}'")
                 if not dry_run:
                     self.repos_api.update_repo(
-                        sp["namespace"], sp["name"], {"archived": True})
+                        sp["namespace"], sp["name"], {"archived": {archived}})
         except RequestException as re:
             self.log.error(
-                f"Failed to archive staged projects, with error:\n{re}")
+                f"Failed to {'' if archived else 'un'}archive staged repo, with error:\n{re}")
         finally:
             add_post_migration_stats(start, log=self.log)
 
