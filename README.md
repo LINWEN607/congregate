@@ -9,6 +9,8 @@
 Requires [GitLab Premium](https://about.gitlab.com/pricing/) or above.
 
 Released under the [GitLab EE license](LICENSE).
+
+Customers are very welcome to trial and evaluate Congregate today. However it's recommended that you do independently review the features and functionality to ensure it meets your requirements while also being aware of any current [key limitations](/customer). For help troubleshooting or using Congregate, Customers need to enter into a paid engagement with GitLab Professional Services. 
 >>>
 
 ![Congregate](./img/overview.png)
