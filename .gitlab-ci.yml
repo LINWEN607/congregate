@@ -20,7 +20,7 @@ variables:
   BB_SERVER_SEED_IMAGE_NAME: "$CI_REGISTRY_IMAGE/bitbucket-seed:latest"
   JENKINS_SEED_IMAGE_NAME: "$CI_REGISTRY_IMAGE/jenkins-seed:latest"
   SAST_EXCLUDED_ANALYZERS: "brakeman,flawfinder,gosec,kubesec,mobsf,phpcs-security-audit,pmd-apex,security-code-scan,sobelow,spotbugs"
-  SECURE_LOG_LEVEL: "debug"
+  SECURE_LOG_LEVEL: debug
   CONGREGATE_PATH: $CI_PROJECT_DIR
   APP_PATH: $CI_PROJECT_DIR
 
@@ -522,13 +522,6 @@ debian_container_scanning:
         - pyproject.toml
         - package.json
         - docker/release/debian.Dockerfile
-
-dependency_scanning:
-  rules:
-    - if: "$CI_PIPELINE_SOURCE != 'schedule'"
-      changes:
-        - pyproject.toml
-        - poetry.lock
 
 docs update:
   stage: deploy
