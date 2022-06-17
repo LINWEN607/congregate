@@ -192,7 +192,6 @@ For each migration attempt check if any project or group imports failed or have 
 * [ ] Once the projects are confirmed deleted, prepare to migrate them again.
 * [ ] If projects or groups are missing, confirm the projects and groups have successfully exported and confirm they don't actually exist on the destination instance
   * To confirm the exports have successfully exported, review the contents of `/opt/congregate/downloads` or the S3 bucket defined in the configuration. Make sure no export archive has a size of 42 bytes. That means the export archive is invalid.
-  * To confirm the projects or groups don't actually exist on the destination instance, compare the results of the diff report and manually check where the project or group should be located.
   * To confirm the projects or groups don't actually exist on the destination instance, you may also `dry-run` a wave.
     * You can also search for the project with an API request to `/projects?search=<project-name>`
     * You can also search for the groups with an API request to `/groups?search=<group-name>` or `/groups/<url-encoded-full-path>`
@@ -216,9 +215,6 @@ For each migration attempt check if any project or group imports failed or have 
 ### Post Migration
 
 * [ ] Once all the projects/groups are migrated, stitch together the various migration attempts by running `./congregate.sh stitch-results --result-type=<user|group|project> --no-of-files=<number-of-results-files-to-stitch>`
-* [ ] Once the results have been stitched into a single JSON file, run the diff report on the newly created results file
-* [ ] Notify in the internal Slack channel dedicated to this migration you are running the diff report
-* [ ] Run `nohup ./congregate.sh generate-diff --staged > data/waves/wave_<insert_wave_number>/diff<insert-wave-here>.log 2>&1 &` to generate the various diff reports
 * [ ] Reach out the whoever has rails console access to the destination instance and have them run the following script where `group_paths` is a list of all expected full_paths for this migration wave:
 
 ```ruby
@@ -238,31 +234,6 @@ p "Number of Merge Request import failures: #{mr_import_failures.count} (this fi
 p "Number of Services import failures: #{services_import_failures.count}"
 p "Number of Protected Branches import failures: #{protected_branches_import_failures.count}"
 ```
-
-* [ ] Review the diff reports (`data/results/*_results.html`) once they are finished generating
-  * Review the following:
-    * Overall accuracy of groups and projects
-    * Individual accuracy of each group and project
-    * Confirm correct group and project members are present.
-    * Confirm nothing has an accuracy of 0. If an asset is missing (one of the causes of an accuracy of 0), take note of the missing asset in this issue and plan to restage it for another, smaller run of this wave
-    * If the namespaces are incorrect, meaning a project or a group has been migrated to the wrong location, do the following:
-      * For projects:
-        * If the project is in an incorrect namespace within the parent group, move the project to the correct group
-        * If the project is in a completely incorrect, random location on the destination, confirm the spread of the leaked data, and refer to the [rollback instructions](#Rollback)
-      * For groups:
-        * If the group is not within the expected parent group, make a note of the incorrectly migrated group in this issue, delete the group, and refer to the [rollback instructions](#Rollback)
-    * If random users are present in a group or project, refer to the [rollback instructions](#Rollback).
-      * Confirm these users are actually incorrect, look up the user through the API (`/api/v4/users/:id`)
-* [ ] Post a comment in this issue containing the following information:
-  * Projects: `<insert-overall-accuracy>`
-  * Groups: `<insert-overall-accuracy>`
-  * Users: `<insert-overall-accuracy>`
-* [ ] If accuracy is greater than 90%, mark this migration as a success
-* [ ] If accuracy is lower than 90%, review the diff reports again and see if any projects or groups are missing
-* [ ] Attach `data/results/*_results.*` and `data/results/*_diff.json` to this issue
-* [ ] Copy `data/results/*_results.*` and `data/results/*_diff.json` to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
-* [ ] Notify in the internal Slack channel dedicated to this migration the diff report is finished generating with a link to the comment you just posted. If you need to run another small subset of this migration, mention that in the Slack message as well.
-* [ ] Notify the customer in the customer-facing Slack channel the migration wave has finished
 
 -->
 

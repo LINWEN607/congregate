@@ -28,6 +28,7 @@ import requests
 from bs4 import BeautifulSoup
 from gitlab_ps_utils.decorators import stable_retry
 from gitlab_ps_utils.logger import myLogger
+from gitlab_ps_utils.misc_utils import safe_json_response
 
 
 class token_generator():
@@ -108,7 +109,7 @@ class token_generator():
         return csrf, cookies
 
     def obtain_personal_access_token(self, name, expires_at, csrf, cookies):
-        self.log.info("Obtaining personal access token for root")
+        self.log.info("Obtaining 'root' user personal access token ({name})")
         data = {
             "personal_access_token[expires_at]": expires_at,
             "personal_access_token[name]": name,
@@ -124,11 +125,15 @@ class token_generator():
                 self.endpoint, "/profile/personal_access_tokens"), data=data, cookies=cookies)
             self.log.debug(
                 f"Status code for {self.__get_pat_route()}: {r.status_code}")
-        soup = BeautifulSoup(r.text, "lxml")
-        # self.log.debug(f"Soup is:\n{soup}")
-        token = soup.find(
-            'input', id='created-personal-access-token').get('value')
-        self.log.info("Obtained personal access token for root")
+        r_json = safe_json_response(r)
+        token = None
+        if r_json:
+            token = r_json.get("new_token")
+            self.log.info(
+                "Obtained 'root' user personal access token ({name})")
+        else:
+            self.log.error(
+                f"Failed to obtain 'root' user personal access token ({name}):\n{r} - {r.text}")
         return token
 
     def generate_token(self, name, expires_at, url=None,
@@ -153,8 +158,6 @@ class token_generator():
 
         token = self.obtain_personal_access_token(
             name, expires_at, csrf3, cookies3)
-
-        self.log.info("Token has been successfully generated")
         return token
 
     def __set_endpoint(self, endpoint):
