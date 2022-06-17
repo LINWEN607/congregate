@@ -1,9 +1,10 @@
 stages:
   - build
   - test
+  - rolling release
+  - deploy
   - bump version
   - release
-  - deploy
 
 include:
   - template: Security/SAST.gitlab-ci.yml
@@ -411,7 +412,7 @@ bump version:
 debian rolling release:
   extends:
     - .docker-build
-  stage: release
+  stage: rolling release
   variables:
     DISTRO: "debian"
     RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:rolling-debian"
@@ -439,7 +440,7 @@ debian-release-tag:
 centos rolling release:
   extends:
     - .docker-build
-  stage: release
+  stage: rolling release
   variables:
     DISTRO: "centos"
     RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:rolling-centos"
