@@ -1,6 +1,6 @@
 import json
 import base64
-from os.path import dirname, isfile
+from os.path import dirname
 import datetime
 from sqlite3 import DataError
 from time import time
@@ -674,7 +674,7 @@ class ProjectsClient(BaseClass):
 
     def push_mirror_staged_projects(
             self, disabled=False, keep_div_refs=False, force=False, dry_run=True):
-        """Create remote push mirror for staged projects"""
+        """Create push mirror for staged projects"""
         start = time()
         rotate_logs()
         staged_projects = get_staged_projects()
@@ -714,7 +714,7 @@ class ProjectsClient(BaseClass):
         add_post_migration_stats(start, log=self.log)
 
     def trigger_mirroring(self, host, token, staged_project, pid):
-        """Force trigger a remote project push mirror via skip-ci commit to new branch"""
+        """Force trigger a project push mirror via skip-ci commit to new branch"""
         branch = "mirroring-trigger"
         commit_data = {
             "branch": branch,
@@ -751,7 +751,7 @@ class ProjectsClient(BaseClass):
                 self.projects_api.archive_project(host, token, pid)
 
     def toggle_staged_projects_push_mirror(self, disable=False, dry_run=True):
-        """Enable/disable remote project push mirror for staged projects"""
+        """Enable/disable project push mirror for staged projects"""
         start = time()
         rotate_logs()
         staged_projects = get_staged_projects()
@@ -771,7 +771,7 @@ class ProjectsClient(BaseClass):
                         is_error, resp = is_error_message_present(m)
                         if is_error or not resp:
                             self.log.error(
-                                f"Invalid {project} remote mirror:\n{json_pretty(resp)}")
+                                f"Invalid {project} push mirror:\n{json_pretty(resp)}")
                         elif url in m.get("url", ""):
                             mirror_id = m.get("id")
                             data = {
@@ -798,8 +798,8 @@ class ProjectsClient(BaseClass):
                 continue
         add_post_migration_stats(start, log=self.log)
 
-    def verify_staged_projects_remote_mirror(self, disabled=False, keep_div_refs=False):
-        """Verify that remote project push mirror exists and is not failing"""
+    def verify_staged_projects_push_mirror(self, disabled=False, keep_div_refs=False):
+        """Verify that push project push mirror exists and is not failing"""
         start = time()
         rotate_logs()
         staged_projects = get_staged_projects()
@@ -811,7 +811,7 @@ class ProjectsClient(BaseClass):
                     host, token, sp, disabled, keep_div_refs)
             except RequestException as re:
                 self.log.error(
-                    f"Failed to verify project {sp.get('path_with_namespace')} remote mirror, with error:\n{re}")
+                    f"Failed to verify project {sp.get('path_with_namespace')} push mirror, with error:\n{re}")
                 continue
         add_post_migration_stats(start, log=self.log)
 
@@ -820,32 +820,32 @@ class ProjectsClient(BaseClass):
         project = f"project {sp.get('path_with_namespace')} (ID: {dst_pid})"
         if dst_pid and mirror_path:
             url = f"{strip_netloc(host)}/{mirror_path}.git"
-            self.verify_remote_mirror(self.projects_api.get_all_remote_push_mirrors(
+            self.verify_push_mirror(self.projects_api.get_all_remote_push_mirrors(
                 dst_pid, host, token), project, url, disabled, keep_div_refs)
 
-    def verify_remote_mirror(self, mirrors, project, url, disabled, keep_div_refs):
+    def verify_push_mirror(self, mirrors, project, url, disabled, keep_div_refs):
         """Loop over project push mirrors, match based on URL and verify its state"""
         missing = True
         for m in mirrors:
             is_error, resp = is_error_message_present(m)
             if is_error or not resp:
                 self.log.error(
-                    f"Invalid {project} remote mirror:\n{json_pretty(resp)}")
+                    f"Invalid {project} push mirror:\n{json_pretty(resp)}")
                 break
             if url in m.get("url", ""):
                 missing = False
                 if m.get("update_status") == "failed":
                     self.log.error(
-                        f"Failed '{project}' remote mirror, with status:\n{json_pretty(m)}")
+                        f"Failed '{project}' push mirror, with status:\n{json_pretty(m)}")
                 if m.get("keep_divergent_refs") != (keep_div_refs):
                     self.log.error(
-                        f"Project '{project}' remote mirror 'keep_divergent_refs' set to: {m.get('keep_divergent_refs')}")
+                        f"Project '{project}' push mirror 'keep_divergent_refs' set to: {m.get('keep_divergent_refs')}")
                 if m.get("enabled") != (not disabled):
                     self.log.error(
-                        f"Project '{project}' remote mirror 'enabled' set to: {m.get('enabled')}")
+                        f"Project '{project}' push mirror 'enabled' set to: {m.get('enabled')}")
                 break
         if missing:
-            self.log.error(f"Missing {project} remote mirror {url}")
+            self.log.error(f"Missing {project} push mirror {url}")
 
     def find_mirror_project(self, staged_project, host, token):
         """Validate push mirror source and destination project"""
@@ -867,6 +867,48 @@ class ProjectsClient(BaseClass):
         except RequestException as re:
             self.log.error(
                 f"Failed to find project {orig_path} and/or push mirror, with error:\n{re}")
+            return (False, False)
+
+    def delete_staged_projects_push_mirrors(self, remove_all=False, dry_run=True):
+        start = time()
+        rotate_logs()
+        staged_projects = get_staged_projects()
+        host = self.config.destination_host
+        token = self.config.destination_token
+        for sp in tqdm(staged_projects, total=len(staged_projects), colour=self.TANUKI, desc=self.DESC, unit=self.UNIT):
+            try:
+                orig_path = get_dst_path_with_namespace(sp)
+                orig_pid = self.find_project_by_path(host, token, orig_path)
+                if not orig_pid:
+                    self.log.warning(
+                        f"SKIP: Original project {orig_path} NOT found")
+                    continue
+                self.delete_push_mirrors(
+                    host, token, orig_pid, sp, remove_all, dry_run)
+            except RequestException as re:
+                self.log.error(
+                    f"Failed to delete project {sp.get('path_with_namespace')} push mirror, with error:\n{re}")
+                continue
+        add_post_migration_stats(start, log=self.log)
+
+    def delete_push_mirrors(self, host, token, orig_pid, sp, remove_all, dry_run):
+        sp_path = sp.get("path_with_namespace")
+        # Look for mirrors to destination host / destination parent group path (if configured)
+        url = f"{strip_netloc(host)}{('/' + self.config.dstn_parent_group_path) if self.config.dstn_parent_group_path else ''}.git"
+        missing = True
+        for m in self.projects_api.get_all_remote_push_mirrors(orig_pid, host, token):
+            is_error, resp = is_error_message_present(m)
+            if is_error or not resp:
+                self.log.error(
+                    f"Invalid project '{sp_path}' push mirror:\n{json_pretty(resp)}")
+                break
+            if not dry_run and (remove_all or url in m.get("url", "")):
+                missing = False
+                self.projects_api.delete_remote_push_mirror(
+                    host, token, orig_pid, m.get("id"))
+        if missing:
+            self.log.error(
+                f"Missing project '{sp_path}' push mirror {url}")
 
     def create_staged_projects_fork_relation(self, dry_run=True):
         start = time()

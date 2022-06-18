@@ -31,7 +31,8 @@ Usage:
     congregate pull-mirror-staged-projects [--commit]
     congregate push-mirror-staged-projects [--disabled] [--keep_div_refs] [--force] [--commit]
     congregate toggle-staged-projects-push-mirror [--disable] [--commit]
-    congregate verify-staged-projects-remote-mirror [--disabled] [--keep_div_refs]
+    congregate verify-staged-projects-push-mirror [--disabled] [--keep_div_refs]
+    congregate delete-staged-projects-push-mirrors [--all] [--commit]
     congregate delete-all-staged-projects-pull-mirrors [--commit]
     congregate set-default-branch [--name=<name>] [--commit]
     congregate enable-mirroring [--commit] # TODO: Find a use for it or remove
@@ -111,6 +112,7 @@ Arguments:
     keep_div_refs                           Set keep_divergent_refs to True (False by default) and avoid overwriting changes on the mirror repo
     force                                   Immediately trigger push mirroring with a repo change e.g. new branch
     name                                    Project branch name
+    all                                     Include all listed objects.
 
 Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/projects.json.
@@ -151,7 +153,8 @@ Commands:
                                                 NOTE: Destination instance only mirroring.
     toggle-staged-projects-push-mirror      Enable/disable push mirror created via command push-mirror-staged-projects.
                                                 NOTE: Destination instance only mirroring.
-    verify-staged-projects-remote-mirror    Verify that each staged project remote push mirror exists and is not failing. Preferably run a few minutes after creating push mirrors.
+    verify-staged-projects-push-mirror      Verify that each staged project push mirror exists and is not failing. Preferably run a few minutes after creating push mirrors.
+    delete-staged-projects-push-mirrors     Remove project push mirrors for staged projects. Only remove destination instance host (+'dstn_parent_group_path' if configured) mirrors. Add '--all' to remove all mirrors.
     delete-all-staged-projects-pull-mirrors Remove all project pull mirrors for staged projects.
     set-default-branch                      Set default branch for staged projects on destination.
     enable-mirroring                        Start pull mirror process for all projects on destination.
@@ -426,9 +429,12 @@ def main():
             if arguments["toggle-staged-projects-push-mirror"]:
                 projects.toggle_staged_projects_push_mirror(
                     disable=arguments["--disable"], dry_run=DRY_RUN)
-            if arguments["verify-staged-projects-remote-mirror"]:
-                projects.verify_staged_projects_remote_mirror(
+            if arguments["verify-staged-projects-push-mirror"]:
+                projects.verify_staged_projects_push_mirror(
                     disabled=arguments["--disabled"], keep_div_refs=arguments["--keep_div_refs"])
+            if arguments["delete-staged-projects-push-mirrors"]:
+                projects.delete_staged_projects_push_mirrors(
+                    remove_all=arguments["--all"], dry_run=DRY_RUN)
             if arguments["set-default-branch"]:
                 branches.set_default_branch(
                     name=arguments["--name"], dry_run=DRY_RUN)
