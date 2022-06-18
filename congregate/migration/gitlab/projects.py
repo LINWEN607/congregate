@@ -1,6 +1,6 @@
 import json
 import base64
-from os.path import dirname
+from os.path import dirname, isfile
 import datetime
 from sqlite3 import DataError
 from time import time
@@ -17,6 +17,7 @@ from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.users import UsersClient
+from congregate.migration.mirror import MirrorClient
 from congregate.helpers.mdbc import MongoConnector
 from congregate.helpers.migrate_utils import get_dst_path_with_namespace,  get_full_path_with_parent_namespace, \
     dig, get_staged_projects, get_staged_groups, find_user_by_email_comparison_without_id, add_post_migration_stats, is_user_project, \
@@ -32,12 +33,13 @@ class ProjectsClient(BaseClass):
         self.users_api = UsersApi()
         self.groups = GroupsClient()
         self.users = UsersClient()
+        self.mirror = MirrorClient()
         self.project_repository_api = ProjectRepositoryApi()
         self.dry_run = DRY_RUN
         super().__init__()
 
     def get_projects(self):
-        with open("{}/data/projects.json".format(self.app_path), "r") as f:
+        with open(f"{self.app_path}/data/projects.json", "r") as f:
             return json.load(f)
 
     def connect_to_mongo(self):
@@ -623,6 +625,78 @@ class ProjectsClient(BaseClass):
                     f"Failed to create project {path_with_namespace} with error:\n{re}")
                 continue
         add_post_migration_stats(start, log=self.log)
+
+    def get_new_ids(self):
+        ids = []
+        staged_projects = get_staged_projects()
+        if staged_projects:
+            for project in staged_projects:
+                try:
+                    self.log.debug("Searching for existing %s" %
+                                   project["name"])
+                    for proj in self.projects_api.search_for_project(self.config.destination_host,
+                                                                     self.config.destination_token,
+                                                                     project['name']):
+                        if proj["name"] == project["name"]:
+
+                            if "%s" % project["namespace"].lower(
+                            ) in proj["path_with_namespace"].lower():
+                                if project["namespace"].lower(
+                                ) == proj["namespace"]["name"].lower():
+                                    self.log.debug("Adding {0}/{1}".format(
+                                        project["namespace"], project["name"]))
+                                    # self.log.info("Migrating variables for %s" % proj["name"])
+                                    ids.append(proj["id"])
+                                    break
+                except IOError as e:
+                    self.log.error(e)
+            return ids
+
+    def update_visibility(self):
+        count = 0
+        if isfile("%s/data/new_ids.txt" % self.app_path):
+            ids = []
+            with open("%s/data/new_ids.txt" % self.app_path, "r") as f:
+                for line in f:
+                    ids.append(int(line.split("\n")[0]))
+        else:
+            ids = self.get_new_ids()
+        for i in ids:
+            project = self.projects_api.get_project(
+                i, self.config.destination_host, self.config.destination_token).json()
+            if project["visibility"] != "private":
+                self.log.debug("Current destination path {0} visibility: {1}".format(
+                    project["path_with_namespace"], project["visibility"]))
+                count += 1
+                # data = {
+                #     "visibility": "private"
+                # }
+                change = self.projects_api.api.generate_put_request(
+                    self.config.destination_host, self.config.destination_token, "projects/%d?visibility=private" % int(
+                        i),
+                    data=None)
+                self.log.info(f"Project {i} edit response: {change}")
+        self.log.info(f"Total count: {count}")
+
+    def pull_mirror_staged_projects(self, dry_run=True):
+        ids = self.get_new_ids()
+        staged_projects = get_staged_projects()
+        if staged_projects:
+            for i in enumerate(staged_projects):
+                pid = ids[i]
+                project = staged_projects[i]
+                self.mirror.mirror_repo(project, pid, dry_run)
+
+    def delete_all_pull_mirrors(self, dry_run=True):
+        # if os.path.isfile("%s/data/new_ids.txt" % self.app_path):
+        #     ids = []
+        #     with open("%s/data/new_ids.txt" % self.app_path, "r") as f:
+        #         for line in f:
+        #             ids.append(int(line.split("\n")[0]))
+        # else:
+        ids = self.get_new_ids()
+        for i in ids:
+            self.mirror.remove_mirror(i, dry_run)
 
     def push_mirror_staged_projects(
             self, disabled=False, keep_div_refs=False, force=False, dry_run=True):

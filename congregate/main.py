@@ -28,11 +28,11 @@ Usage:
     congregate url-rewrite-only [--commit]
     congregate remove-users-from-parent-group [--commit]
     congregate migrate-variables-in-stage [--commit]
-    congregate mirror-staged-projects [--commit]
+    congregate pull-mirror-staged-projects [--commit]
     congregate push-mirror-staged-projects [--disabled] [--keep_div_refs] [--force] [--commit]
     congregate toggle-staged-projects-push-mirror [--disable] [--commit]
     congregate verify-staged-projects-remote-mirror [--disabled] [--keep_div_refs]
-    congregate remove-all-mirrors [--commit]
+    congregate delete-all-staged-projects-pull-mirrors [--commit]
     # TODO: Add dry-run, potentially remove
     congregate update-projects-visibility
     congregate set-default-branch [--name=<name>] [--commit]
@@ -147,14 +147,14 @@ Commands:
     url-rewrite-only                        Performs the URL rewrite portion of a migration as a stand-alone step, instead of as a post-migration step. Requires the projects to be staged, and to exist on destination
     remove-users-from-parent-group          Remove all users with at most Reporter access from the parent group.
     migrate-variables-in-stage              Migrate CI variables for staged projects.
-    mirror-staged-projects                  Set up project mirroring for staged projects.
+    pull-mirror-staged-projects             Set up project pull mirroring for staged projects.
     push-mirror-staged-projects             Set up and enable (by default) project push mirroring for staged projects.
                                                 Assuming both the mirrored repo and empty project structure (create-staged-projects-structure) for mirroring already exist on destination.
                                                 NOTE: Destination instance only mirroring.
     toggle-staged-projects-push-mirror      Enable/disable push mirror created via command push-mirror-staged-projects.
                                                 NOTE: Destination instance only mirroring.
     verify-staged-projects-remote-mirror    Verify that each staged project remote push mirror exists and is not failing. Preferably run a few minutes after creating push mirrors.
-    remove-all-mirrors                      Remove all project mirrors for staged projects.
+    delete-all-staged-projects-pull-mirrors Remove all project pull mirrors for staged projects.
     update-projects-visibility              Return list of all migrated projects' visibility.
     set-default-branch                      Set default branch for staged projects on destination.
     enable-mirroring                        Start pull mirror process for all projects on destination.
@@ -419,15 +419,12 @@ def main():
                 users.remove_users_from_parent_group(dry_run=DRY_RUN)
             if arguments["migrate-variables-in-stage"]:
                 variables.migrate_variables_in_stage(dry_run=DRY_RUN)
-            if arguments["remove-all-mirrors"]:
-                migrate = MigrateClient(dry_run=DRY_RUN)
-                migrate.remove_all_mirrors()
+            if arguments["delete-all-staged-projects-pull-mirrors"]:
+                projects.delete_all_pull_mirrors(dry_run=DRY_RUN)
             if arguments["update-projects-visibility"]:
-                migrate = MigrateClient()
-                migrate.update_visibility()
-            if arguments["mirror-staged-projects"]:
-                migrate = MigrateClient(dry_run=DRY_RUN)
-                migrate.mirror_staged_projects()
+                projects.update_visibility()
+            if arguments["pull-mirror-staged-projects"]:
+                projects.pull_mirror_staged_projects(dry_run=DRY_RUN)
             if arguments["push-mirror-staged-projects"]:
                 projects.push_mirror_staged_projects(
                     disabled=arguments["--disabled"], keep_div_refs=arguments["--keep_div_refs"], force=arguments["--force"], dry_run=DRY_RUN)
