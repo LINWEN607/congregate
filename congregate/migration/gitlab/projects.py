@@ -652,32 +652,6 @@ class ProjectsClient(BaseClass):
                     self.log.error(e)
             return ids
 
-    def update_visibility(self):
-        count = 0
-        if isfile("%s/data/new_ids.txt" % self.app_path):
-            ids = []
-            with open("%s/data/new_ids.txt" % self.app_path, "r") as f:
-                for line in f:
-                    ids.append(int(line.split("\n")[0]))
-        else:
-            ids = self.get_new_ids()
-        for i in ids:
-            project = self.projects_api.get_project(
-                i, self.config.destination_host, self.config.destination_token).json()
-            if project["visibility"] != "private":
-                self.log.debug("Current destination path {0} visibility: {1}".format(
-                    project["path_with_namespace"], project["visibility"]))
-                count += 1
-                # data = {
-                #     "visibility": "private"
-                # }
-                change = self.projects_api.api.generate_put_request(
-                    self.config.destination_host, self.config.destination_token, "projects/%d?visibility=private" % int(
-                        i),
-                    data=None)
-                self.log.info(f"Project {i} edit response: {change}")
-        self.log.info(f"Total count: {count}")
-
     def pull_mirror_staged_projects(self, dry_run=True):
         ids = self.get_new_ids()
         staged_projects = get_staged_projects()

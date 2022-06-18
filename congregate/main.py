@@ -33,8 +33,6 @@ Usage:
     congregate toggle-staged-projects-push-mirror [--disable] [--commit]
     congregate verify-staged-projects-remote-mirror [--disabled] [--keep_div_refs]
     congregate delete-all-staged-projects-pull-mirrors [--commit]
-    # TODO: Add dry-run, potentially remove
-    congregate update-projects-visibility
     congregate set-default-branch [--name=<name>] [--commit]
     congregate enable-mirroring [--commit] # TODO: Find a use for it or remove
     congregate count-unarchived-projects [--local]
@@ -155,7 +153,6 @@ Commands:
                                                 NOTE: Destination instance only mirroring.
     verify-staged-projects-remote-mirror    Verify that each staged project remote push mirror exists and is not failing. Preferably run a few minutes after creating push mirrors.
     delete-all-staged-projects-pull-mirrors Remove all project pull mirrors for staged projects.
-    update-projects-visibility              Return list of all migrated projects' visibility.
     set-default-branch                      Set default branch for staged projects on destination.
     enable-mirroring                        Start pull mirror process for all projects on destination.
     count-unarchived-projects               Return total number and list of all unarchived projects on source.
@@ -421,8 +418,6 @@ def main():
                 variables.migrate_variables_in_stage(dry_run=DRY_RUN)
             if arguments["delete-all-staged-projects-pull-mirrors"]:
                 projects.delete_all_pull_mirrors(dry_run=DRY_RUN)
-            if arguments["update-projects-visibility"]:
-                projects.update_visibility()
             if arguments["pull-mirror-staged-projects"]:
                 projects.pull_mirror_staged_projects(dry_run=DRY_RUN)
             if arguments["push-mirror-staged-projects"]:
