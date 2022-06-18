@@ -5,6 +5,7 @@ import datetime
 from sqlite3 import DataError
 from time import time
 from requests.exceptions import RequestException
+from tqdm import tqdm
 
 from gitlab_ps_utils.misc_utils import get_dry_log, get_timedelta, \
     is_error_message_present, safe_json_response, strip_netloc, \
@@ -130,7 +131,7 @@ class ProjectsClient(BaseClass):
         staged_projects = get_staged_projects()
         host = self.config.destination_host
         token = self.config.destination_token
-        for sp in staged_projects:
+        for sp in tqdm(staged_projects, total=len(staged_projects), colour=self.TANUKI, desc=self.DESC, unit=self.UNIT):
             # SaaS destination instances have a parent group
             path_with_namespace, _ = get_stage_wave_paths(sp)
             self.log.info(f"Removing project {path_with_namespace}")
@@ -181,7 +182,7 @@ class ProjectsClient(BaseClass):
         action_type = "Archive" if archive else "Unarchive"
         self.log.info(f"Project count: {len(staged_projects)}")
         try:
-            for sp in staged_projects:
+            for sp in tqdm(staged_projects, total=len(staged_projects), colour=self.TANUKI, desc=self.DESC, unit=self.UNIT):
                 # Get source/destination project full path and ID
                 path = get_dst_path_with_namespace(
                     sp) if dest else sp["path_with_namespace"]
@@ -570,10 +571,10 @@ class ProjectsClient(BaseClass):
         staged_projects = get_staged_projects()
         host = self.config.destination_host
         token = self.config.destination_token
-        for s in staged_projects:
+        for sp in tqdm(staged_projects, total=len(staged_projects), colour=self.TANUKI, desc=self.DESC, unit=self.UNIT):
             try:
                 # Validate that the parent group structure exists
-                path_with_namespace = s.get("path_with_namespace")
+                path_with_namespace = sp.get("path_with_namespace")
                 dst_grp_full_path = get_full_path_with_parent_namespace(
                     dirname(path_with_namespace))
                 dst_grp = self.groups.find_group_by_path(
@@ -585,21 +586,21 @@ class ProjectsClient(BaseClass):
                         f"SKIP: Parent group {dst_grp_full_path} NOT found")
                     continue
                 # Validate whether the project namespace is already reserved
-                dst_path = get_dst_path_with_namespace(s)
+                dst_path = get_dst_path_with_namespace(sp)
                 dst_pid = self.find_project_by_path(host, token, dst_path)
                 if dst_pid:
                     self.log.info(
                         f"SKIP: Project {dst_path} (ID: {dst_pid}) already exists")
                     continue
-                name = s.get("name")
+                name = sp.get("name")
                 # Construct project metadata
                 data = {
                     "name": name,
-                    "path": s.get("path"),
+                    "path": sp.get("path"),
                     "namespace_id": dst_gid,
-                    "visibility": s.get("visibility"),
-                    "description": s.get("description"),
-                    "default_branch": s.get("default_branch")
+                    "visibility": sp.get("visibility"),
+                    "description": sp.get("description"),
+                    "default_branch": sp.get("default_branch")
                 }
                 if disable_cicd:
                     data["jobs_enabled"] = False
@@ -610,10 +611,10 @@ class ProjectsClient(BaseClass):
                 if not dry_run:
                     resp = self.projects_api.create_project(
                         host, token, name, data=data)
-                    if resp.status_code == 201 and s.get(
+                    if resp.status_code == 201 and sp.get(
                             "merge_requests_template"):
                         self.projects_api.edit_project(host, token, safe_json_response(resp).get(
-                            "id"), {"merge_requests_template": s["merge_requests_template"]})
+                            "id"), {"merge_requests_template": sp["merge_requests_template"]})
                     elif resp.status_code != 201:
                         self.log.error(
                             f"Failed to create and edit project {dst_path}, with response:\n{resp} - {resp.text}")
@@ -633,9 +634,10 @@ class ProjectsClient(BaseClass):
         token = self.config.destination_token
         username = safe_json_response(
             self.users_api.get_current_user(host, token)).get("username", None)
-        for s in staged_projects:
+        for sp in tqdm(staged_projects, total=len(staged_projects), colour=self.TANUKI, desc=self.DESC, unit=self.UNIT):
             try:
-                dst_pid, mirror_path = self.find_mirror_project(s, host, token)
+                dst_pid, mirror_path = self.find_mirror_project(
+                    sp, host, token)
                 if dst_pid and mirror_path and username:
                     data = {
                         # username:token is SaaS specific. Revoking the token
@@ -656,10 +658,10 @@ class ProjectsClient(BaseClass):
                             f"Failed to create project {dst_pid} push mirror to {mirror_path}, with response:\n{resp} - {resp.text}")
                     elif force:
                         # Push commit (skip-ci) to new branch and delete branch
-                        self.trigger_mirroring(host, token, s, dst_pid)
+                        self.trigger_mirroring(host, token, sp, dst_pid)
             except RequestException as re:
                 self.log.error(
-                    f"Failed to create project {s.get('path_with_namespace')} push mirror, with error:\n{re}")
+                    f"Failed to create project {sp.get('path_with_namespace')} push mirror, with error:\n{re}")
                 continue
         add_post_migration_stats(start, log=self.log)
 
@@ -707,10 +709,11 @@ class ProjectsClient(BaseClass):
         staged_projects = get_staged_projects()
         host = self.config.destination_host
         token = self.config.destination_token
-        for s in staged_projects:
+        for sp in tqdm(staged_projects, total=len(staged_projects), colour=self.TANUKI, desc=self.DESC, unit=self.UNIT):
             try:
-                dst_pid, mirror_path = self.find_mirror_project(s, host, token)
-                project = f"project {s.get('path_with_namespace')} (ID: {dst_pid})"
+                dst_pid, mirror_path = self.find_mirror_project(
+                    sp, host, token)
+                project = f"project {sp.get('path_with_namespace')} (ID: {dst_pid})"
                 if dst_pid and mirror_path:
                     # Match mirror based on URL and get ID
                     url = f"{strip_netloc(host)}/{mirror_path}.git"
@@ -743,7 +746,7 @@ class ProjectsClient(BaseClass):
                             f"Failed to {'disable' if disable else 'enable'} {project} push mirror to {mirror_path}, with response:\n{resp} - {resp.text}")
             except RequestException as re:
                 self.log.error(
-                    f"Failed to toggle project {s.get('path_with_namespace')} push mirror, with error:\n{re}")
+                    f"Failed to toggle project {sp.get('path_with_namespace')} push mirror, with error:\n{re}")
                 continue
         add_post_migration_stats(start, log=self.log)
 
@@ -754,7 +757,7 @@ class ProjectsClient(BaseClass):
         staged_projects = get_staged_projects()
         host = self.config.destination_host
         token = self.config.destination_token
-        for sp in staged_projects:
+        for sp in tqdm(staged_projects, total=len(staged_projects), colour=self.TANUKI, desc=self.DESC, unit=self.UNIT):
             try:
                 self.verify_staged_projects(
                     host, token, sp, disabled, keep_div_refs)
@@ -823,13 +826,13 @@ class ProjectsClient(BaseClass):
         staged_projects = get_staged_projects()
         host = self.config.destination_host
         token = self.config.destination_token
-        for s in staged_projects:
-            orig_project = s.get("forked_from_project")
+        for sp in tqdm(staged_projects, total=len(staged_projects), colour=self.TANUKI, desc=self.DESC, unit=self.UNIT):
+            orig_project = sp.get("forked_from_project")
             # Cannot validate destination user namespace without email
             if orig_project and not is_user_project(orig_project):
                 try:
                     # Validate fork source and destination project
-                    fork_path = get_dst_path_with_namespace(s)
+                    fork_path = get_dst_path_with_namespace(sp)
                     fork_pid = self.find_project_by_path(
                         host, token, fork_path)
                     if not fork_pid:
@@ -853,7 +856,7 @@ class ProjectsClient(BaseClass):
                                 f"Failed to create forked from {orig_path} to {fork_path} project relation, with response {resp} - {resp.text}")
                 except RequestException as re:
                     self.log.error(
-                        f"Failed to create project {s.get('path_with_namespace')} fork relation, with error:\n{re}")
+                        f"Failed to create project {sp.get('path_with_namespace')} fork relation, with error:\n{re}")
                     continue
         add_post_migration_stats(start, log=self.log)
 
