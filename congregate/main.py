@@ -39,6 +39,8 @@ Usage:
     congregate count-unarchived-projects [--local]
     congregate archive-staged-projects [--commit] [--dest] [--scm-source=hostname]
     congregate unarchive-staged-projects [--commit] [--dest] [--scm-source=hostname]
+    congregate set-bb-read-only-branch-permissions [--projects] [--commit]
+    congregate unset-bb-read-only-branch-permissions [--projects] [--commit]
     congregate filter-projects-by-state [--commit] [--archived]
     congregate find-empty-repos
     congregate compare-groups [--staged]
@@ -113,6 +115,7 @@ Arguments:
     force                                   Immediately trigger push mirroring with a repo change e.g. new branch
     name                                    Project branch name
     all                                     Include all listed objects.
+    projects                                Target BitBucket repo branches from a project level
 
 Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/projects.json.
@@ -163,8 +166,10 @@ Commands:
                                                 This could be misleading as it sometimes shows 0 (zero) commits/tags/bytes for fully migrated projects.
     compare-groups                          Compare source and destination group results.
     staged-user-list                        Output a list of all staged users and their respective user IDs. Used to confirm IDs were updated correctly.
-    archive-staged-projects                 Archive projects that are staged, not necessarily migrated.
-    unarchive-staged-projects               Unarchive projects that are staged, not necessarily migrate.
+    archive-staged-projects                 Archive GitLab source (or destination if '--dest') projects that are staged, not necessarily migrated.
+    unarchive-staged-projects               Unarchive GitLab source (or destination if '--dest') projects that are staged, not necessarily migrate.
+    set-bb-read-only-branch-permissions     Add read-only branch permission/restriction to all branches (*) on staged BitBucket repos (or projects if '--projects').
+    unset-bb-read-only-branch-permissions   Remove read-only branch permission/restriction from all branches (*) on staged BitBucket repos (or projects if '--projects').
     filter-projects-by-state                Filter out projects by state archived or unarchived (default) from the list of staged projects and overwrite staged_projects.json.
                                                 GitLab source only
     generate-seed-data                      Generate dummy data to test a migration.
@@ -288,13 +293,15 @@ def main():
             from congregate.migration.github.diff.repodiff import RepoDiffClient
             from congregate.helpers.user_util import map_users, map_and_stage_users_by_email_match
             from congregate.helpers.mdbc import MongoConnector
-            from congregate.migration.github.repos import ReposClient
+            from congregate.migration.github.repos import ReposClient as GHReposClient
+            from congregate.migration.bitbucket.repos import ReposClient as BBReposClient
             from congregate.cli.ldap_group_sync import LdapGroupSync
 
             config = conf.Config()
             users = UsersClient()
             groups = GroupsClient()
             projects = ProjectsClient()
+            bb_repos = BBReposClient()
             variables = VariablesClient()
             compare = CompareClient()
             branches = BranchesClient()
@@ -441,8 +448,8 @@ def main():
             if arguments["count-unarchived-projects"]:
                 projects.count_unarchived_projects(local=arguments["--local"])
             if arguments["archive-staged-projects"]:
-                if config.source_type == "gitlab" or (
-                        config.source_type == "bitbucket server" and DEST):
+                # GitLab as source and/or destination instance
+                if (config.source_type == "gitlab") or DEST:
                     projects.update_staged_projects_archive_state(
                         dest=DEST, dry_run=DRY_RUN)
                 elif config.source_type == "github" or config.list_multiple_source_config("github_source") is not None:
@@ -451,23 +458,50 @@ def main():
                                 "github_source"):
                             if SCM_SOURCE in single_source.get(
                                     "src_hostname", None):
-                                gh_repos = ReposClient(single_source["src_hostname"], deobfuscate(
+                                gh_repos = GHReposClient(single_source["src_hostname"], deobfuscate(
                                     single_source["src_access_token"]))
                     else:
-                        gh_repos = ReposClient(
+                        gh_repos = GHReposClient(
                             config.source_host, config.source_token)
-                    gh_repos.archive_staged_repos(dry_run=DRY_RUN)
+                    gh_repos.update_staged_repos_archive_state(dry_run=DRY_RUN)
                 else:
                     log.warning(
                         f"Bulk archive not available for {config.source_type}. Did you mean to add '--dest'?")
             if arguments["unarchive-staged-projects"]:
-                if config.source_type == "gitlab" or (
-                        config.source_type == "bitbucket server" and DEST):
+                # GitLab as source and/or destination instance
+                if (config.source_type == "gitlab") or DEST:
                     projects.update_staged_projects_archive_state(
                         archive=False, dest=DEST, dry_run=DRY_RUN)
+                elif config.source_type == "github" or config.list_multiple_source_config("github_source") is not None:
+                    if SCM_SOURCE is not None:
+                        for single_source in config.list_multiple_source_config(
+                                "github_source"):
+                            if SCM_SOURCE in single_source.get(
+                                    "src_hostname", None):
+                                gh_repos = GHReposClient(single_source["src_hostname"], deobfuscate(
+                                    single_source["src_access_token"]))
+                    else:
+                        gh_repos = GHReposClient(
+                            config.source_host, config.source_token)
+                    gh_repos.update_staged_repos_archive_state(
+                        archived=False, dry_run=DRY_RUN)
                 else:
                     log.warning(
                         f"Bulk unarchive not available for {config.source_type}. Did you mean to add '--dest'?")
+            if arguments["set-bb-read-only-branch-permissions"]:
+                if config.source_type == "bitbucket server":
+                    bb_repos.update_branch_permissions(
+                        is_project=arguments["--projects"], dry_run=DRY_RUN)
+                else:
+                    log.warning(
+                        "This command is ONLY intended for BitBucket source instances")
+            if arguments["unset-bb-read-only-branch-permissions"]:
+                if config.source_type == "bitbucket server":
+                    bb_repos.update_branch_permissions(
+                        restrict=False, is_project=arguments["--projects"], dry_run=DRY_RUN)
+                else:
+                    log.warning(
+                        "This command is ONLY intended for BitBucket source instances")
             if arguments["filter-projects-by-state"]:
                 if config.source_type == "gitlab":
                     projects.filter_projects_by_state(

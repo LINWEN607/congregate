@@ -44,3 +44,27 @@ class ProjectsApi():
         Core REST API: https://docs.atlassian.com/bitbucket-server/rest/7.13.0/bitbucket-rest.html#idp159
         """
         return self.api.list_all(f"projects/{key}/permissions/groups")
+
+    def get_all_project_branch_permissions(self, project_key):
+        """
+        Search for restrictions using the supplied parameters.
+
+        Ref Restriction REST API: https://docs.atlassian.com/bitbucket-server/rest/7.13.0/bitbucket-ref-restriction-rest.html#idp11
+        """
+        return self.api.list_all(f"projects/{project_key}/restrictions", branch_permissions=True)
+
+    def create_project_branch_permissions(self, project_key, data=None, message=None):
+        """
+        Create a restriction for the supplied branch or set of branches to be applied on all repositories in the given project.
+
+        Ref Restriction REST API: https://docs.atlassian.com/bitbucket-server/rest/7.13.0/bitbucket-ref-restriction-rest.html#idp9
+        """
+        return self.api.generate_post_request(f"projects/{project_key}/restrictions", data, branch_permissions=True, description=message)
+
+    def delete_project_branch_permission(self, project_key, rid, message=None):
+        """
+        Deletes a restriction as specified by a restriction id.
+
+        Ref Restriction REST API: https://docs.atlassian.com/bitbucket-server/rest/7.13.0/bitbucket-ref-restriction-rest.html#idp14
+        """
+        return self.api.generate_delete_request(f"projects/{project_key}/restrictions/{rid}", branch_permissions=True, description=message)
