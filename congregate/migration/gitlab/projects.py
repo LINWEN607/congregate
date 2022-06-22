@@ -817,7 +817,7 @@ class ProjectsClient(BaseClass):
 
     def verify_staged_projects(self, host, token, sp, disabled, keep_div_refs):
         dst_pid, mirror_path = self.find_mirror_project(sp, host, token)
-        project = f"project {sp.get('path_with_namespace')} (ID: {dst_pid})"
+        project = f"'{sp.get('path_with_namespace')}' (ID: {dst_pid})"
         if dst_pid and mirror_path:
             url = f"{strip_netloc(host)}/{mirror_path}.git"
             self.verify_push_mirror(self.projects_api.get_all_remote_push_mirrors(
@@ -830,19 +830,19 @@ class ProjectsClient(BaseClass):
             is_error, resp = is_error_message_present(m)
             if is_error or not resp:
                 self.log.error(
-                    f"Invalid {project} push mirror:\n{json_pretty(resp)}")
+                    f"Invalid project {project} push mirror:\n{json_pretty(resp)}")
                 break
             if url in m.get("url", ""):
                 missing = False
                 if m.get("update_status") == "failed":
                     self.log.error(
-                        f"Failed '{project}' push mirror, with status:\n{json_pretty(m)}")
+                        f"Failed project {project} push mirror, with status:\n{json_pretty(m)}")
                 if m.get("keep_divergent_refs") != (keep_div_refs):
                     self.log.error(
-                        f"Project '{project}' push mirror 'keep_divergent_refs' set to: {m.get('keep_divergent_refs')}")
+                        f"Project {project} push mirror 'keep_divergent_refs' set to: {m.get('keep_divergent_refs')}")
                 if m.get("enabled") != (not disabled):
                     self.log.error(
-                        f"Project '{project}' push mirror 'enabled' set to: {m.get('enabled')}")
+                        f"Project {project} push mirror 'enabled' set to: {m.get('enabled')}")
                 break
         if missing:
             self.log.error(f"Missing {project} push mirror {url}")
@@ -876,25 +876,24 @@ class ProjectsClient(BaseClass):
         host = self.config.destination_host
         token = self.config.destination_token
         for sp in tqdm(staged_projects, total=len(staged_projects), colour=self.TANUKI, desc=self.DESC, unit=self.UNIT):
+            sp_path = sp.get("path_with_namespace")
             try:
-                orig_path = get_dst_path_with_namespace(sp)
-                orig_pid = self.find_project_by_path(host, token, orig_path)
+                orig_pid = self.find_project_by_path(host, token, sp_path)
                 if not orig_pid:
                     self.log.warning(
-                        f"SKIP: Original project {orig_path} NOT found")
+                        f"SKIP: Original project {sp_path} NOT found")
                     continue
                 self.delete_push_mirrors(
-                    host, token, orig_pid, sp, remove_all, dry_run)
+                    host, token, orig_pid, sp_path, remove_all, dry_run)
             except RequestException as re:
                 self.log.error(
-                    f"Failed to delete project {sp.get('path_with_namespace')} push mirror, with error:\n{re}")
+                    f"Failed to DELETE project '{sp_path}' push mirror, with error:\n{re}")
                 continue
         add_post_migration_stats(start, log=self.log)
 
-    def delete_push_mirrors(self, host, token, orig_pid, sp, remove_all, dry_run):
-        sp_path = sp.get("path_with_namespace")
+    def delete_push_mirrors(self, host, token, orig_pid, sp_path, remove_all, dry_run):
         # Look for mirrors to destination host / destination parent group path (if configured)
-        url = f"{strip_netloc(host)}{('/' + self.config.dstn_parent_group_path) if self.config.dstn_parent_group_path else ''}.git"
+        url = f"{strip_netloc(host)}{('/' + self.config.dstn_parent_group_path) if self.config.dstn_parent_group_path else ''}"
         missing = True
         for m in self.projects_api.get_all_remote_push_mirrors(orig_pid, host, token):
             is_error, resp = is_error_message_present(m)
@@ -902,11 +901,15 @@ class ProjectsClient(BaseClass):
                 self.log.error(
                     f"Invalid project '{sp_path}' push mirror:\n{json_pretty(resp)}")
                 break
-            if not dry_run and (remove_all or url in m.get("url", "")):
+            url_in = url in m.get("url", "")
+            if not dry_run and (remove_all or url_in):
                 missing = False
-                self.projects_api.delete_remote_push_mirror(
+                resp = self.projects_api.delete_remote_push_mirror(
                     host, token, orig_pid, m.get("id"))
-        if missing:
+                if resp.status_code != 204:
+                    self.log.error(
+                        f"Failed to delete project '{sp_path}' push mirror '{url if url_in else m.get('url','')}', with response:\n{resp} - {resp.text}")
+        if not dry_run and missing:
             self.log.error(
                 f"Missing project '{sp_path}' push mirror {url}")
 
