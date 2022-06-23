@@ -929,3 +929,31 @@ class MockProjectsApi():
             "target_namespace": "top-level-group/sub-level-group",
             "override_dstn_ns": True
         }
+
+    def get_staged_project_push_mirrors(self):
+        return [
+            {
+                "id": 42,
+                "enabled": True,
+                "url": "https://*****:*****@gitlab.example.com/congregate/congregate.git",
+                "update_status": "to_retry",
+                "last_update_at": "2021-11-10T11:55:47.729Z",
+                "last_update_started_at": "2022-06-17T20:45:53.636Z",
+                "last_successful_update_at": "2021-11-10T11:55:47.729Z",
+                "last_error": "13:get remote references: create git ls-remote: exit status 128, stderr: \"remote: The project you were looking for could not be found or you don't have permission to view it.\\nfatal: repository 'https://gitlab.com/caesarsdigital/clp_splunk_apps_migration_testing/wh_data_sdp_infrastructure.git/' not found\\n\".",
+                "only_protected_branches": False,
+                "keep_divergent_refs": True
+            },
+            {
+                "id": 666,
+                "enabled": True,
+                "url": "https://*****:*****@gitlab.example.com/test/congregate/congregate.git",
+                "update_status": "finished",
+                "last_update_at": "2022-06-17T20:45:55.448Z",
+                "last_update_started_at": "2022-06-17T20:45:53.776Z",
+                "last_successful_update_at": "2022-06-17T20:45:55.448Z",
+                "last_error": None,
+                "only_protected_branches": False,
+                "keep_divergent_refs": True
+            }
+        ]

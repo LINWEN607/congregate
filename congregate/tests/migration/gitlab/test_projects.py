@@ -630,3 +630,58 @@ class ProjectsTests(unittest.TestCase):
             returned = self.projects.handle_rewriting_project_yaml({"id": 345})
             self.assertDictEqual(returned, {"id": None, "path": "some namespace",
                                  "message": "error", "exception": "Project some namespace not found"})
+
+    @patch.object(ProjectsApi, "get_all_remote_push_mirrors")
+    @patch.object(ConfigurationValidator, "dstn_parent_group_path", new_callable=PropertyMock)
+    def test_delete_push_mirrors_no_mirrors(self, mock_parent_path, mock_get_all_mirrors):
+        mock_parent_path.return_value = "testing"
+        mock_get_all_mirrors.return_value = []
+        with self.assertLogs(self.projects.log, level="ERROR"):
+            self.projects.delete_push_mirrors(
+                "https://gitlab.example.com", "token", 42, "staged_project_path", False, False)
+
+    @patch.object(ProjectsApi, "get_all_remote_push_mirrors")
+    @patch.object(ConfigurationValidator, "dstn_parent_group_path", new_callable=PropertyMock)
+    def test_delete_push_mirrors_invalid_mirror(self, mock_parent_path, mock_get_all_mirrors):
+        mock_parent_path.return_value = "testing"
+        mock_get_all_mirrors.return_value = [{"message": "Invalid"}]
+        with self.assertLogs(self.projects.log, level="ERROR"):
+            self.projects.delete_push_mirrors(
+                "https://gitlab.example.com", "token", 42, "staged_project_path", False, False)
+
+    @patch.object(ProjectsApi, "get_all_remote_push_mirrors")
+    @patch.object(ConfigurationValidator, "dstn_parent_group_path", new_callable=PropertyMock)
+    def test_delete_push_mirrors_mirror_not_found(self, mock_parent_path, mock_get_all_mirrors):
+        mock_parent_path.return_value = "testing"
+        mock_get_all_mirrors.return_value = self.mock_projects.get_staged_project_push_mirrors()
+        with self.assertLogs(self.projects.log, level="ERROR"):
+            self.projects.delete_push_mirrors(
+                "https://gitlab.example.com", "token", 42, "staged_project_path", False, False)
+
+    @patch.object(ProjectsApi, "delete_remote_push_mirror")
+    @patch.object(ProjectsApi, "get_all_remote_push_mirrors")
+    @patch.object(ConfigurationValidator, "dstn_parent_group_path", new_callable=PropertyMock)
+    def test_delete_push_mirrors_mirror_failed_delete(self, mock_parent_path, mock_get_all_mirrors, mock_delete):
+        mock_parent_path.side_effect = "test"
+        mock_get_all_mirrors.return_value = self.mock_projects.get_staged_project_push_mirrors()
+        failed_delete = MagicMock()
+        type(failed_delete).status_code = PropertyMock(return_value=404)
+        mock_delete.json.return_value = {"message": "Not Found"}
+        with self.assertLogs(self.projects.log, level="ERROR"):
+            self.projects.delete_push_mirrors(
+                "https://gitlab.example.com", "token", 42, "staged_project_path", False, False)
+
+    @patch.object(ProjectsApi, "delete_remote_push_mirror")
+    @patch.object(ProjectsApi, "get_all_remote_push_mirrors")
+    @patch.object(ConfigurationValidator, "dstn_parent_group_path", new_callable=PropertyMock)
+    def test_delete_push_mirrors_mirror_delete(self, mock_parent_path, mock_get_all_mirrors, mock_delete):
+        mock_parent_path.side_effect = "test"
+        mock_get_all_mirrors.return_value = self.mock_projects.get_staged_project_push_mirrors()
+        successful_delete1 = MagicMock()
+        type(successful_delete1).status_code = PropertyMock(return_value=204)
+        mock_delete.json.return_value = {}
+        successful_delete2 = MagicMock()
+        type(successful_delete2).status_code = PropertyMock(return_value=204)
+        mock_delete.json.side_effect = [{}, {}]
+        self.projects.delete_push_mirrors(
+            "https://gitlab.example.com", "token", 42, "staged_project_path", True, False)
