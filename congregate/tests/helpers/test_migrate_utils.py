@@ -806,6 +806,11 @@ class MigrateTests(unittest.TestCase):
             assert mutils.validate_name(" !  _-:: This.is-how/WE do\n&it#? - (šđžčć)_  ? ",
                                         "full_path", is_group=True) == "This.is-how WE do it - (šđžčć"
 
+    def test_validate_project_path(self):
+        with self.assertLogs(mutils.b.log, level="WARNING"):
+            assert mutils.validate_project_path(
+                "!_-::This.is;;-how_we--do\n&IT#?-šđžčć_?", "full_path") == "This.is-how_we-do-IT"
+
     def test_get_duplicate_paths_projects(self):
         data = [{
             "path_with_namespace": "a/b"

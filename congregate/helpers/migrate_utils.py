@@ -377,6 +377,22 @@ def validate_name(name, full_path, is_group=False):
     return valid
 
 
+def validate_project_path(path, full_path):
+    """
+    Validate project paths to satisfy the following criteria:
+    Project namespace path can contain only letters, digits, '_', '-' and '.'. Cannot start with '-', end in '.git' or end in '.atom'
+    Path can contain only letters, digits, '_', '-' and '.'. Cannot start with '-', end in '.git' or end in '.atom'
+    Path must not start or end with a special character and must not contain consecutive special characters.
+    """
+    # Validate path convention in docstring
+    valid = sub("[._-][^A-Za-z0-9]+", "-",
+                sub("[^A-Za-z0-9\_\-\.]+", "-", path)).strip("-_.")
+    if path != valid:
+        b.log.warning(
+            f"Updating invalid project path '{path}' -> '{valid}' ({full_path})")
+    return valid
+
+
 def get_duplicate_paths(data, are_projects=True):
     """
     Legacy GL versions had case insensitive paths, which on newer GL versions are seen as duplicates
