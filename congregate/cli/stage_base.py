@@ -12,7 +12,7 @@ from gitlab_ps_utils.dict_utils import dig
 from gitlab_ps_utils.json_utils import json_pretty
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.migrate_utils import validate_name, is_gl_version_older_than, validate_project_path
+from congregate.helpers.migrate_utils import sanitize_name, is_gl_version_older_than, sanitize_project_path
 
 
 class BaseStageClass(BaseClass):
@@ -117,9 +117,9 @@ class BaseStageClass(BaseClass):
             project = self.rewritten_projects[project] if group else project
             obj = {
                 "id": project["id"],
-                "name": validate_name(project["name"], project["path_with_namespace"]),
+                "name": sanitize_name(project["name"], project["path_with_namespace"]),
                 "namespace": dig(project, 'namespace', 'full_path'),
-                "path": validate_project_path(project["path"], project["path_with_namespace"]),
+                "path": sanitize_project_path(project["path"], project["path_with_namespace"]),
                 "path_with_namespace": project["path_with_namespace"],
                 "visibility": project["visibility"],
                 "description": project["description"],
@@ -162,7 +162,7 @@ class BaseStageClass(BaseClass):
         # Decrease size of staged_groups.json
         group.pop("projects", None)
         group.pop("desc_groups", None)
-        group["name"] = validate_name(
+        group["name"] = sanitize_name(
             group["name"], group["full_path"], is_group=True)
         return group
 
