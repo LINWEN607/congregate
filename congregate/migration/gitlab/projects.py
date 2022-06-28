@@ -799,7 +799,7 @@ class ProjectsClient(BaseClass):
         add_post_migration_stats(start, log=self.log)
 
     def verify_staged_projects_push_mirror(self, disabled=False, keep_div_refs=False):
-        """Verify that push project push mirror exists and is not failing"""
+        """Verify that the project push mirror exists and is not failing"""
         start = time()
         rotate_logs()
         staged_projects = get_staged_projects()
@@ -895,20 +895,20 @@ class ProjectsClient(BaseClass):
         # Look for mirrors to destination host / destination parent group path (if configured)
         url = f"{strip_netloc(host)}{('/' + self.config.dstn_parent_group_path) if self.config.dstn_parent_group_path else ''}"
         missing = True
-        for m in self.projects_api.get_all_remote_push_mirrors(orig_pid, host, token):
-            is_error, resp = is_error_message_present(m)
+        for mirror in self.projects_api.get_all_remote_push_mirrors(orig_pid, host, token):
+            is_error, resp = is_error_message_present(mirror)
             if is_error or not resp:
                 self.log.error(
                     f"Invalid project '{sp_path}' push mirror:\n{json_pretty(resp)}")
                 break
-            url_in = url in m.get("url", "")
-            if not dry_run and (remove_all or url_in):
+            url_present = url in mirror.get("url", "")
+            if not dry_run and (remove_all or url_present):
                 missing = False
                 resp = self.projects_api.delete_remote_push_mirror(
-                    host, token, orig_pid, m.get("id"))
+                    host, token, orig_pid, mirror.get("id"))
                 if resp.status_code != 204:
                     self.log.error(
-                        f"Failed to delete project '{sp_path}' push mirror '{url if url_in else m.get('url','')}', with response:\n{resp} - {resp.text}")
+                        f"Failed to delete project '{sp_path}' push mirror '{url if url_present else mirror.get('url','')}', with response:\n{resp} - {resp.text}")
         if not dry_run and missing:
             self.log.error(
                 f"Missing project '{sp_path}' push mirror {url}")
