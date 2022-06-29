@@ -34,7 +34,6 @@ from congregate.migration.gitlab.api.instance import InstanceApi
 from congregate.migration.gitlab.pushrules import PushRulesClient
 from congregate.migration.gitlab.merge_request_approvals import MergeRequestApprovalsClient
 from congregate.migration.gitlab.registries import RegistryClient
-from congregate.migration.mirror import MirrorClient
 from congregate.migration.gitlab.keys import KeysClient
 from congregate.migration.gitlab.hooks import HooksClient
 from congregate.migration.gitlab.clusters import ClustersClient
@@ -70,7 +69,6 @@ class MigrateClient(BaseClass):
         group_structure=False
     ):
         self.ie = ImportExportClient()
-        self.mirror = MirrorClient()
         self.variables = VariablesClient()
         self.users = UsersClient()
         self.users_api = UsersApi()
@@ -1417,78 +1415,6 @@ class MigrateClient(BaseClass):
                 dry_run=self.dry_run, hard_delete=self.hard_delete)
 
         mig_utils.add_post_migration_stats(self.start, log=self.log)
-
-    def remove_all_mirrors(self):
-        # if os.path.isfile("%s/data/new_ids.txt" % self.app_path):
-        #     ids = []
-        #     with open("%s/data/new_ids.txt" % self.app_path, "r") as f:
-        #         for line in f:
-        #             ids.append(int(line.split("\n")[0]))
-        # else:
-        ids = self.get_new_ids()
-        for i in ids:
-            self.mirror.remove_mirror(i, self.dry_run)
-
-    def get_new_ids(self):
-        ids = []
-        staged_projects = mig_utils.get_staged_projects()
-        if staged_projects:
-            for project in staged_projects:
-                try:
-                    self.log.debug("Searching for existing %s" %
-                                   project["name"])
-                    for proj in self.projects_api.search_for_project(self.config.destination_host,
-                                                                     self.config.destination_token,
-                                                                     project['name']):
-                        if proj["name"] == project["name"]:
-
-                            if "%s" % project["namespace"].lower(
-                            ) in proj["path_with_namespace"].lower():
-                                if project["namespace"].lower(
-                                ) == proj["namespace"]["name"].lower():
-                                    self.log.debug("Adding {0}/{1}".format(
-                                        project["namespace"], project["name"]))
-                                    # self.log.info("Migrating variables for %s" % proj["name"])
-                                    ids.append(proj["id"])
-                                    break
-                except IOError as e:
-                    self.log.error(e)
-            return ids
-
-    def mirror_staged_projects(self):
-        ids = self.get_new_ids()
-        staged_projects = mig_utils.get_staged_projects()
-        if staged_projects:
-            for i in enumerate(staged_projects):
-                pid = ids[i]
-                project = staged_projects[i]
-                self.mirror.mirror_repo(project, pid, self.dry_run)
-
-    def update_visibility(self):
-        count = 0
-        if os.path.isfile("%s/data/new_ids.txt" % self.app_path):
-            ids = []
-            with open("%s/data/new_ids.txt" % self.app_path, "r") as f:
-                for line in f:
-                    ids.append(int(line.split("\n")[0]))
-        else:
-            ids = self.get_new_ids()
-        for i in ids:
-            project = self.projects_api.get_project(
-                i, self.config.destination_host, self.config.destination_token).json()
-            if project["visibility"] != "private":
-                self.log.debug("Current destination path {0} visibility: {1}".format(
-                    project["path_with_namespace"], project["visibility"]))
-                count += 1
-                data = {
-                    "visibility": "private"
-                }
-                change = self.projects_api.api.generate_put_request(
-                    self.config.destination_host, self.config.destination_token, "projects/%d?visibility=private" % int(
-                        i),
-                    data=None)
-                print(change)
-        print(count)
 
     def get_total_migrated_count(self):
         # group_projects = api.get_count(

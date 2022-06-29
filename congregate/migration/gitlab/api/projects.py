@@ -1201,3 +1201,19 @@ class ProjectsApi(GitLabApiWrapper):
         if not message:
             message = f"Editing project {pid} remote push mirror {mid} with payload {str(data)}"
         return self.api.generate_put_request(host, token, f"projects/{pid}/remote_mirrors/{mid}", json.dumps(data), description=message)
+
+    def delete_remote_push_mirror(self, host, token, pid, mid, message=None):
+        """
+        Delete a remote mirror.
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/remote_mirrors.html#delete-a-remote-mirror
+
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :param: pid: (int) GitLab project ID
+            :param: mid: (ind) Remote mirror ID
+            :return: Response object containing the response to DELETE /projects/:pid/remote_mirrors/:mid
+        """
+        if not message:
+            message = f"Deleting project {pid} remote push mirror {mid}"
+        return self.api.generate_delete_request(host, token, f"projects/{pid}/remote_mirrors/{mid}")

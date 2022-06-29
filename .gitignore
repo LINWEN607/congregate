@@ -5,7 +5,7 @@ data/*
 .vscode
 *.log
 *.log.*
-.coverage
+.coverage*
 unused_stuff
 docker-copy
 downloads/*

@@ -28,13 +28,12 @@ Usage:
     congregate url-rewrite-only [--commit]
     congregate remove-users-from-parent-group [--commit]
     congregate migrate-variables-in-stage [--commit]
-    congregate mirror-staged-projects [--commit]
+    congregate pull-mirror-staged-projects [--commit]
     congregate push-mirror-staged-projects [--disabled] [--keep_div_refs] [--force] [--commit]
     congregate toggle-staged-projects-push-mirror [--disable] [--commit]
-    congregate verify-staged-projects-remote-mirror [--disabled] [--keep_div_refs]
-    congregate remove-all-mirrors [--commit]
-    # TODO: Add dry-run, potentially remove
-    congregate update-projects-visibility
+    congregate verify-staged-projects-push-mirror [--disabled] [--keep_div_refs]
+    congregate delete-staged-projects-push-mirrors [--all] [--commit]
+    congregate delete-all-staged-projects-pull-mirrors [--commit]
     congregate set-default-branch [--name=<name>] [--commit]
     congregate enable-mirroring [--commit] # TODO: Find a use for it or remove
     congregate count-unarchived-projects [--local]
@@ -115,6 +114,7 @@ Arguments:
     keep_div_refs                           Set keep_divergent_refs to True (False by default) and avoid overwriting changes on the mirror repo
     force                                   Immediately trigger push mirroring with a repo change e.g. new branch
     name                                    Project branch name
+    all                                     Include all listed objects.
     projects                                Target BitBucket repo branches from a project level
 
 Commands:
@@ -150,15 +150,15 @@ Commands:
     url-rewrite-only                        Performs the URL rewrite portion of a migration as a stand-alone step, instead of as a post-migration step. Requires the projects to be staged, and to exist on destination
     remove-users-from-parent-group          Remove all users with at most Reporter access from the parent group.
     migrate-variables-in-stage              Migrate CI variables for staged projects.
-    mirror-staged-projects                  Set up project mirroring for staged projects.
+    pull-mirror-staged-projects             Set up project pull mirroring for staged projects.
     push-mirror-staged-projects             Set up and enable (by default) project push mirroring for staged projects.
                                                 Assuming both the mirrored repo and empty project structure (create-staged-projects-structure) for mirroring already exist on destination.
                                                 NOTE: Destination instance only mirroring.
     toggle-staged-projects-push-mirror      Enable/disable push mirror created via command push-mirror-staged-projects.
                                                 NOTE: Destination instance only mirroring.
-    verify-staged-projects-remote-mirror    Verify that each staged project remote push mirror exists and is not failing. Preferably run a few minutes after creating push mirrors.
-    remove-all-mirrors                      Remove all project mirrors for staged projects.
-    update-projects-visibility              Return list of all migrated projects' visibility.
+    verify-staged-projects-push-mirror      Verify that each staged project push mirror exists and is not failing. Preferably run a few minutes after creating push mirrors.
+    delete-staged-projects-push-mirrors     Remove project push mirrors for staged projects. Only remove destination instance host (+'dstn_parent_group_path' if configured) mirrors. Add '--all' to remove all mirrors.
+    delete-all-staged-projects-pull-mirrors Remove all project pull mirrors for staged projects.
     set-default-branch                      Set default branch for staged projects on destination.
     enable-mirroring                        Start pull mirror process for all projects on destination.
     count-unarchived-projects               Return total number and list of all unarchived projects on source.
@@ -426,24 +426,22 @@ def main():
                 users.remove_users_from_parent_group(dry_run=DRY_RUN)
             if arguments["migrate-variables-in-stage"]:
                 variables.migrate_variables_in_stage(dry_run=DRY_RUN)
-            if arguments["remove-all-mirrors"]:
-                migrate = MigrateClient(dry_run=DRY_RUN)
-                migrate.remove_all_mirrors()
-            if arguments["update-projects-visibility"]:
-                migrate = MigrateClient()
-                migrate.update_visibility()
-            if arguments["mirror-staged-projects"]:
-                migrate = MigrateClient(dry_run=DRY_RUN)
-                migrate.mirror_staged_projects()
+            if arguments["delete-all-staged-projects-pull-mirrors"]:
+                projects.delete_all_pull_mirrors(dry_run=DRY_RUN)
+            if arguments["pull-mirror-staged-projects"]:
+                projects.pull_mirror_staged_projects(dry_run=DRY_RUN)
             if arguments["push-mirror-staged-projects"]:
                 projects.push_mirror_staged_projects(
                     disabled=arguments["--disabled"], keep_div_refs=arguments["--keep_div_refs"], force=arguments["--force"], dry_run=DRY_RUN)
             if arguments["toggle-staged-projects-push-mirror"]:
                 projects.toggle_staged_projects_push_mirror(
                     disable=arguments["--disable"], dry_run=DRY_RUN)
-            if arguments["verify-staged-projects-remote-mirror"]:
-                projects.verify_staged_projects_remote_mirror(
+            if arguments["verify-staged-projects-push-mirror"]:
+                projects.verify_staged_projects_push_mirror(
                     disabled=arguments["--disabled"], keep_div_refs=arguments["--keep_div_refs"])
+            if arguments["delete-staged-projects-push-mirrors"]:
+                projects.delete_staged_projects_push_mirrors(
+                    remove_all=arguments["--all"], dry_run=DRY_RUN)
             if arguments["set-default-branch"]:
                 branches.set_default_branch(
                     name=arguments["--name"], dry_run=DRY_RUN)

@@ -86,10 +86,12 @@ Copy the following data and add subsequent columns for single project migration
 
 ### Pre-migration checklist
 
-* [ ] PSE conducting the migration has acquired a BitBucket Server personal access token with admin privileges (top right icon in BB server -> Manage Account -> Personal Access Tokens)
-* [ ] PSE conducting the migration has acquired an admin token for GitLab (top right icon in GitLab -> Settings -> Access Tokens)
-* [ ] PSE has configured congregate to migrate from BitBucket Server to gitlab.com
-  * [ ] Inspect and validate configured values in `data/congregate.conf`
+* PSE conducting the migration:
+  * [ ] Acquires a BitBucket Server account with `SYS_ADMIN` or `ADMIN` privileges
+    * **NOTE:** Unverified alternatives are [app passwords](https://bitbucket.org/blog/deprecating-atlassian-account-password-for-bitbucket-api-and-git-activity) and [HTTP access tokens](https://confluence.atlassian.com/bitbucketserver/personal-access-tokens-939515499.html) (as of version 8)
+  * [ ] Acquires the obfuscated (`congregate obfuscate`) BitBucket Server account password as `src_access_token`
+  * [ ] Acquires a GitLab admin token (top right icon in *GitLab -> Settings -> Access Tokens*) with `api` scope
+  * [ ] Configures Congregate (`congregate configure`) to migrate from BitBucket Server to GitLab
 
 ### User migration
 
@@ -98,7 +100,7 @@ Copy the following data and add subsequent columns for single project migration
 #### Prepare users
 
 * [ ] Review migration schedule (see customer migration schedule)
-* [ ] Check the status of **gitlab.com** (https://status.gitlab.com/)
+* [ ] **(gitlab.com)** Check the [status of **gitlab.com**](https://status.gitlab.com)
   * [ ] Confirm you can reach the UI of the instance
   * [ ] Confirm you can reach the API through cURL or a REST client
 * [ ] Run `congregate list` at the beginning of the migration blackout period
@@ -150,7 +152,7 @@ Copy the following data and add subsequent columns for single project migration
 #### Prepare groups and projects
 
 * [ ] Review migration schedule (see customer migration schedule)
-* [ ] Check the status of **gitlab.com** (https://status.gitlab.com/)
+* [ ] **(gitlab.com)** Check the [status of **gitlab.com**](https://status.gitlab.com)
   * [ ] Confirm you can reach the UI of the instance
   * [ ] Confirm you can reach the API through cURL or a REST client
 * [ ] Run `congregate list` at the beginning of the migration blackout period

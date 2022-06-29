@@ -5,14 +5,20 @@ and logger as well provide the app path
 
 from warnings import simplefilter
 from urllib3.exceptions import InsecureRequestWarning
-from congregate.helpers.configuration_validator import ConfigurationValidator
+
 from gitlab_ps_utils.logger import myLogger
 from gitlab_ps_utils.audit_logger import audit_logger
-from congregate.helpers.utils import get_congregate_path
 from gitlab_ps_utils.processes import MultiProcessing
 
+from congregate.helpers.configuration_validator import ConfigurationValidator
+from congregate.helpers.utils import get_congregate_path
 
-class BaseClass(object):
+
+class BaseClass():
+    TANUKI = "#e24329"
+    DESC = "Progress"
+    UNIT = " unit"
+
     def __init__(self):
         self.config = ConfigurationValidator()
         if not self.config.ssl_verify:
