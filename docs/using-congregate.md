@@ -7,8 +7,10 @@
 1. Generate a personal access token from your gitlab.com account that has the `read_registry` permission by clicking *User Icon (top right) > Settings > Access Tokens > Generate Access Token*.
 1. Then run `docker login registry.gitlab.com` and provide your username and paste the access token when prompted for a password.
 1. Pull the docker image from the [container registry](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/container_registry/2394823):
-    * :white_check_mark: For official versioned releases, `docker pull registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate:<version>` (or `:latest-<debian|centos>`)
-    * :warning: For rolling releases, `docker pull registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate:rolling-debian` (or `:rolling-centos`)
+    * :white_check_mark: For [official versioned releases](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/releases)
+        * `docker pull registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate:<version>` (or `:latest-<debian|centos>`)
+    * :warning: For rolling releases (latest on `master`):
+        * `docker pull registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate:rolling-debian` (or `:rolling-centos`)
 1. Run `docker images -a` to list and copy the `image-id` of the congregate image.
 1. Create and run the Congregate docker container:
 
@@ -77,6 +79,8 @@ During migrations, we generally do the same type of commands every time in rough
 
 ![Congregate Process Flow](/img/process-flow.png)
 
+**NOTE:** Migrations from GitHub and BitBucket Server (source SCMs) rely on incoming (Ingress) REST API connections from GitLab (destination).
+
 ### List
 
 `./congregate.sh list` is the command that gathers meta data from the source system(s) to prepare for later steps of migration. Listing pulls all of the metadata from each of these systems and typically requires an admin token or read-only all credentials to be successful. To set these run `./congregate.sh configure` or modify `data/congregate.conf` with the SCM and/or CI source hostname(s) and credentials provided by the customer. Be sure to reference the [congregate config template](/congregate.conf.template) to format it correctly if you're editing the `.conf` file directly.
@@ -85,7 +89,7 @@ Listing can take quite a long time and is directly dependant on the amount of da
 
 If you need to re-list and don't want to overwrite any data that you have listed previously (and get a small performance boost), run it with `--partial`. Additional `--skip-*` arguments allow you to skip users, groups, projects and ci.
 
-If you are migrating data from CI sources with an SCM source, listing will also perform a mapping function to map CI jobs to SCM repositories. This functionality will position migrations of build config xmls into repositories for future transformation into `gitlab-ci.yml`.
+If you are migrating data from CI sources with an SCM source, listing will also perform a mapping function to map CI jobs to SCM repositories. This functionality will position migrations of build config XMLs into repositories for future transformation into `gitlab-ci.yml`.
 
 ### Stage
 
@@ -121,42 +125,43 @@ In General, we like to migrate all users into the destination system before doin
 
 Best practice is to first migrate ONLY users by running:
 
-- `./congregate.sh ui &` - Open the UI in your browser (by default `localhost:8000`), select and stage all users.
-- `./congregate.sh migrate --skip-group-export --skip-group-import --skip-project-export --skip-project-import` - Inspect the dry-run output in:
-  - `data/results/dry_run_user_migration.json`
-  - `data/logs/congregate.log`
-  - Inspect `data/staged_users.json` if any of the NOT found users are inactive as, by default, they will not be migrated.
-  - To explicitly remove inactive users from staged users, groups and projects run `./congregate.sh remove-inactive-users --commit`.
-- `./congregate.sh migrate --skip-group-export --skip-group-import --skip-project-export --skip-project-import --commit`
+* `./congregate.sh ui &` - Open the UI in your browser (by default `localhost:8000`), select and stage all users.
+* `./congregate.sh migrate --skip-group-export --skip-group-import --skip-project-export --skip-project-import` - Inspect the dry-run output in:
+  * `data/results/dry_run_user_migration.json`
+  * `data/logs/congregate.log`
+  * Inspect `data/staged_users.json` if any of the NOT found users are inactive as, by default, they will not be migrated.
+  * To explicitly remove inactive users from staged users, groups and projects run `./congregate.sh remove-inactive-users --commit`.
+* `./congregate.sh migrate --skip-group-export --skip-group-import --skip-project-export --skip-project-import --commit`
 
 #### Migrate Groups and Sub-Groups
 
 Once all the users are migrated:
 
-- Go back to the UI, select and stage all groups and sub-groups.
-- Only the top level groups will be staged as they comprise the entire tree structure.
-- `./congregate.sh search-for-staged-users` - Check output for found and NOT found users on destination.
-  - All users should be found.
-  - Inspect `data/staged_users.json` if any of the NOT found users are inactive as, by default, they will not be migrated.
-  - To explicitly remove inactive users from staged users, groups and projects run `./congregate.sh remove-inactive-users --commit`.
-- `./congregate.sh migrate --skip-users --skip-project-export --skip-project-import` - Inspect the dry-run output in:
-  - `data/results/dry_run_group_migration.json`
-  - `data/logs/congregate.log`
-- `./congregate.sh migrate --skip-users --skip-project-export --skip-project-import --commit`
+* Go back to the UI, select and stage all groups and sub-groups.
+* Only the top level groups will be staged as they comprise the entire tree structure.
+* `./congregate.sh search-for-staged-users` - Check output for found and NOT found users on destination.
+  * Adding argument `--table` will output the result, in the form of a table, to *data/user_stats.csv*.
+  * All users should be found.
+  * Inspect `data/staged_users.json` if any of the NOT found users are inactive as, by default, they will not be migrated.
+  * To explicitly remove inactive users from staged users, groups and projects run `./congregate.sh remove-inactive-users --commit`.
+* `./congregate.sh migrate --skip-users --skip-project-export --skip-project-import` - Inspect the dry-run output in:
+  * `data/results/dry_run_group_migration.json`
+  * `data/logs/congregate.log`
+* `./congregate.sh migrate --skip-users --skip-project-export --skip-project-import --commit`
 
 #### Migrate Projects
 
 Once all the users and groups and sub-groups are migrated:
 
-- Go back to the UI, select and stage projects (either all, or in waves).
-- `./congregate.sh search-for-staged-users` - Check output for found and NOT found users on destination.
-  - All users should be found.
-  - Inspect `data/staged_users.json` if any of the NOT found users are inactive as, by default, they will not be migrated.
-  - To explicitly remove inactive users from staged users, groups and projects run `./congregate.sh remove-inactive-users --commit`.
-- `./congregate.sh migrate --skip-users --skip-group-export --skip-group-import` - Inspect the dry-run output in:
-  - `data/results/dry_run_project_migration.json`
-  - `data/logs/congregate.log`
-- `./congregate.sh migrate --skip-users --skip-group-export --skip-group-import --commit`
+* Go back to the UI, select and stage projects (either all, or in waves).
+* `./congregate.sh search-for-staged-users` - Check output for found and NOT found users on destination.
+  * All users should be found.
+  * Inspect `data/staged_users.json` if any of the NOT found users are inactive as, by default, they will not be migrated.
+  * To explicitly remove inactive users from staged users, groups and projects run `./congregate.sh remove-inactive-users --commit`.
+* `./congregate.sh migrate --skip-users --skip-group-export --skip-group-import` - Inspect the dry-run output in:
+  * `data/results/dry_run_project_migration.json`
+  * `data/logs/congregate.log`
+* `./congregate.sh migrate --skip-users --skip-group-export --skip-group-import --commit`
 
 ### Rollback
 
@@ -164,10 +169,10 @@ To remove all of the staged users, groups (w/ sub-groups) and projects on destin
 
 > :warning: This will delete everything that was previously staged and migrated. If a significant period of time has passed since migration, you will risk losing data added by users in the time since migration completed. There is a default timeout on rollback 24 hours from the time of migration that acts as a guard against accidental rollbacks.
 
-- `./congregate.sh rollback --hard-delete` - Inspect the output in:
-  - `data/logs/congregate.log`
-- `./congregate.sh rollback --commit`
-- For more granular rollback see [Usage](#usage).
+* `./congregate.sh rollback --hard-delete` - Inspect the output in:
+  * `data/logs/congregate.log`
+* `./congregate.sh rollback --commit`
+* For more granular rollback see [Usage](#usage).
 
 ## Checking the results of a migration
 
@@ -175,16 +180,16 @@ Lots of this section is covered in our [runbooks](runbooks), but an overview is 
 
 ### Spot checking features
 
-- group creation
-- project creation
-- membership
-- branches
-- commits
-- tags
-- merge requests
-- user attribution
-- branch protection settings
-- merge request approver settings
+* Group creation
+* Project creation
+* Membership
+* Branches
+* Commits
+* Tags
+* Merge requests
+* User attribution
+* Branch protection settings
+* Merge request approver settings
 
 ### Automated diff report
 
