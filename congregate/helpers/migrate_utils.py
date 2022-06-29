@@ -361,6 +361,8 @@ def sanitize_name(name, full_path, is_group=False):
     Validate and sanitize group and project names to satisfy the following criteria:
     Name can only contain letters, digits, emojis, '_', '.', dash, space, parenthesis (groups only).
     It must start with letter, digit, emoji or '_'.
+    Example:
+        " !  _-:: This.is-how/WE do\n&it#? - šđžčć_  ? " -> "This.is-how WE do it - šđžčć"
     """
     # Remove leading and trailing special characters and spaces
     stripped = name.strip(punctuation + " ")
@@ -383,6 +385,8 @@ def sanitize_project_path(path, full_path):
     Project namespace path can contain only letters, digits, '_', '-' and '.'. Cannot start with '-', end in '.git' or end in '.atom'
     Path can contain only letters, digits, '_', '-' and '.'. Cannot start with '-', end in '.git' or end in '.atom'
     Path must not start or end with a special character and must not contain consecutive special characters.
+    Example:
+        "!_-::This.is;;-how_we--do\n&IT#?-šđžčć_?" -> "This.is-how_we-do-IT"
     """
     # Validate path convention in docstring and sanitize path
     valid = sub("[._-][^A-Za-z0-9]+", "-",
