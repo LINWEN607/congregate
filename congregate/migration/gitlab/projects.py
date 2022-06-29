@@ -36,6 +36,7 @@ class ProjectsClient(BaseClass):
         self.mirror = MirrorClient()
         self.project_repository_api = ProjectRepositoryApi()
         self.dry_run = DRY_RUN
+        self.skip_project_members = False
         super().__init__()
 
     def get_projects(self):
@@ -78,8 +79,8 @@ class ProjectsClient(BaseClass):
         else:
             self.log.info(
                 f"[ID: {project['id']}] {project['name']}: {project['description']}")
-            project["members"] = list(self.projects_api.get_members(
-                project["id"], host, token))
+            project["members"] = [] if self.skip_project_members else list(
+                self.projects_api.get_members(project["id"], host, token))
 
             mongo.insert_data(f"projects-{strip_netloc(host)}", project)
         mongo.close_connection()
@@ -287,25 +288,25 @@ class ProjectsClient(BaseClass):
         staged_groups = get_staged_groups()
         for g in staged_groups:
             self.log.info(g)
-            if g.get("name", None) is None:
+            if g.get("name") is None:
                 self.log.warning("name is missing")
-            if g.get("namespace", None) is None:
+            if g.get("namespace") is None:
                 self.log.warning("namespace is missing")
-            if g.get("project_type", None) is None:
+            if g.get("project_type") is None:
                 self.log.warning("project_type is missing")
-            if g.get("default_branch", None) is None:
+            if g.get("default_branch") is None:
                 self.log.warning("default_branch is missing")
-            if g.get("visibility", None) is None:
+            if g.get("visibility") is None:
                 self.log.warning("visibility is missing")
-            if g.get("http_url_to_repo", None) is None:
+            if g.get("http_url_to_repo") is None:
                 self.log.warning("http_url_to_repo is missing")
-            if g.get("shared_runners_enabled", None) is None:
+            if g.get("shared_runners_enabled") is None:
                 self.log.warning("shared_runners_enabled is missing")
-            if g.get("members", None) is None:
+            if g.get("members") is None:
                 self.log.warning("members is missing")
-            if g.get("id", None) is None:
+            if g.get("id") is None:
                 self.log.warning("id is missing")
-            if g.get("description", None) is None:
+            if g.get("description") is None:
                 self.log.warning("description is missing")
 
     def add_members_to_destination_project(
@@ -845,7 +846,7 @@ class ProjectsClient(BaseClass):
                         f"Project {project} push mirror 'enabled' set to: {m.get('enabled')}")
                 break
         if missing:
-            self.log.error(f"Missing {project} push mirror {url}")
+            self.log.error(f"Missing project {project} push mirror {url}")
 
     def find_mirror_project(self, staged_project, host, token):
         """Validate push mirror source and destination project"""

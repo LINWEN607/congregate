@@ -4,7 +4,7 @@ Copyright (c) 2022 - GitLab
 
 Usage:
     congregate init
-    congregate list [--processes=<n>] [--partial] [--skip-users] [--skip-groups] [--skip-projects] [--skip-ci] [--src-instances]
+    congregate list [--processes=<n>] [--partial] [--skip-users] [--skip-groups] [--skip-group-members] [--skip-projects] [--skip-project-members] [--skip-ci] [--src-instances]
     congregate configure
     congregate generate-reporting
     congregate stage-projects <projects>... [--skip-users] [--commit] [--scm-source=hostname]
@@ -73,16 +73,18 @@ Options:
 Arguments:
     processes                               Set number of processes to run in parallel.
     commit                                  Disable the dry-run and perform the full migration with all reads/writes.
-    src_instances                           Present if there are multiple GH source instances
-    scm_source                              Specific SCM source hostname
+    src-instances                           Present if there are multiple GH source instances
+    scm-source                              Specific SCM source hostname
     skip-users                              Stage: Skip staging users; Migrate: Skip migrating users; Rollback: Remove only groups and projects.
     remove-members                          Remove all members of created (GitHub) or imported (GitLab) groups. Skip adding any members of BitBucket Server imported repos.
     hard-delete                             Remove user contributions and solely owned groups
     stream-groups                           Streamed approach of migrating staged groups in bulk
     skip-groups                             Rollback: Remove only users and projects
+    skip-group-members                      Add empty list instead of listing GitLab group members.
     skip-group-export                       Skip exporting groups from source instance
     skip-group-import                       Skip importing groups to destination instance
     skip-projects                           Rollback: Remove only users and empty groups
+    skip-project-members                    Add empty list instead of listing GitLab project members.
     skip-project-export                     Skips the project export and assumes that the project file is already ready
                                                 for rewrite. Currently does NOT work for exports through filesystem-aws
     skip-project-import                     Will do all steps up to import (export, re-write exported project json,
@@ -320,7 +322,9 @@ def main():
                     partial=PARTIAL,
                     skip_users=SKIP_USERS,
                     skip_groups=SKIP_GROUPS,
+                    skip_group_members=arguments["--skip-group-members"],
                     skip_projects=SKIP_PROJECTS,
+                    skip_project_members=arguments["--skip-project-members"],
                     skip_ci=arguments["--skip-ci"],
                     src_instances=SRC_INSTANCES
                 )

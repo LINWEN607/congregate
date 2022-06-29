@@ -27,8 +27,14 @@ from congregate.helpers.mdbc import MongoConnector
 b = BaseClass()
 
 
-def list_gitlab_data(processes=None, partial=False,
-                     skip_users=False, skip_groups=False, skip_projects=False):
+def list_gitlab_data(
+        processes=None,
+        partial=False,
+        skip_users=False,
+        skip_groups=False,
+        skip_group_members=False,
+        skip_projects=False,
+        skip_project_members=False):
     """
         List the projects information, and Retrieve user info, group info from source instance.
     """
@@ -43,12 +49,15 @@ def list_gitlab_data(processes=None, partial=False,
 
     if not skip_groups:
         groups = GroupsClient()
+        groups.skip_group_members = skip_group_members
+        groups.skip_project_members = skip_project_members
         groups.retrieve_group_info(host, token, processes=processes)
         mongo.dump_collection_to_file(g, f"{b.app_path}/data/groups.json")
 
     # When to list projects - Listing groups on gitlab.com will also list their projects
     if not skip_projects and not is_dot_com(host):
         projects = ProjectsClient()
+        projects.skip_project_members = skip_project_members
         projects.retrieve_project_info(host, token, processes=processes)
 
     # When to dump listed projects
@@ -58,8 +67,12 @@ def list_gitlab_data(processes=None, partial=False,
     mongo.close_connection()
 
 
-def list_bitbucket_data(processes=None, partial=False,
-                        skip_users=False, skip_groups=False, skip_projects=False):
+def list_bitbucket_data(
+        processes=None,
+        partial=False,
+        skip_users=False,
+        skip_groups=False,
+        skip_projects=False):
     mongo, p, g, u = mongo_init(partial=partial)
 
     groups_client = BitBucketGroups()
@@ -160,8 +173,17 @@ def write_empty_file(filename):
             f.write("[]")
 
 
-def list_data(processes=None, partial=False, skip_users=False,
-              skip_groups=False, skip_projects=False, skip_ci=False, src_instances=False):
+def list_data(
+        processes=None,
+        partial=False,
+        skip_users=False,
+        skip_groups=False,
+        skip_group_members=False,
+        skip_projects=False,
+        skip_project_members=False,
+        skip_ci=False,
+        src_instances=False):
+
     src_type = b.config.source_type or "unknown"
     staged_files = ["staged_projects", "staged_groups", "staged_users"]
 
@@ -178,14 +200,29 @@ def list_data(processes=None, partial=False, skip_users=False,
     b.log.info(
         f"Listing data from {src_type} source type - {b.config.source_host}")
     if src_type == "bitbucket server":
-        list_bitbucket_data(processes=processes, partial=partial, skip_users=skip_users,
-                            skip_projects=skip_projects, skip_groups=skip_groups)
+        list_bitbucket_data(
+            processes=processes,
+            partial=partial,
+            skip_users=skip_users,
+            skip_groups=skip_groups,
+            skip_projects=skip_projects)
     elif src_type == "gitlab":
-        list_gitlab_data(processes=processes, partial=partial, skip_users=skip_users,
-                         skip_projects=skip_projects, skip_groups=skip_groups)
+        list_gitlab_data(
+            processes=processes,
+            partial=partial,
+            skip_users=skip_users,
+            skip_groups=skip_groups,
+            skip_group_members=skip_group_members,
+            skip_projects=skip_projects,
+            skip_project_members=skip_project_members)
     elif src_type == "github":
-        list_github_data(processes=processes, partial=partial, skip_users=skip_users,
-                         skip_projects=skip_projects, skip_groups=skip_groups, src_instances=src_instances)
+        list_github_data(
+            processes=processes,
+            partial=partial,
+            skip_users=skip_users,
+            skip_groups=skip_groups,
+            skip_projects=skip_projects,
+            src_instances=src_instances)
     else:
         b.log.warning(
             f"Cannot list from {src_type} source type - {b.config.source_host}")
