@@ -45,7 +45,8 @@ def rotate_logs():
             if e.errno != errno.ENOENT:
                 raise
     else:
-        print("Cannot find data directory. CONGREGATE_PATH not set or you are not running this in the Congregate directory.")
+        raise NotADirectoryError(
+            "Cannot find data directory. CONGREGATE_PATH not set or you are not running this in the Congregate directory.")
 
 
 def stitch_json_results(result_type="project", steps=0, order="tail"):
