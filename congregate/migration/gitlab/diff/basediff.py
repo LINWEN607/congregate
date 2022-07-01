@@ -75,6 +75,26 @@ class BaseDiffClient(BaseClass):
         }
     """
 
+    # Setting Red/Green colors here in case someone needs to change them later.
+    HEX_FAIL = "#ff0000" # Red
+    HEX_SUCCESS = "#00800" # Green
+    HEX_TITLE = "#6699CC" # Blue Gray
+
+    # Report Description
+    SUMMARY = """
+        This report is a high level view of the migration with diffs listed
+        between source and destination. The report is meant for engineers to
+        get details and stats without having to rely on other teams to verify
+        all the details about the migration. This report DOES NOT replace User
+        Acceptance Testing.
+
+        The report will show a color coded 'Overall Accuracy' along with
+        individual endpoint 'Accuracy'.  Anything with an accuracy of 90% or
+        above is considered a success, and isn't worth looking at unless
+        something comes up in User Acceptance Testing.  Items under 90% accuracy
+        should merit further investigation. 
+    """
+
     def __init__(self):
         super().__init__()
         self.keys_to_ignore = []
@@ -314,8 +334,7 @@ class BaseDiffClient(BaseClass):
                     "result": result
                 }
         except Exception as e:
-            self.log.error(
-                "Unable to calculate overall_accuracy for {0}, due to {1}".format(obj, e))
+            self.log.error(f"Unable to calculate overall_accuracy for {obj}, due to {e}")
             return {
                 "overall_accuracy": 0,
                 "results": "failure"
@@ -398,9 +417,41 @@ class BaseDiffClient(BaseClass):
             "error": f"asset '{identifier}' is missing"
         }
 
+    def as_percentage(self, num):
+        '''
+        Change a float to a percentage for display purposes.  This should probably be in ps-utils, but just putting it here to get it done.
+
+        :param num: (float) The accuracy float number.
+        :return: % formatted number, 0 in the case of None
+        '''
+        valid_types = [float, int, bool]
+
+        if not num or type(num) not in valid_types:
+            return "0%"
+        return f"{num: .2%}"
+
+    def select_bg_color(self, value="Title"):
+        '''
+        Choose a HEX background color code based on keywords.
+        
+        :param value: (str) String to evaluate and return a hex color code
+        :return: (str) Hex Color Code to use in HTML 
+        '''
+
+        if not value:
+            value = "Title"
+        if str(value).lower() == 'success':
+            bgcolor = self.HEX_SUCCESS
+        elif str(value.lower() == 'failure'):
+            bgcolor = self.HEX_FAIL
+        else:
+            bgcolor = self.HEX_TITLE
+        return bgcolor
+
     def generate_html_report(self, asset, diff, filepath, nested=False):
         filepath = f"{self.app_path}{filepath}"
         self.log.info(f"Writing HTML report to {filepath}")
+
         soup = bs(
             "<html><body><table class = 'content'></table></body></html>", features="lxml")
         style = soup.new_tag("style")
@@ -427,12 +478,15 @@ class BaseDiffClient(BaseClass):
                 #     # Make sure the JSON only has double quotes
                 #     p = re.compile('(?<!\\\\)\'')
                 #     v = json.loads(json.dumps(p.sub('\"', v)))
+
+                # This is the main table body of the report, and contains all the individual projects, groups, or users, etc...
                 if "migration_results" not in d:
+                    # Creating the normal asset row
                     header_row = soup.new_tag("tr")
                     header_data_row = soup.new_tag("tr")
                     header_data = {
                         asset: d,
-                        "Accuracy": str(dig(v, "overall_accuracy", "accuracy")),
+                        "Accuracy": str(self.as_percentage(dig(v, "overall_accuracy", "accuracy"))),
                         "Result": dig(v, "overall_accuracy", "result")
                     }
                     for k, kv in header_data.items():
@@ -440,6 +494,7 @@ class BaseDiffClient(BaseClass):
                         cell_data = soup.new_tag("td")
                         cell_header.string = k
                         cell_data.string = str(kv)
+                        header_data_row['bgcolor'] = self.select_bg_color(kv)
                         header_row.append(cell_header)
                         header_data_row.append(cell_data)
                     soup.html.body.table.append(header_row)
@@ -460,7 +515,7 @@ class BaseDiffClient(BaseClass):
                             diff_data_row = soup.new_tag("tr")
                             data = [
                                 endpoint,
-                                str(dig(v, endpoint, 'accuracy')),
+                                str(self.as_percentage(dig(v, endpoint, 'accuracy'))),
                                 dig(v, endpoint, 'diff')
                             ]
                         elif "overall_accuracy" in endpoint:
@@ -509,7 +564,24 @@ class BaseDiffClient(BaseClass):
                     td.append(diff_row_table)
                     diff_row.append(td)
                     soup.html.body.table.append(diff_row)
+
+                # This is the Main Header Row for the page
                 else:
+                    # Create the Summary Header Row
+                    summary_header_row = soup.new_tag("tr")
+                    summary_cell_header = soup.new_tag("th")
+                    summary_cell_header['colspan'] = 3
+                    summary_cell_header.string = "Instructions"
+                    summary_header_row.append(summary_cell_header)
+                    soup.html.body.table.insert(0, summary_header_row)
+                    # Create the Summary Data Row
+                    summary_data_row = soup.new_tag("tr")
+                    summary_cell_data = soup.new_tag("td")
+                    summary_cell_data['colspan'] = 3
+                    summary_cell_data.string = self.SUMMARY
+                    summary_data_row.append(summary_cell_data)
+                    soup.html.body.table.insert(1, summary_data_row)
+
                     overall_results_header_row = soup.new_tag("tr")
                     diff_headers = [pretty_print_key(
                         d), "Overall Accuracy", "Result"]
@@ -517,18 +589,21 @@ class BaseDiffClient(BaseClass):
                         diff_cell_header = soup.new_tag("th")
                         diff_cell_header.string = diff_header
                         overall_results_header_row.append(diff_cell_header)
-                    soup.html.body.table.insert(0, overall_results_header_row)
+                    overall_results_header_row['bgcolor'] = self.select_bg_color()
+                    soup.html.body.table.insert(2, overall_results_header_row)
                     overall_results_data_row = soup.new_tag("tr")
+                    dest_length = len([x for x in diff.items() if 'error' not in x[1]]) - 1
+                    source_length = len(diff.items()) - 1
                     data = [
-                        "",
-                        str(v.get("overall_accuracy", 0)),
+                        f"Staged {asset}'s: '{source_length}' Successful {asset}'s: '{dest_length}'",
+                        str(self.as_percentage(v.get("overall_accuracy", 0))),
                         v.get("result", "failure")
                     ]
                     for da in data:
                         cell_data = soup.new_tag("td")
                         cell_data.string = da if da else ""
                         overall_results_data_row.append(cell_data)
-                    soup.html.body.table.insert(1, overall_results_data_row)
+                    soup.html.body.table.insert(3, overall_results_data_row)
 
         head = soup.new_tag("head")
         script = soup.new_tag("script")
