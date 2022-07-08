@@ -466,6 +466,23 @@ centos-release-tag:
     RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME-centos"
     LATEST: "$CI_REGISTRY_IMAGE:latest-centos"
 
+centos-no-mongo rolling release:
+  extends:
+    - .docker-build
+  stage: rolling release
+  variables:
+    DISTRO: "no-mongo"
+    RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:rolling-centos-no-mongo"
+  rules:
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
+      changes:
+        - congregate/**/*.py
+        - frontend/**/*
+        - congregate.sh
+        - pyproject.toml
+        - package.json
+        - docker/release/no-mongo.Dockerfile
+
 container-scan-build:centos:
   stage: build
   extends:
