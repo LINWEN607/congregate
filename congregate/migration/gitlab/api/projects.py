@@ -232,6 +232,16 @@ class ProjectsApi(GitLabApiWrapper):
         return self.api.generate_post_request(host, token, f"projects/{pid}/mirror/pull", json.dumps(data))
 
     def create_project(self, host, token, name, data=None, headers=None, message=None):
+        """
+        Creates a new project owned by the authenticated user.
+
+        GitLab API doc: https://docs.gitlab.com/ee/api/projects.html#create-project
+
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :param: name: (str) GitLab project name
+            :return: Response object containing the response to POST /projects
+        """
         if data is not None:
             data["name"] = name
         else:

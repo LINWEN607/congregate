@@ -356,16 +356,18 @@ def get_external_path_with_namespace(path_with_namespace):
     return f"{b.config.dstn_parent_group_path or ''}/{path_with_namespace}".strip("/")
 
 
-def validate_name(name, full_path, is_group=False):
+def sanitize_name(name, full_path, is_group=False):
     """
-    Validate group and project names to satisfy the following criteria:
+    Validate and sanitize group and project names to satisfy the following criteria:
     Name can only contain letters, digits, emojis, '_', '.', dash, space, parenthesis (groups only).
     It must start with letter, digit, emoji or '_'.
+    Example:
+        " !  _-:: This.is-how/WE do\n&it#? - šđžčć_  ? " -> "This.is-how WE do it - šđžčć"
     """
     # Remove leading and trailing special characters and spaces
     stripped = name.strip(punctuation + " ")
 
-    # Validate naming convention in docstring
+    # Validate naming convention in docstring and sanitize name
     valid = " ".join(sub(
         r"[^\U00010000-\U0010ffff\w\_\-\.\(\) ]" if is_group else r"[^\U00010000-\U0010ffff\w\_\-\. ]", " ", stripped).split())
     if name != valid:
@@ -374,6 +376,24 @@ def validate_name(name, full_path, is_group=False):
         if is_group:
             b.log.error(
                 f"Sub-group {name} ({full_path}) requires a rename on source or direct import")
+    return valid
+
+
+def sanitize_project_path(path, full_path):
+    """
+    Validate and sanitize project paths to satisfy the following criteria:
+    Project namespace path can contain only letters, digits, '_', '-' and '.'. Cannot start with '-', end in '.git' or end in '.atom'
+    Path can contain only letters, digits, '_', '-' and '.'. Cannot start with '-', end in '.git' or end in '.atom'
+    Path must not start or end with a special character and must not contain consecutive special characters.
+    Example:
+        "!_-::This.is;;-how_we--do\n&IT#?-šđžčć_?" -> "This.is-how_we-do-IT"
+    """
+    # Validate path convention in docstring and sanitize path
+    valid = sub("[._-][^A-Za-z0-9]+", "-",
+                sub("[^A-Za-z0-9\_\-\.]+", "-", path)).strip("-_.")
+    if path != valid:
+        b.log.warning(
+            f"Updating invalid project path '{path}' -> '{valid}' ({full_path})")
     return valid
 
 

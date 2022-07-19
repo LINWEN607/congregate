@@ -26,15 +26,15 @@
 
 1. Set `/var/run/docker.sock` permissions for `ps-user` by running `sudo chmod 666 /var/run/docker.sock`.
 1. Exit (*Ctrl+d*) the container (stops it).
-1. Run `docker ps` to get the `container-id`.
-1. To resume the container and keep it up:
+1. To resume the container and keep it up, along with copying the congregate.conf template file:
 
     ```bash
-    docker start <container-id>
-    docker exec -it <container-id> /bin/bash   # OR -itd (zsh)
+    docker start <container-name>
+    docker cp ./congregate.conf.template <container-name>:/opt/congregate/data/congregate.conf
+    docker exec -it <container-name> /bin/bash   # OR -itd (zsh)
     ```
 
-1. Modify the configuration file in `/opt/congregate/congregate.conf` using the [`congregate.conf.template`](congregate.conf.template) as a guide.
+1. Modify the configuration file in `/opt/congregate/data/congregate.conf` using the [`congregate.conf.template`](congregate.conf.template) as a guide.
 1. Check out the fundamental [congregate commands](#congregate-commands) below.
 
 ## Full Congregate setup with test environment
