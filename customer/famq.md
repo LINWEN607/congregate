@@ -187,6 +187,10 @@ Additionally:
 * (optional) provide UI (Admin) access to source/destination instance
   * this is manly for the (PS) engineer to run the migration async, e.g. outside of customer working hours and without assistance
 
+## Does Congregate Migrate data from package/container management tools like Artifactory or Nexus?
+
+No, congregate does not migrate from package management tools today. We typically suggest customers establish pipeline jobs in GitLab after source code migration to publish these containers/packages to the GitLab registry as desired. For customers who are interested in maintaining audit history, we suggest keeping the legacy package/container registry tool around with a reduced license spend until the audit window expires.
+
 ## Does the source instance need to be updated to latest in order to migrate?
 
 Following the [version history](https://docs.gitlab.com/ee/user/project/settings/import_export.html#version-history) it should be at most 2 minor versions behind the destination instance version, while not surpassing it.
