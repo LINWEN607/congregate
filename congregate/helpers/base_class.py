@@ -28,5 +28,6 @@ class BaseClass():
         self.log = myLogger(__name__, app_path=self.app_path,
                             log_name=self.log_name, config=self.config)
         self.audit = audit_logger(__name__, app_path=self.app_path)
-        self.INACTIVE = ["blocked", "ldap_blocked", "deactivated", "banned"]
+        self.INACTIVE = ["blocked", "blocked_pending_approval",
+                         "ldap_blocked", "deactivated", "banned"]
         self.multi = MultiProcessing()
