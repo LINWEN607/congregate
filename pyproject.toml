@@ -40,6 +40,8 @@ mkdocs-mermaid2-plugin = "^0.5.2"
 mkdocstrings = "^0.18.0"
 mkdocs-gen-files = "^0.3.4"
 mkdocs-literate-nav = "^0.4.1"
+grpcio = "^1.47.0"
+grpcio-tools = "^1.47.0"
 
 
 [tool.poetry.dev-dependencies]
