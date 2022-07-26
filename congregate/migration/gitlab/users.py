@@ -101,9 +101,9 @@ class UsersClient(BaseClass):
             email = old_user["email"]
             for user in self.users_api.search_for_user_by_email(
                     self.config.destination_host, self.config.destination_token, email):
-                if user.get("email", None) == email:
+                if user.get("email") == email:
                     return True
-                elif index > 100:
+                if index > 100:
                     return False
                 index += 1
         return False
@@ -111,10 +111,10 @@ class UsersClient(BaseClass):
     def find_user_primarily_by_email(self, user):
         new_user = None
         if user:
-            if user.get("email", None) is not None:
+            if user.get("email") is not None:
                 new_user = find_user_by_email_comparison_without_id(
                     user["email"])
-            elif user.get("id", None) is not None:
+            elif user.get("id") is not None:
                 new_user = self.find_user_by_email_comparison_with_id(
                     user["id"])
         return new_user
@@ -200,8 +200,7 @@ class UsersClient(BaseClass):
             # and not email
             found_by_email_user = find_user_by_email_comparison_without_id(
                 user["email"])
-            if found_by_email_user and found_by_email_user.get(
-                    "username", None):
+            if found_by_email_user and found_by_email_user.get("username"):
                 return found_by_email_user["username"]
         return username
 
@@ -521,7 +520,7 @@ class UsersClient(BaseClass):
         mongo.close_connection()
 
     def generate_user_data(self, user):
-        if user.get("id", None) is not None:
+        if user.get("id") is not None:
             user.pop("id")
         if self.config.group_sso_provider is not None:
             return self.generate_user_group_saml_post_data(user)
@@ -601,7 +600,7 @@ class UsersClient(BaseClass):
                     "email": response[0]["email"],
                     "id": response[0]["id"]
                 }
-            elif isinstance(response, dict) and response.get("id", None) is not None:
+            elif isinstance(response, dict) and response.get("id") is not None:
                 return {
                     "email": response["email"],
                     "id": response["id"]
