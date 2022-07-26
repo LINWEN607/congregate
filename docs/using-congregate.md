@@ -87,7 +87,7 @@ During migrations, we generally do the same type of commands every time in rough
 
 Listing can take quite a long time and is directly dependant on the amount of data in the source system(s). To tune the concurrency of a list, you can add `--processes=16` (GitHub only) to a `list` command. Without setting this, it will use `processes=nproc` based on the hardware number of processes. Be careful with going over 16 processes as it will increase the chances of causing undue harm to the source systems (which if their API rate limit isn't set, could cause stability problems)
 
-If you need to re-list and don't want to overwrite any data that you have listed previously (and get a small performance boost), run it with `--partial`. Additional `--skip-*` arguments allow you to skip users, groups, projects and ci.
+If you need to re-list and don't want to overwrite any data that you have listed previously, run it with `--partial`. Additional `--skip-*` arguments allow you to skip users, groups, projects and ci.
 
 If you are migrating data from CI sources with an SCM source, listing will also perform a mapping function to map CI jobs to SCM repositories. This functionality will position migrations of build config XMLs into repositories for future transformation into `gitlab-ci.yml`.
 
