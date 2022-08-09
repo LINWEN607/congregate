@@ -1,7 +1,0 @@
-<project>
-  <modelVersion>4.0.0</modelVersion>
- 
-  <groupId>com.congregate.app</groupId>
-  <artifactId>maven-grpc</artifactId>
-  <version>1</version>
-</project>
