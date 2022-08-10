@@ -5,7 +5,8 @@ Copyright (c) 2022 - GitLab
 """
 
 import json
-
+import sys
+import os
 from gitlab_ps_utils.misc_utils import get_dry_log, strip_netloc
 from gitlab_ps_utils.list_utils import remove_dupes_with_keys, remove_dupes
 from gitlab_ps_utils.dict_utils import dig
@@ -95,15 +96,18 @@ class BaseStageClass(BaseClass):
             params: rewritten_users: object containing the specific member to be added to the group or project
         """
         if isinstance(member, dict):
-            if member.get("id") is not None:
+            if mid := member.get("id"):
                 self.log.info(
-                    f"{get_dry_log(dry_run)}Staging user {member['username']} (ID: {member['id']})")
-                if self.rewritten_users.get(member['id']):
+                    f"{get_dry_log(dry_run)}Staging user {member['username']} (ID: {mid})")
+                if self.rewritten_users.get(mid):
                     self.staged_users.append(
-                        self.rewritten_users[member["id"]])
+                        self.rewritten_users[mid])
                     members_list.append(member)
+                else:
+                    self.log.warning(
+                        f"Member ID {mid} NOT found among listed users")
         else:
-            self.log.error(member)
+            self.log.error(f"Member NOT of type 'dict': {member}")
 
     def get_project_metadata(self, project, group=False):
         """
@@ -115,12 +119,14 @@ class BaseStageClass(BaseClass):
         try:
             # If group=True a project IDs is passed
             project = self.rewritten_projects[project] if group else project
+            path_with_namespace = project["path_with_namespace"]
+            pid = project["id"]
             obj = {
-                "id": project["id"],
-                "name": sanitize_name(project["name"], project["path_with_namespace"]),
+                "id": pid,
+                "name": sanitize_name(project["name"], path_with_namespace),
                 "namespace": dig(project, 'namespace', 'full_path'),
-                "path": sanitize_project_path(project["path"], project["path_with_namespace"]),
-                "path_with_namespace": project["path_with_namespace"],
+                "path": sanitize_project_path(project["path"], path_with_namespace),
+                "path_with_namespace": path_with_namespace,
                 "visibility": project["visibility"],
                 "description": project["description"],
                 # Will be deprecated in favor of builds_access_level
@@ -145,7 +151,7 @@ class BaseStageClass(BaseClass):
                     obj["default_branch"] = branch
         except KeyError as ke:
             self.log.error(
-                f"Failed to retrieve project details for project {project['path_with_namespace']} (ID: {project['id']}), with key error\n{ke}")
+                f"Failed to retrieve project details for project {path_with_namespace} (ID: {pid}), with key error\n{ke}")
             return {}
         return obj
 

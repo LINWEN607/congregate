@@ -7,7 +7,7 @@ import os
 import sys
 
 from gitlab_ps_utils.misc_utils import get_dry_log, safe_json_response
-from gitlab_ps_utils.dict_utils import rewrite_list_into_dict
+from gitlab_ps_utils.dict_utils import rewrite_list_into_dict, dig
 from gitlab_ps_utils.string_utils import clean_split
 from congregate.migration.meta.etl import WaveSpreadsheetHandler
 from congregate.migration.gitlab.api.groups import GroupsApi
@@ -163,24 +163,33 @@ class WaveStageCLI(BaseStageClass):
         for member in project["members"]:
             self.append_member_to_members_list([], member, dry_run)
 
-        if project["project_type"] == "group":
-            group_to_stage = self.rewritten_groups[self.rewritten_projects.get(project["id"])[
-                "namespace"]["id"]].copy()
+        try:
+            if project["project_type"] == "group":
+                if parent_group_id := dig(self.rewritten_projects.get(project["id"]), "namespace", "id"):
+                    group_to_stage = self.rewritten_groups[parent_group_id].copy(
+                    )
+                    self.log.info(
+                        f"{get_dry_log(dry_run)}Staging group {group_to_stage['full_path']} (ID: {group_to_stage['id']})")
+                    group_to_stage.pop("projects", None)
+                    self.handle_parent_group(wave_row, group_to_stage)
+                    self.staged_groups.append(group_to_stage)
+
+                    # Append all group members to staged users
+                    for member in group_to_stage["members"]:
+                        self.append_member_to_members_list([], member, dry_run)
+                else:
+                    self.log.warning(
+                        f"Project {project['path_with_namespace']} NOT found among listed projects")
+
             self.log.info(
-                f"{get_dry_log(dry_run)}Staging group {group_to_stage['full_path']} (ID: {group_to_stage['id']})")
-            group_to_stage.pop("projects", None)
-            self.handle_parent_group(wave_row, group_to_stage)
-            self.staged_groups.append(group_to_stage)
-
-            # Append all group members to staged users
-            for member in group_to_stage["members"]:
-                self.append_member_to_members_list([], member, dry_run)
-
-        self.log.info(
-            f"{get_dry_log(dry_run)}Staging project {project['path_with_namespace']} (ID: {project['id']})"
-            f"[{len(self.staged_projects) + 1}/{len(p_range) if p_range else len(projects_to_stage)}]"
-        )
-        self.staged_projects.append(project)
+                f"{get_dry_log(dry_run)}Staging project {project['path_with_namespace']} (ID: {project['id']})"
+                f"[{len(self.staged_projects) + 1}/{len(p_range) if p_range else len(projects_to_stage)}]"
+            )
+            self.staged_projects.append(project)
+        except KeyError:
+            self.log.error(
+                f"Parent group ID {parent_group_id} not found among listed groups")
+            sys.exit(os.EX_DATAERR)
 
     def append_group_data(self, group, groups_to_stage,
                           wave_row, p_range=0, dry_run=True):
