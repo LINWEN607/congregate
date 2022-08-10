@@ -2,7 +2,10 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-import maven_pb2 as maven__pb2
+try:
+    import maven_pb2 as maven__pb2
+except ImportError:
+    from congregate.migration.maven import maven_pb2 as maven__pb2
 
 
 class MavenCommandHandlerStub(object):
