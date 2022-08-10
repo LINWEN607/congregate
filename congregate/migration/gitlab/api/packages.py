@@ -16,7 +16,7 @@ class PackagesApi(GitLabApiWrapper):
         """
         return self.api.list_all(host, token, f"projects/{project}/packages")
 
-    def get_group_packages(self, host, token, group ):
+    def get_group_packages(self, host, token, group):
         """
         List packages within a group
 
