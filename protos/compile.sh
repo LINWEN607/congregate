@@ -15,6 +15,6 @@ do
     fi
     echo "Compiling $SRC gRPC files"
     poetry run python -m grpc_tools.protoc --proto_path=. --python_out=$COMPILE_PATH --grpc_python_out=$COMPILE_PATH ./$PROTOBUF
-    echo "$SRC gRPC files have been generated. Be sure to check the imports of $COMPILE_PATH/$SRC_pb2_grpc.py. The imports will be different between the server and the client usage"
+    echo "$SRC gRPC files have been generated. Be sure to check the imports of $COMPILE_PATH/${SRC}_pb2_grpc.py. The imports will be different between the server and the client usage"
 done
 
