@@ -255,6 +255,7 @@ check ldap compose yaml:
         - congregate/migration/gitlab/**/*
         - congregate/migration/migrate.py
         - congregate/tests/migration/gitlab/test_*_setup.py
+        - congregate/cli/stage_*.py
     - if: "$CI_PIPELINE_SOURCE == 'schedule' && $E2E_NIGHTLY"
   timeout: 30 minutes
 
