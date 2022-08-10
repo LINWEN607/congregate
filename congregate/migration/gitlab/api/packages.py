@@ -3,7 +3,7 @@ from congregate.migration.gitlab.api.base_api import GitLabApiWrapper
 
 class PackagesApi(GitLabApiWrapper):
 
-    def get_project_packages(self, host, token, project ):
+    def get_project_packages(self, host, token, project):
         """
         List packages within a project
 
