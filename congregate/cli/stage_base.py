@@ -121,6 +121,7 @@ class BaseStageClass(BaseClass):
             project = self.rewritten_projects[project] if group else project
             path_with_namespace = project["path_with_namespace"]
             pid = project["id"]
+
             obj = {
                 "id": pid,
                 "name": sanitize_name(project["name"], path_with_namespace),
@@ -149,11 +150,11 @@ class BaseStageClass(BaseClass):
                 # In case of projects without repos (e.g. Wiki)
                 if branch := project.get("default_branch"):
                     obj["default_branch"] = branch
-        except KeyError as ke:
+            return obj
+        except KeyError:
             self.log.error(
-                f"Failed to retrieve project details for project {path_with_namespace} (ID: {pid}), with key error\n{ke}")
-            return {}
-        return obj
+                f"Project NOT found among listed projects:\n{json_pretty(project)}")
+            sys.exit(os.EX_DATAERR)
 
     def the_number_of_instance(self, scm_source):
         for i, single_source in enumerate(
