@@ -1,3 +1,5 @@
+# NOTE: this file currently doesn't work and needs to be refactored to handle the new maven gRPC files
+
 from concurrent import futures
 import logging
 
