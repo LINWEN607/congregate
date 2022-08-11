@@ -7,7 +7,7 @@ RUN adduser ps-user && \
     sed -i 's/sudo.*ALL\=(ALL:ALL).*ALL/sudo ALL=(ALL) NOPASSWD:ALL/' /etc/sudoers
 
 # Copy files
-COPY docker/maven/command_server.py /opt/command_server.py
+COPY docker/maven/maven_server.py /opt/maven_server.py
 COPY congregate/migration/maven/maven_pb2_grpc.py /opt/maven_pb2_grpc.py
 COPY congregate/migration/maven/maven_pb2.py /opt/maven_pb2.py
 
@@ -35,5 +35,5 @@ EXPOSE 50051
 
 USER ps-user
 
-ENTRYPOINT ["python3", "command_server.py"]
+ENTRYPOINT ["python3", "maven_server.py"]
 
