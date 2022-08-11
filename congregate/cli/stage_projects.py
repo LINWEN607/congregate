@@ -120,19 +120,24 @@ class ProjectStageCLI(BaseStageClass):
             self.append_member_to_members_list([], member, dry_run)
 
         if obj.get("project_type") == "group":
-            group_to_stage = self.rewritten_groups.get(
-                dig(project, 'namespace', 'id'))
-            if group_to_stage:
-                self.log.info(
-                    f"{get_dry_log(dry_run)}Staging group {group_to_stage['full_path']} (ID: {group_to_stage['id']})")
-                self.staged_groups.append(self.format_group(group_to_stage))
+            parent_group_id = dig(project, "namespace", "id")
+            try:
+                if group_to_stage := self.rewritten_groups[parent_group_id]:
+                    self.log.info(
+                        f"{get_dry_log(dry_run)}Staging group {group_to_stage['full_path']} (ID: {group_to_stage['id']})")
+                    self.staged_groups.append(
+                        self.format_group(group_to_stage))
 
-                # Append all group members to staged users
-                for member in group_to_stage.get("members", []):
-                    self.append_member_to_members_list([], member, dry_run)
-            else:
-                self.log.warning(
-                    f"Unable to stage group of {project.get('path_with_namespace')}")
+                    # Append all group members to staged users
+                    for member in group_to_stage.get("members", []):
+                        self.append_member_to_members_list([], member, dry_run)
+                else:
+                    self.log.warning(
+                        f"Project {project.get('path_with_namespace')} parent group ID {parent_group_id} NOT found among listed groups")
+            except KeyError:
+                self.log.error(
+                    f"Parent group ID {parent_group_id} NOT found among listed groups")
+                sys.exit(os.EX_DATAERR)
 
         self.log.info(
             f"{get_dry_log(dry_run)}Staging project {obj['path_with_namespace']} (ID: {obj['id']}) [{len(self.staged_projects) + 1}/{len(p_range) if p_range else len(projects_to_stage)}]")

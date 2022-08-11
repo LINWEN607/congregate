@@ -1,9 +1,12 @@
-import json
 from congregate.migration.gitlab.api.base_api import GitLabApiWrapper
 
 class PackagesApi(GitLabApiWrapper):
 
-    def get_project_packages(self, host, token, project ):
+<<<<<<< HEAD
+    def get_project_packages(self, host, token, project):
+=======
+    def get_project_packages(self, host, token, project):
+>>>>>>> 138d6a716b3c61745ec9466277b5bdd8898b2bc3
         """
         List packages within a project
 
@@ -16,7 +19,11 @@ class PackagesApi(GitLabApiWrapper):
         """
         return self.api.list_all(host, token, f"projects/{project}/packages")
 
-    def get_group_packages(self, host, token, group ):
+<<<<<<< HEAD
+    def get_group_packages(self, host, token, group):
+=======
+    def get_group_packages(self, host, token, group):
+>>>>>>> 138d6a716b3c61745ec9466277b5bdd8898b2bc3
         """
         List packages within a group
 

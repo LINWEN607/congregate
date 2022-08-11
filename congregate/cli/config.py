@@ -141,7 +141,7 @@ def generate_config():
             deobfuscate(config.get("SOURCE", "src_access_token"))))
         if lic and is_error_message_present(lic):
             print(
-                f"Insufficient token permission to GET license plan, setting default (core/free):\n{lic}")
+                f"Using GitLab Community Edition (CE) or insufficient token permission to GET /license 'plan'. Setting default tier (core/free):\n{lic}")
         config.set("SOURCE", "src_tier", lic.get(
             "plan", "core") if lic else "core")
         source_group = input(

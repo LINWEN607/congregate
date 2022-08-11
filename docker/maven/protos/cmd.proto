@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+// Interface exported by the server.
+service CommandHandler {
+  rpc RunCommand(Command) returns (Response) {}
+}
+
+// Data structure for the command input
+message Command {
+    string command = 1;
+}
+
+// Data structure for the response running the command
+message Response {
+    string output = 1;
+    int32 exitCode = 2;
+}
