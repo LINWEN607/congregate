@@ -10,7 +10,7 @@ do
     SRC="${PROTOBUF%%.*}"
     COMPILE_PATH="../congregate/migration/$SRC"
     if [ ! -d $COMPILE_PATH ]; then
-        echo "No corresponding file for **$SRC** python files found. Creating now"
+        echo "No corresponding directory for **$SRC** python files found. Creating now"
         mkdir -p $COMPILE_PATH
     fi
     echo "Compiling **$SRC** gRPC files in $COMPILE_PATH"
