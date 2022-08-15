@@ -1,5 +1,3 @@
-# NOTE: this file currently doesn't work and needs to be refactored to handle the new maven gRPC files
-
 from concurrent import futures
 import logging
 
@@ -11,10 +9,46 @@ from subprocess import Popen,PIPE,STDOUT
 
 class MavenCommandHandler(maven_pb2_grpc.MavenCommandHandlerServicer):
 
+    def execute_mvn_command(self, cmd):
+        return Popen(cmd.split(' '), stderr=STDOUT,stdout=PIPE)
+    
+    def build_response(self, output):
+        return maven_pb2.Response(output=output.communicate()[0], existCode=output.returncode)
+    
     def RunCommand(self, request, context):
         out = Popen(request.phase.split(' '), stderr=STDOUT,stdout=PIPE)
         return maven_pb2.Response(output=out.communicate()[0], exitCode=out.returncode)
 
+    def GetPackage(self, request, context):
+        cmd = f"mvn org.apache.maven.plugins:maven-dependency-plugin:2.1:get"
+        if request.artifact:
+            cmd += f"-Dartifact={request.artifact}"
+        if request.remoteRepositories:
+            cmd += f"-DremoteRepositories=request.remoteRepositories"
+        if request.transitive and request.overrideDefault:
+            cmd += f"-Dtransitive={request.transitive}"
+        return self.build_response(self.execute_mvn_command(cmd))
+
+    def DeployPackage(self, request, context):
+        cmd = f"mvn deploy:deploy-file"
+        if request.groupId:
+            cmd += f" -DgroupId={request.groupId}"
+        if request.artifactId:
+            cmd += f" -DartifactId={request.artifactId}"
+        if request.version:
+            cmd += f" -Dversion={request.artifactId}"
+        if request.package:
+            cmd += f" -Dpackage={request.package}"
+        if request.file:
+            cmd += f" -Dfile={request.file}"
+        if request.repositoryId:
+            cmd += f" -DrepositoryId={request.repositoryId}"
+        if request.url:
+            cmd += f" -Durl={request.url}"
+        if request.generatePom and request.overrideDefault:
+            cmd += f" -DgeneratePom={request.generatePom}"
+        
+        return self.build_response(self.execute_mvn_command(cmd))
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))

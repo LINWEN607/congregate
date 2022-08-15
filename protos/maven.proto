@@ -2,19 +2,40 @@ syntax = "proto3";
 
 // Interface exported by the server.
 service MavenCommandHandler {
-  rpc RunCommand(Command) returns (Response) {}
+  rpc GetPackage(GetPackageArgs) returns (Response) {}
+
+  rpc DeployPackage(DeployPackageArgs) returns (Response) {}
 }
 
 // Data structure for the command input
-message Command {
-    string phase = 1;
-    string pluginGoal = 2;
-    string args = 3;
+message CommandArgs {
+  string phase = 1;
+  string pluginGoal = 2;
+  string args = 3;
+}
+
+message GetPackageArgs {
+  string artifact = 1;
+  string remoteRepositories = 2;
+  bool transitive = 3;
+  bool overrideDefault = 4;
+}
+
+message DeployPackageArgs {
+  string groupId = 1;
+  string artifactId = 2;
+  string version = 3;
+  string package = 4;
+  string file = 5;
+  string repositoryId = 6;
+  string url = 7;
+  bool generatePom = 8;
+  bool overrideDefault = 9;
 }
 
 // Data structure for the response running the command
 message Response {
-    string output = 1;
-    int32 exitCode = 2;
+  string output = 1;
+  int32 exitCode = 2;
 }
 

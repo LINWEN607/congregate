@@ -14,18 +14,34 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0bmaven.proto\":\n\x07\x43ommand\x12\r\n\x05phase\x18\x01 \x01(\t\x12\x12\n\npluginGoal\x18\x02 \x01(\t\x12\x0c\n\x04\x61rgs\x18\x03 \x01(\t\",\n\x08Response\x12\x0e\n\x06output\x18\x01 \x01(\t\x12\x10\n\x08\x65xitCode\x18\x02 \x01(\x05\x32:\n\x13MavenCommandHandler\x12#\n\nRunCommand\x12\x08.Command\x1a\t.Response\"\x00\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0bmaven.proto\">\n\x0b\x43ommandArgs\x12\r\n\x05phase\x18\x01 \x01(\t\x12\x12\n\npluginGoal\x18\x02 \x01(\t\x12\x0c\n\x04\x61rgs\x18\x03 \x01(\t\">\n\x0eGetPackageArgs\x12\x10\n\x08\x61rtifact\x18\x01 \x01(\t\x12\x1a\n\x12remoteRepositories\x18\x02 \x01(\t\"z\n\x11\x44\x65ployPackageArgs\x12\x12\n\nartifactId\x18\x01 \x01(\t\x12\x0f\n\x07version\x18\x02 \x01(\t\x12\x0f\n\x07package\x18\x03 \x01(\t\x12\x0c\n\x04\x66ile\x18\x04 \x01(\t\x12\x14\n\x0crepositoryId\x18\x05 \x01(\t\x12\x0b\n\x03url\x18\x06 \x01(\t\",\n\x08Response\x12\x0e\n\x06output\x18\x01 \x01(\t\x12\x10\n\x08\x65xitCode\x18\x02 \x01(\x05\x32s\n\x13MavenCommandHandler\x12*\n\nGetPackage\x12\x0f.GetPackageArgs\x1a\t.Response\"\x00\x12\x30\n\rDeployPackage\x12\x12.DeployPackageArgs\x1a\t.Response\"\x00\x62\x06proto3')
 
 
 
-_COMMAND = DESCRIPTOR.message_types_by_name['Command']
+_COMMANDARGS = DESCRIPTOR.message_types_by_name['CommandArgs']
+_GETPACKAGEARGS = DESCRIPTOR.message_types_by_name['GetPackageArgs']
+_DEPLOYPACKAGEARGS = DESCRIPTOR.message_types_by_name['DeployPackageArgs']
 _RESPONSE = DESCRIPTOR.message_types_by_name['Response']
-Command = _reflection.GeneratedProtocolMessageType('Command', (_message.Message,), {
-  'DESCRIPTOR' : _COMMAND,
+CommandArgs = _reflection.GeneratedProtocolMessageType('CommandArgs', (_message.Message,), {
+  'DESCRIPTOR' : _COMMANDARGS,
   '__module__' : 'maven_pb2'
-  # @@protoc_insertion_point(class_scope:Command)
+  # @@protoc_insertion_point(class_scope:CommandArgs)
   })
-_sym_db.RegisterMessage(Command)
+_sym_db.RegisterMessage(CommandArgs)
+
+GetPackageArgs = _reflection.GeneratedProtocolMessageType('GetPackageArgs', (_message.Message,), {
+  'DESCRIPTOR' : _GETPACKAGEARGS,
+  '__module__' : 'maven_pb2'
+  # @@protoc_insertion_point(class_scope:GetPackageArgs)
+  })
+_sym_db.RegisterMessage(GetPackageArgs)
+
+DeployPackageArgs = _reflection.GeneratedProtocolMessageType('DeployPackageArgs', (_message.Message,), {
+  'DESCRIPTOR' : _DEPLOYPACKAGEARGS,
+  '__module__' : 'maven_pb2'
+  # @@protoc_insertion_point(class_scope:DeployPackageArgs)
+  })
+_sym_db.RegisterMessage(DeployPackageArgs)
 
 Response = _reflection.GeneratedProtocolMessageType('Response', (_message.Message,), {
   'DESCRIPTOR' : _RESPONSE,
@@ -38,10 +54,14 @@ _MAVENCOMMANDHANDLER = DESCRIPTOR.services_by_name['MavenCommandHandler']
 if _descriptor._USE_C_DESCRIPTORS == False:
 
   DESCRIPTOR._options = None
-  _COMMAND._serialized_start=15
-  _COMMAND._serialized_end=73
-  _RESPONSE._serialized_start=75
-  _RESPONSE._serialized_end=119
-  _MAVENCOMMANDHANDLER._serialized_start=121
-  _MAVENCOMMANDHANDLER._serialized_end=179
+  _COMMANDARGS._serialized_start=15
+  _COMMANDARGS._serialized_end=77
+  _GETPACKAGEARGS._serialized_start=79
+  _GETPACKAGEARGS._serialized_end=141
+  _DEPLOYPACKAGEARGS._serialized_start=143
+  _DEPLOYPACKAGEARGS._serialized_end=265
+  _RESPONSE._serialized_start=267
+  _RESPONSE._serialized_end=311
+  _MAVENCOMMANDHANDLER._serialized_start=313
+  _MAVENCOMMANDHANDLER._serialized_end=428
 # @@protoc_insertion_point(module_scope)

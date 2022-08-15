@@ -18,9 +18,14 @@ class MavenCommandHandlerStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.RunCommand = channel.unary_unary(
-                '/MavenCommandHandler/RunCommand',
-                request_serializer=maven__pb2.Command.SerializeToString,
+        self.GetPackage = channel.unary_unary(
+                '/MavenCommandHandler/GetPackage',
+                request_serializer=maven__pb2.GetPackageArgs.SerializeToString,
+                response_deserializer=maven__pb2.Response.FromString,
+                )
+        self.DeployPackage = channel.unary_unary(
+                '/MavenCommandHandler/DeployPackage',
+                request_serializer=maven__pb2.DeployPackageArgs.SerializeToString,
                 response_deserializer=maven__pb2.Response.FromString,
                 )
 
@@ -29,7 +34,13 @@ class MavenCommandHandlerServicer(object):
     """Interface exported by the server.
     """
 
-    def RunCommand(self, request, context):
+    def GetPackage(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def DeployPackage(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -38,9 +49,14 @@ class MavenCommandHandlerServicer(object):
 
 def add_MavenCommandHandlerServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'RunCommand': grpc.unary_unary_rpc_method_handler(
-                    servicer.RunCommand,
-                    request_deserializer=maven__pb2.Command.FromString,
+            'GetPackage': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetPackage,
+                    request_deserializer=maven__pb2.GetPackageArgs.FromString,
+                    response_serializer=maven__pb2.Response.SerializeToString,
+            ),
+            'DeployPackage': grpc.unary_unary_rpc_method_handler(
+                    servicer.DeployPackage,
+                    request_deserializer=maven__pb2.DeployPackageArgs.FromString,
                     response_serializer=maven__pb2.Response.SerializeToString,
             ),
     }
@@ -55,7 +71,7 @@ class MavenCommandHandler(object):
     """
 
     @staticmethod
-    def RunCommand(request,
+    def GetPackage(request,
             target,
             options=(),
             channel_credentials=None,
@@ -65,8 +81,25 @@ class MavenCommandHandler(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/MavenCommandHandler/RunCommand',
-            maven__pb2.Command.SerializeToString,
+        return grpc.experimental.unary_unary(request, target, '/MavenCommandHandler/GetPackage',
+            maven__pb2.GetPackageArgs.SerializeToString,
+            maven__pb2.Response.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def DeployPackage(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/MavenCommandHandler/DeployPackage',
+            maven__pb2.DeployPackageArgs.SerializeToString,
             maven__pb2.Response.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
