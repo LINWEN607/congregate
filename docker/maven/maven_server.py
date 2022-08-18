@@ -13,7 +13,7 @@ class MavenCommandHandler(maven_pb2_grpc.MavenCommandHandlerServicer):
         return Popen(cmd.split(' '), stderr=STDOUT,stdout=PIPE)
     
     def build_response(self, output):
-        return maven_pb2.Response(output=output.communicate()[0], existCode=output.returncode)
+        return maven_pb2.Response(output=output.communicate()[0], exitCode=output.returncode)
     
     def RunCommand(self, request, context):
         out = Popen(request.phase.split(' '), stderr=STDOUT,stdout=PIPE)
@@ -22,11 +22,11 @@ class MavenCommandHandler(maven_pb2_grpc.MavenCommandHandlerServicer):
     def GetPackage(self, request, context):
         cmd = f"mvn dependency:get -s /opt/settings.xml"
         if request.artifact:
-            cmd += f"-Dartifact={request.artifact}"
+            cmd += f" -Dartifact={request.artifact}"
         if request.remoteRepositories:
-            cmd += f"-DremoteRepositories={request.remoteRepositories}"
+            cmd += f" -DremoteRepositories={request.remoteRepositories}"
         if request.transitive and request.overrideDefault:
-            cmd += f"-Dtransitive={request.transitive}"
+            cmd += f" -Dtransitive={request.transitive}"
         return self.build_response(self.execute_mvn_command(cmd))
 
     def DeployPackage(self, request, context):
