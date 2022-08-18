@@ -568,7 +568,7 @@ class UsersClient(BaseClass):
         try:
             resp = self.users_api.modify_user(
                 user["id"], host, self.config.destination_token, data)
-            if resp.status_code != 200:
+            if resp and resp.status_code != 200:
                 self.log.error(
                     f"Failed to add {user_msg}, with response:\n{resp} - {resp.text}")
         except RequestException as e:
@@ -621,7 +621,7 @@ class UsersClient(BaseClass):
                     "email": response[0]["email"],
                     "id": response[0]["id"]
                 }
-            elif isinstance(response, dict) and response.get("id") is not None:
+            if isinstance(response, dict) and response.get("id") is not None:
                 return {
                     "email": response["email"],
                     "id": response["id"]
