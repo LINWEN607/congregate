@@ -20,33 +20,33 @@ class MavenCommandHandler(maven_pb2_grpc.MavenCommandHandlerServicer):
         return maven_pb2.Response(output=out.communicate()[0], exitCode=out.returncode)
 
     def GetPackage(self, request, context):
-        cmd = f"mvn org.apache.maven.plugins:maven-dependency-plugin:2.1:get"
+        cmd = f"mvn dependency:get -s /opt/settings.xml"
         if request.artifact:
             cmd += f"-Dartifact={request.artifact}"
         if request.remoteRepositories:
-            cmd += f"-DremoteRepositories=request.remoteRepositories"
+            cmd += f"-DremoteRepositories={request.remoteRepositories}"
         if request.transitive and request.overrideDefault:
             cmd += f"-Dtransitive={request.transitive}"
         return self.build_response(self.execute_mvn_command(cmd))
 
     def DeployPackage(self, request, context):
-        cmd = f"mvn deploy:deploy-file"
+        cmd = f"mvn deploy:deploy-file -s /opt/settings.xml"
         if request.groupId:
             cmd += f" -DgroupId={request.groupId}"
         if request.artifactId:
             cmd += f" -DartifactId={request.artifactId}"
         if request.version:
             cmd += f" -Dversion={request.artifactId}"
-        if request.package:
-            cmd += f" -Dpackage={request.package}"
+        if request.packaging:
+            cmd += f" -Dpackaging={request.packaging}"
         if request.file:
             cmd += f" -Dfile={request.file}"
+        if request.pomFile:
+            cmd += f" -Dfile={request.pomFile}"
         if request.repositoryId:
             cmd += f" -DrepositoryId={request.repositoryId}"
         if request.url:
             cmd += f" -Durl={request.url}"
-        if request.generatePom and request.overrideDefault:
-            cmd += f" -DgeneratePom={request.generatePom}"
         
         return self.build_response(self.execute_mvn_command(cmd))
 

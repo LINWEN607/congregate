@@ -7,6 +7,7 @@ RUN adduser ps-user && \
     sed -i 's/sudo.*ALL\=(ALL:ALL).*ALL/sudo ALL=(ALL) NOPASSWD:ALL/' /etc/sudoers
 
 # Copy files
+COPY docker/maven/settings.xml /opt/settings.xml
 COPY docker/maven/maven_server.py /opt/maven_server.py
 COPY congregate/migration/maven/maven_pb2_grpc.py /opt/maven_pb2_grpc.py
 COPY congregate/migration/maven/maven_pb2.py /opt/maven_pb2.py
