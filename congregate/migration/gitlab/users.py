@@ -548,7 +548,7 @@ class UsersClient(BaseClass):
                     self.config.destination_token,
                     user_creation_data["id"])
                 self.log.info(
-                    f"Block user {user_data['username']} email {user_data['email']} (status: {block_response})")
+                    f"Blocking user {user_data['username']} email {user_data['email']} (status: {block_response})")
                 if block_response and block_response.status_code == 201:
                     self.add_blocked_user_admin_note(user_creation_data)
                 else:
