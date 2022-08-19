@@ -10,7 +10,7 @@ The Dockerfile is meant to be built from the root of this repository
 cp docker/maven/Dockerfile ./
 sudo podman build -t 'maven-grpc' .
 # Generate a PAT in GitLab and pass it into the container
-sudo podman run --name maven-grpc -e SRC_ACCESS_TOKEN=<src-access-token> DEST_ACCESS_TOKEN=<dest-access-token> -p 50051:50051 -it localhost/maven-grpc:latest /bin/bash
+sudo podman run --name maven-grpc -e SRC_ACCESS_TOKEN=<src-access-token> -e DEST_ACCESS_TOKEN=<dest-access-token> -p 50051:50051 -it localhost/maven-grpc:latest /bin/bash
 ```
 
 ## Troubleshooting

@@ -1,10 +1,5 @@
-from http.server import executable
-from unittest import result
-from requests.exceptions import RequestException
 from pathlib import Path
 from congregate.helpers.base_class import BaseClass
-from gitlab_ps_utils.misc_utils import is_error_message_present
-from gitlab_ps_utils.dict_utils import pop_multiple_keys
 from congregate.migration.gitlab.api.packages import PackagesApi
 from congregate.migration.maven.maven_client import get_package, deploy_package
 
@@ -22,9 +17,10 @@ class PackagesClient(BaseClass):
                 pom_file = None
                 packaging = None
                 for package_file in self.packages.get_package_files(self.config.source_host, self.config.source_token, src_id, package.get('id')):
-                    if Path(package_file.get('file_name')).suffix == '.pom':
+                    #self.log.info(package_file)
+                    if Path(package_file.get('file_name')).suffix.lower() == '.pom':
                         pom_file = package_file['file_name']
-                    if Path(package_file.get('file_name')).suffix in ['.jar', '.war', '.ear']:
+                    if Path(package_file.get('file_name')).suffix.lower() in ['.jar', '.war', '.ear']:
                         packaging = (Path(package_file.get('file_name')).suffix).strip('.').upper()
                         executable = package_file['file_name']
                 if executable and pom_file:
@@ -51,9 +47,13 @@ class PackagesClient(BaseClass):
                             self.log.info("Package was succesfully deployed")
                             results.append(True)
                         else:
-                            self.log.error("Package was no succedfully deployed")
+                            self.log.error("Package was not succedfully deployed")
                             results.append(False)
-
+                    else:
+                        self.log.error("Package wasn't downloaded")
+                        self.log.error(get_package_result[1])
+                else:
+                    self.log.info("Unable to find usable data")
             else:
                 self.log.info(f"{package.get('name')} is not a maven package and thus not supported at this time, skipping")
             
@@ -66,7 +66,7 @@ class PackagesClient(BaseClass):
         return name.split('/')[-1]
 
     def format_artifact(self, name, version ):
-        return f"{name.replace('/','.')}:{version}"
+        return f"{self.format_groupid(name)}:{self.format_artifactid(name)}:{version}"
 
     def get_package_type(self, package):
         return package.get("package_type")
