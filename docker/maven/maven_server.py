@@ -21,6 +21,8 @@ class MavenCommandHandler(maven_pb2_grpc.MavenCommandHandlerServicer):
 
     def GetPackage(self, request, context):
         cmd = f"mvn dependency:get -s /opt/settings.xml"
+        if request.projectName:
+            cmd += f" -Dmaven.repo.local=/opt/project_repositories/{request.projectName}"
         if request.artifact:
             cmd += f" -Dartifact={request.artifact}"
         if request.remoteRepositories:
@@ -31,6 +33,8 @@ class MavenCommandHandler(maven_pb2_grpc.MavenCommandHandlerServicer):
 
     def DeployPackage(self, request, context):
         cmd = f"mvn deploy:deploy-file -s /opt/settings.xml"
+        if request.projectName:
+            cmd += f" -Dmaven.repo.local=/opt/project_repositories/{request.projectName}"
         if request.groupId:
             cmd += f" -DgroupId={request.groupId}"
         if request.artifactId:

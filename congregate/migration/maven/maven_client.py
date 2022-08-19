@@ -13,6 +13,7 @@ def get_package(**kwargs):
         Example usage:
 
         get_package(
+            projectName="gitlab_project",
             artifact="com.example:demo:0.0.1-SNAPSHOT",
             remoteRepositories="gitlab-maven::::http://<gitlab-instance>/api/v4/projects/<project-id>/packages/maven"
         )
@@ -20,7 +21,7 @@ def get_package(**kwargs):
     with grpc.insecure_channel(f"{os.getenv('HOST_IP')}:50051") as channel:
         stub = maven_pb2_grpc.MavenCommandHandlerStub(channel)
         response = stub.GetPackage(maven_pb2.GetPackageArgs(**kwargs))
-    return response.output, response.exitCode
+    return response.exitCode, response.output
 
 def deploy_package(**kwargs):
     """
@@ -31,6 +32,7 @@ def deploy_package(**kwargs):
         Example usage:
 
         deploy_package(
+            projectName="gitlab_project",
             groupId="com.example",
             artifactId="demo",
             version="0.0.1-SNAPSHOT",
@@ -44,4 +46,4 @@ def deploy_package(**kwargs):
     with grpc.insecure_channel(f"{os.getenv('HOST_IP')}:50051") as channel:
         stub = maven_pb2_grpc.MavenCommandHandlerStub(channel)
         response = stub.DeployPackage(maven_pb2.DeployPackageArgs(**kwargs))
-    return response.output, response.exitCode
+    return response.exitCode, response.output

@@ -15,6 +15,8 @@ COPY congregate/migration/maven/maven_pb2.py /opt/maven_pb2.py
 RUN apt-get install -y build-essential libncursesw5-dev \
     libssl-dev libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev libffi-dev zlib1g-dev
 
+RUN mkdir /opt/project_repositories
+
 RUN cd /opt && \
     curl https://www.python.org/ftp/python/3.8.12/Python-3.8.12.tgz -o Python-3.8.12.tgz && \
     tar xzf Python-3.8.12.tgz && \

@@ -14,7 +14,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0bmaven.proto\">\n\x0b\x43ommandArgs\x12\r\n\x05phase\x18\x01 \x01(\t\x12\x12\n\npluginGoal\x18\x02 \x01(\t\x12\x0c\n\x04\x61rgs\x18\x03 \x01(\t\"k\n\x0eGetPackageArgs\x12\x10\n\x08\x61rtifact\x18\x01 \x01(\t\x12\x1a\n\x12remoteRepositories\x18\x02 \x01(\t\x12\x12\n\ntransitive\x18\x03 \x01(\x08\x12\x17\n\x0foverrideDefault\x18\x04 \x01(\x08\"\x9e\x01\n\x11\x44\x65ployPackageArgs\x12\x0f\n\x07groupId\x18\x01 \x01(\t\x12\x12\n\nartifactId\x18\x02 \x01(\t\x12\x0f\n\x07version\x18\x03 \x01(\t\x12\x11\n\tpackaging\x18\x04 \x01(\t\x12\x0c\n\x04\x66ile\x18\x05 \x01(\t\x12\x0f\n\x07pomFile\x18\x06 \x01(\t\x12\x14\n\x0crepositoryId\x18\x07 \x01(\t\x12\x0b\n\x03url\x18\x08 \x01(\t\",\n\x08Response\x12\x0e\n\x06output\x18\x01 \x01(\t\x12\x10\n\x08\x65xitCode\x18\x02 \x01(\x05\x32s\n\x13MavenCommandHandler\x12*\n\nGetPackage\x12\x0f.GetPackageArgs\x1a\t.Response\"\x00\x12\x30\n\rDeployPackage\x12\x12.DeployPackageArgs\x1a\t.Response\"\x00\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0bmaven.proto\">\n\x0b\x43ommandArgs\x12\r\n\x05phase\x18\x01 \x01(\t\x12\x12\n\npluginGoal\x18\x02 \x01(\t\x12\x0c\n\x04\x61rgs\x18\x03 \x01(\t\"\x80\x01\n\x0eGetPackageArgs\x12\x10\n\x08\x61rtifact\x18\x01 \x01(\t\x12\x1a\n\x12remoteRepositories\x18\x02 \x01(\t\x12\x12\n\ntransitive\x18\x03 \x01(\x08\x12\x17\n\x0foverrideDefault\x18\x04 \x01(\x08\x12\x13\n\x0bprojectName\x18\x05 \x01(\t\"\xb3\x01\n\x11\x44\x65ployPackageArgs\x12\x0f\n\x07groupId\x18\x01 \x01(\t\x12\x12\n\nartifactId\x18\x02 \x01(\t\x12\x0f\n\x07version\x18\x03 \x01(\t\x12\x11\n\tpackaging\x18\x04 \x01(\t\x12\x0c\n\x04\x66ile\x18\x05 \x01(\t\x12\x0f\n\x07pomFile\x18\x06 \x01(\t\x12\x14\n\x0crepositoryId\x18\x07 \x01(\t\x12\x0b\n\x03url\x18\x08 \x01(\t\x12\x13\n\x0bprojectName\x18\t \x01(\t\",\n\x08Response\x12\x0e\n\x06output\x18\x01 \x01(\t\x12\x10\n\x08\x65xitCode\x18\x02 \x01(\x05\x32s\n\x13MavenCommandHandler\x12*\n\nGetPackage\x12\x0f.GetPackageArgs\x1a\t.Response\"\x00\x12\x30\n\rDeployPackage\x12\x12.DeployPackageArgs\x1a\t.Response\"\x00\x62\x06proto3')
 
 
 
@@ -56,12 +56,12 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   DESCRIPTOR._options = None
   _COMMANDARGS._serialized_start=15
   _COMMANDARGS._serialized_end=77
-  _GETPACKAGEARGS._serialized_start=79
-  _GETPACKAGEARGS._serialized_end=186
-  _DEPLOYPACKAGEARGS._serialized_start=189
-  _DEPLOYPACKAGEARGS._serialized_end=347
-  _RESPONSE._serialized_start=349
-  _RESPONSE._serialized_end=393
-  _MAVENCOMMANDHANDLER._serialized_start=395
-  _MAVENCOMMANDHANDLER._serialized_end=510
+  _GETPACKAGEARGS._serialized_start=80
+  _GETPACKAGEARGS._serialized_end=208
+  _DEPLOYPACKAGEARGS._serialized_start=211
+  _DEPLOYPACKAGEARGS._serialized_end=390
+  _RESPONSE._serialized_start=392
+  _RESPONSE._serialized_end=436
+  _MAVENCOMMANDHANDLER._serialized_start=438
+  _MAVENCOMMANDHANDLER._serialized_end=553
 # @@protoc_insertion_point(module_scope)
