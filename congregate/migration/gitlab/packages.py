@@ -1,4 +1,5 @@
 from http.server import executable
+from unittest import result
 from requests.exceptions import RequestException
 from pathlib import Path
 from congregate.helpers.base_class import BaseClass
@@ -14,6 +15,7 @@ class PackagesClient(BaseClass):
 
     def migrate_project_packages(self, src_id, dest_id, project_name):
         self.log.info(f"Migrating project {src_id} packages")
+        results = []
         for package in self.packages.get_project_packages(self.config.source_host, self.config.source_token, src_id):
             if self.get_package_type(package) == 'maven':
                 executable = None
@@ -26,12 +28,14 @@ class PackagesClient(BaseClass):
                         packaging = (Path(package_file.get('file_name')).suffix).strip('.').upper()
                         executable = package_file['file_name']
                 if executable and pom_file:
+                    self.log.info("Attempting to download package")
                     get_package_result = get_package(
                         projectName=project_name,
                         artifact=self.format_artifact(package['name'], package['version']),
                         remoteRepositories=f"gitlab-src::::{self.config.source_host}/api/v4/projects/{src_id}/packages/maven"
                     )
-                    if get_package_result[0] == 0 :
+                    if get_package_result[0] == 0:
+                        self.log.info("Package was successfully downloaded. Moving on to deploying package")
                         deploy_package_result = deploy_package(
                                 projectName=project_name,
                                 groupId=self.format_groupid(package['name']),
@@ -43,9 +47,17 @@ class PackagesClient(BaseClass):
                                 repositoryId="gitlab-dest",
                                 url=f"{self.config.destination_host}/api/v4/projects/{dest_id}/packages/maven"
                         )
+                        if deploy_package_result[0] == 0:
+                            self.log.info("Package was succesfully deployed")
+                            results.append(True)
+                        else:
+                            self.log.error("Package was no succedfully deployed")
+                            results.append(False)
 
             else:
                 self.log.info(f"{package.get('name')} is not a maven package and thus not supported at this time, skipping")
+            
+        return not False in results
 
     def format_groupid(self, name):
         return '.'.join(name.split('/')[:-1])
