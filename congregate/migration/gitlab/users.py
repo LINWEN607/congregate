@@ -547,12 +547,33 @@ class UsersClient(BaseClass):
                     self.config.destination_host,
                     self.config.destination_token,
                     user_creation_data["id"])
-                self.log.info("Blocking user {0} email {1} (status: {2})"
-                              .format(user_data["username"], user_data["email"], block_response))
+                self.log.info(
+                    f"Blocking user {user_data['username']} email {user_data['email']} (status: {block_response})")
+                if block_response and block_response.status_code == 201:
+                    self.add_blocked_user_admin_note(user_creation_data)
+                else:
+                    self.log.error(
+                        f"Failed to block user {user_data}, with response:\n{block_response} - {block_response.text}")
                 return block_response
         except RequestException as e:
             self.log.error(
-                "Failed to block user {0}, with error:\n{1}".format(user_data, e))
+                f"Failed request to block user {user_data}, with error:\n{e}")
+
+    def add_blocked_user_admin_note(self, user):
+        host = self.config.destination_host
+        user_msg = f"blocked user {user['email']}' (ID: {user['id']}) Admin note"
+        data = {
+            "note": f"User blocked as part of {'GitLab PS' if is_dot_com(host) else ''} user migration from {self.config.source_token}"}
+        self.log.info(f"Add {user_msg}")
+        try:
+            resp = self.users_api.modify_user(
+                user["id"], host, self.config.destination_token, data)
+            if resp and resp.status_code != 200:
+                self.log.error(
+                    f"Failed to add {user_msg}, with response:\n{resp} - {resp.text}")
+        except RequestException as e:
+            self.log.error(
+                f"Failed request to add {user_msg}, with error:\n{e}")
 
     def handle_user_creation_status(self, response, user):
         """
@@ -600,7 +621,7 @@ class UsersClient(BaseClass):
                     "email": response[0]["email"],
                     "id": response[0]["id"]
                 }
-            elif isinstance(response, dict) and response.get("id") is not None:
+            if isinstance(response, dict) and response.get("id") is not None:
                 return {
                     "email": response["email"],
                     "id": response["id"]

@@ -132,6 +132,9 @@ Copy the following data and add subsequent rows for single group migration
 * [ ] Notify the customer in the customer-facing Slack channel you are starting the user migration wave
 * [ ] Run the following command `nohup ./congregate.sh migrate --commit > data/waves/user_wave/user_wave.log 2>&1 &`
 * [ ] Monitor the wave periodically by running `tail -f data/waves/user_wave/user_wave.log`
+* [ ] (gitlab.com) If manually blocking a user on destination to align `blocked` user state between instances
+  * Manually add (via GitLab UI), for GitLab Support visibility, the following Admin note to *Admin -> Users -> User page -> Edit -> Admin notes (Note)*
+  **User blocked as part of GitLab PS user migration from `<src_hostname>`**
 * [ ] Copy the following files to `/opt/congregate/data/waves/user_wave/` and attach to this issue:
   * `data/logs/congregate.log`
   * `data/logs/audit.log`
