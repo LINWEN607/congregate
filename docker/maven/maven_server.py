@@ -40,13 +40,13 @@ class MavenCommandHandler(maven_pb2_grpc.MavenCommandHandlerServicer):
         if request.artifactId:
             cmd += f" -DartifactId={request.artifactId}"
         if request.version:
-            cmd += f" -Dversion={request.artifactId}"
+            cmd += f" -Dversion={request.version}"
         if request.packaging:
             cmd += f" -Dpackaging={request.packaging}"
         if request.file:
             cmd += f" -Dfile={request.file}"
         if request.pomFile:
-            cmd += f" -Dfile={request.pomFile}"
+            cmd += f" -DpomFile={request.pomFile}"
         if request.repositoryId:
             cmd += f" -DrepositoryId={request.repositoryId}"
         if request.url:
