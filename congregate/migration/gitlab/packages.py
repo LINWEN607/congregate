@@ -16,8 +16,8 @@ class PackagesClient(BaseClass):
                 self.migrate_maven_packages(src_id, dest_id, package, project_name, results)
             else:
                 self.log.info(f"{package.get('name')} is not a maven package (Package Type:{package.get('package_type')}) and thus not supported at this time, skipping")
-            
-        return not False in results
+                results.append({'Migrated': False, 'Package': package.get('name')})
+        return results
 
     def format_groupid(self, name):
         return '.'.join(name.split('/')[:-1])
@@ -65,10 +65,11 @@ class PackagesClient(BaseClass):
                 )
                 if deploy_package_result[0] == 0:
                     self.log.info(f"Package ({artifact}) was successfully deployed")
-                    results.append(True)
+                    results.append({'Migrated': True, 'Package': artifact})
+
                 else:
                     self.log.error(f"Package ({artifact}) was not successfully deployed")
-                    results.append(False)
+                    results.append({'Migrated': False, 'Package': artifact})
                     self.log.error(deploy_package_result[1])
             else:
                 self.log.error(f"Package ({artifact}) wasn't downloaded. Here is the stack trace \n {get_package_result[1]}")
