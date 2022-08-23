@@ -431,7 +431,7 @@ class Config(BaseConfig):
     @property
     def maven_port(self):
         """
-        The explicity port for the maven gRPC connection. Defaults to 50051
+        The explicit port for the maven gRPC connection. Defaults to 50051
         """
         return self.prop_int("APP", "maven_port", default=50051)
 
