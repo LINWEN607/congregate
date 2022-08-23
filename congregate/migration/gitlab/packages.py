@@ -1,4 +1,6 @@
 from pathlib import Path
+from grpc._channel import _InactiveRpcError
+from requests.exceptions import RequestException 
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.api.packages import PackagesApi
 from congregate.migration.maven.maven_client import get_package, deploy_package
@@ -11,12 +13,20 @@ class PackagesClient(BaseClass):
     def migrate_project_packages(self, src_id, dest_id, project_name):
         self.log.info(f"Migrating project {project_name}(ID:{src_id}) packages")
         results = []
-        for package in self.packages.get_project_packages(self.config.source_host, self.config.source_token, src_id):
-            if package.get('package_type') == 'maven':
-                self.migrate_maven_packages(src_id, dest_id, package, project_name, results)
-            else:
-                self.log.info(f"{package.get('name')} is not a maven package (Package Type:{package.get('package_type')}) and thus not supported at this time, skipping")
-                results.append({'Migrated': False, 'Package': package.get('name')})
+        try:
+            for package in self.packages.get_project_packages(self.config.source_host, self.config.source_token, src_id):
+                if package.get('package_type') == 'maven':
+                    self.migrate_maven_packages(src_id, dest_id, package, project_name, results)
+                else:
+                    self.log.info(f"{package.get('name')} is not a maven package (Package Type:{package.get('package_type')}) and thus not supported at this time, skipping")
+                    results.append({'Migrated': False, 'Package': package.get('name')})
+        except RequestException as re :
+            self.log.error(f"Failed to get all packages for project {project_name} (ID:{src_id}) due to a request exception")
+            self.log.debug(re)
+        except _InactiveRpcError as ire:
+            self.log.error(f"Failed to get all packages for project {project_name} (ID:{src_id}) because congregate was unable to connect to Maven gRPC server")
+            self.log.debug(ire)
+
         return results
 
     def format_groupid(self, name):
@@ -32,12 +42,16 @@ class PackagesClient(BaseClass):
         executable = None
         pom_file = None
         packaging = None
-        for package_file in self.packages.get_package_files(self.config.source_host, self.config.source_token, src_id, package.get('id')):
-            if Path(package_file.get('file_name')).suffix.lower() == '.pom':
-                pom_file = package_file['file_name']
-            if Path(package_file.get('file_name')).suffix.lower() in ['.jar', '.war', '.ear']:
-                packaging = (Path(package_file.get('file_name')).suffix).strip('.').upper()
-                executable = package_file['file_name']
+        try:
+            for package_file in self.packages.get_package_files(self.config.source_host, self.config.source_token, src_id, package.get('id')):
+                if Path(package_file.get('file_name')).suffix.lower() == '.pom':
+                    pom_file = package_file['file_name']
+                if Path(package_file.get('file_name')).suffix.lower() in ['.jar', '.war', '.ear']:
+                    packaging = (Path(package_file.get('file_name')).suffix).strip('.').upper()
+                    executable = package_file['file_name']
+        except RequestException as re:
+            self.log.error(f"Failed to retrieve package files for {package.get('name')} {package.get('version')} ")
+            self.log.error(re)
         return executable, pom_file, packaging
 
     def migrate_maven_packages(self, src_id, dest_id, package, project_name, results):
