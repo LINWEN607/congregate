@@ -74,7 +74,7 @@ workflow:
           echo $GITLAB_LICENSE_PATH > /etc/gitlab/Gitlab.gitlab-license & \
           python3 -m http.server 443 --directory /var/log/gitlab/gitlab-rails/ & :; /assets/wrapper",
         ]
-    - name: mongo:4.4.4
+    - name: mongo:4.4.16
       alias: mongo
 
 .e2e-ghe-cleanup:
@@ -195,8 +195,10 @@ build maven server image:
   rules:
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
       changes:
-        - docker/maven/*
-        - congregate/migration/maven/*
+        - docker/maven/Dockerfile
+        - docker/maven/*.xml
+        - docker/maven/*.py
+        - congregate/migration/maven/*.py
 
 check ldap compose yaml:
   extends:

@@ -29,7 +29,19 @@ you can use that will break up different components into distinct services.
 ### Congregate, mongo, and maven
 
 - Follow the instructions above with these additional steps
-- Set `maven_port` to `50050` in the `[APP]` section in you congregate.conf
-- If you are running into an issue where congregate cannot communicate with
-  the maven gRPC server, try setting `grpc_host` in the `[APP]` section in 
-  congregate.conf to the local IP of the docker host, like `192.168.0.5`
+    - Configure in your *congregate.conf* file
+
+    ```ini
+    [APP]
+    maven_port = 50050
+    ```
+
+    - If you are running into an issue where congregate cannot communicate with
+      the maven gRPC server, try configuring the following in your *congregate.conf* file 
+
+    ```ini
+    [APP]
+    maven_port = 50050
+    grpc_host = <docker_host_local_ip> # E.g. 192.168.0.5
+    ```
+
