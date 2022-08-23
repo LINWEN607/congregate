@@ -8,7 +8,7 @@ Refer to the [full setup docs](./docs/full_setup.md) when using a congregate con
 
 In an effort to provide a more [modular setup for using congregate](https://gitlab.com/groups/gitlab-org/professional-services-automation/tools/-/epics/115),
 there will be some docker-compose files in this folder
-you can use that will break up different components into distinct services.
+that you can use to break up different components into distinct services.
 
 ### Congregate and mongo as separate services
 
