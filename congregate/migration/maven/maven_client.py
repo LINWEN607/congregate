@@ -1,8 +1,11 @@
 import os
 import grpc
 
+from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.migration.maven import maven_pb2
 from congregate.migration.maven import maven_pb2_grpc
+
+config = ConfigurationValidator()
 
 def get_package(**kwargs):
     """
@@ -18,7 +21,7 @@ def get_package(**kwargs):
             remoteRepositories="gitlab-maven::::http://<gitlab-instance>/api/v4/projects/<project-id>/packages/maven"
         )
     """
-    with grpc.insecure_channel(f"{os.getenv('HOST_IP')}:50051") as channel:
+    with grpc.insecure_channel(f"{config.grpc_host}:{config.maven_port}") as channel:
         stub = maven_pb2_grpc.MavenCommandHandlerStub(channel)
         response = stub.GetPackage(maven_pb2.GetPackageArgs(**kwargs))
     return response.exitCode, response.output
@@ -43,7 +46,7 @@ def deploy_package(**kwargs):
             url="http://<gitlab-instance>/api/v4/projects/<project-id>/packages/maven"
         )
     """
-    with grpc.insecure_channel(f"{os.getenv('HOST_IP')}:50051") as channel:
+    with grpc.insecure_channel(f"{config.grpc_host}:{config.maven_port}") as channel:
         stub = maven_pb2_grpc.MavenCommandHandlerStub(channel)
         response = stub.DeployPackage(maven_pb2.DeployPackageArgs(**kwargs))
     return response.exitCode, response.output
