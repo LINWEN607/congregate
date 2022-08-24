@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 
 services:
   congregate:
@@ -22,7 +22,7 @@ services:
     restart: always
     ports:
       - "27017:27017"
-    hostname: 'mongo'
+    hostname: "mongo"
     networks:
       default:
         aliases: 
@@ -37,7 +37,7 @@ services:
     environment:
       - SRC_ACCESS_TOKEN=$SRC_ACCESS_TOKEN
       - DEST_ACCESS_TOKEN=$DEST_ACCESS_TOKEN
-    hostname: 'maven'
+    hostname: "maven"
     networks:
       default:
         aliases: 
