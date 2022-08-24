@@ -44,6 +44,7 @@ from congregate.migration.jenkins.base import JenkinsClient
 from congregate.migration.teamcity.base import TeamcityClient
 from congregate.migration.bitbucket.repos import ReposClient as BBSReposClient
 from congregate.migration.github.repos import ReposClient
+from congregate.migration.gitlab.packages import PackagesClient
 
 
 class MigrateClient(BaseClass):
@@ -84,6 +85,7 @@ class MigrateClient(BaseClass):
         self.registries = RegistryClient(
             reg_dry_run=reg_dry_run
         )
+        self.packages = PackagesClient()
         self.keys = KeysClient()
         self.hooks = HooksClient()
         self.clusters = ClustersClient()
@@ -1232,6 +1234,10 @@ class MigrateClient(BaseClass):
         if self.config.source_registry and self.config.destination_registry:
             results["container_registry"] = self.registries.migrate_registries(
                 src_id, dst_id, path_with_namespace)
+        
+        # Package Registries
+        results["package_registry"] = self.packages.migrate_project_packages(
+            src_id, dst_id, path_with_namespace)
 
         # Hooks (Webhooks)
         results["project_hooks"] = self.hooks.migrate_project_hooks(
