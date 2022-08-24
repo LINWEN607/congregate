@@ -30,13 +30,14 @@ RUN cd /opt && \
 RUN apt-get -y install python3-pip
 RUN pip3 install grpcio grpcio-tools
 
+RUN mkdir /opt/project_repositories
+RUN chmown -R ps-user: /opt/project_repositories
+
 WORKDIR /opt
 
 EXPOSE 50051
 
 USER ps-user
-
-RUN mkdir /opt/project_repositories
 
 ENTRYPOINT ["python3", "maven_server.py"]
 

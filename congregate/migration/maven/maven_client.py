@@ -1,4 +1,3 @@
-import os
 import grpc
 
 from congregate.helpers.configuration_validator import ConfigurationValidator
