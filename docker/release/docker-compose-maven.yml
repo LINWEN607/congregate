@@ -34,6 +34,9 @@ services:
     restart: always
     ports:
       - "50050:50051"
+    environment:
+      - SRC_ACCESS_TOKEN=$SRC_ACCESS_TOKEN
+      - DEST_ACCESS_TOKEN=$DEST_ACCESS_TOKEN
     hostname: 'maven'
     networks:
       default:
