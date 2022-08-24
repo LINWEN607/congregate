@@ -4,6 +4,7 @@ from requests.exceptions import RequestException
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.api.packages import PackagesApi
 from congregate.migration.maven.maven_client import get_package, deploy_package
+from congregate.helpers.grpc_utils import is_rpc_service_running
 
 class PackagesClient(BaseClass):
     def __init__(self):
@@ -11,23 +12,25 @@ class PackagesClient(BaseClass):
         super(PackagesClient, self).__init__()
 
     def migrate_project_packages(self, src_id, dest_id, project_name):
-        self.log.info(f"Migrating project {project_name}(ID:{src_id}) packages")
-        results = []
-        try:
-            for package in self.packages.get_project_packages(self.config.source_host, self.config.source_token, src_id):
-                if package.get('package_type') == 'maven':
-                    self.migrate_maven_packages(src_id, dest_id, package, project_name, results)
-                else:
-                    self.log.info(f"{package.get('name')} is not a maven package (Package Type:{package.get('package_type')}) and thus not supported at this time, skipping")
-                    results.append({'Migrated': False, 'Package': package.get('name')})
-        except RequestException as re :
-            self.log.error(f"Failed to get all packages for project {project_name} (ID:{src_id}) due to a request exception")
-            self.log.debug(re)
-        except _InactiveRpcError as ire:
-            self.log.error(f"Failed to get all packages for project {project_name} (ID:{src_id}) because congregate was unable to connect to Maven gRPC server")
-            self.log.debug(ire)
-
-        return results
+        if is_rpc_service_running(f"{self.config.grpc_host}:{self.config.maven_port}"):
+            self.log.info(f"Migrating project {project_name}(ID:{src_id}) packages")
+            results = []
+            try:
+                for package in self.packages.get_project_packages(self.config.source_host, self.config.source_token, src_id):
+                    if package.get('package_type') == 'maven':
+                        self.migrate_maven_packages(src_id, dest_id, package, project_name, results)
+                    else:
+                        self.log.info(f"{package.get('name')} is not a maven package (Package Type:{package.get('package_type')}) and thus not supported at this time, skipping")
+                        results.append({'Migrated': False, 'Package': package.get('name')})
+            except RequestException as re :
+                self.log.error(f"Failed to get all packages for project {project_name} (ID:{src_id}) due to a request exception")
+                self.log.debug(re)
+            except _InactiveRpcError as ire:
+                self.log.error(f"Failed to get all packages for project {project_name} (ID:{src_id}) because congregate was unable to connect to Maven gRPC server")
+                self.log.debug(ire)
+            return results
+        else:
+            self.log.warning("Maven gRPC service is not running. Skipping packages migration")
 
     def format_groupid(self, name):
         return '.'.join(name.split('/')[:-1])
