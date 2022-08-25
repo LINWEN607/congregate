@@ -90,5 +90,6 @@ class PackagesClient(BaseClass):
                     self.log.error(deploy_package_result[1])
             else:
                 self.log.error(f"Package ({artifact}) wasn't downloaded. Here is the stack trace \n {get_package_result[1]}")
+                results.append({'Migrated': False, 'Package': artifact})
         else:
             self.log.info(f"Unable to find usable data (executable or pom file is missing) \n {package}")
