@@ -30,7 +30,7 @@ class PackagesClient(BaseClass):
                 self.log.debug(ire)
             return results
         else:
-            self.log.warning("Maven gRPC service is not running. Skipping packages migration")
+            self.log.warning(f"Maven gRPC service is not running. Skipping packages migration for project {project_name}")
 
     def format_groupid(self, name):
         return '.'.join(name.split('/')[:-1])
