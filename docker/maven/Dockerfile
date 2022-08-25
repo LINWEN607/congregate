@@ -31,7 +31,7 @@ RUN apt-get -y install python3-pip
 RUN pip3 install grpcio grpcio-tools
 
 RUN mkdir /opt/project_repositories
-RUN chmown -R ps-user: /opt/project_repositories
+RUN chown -R ps-user: /opt/project_repositories
 
 WORKDIR /opt
 
