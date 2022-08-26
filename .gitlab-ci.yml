@@ -416,6 +416,8 @@ bump version:
   stage: bump version
   extends:
     - .release-creds
+  variables:
+    GIT_DEPTH: 250
   script:
     - apk --update add python3 py-pip git
     - pip install poetryupvers
