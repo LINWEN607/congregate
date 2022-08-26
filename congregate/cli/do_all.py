@@ -3,7 +3,7 @@ from gitlab_ps_utils.list_utils import remove_dupes
 from gitlab_ps_utils.file_utils import is_recent_file
 
 from congregate.cli.stage_groups import GroupStageCLI
-from congregate.cli.list_source import list_data
+from congregate.cli.list_source import ListClient
 from congregate.migration.gitlab.users import UsersClient
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.migrate import MigrateClient
@@ -11,6 +11,7 @@ from congregate.helpers.base_class import BaseClass
 
 users = UsersClient()
 groups = GroupsClient()
+list_client = ListClient()
 b = BaseClass()
 
 """
@@ -27,8 +28,8 @@ def do_all_users(dry_run=True):
     # Clear staged projects and groups and stage only users
     gcli = GroupStageCLI()
     gcli.stage_data([""], dry_run=dry_run)
-    with open("{}/data/users.json".format(b.app_path), "r") as u:
-        with open("{}/data/staged_users.json".format(b.app_path), "w") as su:
+    with open(f"{b.app_path}/data/users.json", "r") as u:
+        with open(f"{b.app_path}/data/staged_users.json", "w") as su:
             json.dump(remove_dupes(json.load(u)), su, indent=4)
 
     migrate = MigrateClient(
@@ -92,4 +93,4 @@ def list_all():
     """
     # List ALL source instance users/groups/projects if empty or not recent
     if not is_recent_file(f"{b.app_path}/data/projects.json", age=3600):
-        list_data()
+        list_client.list_data()

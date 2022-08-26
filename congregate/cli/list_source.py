@@ -101,7 +101,8 @@ class ListClient(BaseClass):
             projects = BitBucketProjects()
             projects.set_user_groups(groups)
             projects.retrieve_project_info(processes=self.processes)
-            mongo.dump_collection_to_file(g, f"{b.app_path}/data/groups.json")
+            mongo.dump_collection_to_file(
+                g, f"{self.app_path}/data/groups.json")
         if not self.skip_projects:
             repos = BitBucketRepos()
             repos.set_user_groups(groups)
@@ -120,7 +121,7 @@ class ListClient(BaseClass):
             app = self.app_path
             if not self.skip_users:
                 users = GitHubUsers(
-                    host, token, self.config.source_username, b.config.source_password)
+                    host, token, self.config.source_username, self.config.source_password)
                 users.retrieve_user_info(processes=self.processes)
                 mongo.dump_collection_to_file(u, f"{app}/data/users.json")
             if not self.skip_groups:
@@ -199,7 +200,7 @@ class ListClient(BaseClass):
             staged_files.append("teamcity_jobs")
 
         self.log.info(
-            f"Listing data from {src_type} source type - {b.config.source_host}")
+            f"Listing data from {src_type} source type - {self.config.source_host}")
         if src_type == "bitbucket server":
             self.list_bitbucket_data()
         elif src_type == "gitlab":
