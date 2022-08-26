@@ -4,7 +4,7 @@ Copyright (c) 2022 - GitLab
 
 Usage:
     congregate init
-    congregate list [--processes=<n>] [--partial] [--skip-users] [--skip-groups] [--skip-group-members] [--skip-projects] [--skip-project-members] [--skip-ci] [--src-instances]
+    congregate list [--processes=<n>] [--partial] [--skip-users] [--skip-groups] [--skip-group-members] [--skip-projects] [--skip-project-members] [--skip-ci] [--src-instances] [--subset]
     congregate configure
     congregate generate-reporting
     congregate stage-projects <projects>... [--skip-users] [--commit] [--scm-source=hostname]
@@ -74,6 +74,7 @@ Arguments:
     processes                               Set number of processes to run in parallel.
     commit                                  Disable the dry-run and perform the full migration with all reads/writes.
     src-instances                           Present if there are multiple GH source instances
+    subset                                  Provide input file with list of URLs to list a subset of groups or projects. BitBucket ONLY.
     scm-source                              Specific SCM source hostname
     skip-users                              Stage: Skip staging users; Migrate: Skip migrating users; Rollback: Remove only groups and projects.
     remove-members                          Remove all members of created (GitHub) or imported (GitLab) groups. Skip adding any members of BitBucket Server imported repos.
@@ -283,7 +284,8 @@ def main():
             from congregate.migration.gitlab.compare import CompareClient
             from congregate.migration.migrate import MigrateClient
             from congregate.migration.gitlab.branches import BranchesClient
-            from congregate.cli import list_source, do_all
+            from congregate.cli import do_all
+            from congregate.cli.list_source import ListClient
             from congregate.cli.stage_projects import ProjectStageCLI
             from congregate.cli.stage_groups import GroupStageCLI
             from congregate.cli.stage_wave import WaveStageCLI
@@ -317,7 +319,7 @@ def main():
             if arguments["list"]:
                 start = time()
                 rotate_logs()
-                list_source.list_data(
+                list_client = ListClient(
                     processes=PROCESSES,
                     partial=PARTIAL,
                     skip_users=SKIP_USERS,
@@ -326,8 +328,10 @@ def main():
                     skip_projects=SKIP_PROJECTS,
                     skip_project_members=arguments["--skip-project-members"],
                     skip_ci=arguments["--skip-ci"],
-                    src_instances=SRC_INSTANCES
+                    src_instances=SRC_INSTANCES,
+                    subset=arguments["--subset"]
                 )
+                list_client.list_data()
                 add_post_migration_stats(start, log=log)
 
             if arguments["generate-reporting"] or arguments["--reporting"]:
