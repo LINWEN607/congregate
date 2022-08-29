@@ -516,3 +516,12 @@ class Config(BaseConfig):
         which allows for multiple files with multiple changes.
         """
         return self.prop("APP", "remapping_file_path")
+
+    @property
+    def list_subset_input_path(self):
+        """
+        Full path to .txt file holding a list of BitBucket project or repo URLs.
+        Use when listing the entire instance is not possible i.e.
+        the project or repo metadata exceeds the mongo collection max character limit.
+        """
+        return self.prop("SOURCE", "list_subset_input_path")
