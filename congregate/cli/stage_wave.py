@@ -13,6 +13,7 @@ from congregate.migration.meta.etl import WaveSpreadsheetHandler
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.cli.stage_base import BaseStageClass
 from congregate.cli.stage_projects import ProjectStageCLI
+from congregate.helpers.migrate_utils import check_config_file_path
 
 
 class WaveStageCLI(BaseStageClass):
@@ -57,10 +58,7 @@ class WaveStageCLI(BaseStageClass):
             self.open_projects_file(scm_source), "path_with_namespace", lowercase=True)
         unable_to_find = []
 
-        if not os.path.isfile(self.config.wave_spreadsheet_path):
-            self.log.error(
-                f"The spreadsheet {self.config.wave_spreadsheet_path} does not exist. Please create a spreadsheet with the projects scheduled for migration")
-            sys.exit(os.EX_CONFIG)
+        check_config_file_path(self.config.wave_spreadsheet_path)
 
         wsh = WaveSpreadsheetHandler(
             self.config.wave_spreadsheet_path,

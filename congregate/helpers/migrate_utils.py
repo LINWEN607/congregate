@@ -440,3 +440,10 @@ def get_stage_wave_paths(project):
         tn = get_dst_path_with_namespace(
             project).rsplit("/", 1)[0]
     return dstn_pwn, tn
+
+
+def check_config_file_path(config_file_path):
+    if not os.path.isfile(config_file_path):
+        b.log.error(
+            f"Config '{config_file_path.__annotations__}' file path does not exist. Please create it")
+        sys.exit(os.EX_CONFIG)

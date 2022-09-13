@@ -363,7 +363,7 @@ class Config(BaseConfig):
         return self.prop_bool("APP", "ssl_verify", default=True)
 
     @property
-    def wave_spreadsheet_path(self):
+    def wave_spreadsheet_path(self) -> "wave_spreadsheet_path":
         """
         The absolute path to a spreadsheet containing specific details about migration waves
         """
@@ -518,7 +518,7 @@ class Config(BaseConfig):
         return self.prop("APP", "remapping_file_path")
 
     @property
-    def list_subset_input_path(self):
+    def list_subset_input_path(self) -> "list_subset_input_path":
         """
         Full path to .txt file holding a list of BitBucket project or repo URLs.
         Use when listing the entire instance is not possible i.e.
