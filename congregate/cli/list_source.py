@@ -98,11 +98,14 @@ class ListClient(BaseClass):
             mongo.dump_collection_to_file(
                 u, f"{self.app_path}/data/users.json")
         if not self.skip_groups:
-            projects = BitBucketProjects()
+            projects = BitBucketProjects(subset=self.subset)
             projects.set_user_groups(groups)
             projects.retrieve_project_info(processes=self.processes)
             mongo.dump_collection_to_file(
                 g, f"{self.app_path}/data/groups.json")
+            if self.subset:
+                mongo.dump_collection_to_file(
+                    p, f"{self.app_path}/data/projects.json")
         if not self.skip_projects:
             repos = BitBucketRepos()
             repos.set_user_groups(groups)
