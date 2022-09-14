@@ -148,7 +148,7 @@ src_access_token = *****
 #     }
 
 ###! **HIDDEN PROPERTIES**
-### Full .txt file path. List of URLs, used with --subset list command argument, to list a custom subset of BitBucket projects or repos.
+### Full .txt file path. List of URLs (per line), used with --subset list command argument, to list a custom subset of BitBucket projects or repos.
 # list_subset_input_path =
 
 ###! **Configuration settings below are for EXPORT**

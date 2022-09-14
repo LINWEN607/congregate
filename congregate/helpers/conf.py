@@ -520,7 +520,12 @@ class Config(BaseConfig):
     @property
     def list_subset_input_path(self) -> "list_subset_input_path":
         """
-        Full path to .txt file holding a list of BitBucket project or repo URLs.
+        Full path to .txt file holding a list of BitBucket project or repo URLs (per line). E.g.
+            https://bd1b-62-250-254-182.ngrok.io/projects/TES
+            https://bd1b-62-250-254-182.ngrok.io/projects/TP
+            OR
+            https://bd1b-62-250-254-182.ngrok.io/projects/TES/repos/test_repo_1
+            https://bd1b-62-250-254-182.ngrok.io/projects/TP/repos/test_repo_2
         Use when listing the entire instance is not possible i.e.
         the project or repo metadata exceeds the mongo collection max character limit.
         """
