@@ -363,7 +363,7 @@ class Config(BaseConfig):
         return self.prop_bool("APP", "ssl_verify", default=True)
 
     @property
-    def wave_spreadsheet_path(self) -> "wave_spreadsheet_path":
+    def wave_spreadsheet_path(self):
         """
         The absolute path to a spreadsheet containing specific details about migration waves
         """
@@ -518,7 +518,7 @@ class Config(BaseConfig):
         return self.prop("APP", "remapping_file_path")
 
     @property
-    def list_subset_input_path(self) -> "list_subset_input_path":
+    def list_subset_input_path(self):
         """
         Full path to .txt file holding a list of BitBucket project or repo URLs (per line). E.g.
             https://bd1b-62-250-254-182.ngrok.io/projects/TES
