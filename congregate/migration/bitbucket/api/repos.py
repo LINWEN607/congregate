@@ -5,6 +5,14 @@ class ReposApi():
     def __init__(self):
         self.api = BitBucketServerApi()
 
+    def get_repo(self, project_key, repo_slug):
+        """
+        Retrieve the repository matching the supplied projectKey and repositorySlug.
+
+        Core REST API: https://docs.atlassian.com/bitbucket-server/rest/7.13.0/bitbucket-rest.html#idp179
+        """
+        return self.api.generate_get_request(f"projects/{project_key}/repos/{repo_slug}")
+
     def get_all_repos(self):
         """
         Retrieve all repositories based on query parameters that control the search.

@@ -4,7 +4,7 @@ from gitlab_ps_utils.misc_utils import remove_dupes_but_take_higher_access, stri
 from gitlab_ps_utils.dict_utils import dig
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.mdbc import MongoConnector
-from congregate.helpers.migrate_utils import check_config_file_path
+from congregate.helpers.migrate_utils import get_subset_list
 from congregate.migration.bitbucket.api.projects import ProjectsApi
 from congregate.migration.bitbucket.users import UsersClient
 from congregate.migration.bitbucket.repos import ReposClient
@@ -30,19 +30,18 @@ class ProjectsClient(BaseClass):
 
     def retrieve_project_info(self, processes=None):
         if self.subset:
-            subset_path = self.config.list_subset_input_path
+            subset_path = self.check_list_subset_input_file_path()
             self.log.info(
                 f"Listing subset of {self.config.source_host} projects from '{subset_path}'")
-            check_config_file_path(subset_path)
             self.multi.start_multi_process_stream_with_args(
-                self.handle_projects_subset, self.get_projects_subset_list(), processes=processes, nestable=True)
+                self.handle_projects_subset, get_subset_list(), processes=processes, nestable=True)
         else:
             self.multi.start_multi_process_stream_with_args(
                 self.handle_retrieving_projects, self.projects_api.get_all_projects(), processes=processes, nestable=True)
 
-    def handle_projects_subset(self, project):
+    def handle_projects_subset(self, project, project_key=None):
         # e.g. https://www.bitbucketserverexample.com/projects/TEST"
-        project_key = project.split("/")[4]
+        project_key = project_key or project.split("/")[4]
         try:
             project_json = self.projects_api.get_project(project_key)
             self.handle_retrieving_projects(project_json)
@@ -58,7 +57,8 @@ class ProjectsClient(BaseClass):
             if not mongo:
                 mongo = self.connect_to_mongo()
             mongo.insert_data(
-                f"groups-{strip_netloc(self.config.source_host)}", self.format_project(resp, mongo))
+                f"groups-{strip_netloc(self.config.source_host)}",
+                self.format_project(resp, mongo))
             mongo.close_connection()
         else:
             self.log.error(resp)
@@ -107,18 +107,14 @@ class ProjectsClient(BaseClass):
             for repo in self.projects_api.get_all_project_repos(project_key):
                 # Save all project repos ID references as part of group metadata
                 repos.append(repo.get("id"))
+                # List BB Server project repos
                 if self.subset:
-                    # Save full JSON response
                     mongo.insert_data(
-                        f"projects-{strip_netloc(self.config.source_host)}", self.repos.format_repo(repo))
+                        f"projects-{strip_netloc(self.config.source_host)}",
+                        self.repos.format_repo(repo))
             # Remove duplicate entries
             return list(set(repos))
         except RequestException as re:
             self.log.error(
                 f"Failed to GET repos from project '{project_key}', with error:\n{re}")
             return None
-
-    def get_projects_subset_list(self):
-        with open(self.config.list_subset_input_path, "r") as f:
-            for project in f.read().splitlines():
-                yield project

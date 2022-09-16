@@ -88,7 +88,7 @@ class ListClient(BaseClass):
         mongo.close_connection()
 
     def list_bitbucket_data(self):
-        mongo, p, g, u = self.mongo_init()
+        mongo, p, g, u = self.mongo_init(subset=self.subset)
 
         groups_client = BitBucketGroups()
         groups = groups_client.retrieve_group_info()
@@ -103,15 +103,20 @@ class ListClient(BaseClass):
             projects.retrieve_project_info(processes=self.processes)
             mongo.dump_collection_to_file(
                 g, f"{self.app_path}/data/groups.json")
+            # Save listed BB Server parent projects
             if self.subset:
                 mongo.dump_collection_to_file(
                     p, f"{self.app_path}/data/projects.json")
         if not self.skip_projects:
-            repos = BitBucketRepos()
+            repos = BitBucketRepos(subset=self.subset)
             repos.set_user_groups(groups)
             repos.retrieve_repo_info(processes=self.processes)
             mongo.dump_collection_to_file(
                 p, f"{self.app_path}/data/projects.json")
+            # Save listed BB Server parent projects
+            if self.subset:
+                mongo.dump_collection_to_file(
+                    g, f"{self.app_path}/data/groups.json")
 
         mongo.close_connection()
 
@@ -218,7 +223,7 @@ class ListClient(BaseClass):
         for f in staged_files:
             self.write_empty_file(f)
 
-    def mongo_init(self):
+    def mongo_init(self, subset=False):
         mongo = MongoConnector()
         src_hostname = strip_netloc(self.config.source_host)
         p = f"projects-{src_hostname}"
@@ -226,9 +231,9 @@ class ListClient(BaseClass):
         u = f"users-{src_hostname}"
         if not self.partial:
             self.log.info("Dropping database collections")
-            if not self.skip_projects:
+            if not self.skip_projects or subset:
                 mongo.drop_collection(p)
-            if not self.skip_groups:
+            if not self.skip_groups or subset:
                 mongo.drop_collection(g)
             if not self.skip_users:
                 mongo.drop_collection(u)

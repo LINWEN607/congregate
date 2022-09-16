@@ -6,6 +6,7 @@ from gitlab_ps_utils.misc_utils import get_dry_log, safe_json_response, remove_d
 from gitlab_ps_utils.dict_utils import dig
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.mdbc import MongoConnector
+from congregate.helpers.migrate_utils import get_subset_list
 from congregate.migration.bitbucket.api.projects import ProjectsApi
 from congregate.migration.bitbucket.api.repos import ReposApi
 from congregate.migration.bitbucket.api.users import UsersApi
@@ -17,7 +18,24 @@ from congregate.helpers.utils import rotate_logs
 
 
 class ReposClient(BaseClass):
-    def __init__(self):
+    @classmethod
+    def connect_to_mongo(cls):
+        return MongoConnector()
+
+    @classmethod
+    def format_repo_parent_project(cls, project):
+        return {
+            "name": project["name"],
+            "id": project["id"],
+            "path": project["key"],
+            "full_path": project["key"],
+            "visibility": "public" if project["public"] else "private",
+            "description": project.get("description", ""),
+            "members": [],
+            "projects": []
+        }
+
+    def __init__(self, subset=False):
         self.projects_api = ProjectsApi()
         self.repos_api = ReposApi()
         self.users_api = UsersApi()
@@ -25,32 +43,77 @@ class ReposClient(BaseClass):
         self.groups_api = GroupsApi()
         self.gl_projects_api = GLProjectsApi()
         self.user_groups = None
+        self.subset = subset
+        self.unique_projects = set()
         super().__init__()
-
-    def connect_to_mongo(self):
-        return MongoConnector()
 
     def set_user_groups(self, groups):
         self.user_groups = groups
 
     def retrieve_repo_info(self, processes=None):
-        self.multi.start_multi_process_stream_with_args(
-            self.handle_retrieving_repos, self.repos_api.get_all_repos(), processes=processes, nestable=True)
+        if self.subset:
+            subset_path = self.check_list_subset_input_file_path()
+            self.log.info(
+                f"Listing subset of {self.config.source_host} repos from '{subset_path}'")
+            self.multi.start_multi_process_stream_with_args(
+                self.handle_repos_subset, get_subset_list(), processes=processes, nestable=True)
+        else:
+            self.multi.start_multi_process_stream_with_args(
+                self.handle_retrieving_repos, self.repos_api.get_all_repos(), processes=processes, nestable=True)
 
-    def handle_retrieving_repos(self, repo, mongo=None):
+    def handle_repos_subset(self, repo):
+        # e.g. https://www.bitbucketserverexample.com/projects/TEST/repos/test"
+        repo_split = repo.split("/")
+        project_key = repo_split[4]
+        repo_slug = repo_split[-1]
+        try:
+            self.log.info(
+                f"Listing project '{project_key}' repo '{repo_slug}'")
+            repo_json = self.repos_api.get_repo(project_key, repo_slug)
+            self.handle_retrieving_repos(repo_json, project_key=project_key)
+        except RequestException as re:
+            self.log.error(
+                f"Failed to GET project '{project_key}' repo '{repo_slug}', with error:\n{re}")
+
+    def handle_retrieving_repos(self, repo, mongo=None, project_key=None):
         # List and reformat all Bitbucket Server repo to GitLab project
         # metadata
         error, resp = is_error_message_present(repo)
         if resp and not error:
+            # List BB Server parent projects
+            project = self.list_repo_parent_project(resp["slug"], project_key)
+
             # mongo should be set to None unless this function is being used in a
             # unit test
             if not mongo:
                 mongo = self.connect_to_mongo()
             mongo.insert_data(
-                f"projects-{strip_netloc(self.config.source_host)}", self.format_repo(resp))
+                f"projects-{strip_netloc(self.config.source_host)}",
+                self.format_repo(resp))
+            if project:
+                mongo.insert_data(
+                    f"groups-{strip_netloc(self.config.source_host)}",
+                    self.format_repo_parent_project(project))
             mongo.close_connection()
         else:
             self.log.error(resp)
+
+    def list_repo_parent_project(self, repo_slug, project_key):
+        try:
+            if project_key and project_key not in self.unique_projects:
+                self.unique_projects.add(project_key)
+                self.log.info(
+                    f"Listing repo '{repo_slug}' parent project '{project_key}'")
+                project_json = self.projects_api.get_project(project_key)
+                error, resp = is_error_message_present(project_json)
+                if resp and not error:
+                    return resp
+                self.log.error(resp)
+            return None
+        except RequestException as re:
+            self.log.error(
+                f"Failed to GET repo '{repo_slug}' parent project '{project_key}', with error:\n{re}")
+            return None
 
     def add_repo_users(self, members, project_key, repo_slug):
         REPO_PERM_MAP = {
