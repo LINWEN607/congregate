@@ -74,7 +74,7 @@ Arguments:
     processes                               Set number of processes to run in parallel.
     commit                                  Disable the dry-run and perform the full migration with all reads/writes.
     src-instances                           Present if there are multiple GH source instances
-    subset                                  Provide input file with list of URLs to list a subset of groups or projects. BitBucket ONLY.
+    subset                                  Provide input file with list of URLs to list a subset of groups (--skip-projects) or projects (--skip-groups). BitBucket ONLY.
     scm-source                              Specific SCM source hostname
     skip-users                              Stage: Skip staging users; Migrate: Skip migrating users; Rollback: Remove only groups and projects.
     remove-members                          Remove all members of created (GitHub) or imported (GitLab) groups. Skip adding any members of BitBucket Server imported repos.
