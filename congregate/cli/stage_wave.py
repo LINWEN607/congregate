@@ -13,7 +13,6 @@ from congregate.migration.meta.etl import WaveSpreadsheetHandler
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.cli.stage_base import BaseStageClass
 from congregate.cli.stage_projects import ProjectStageCLI
-from congregate.helpers.migrate_utils import check_config_file_path
 
 
 class WaveStageCLI(BaseStageClass):
@@ -58,10 +57,14 @@ class WaveStageCLI(BaseStageClass):
             self.open_projects_file(scm_source), "path_with_namespace", lowercase=True)
         unable_to_find = []
 
-        check_config_file_path(self.config.wave_spreadsheet_path)
+        wave_spreadsheet_path = self.config.wave_spreadsheet_path
+        if not os.path.isfile(wave_spreadsheet_path):
+            self.log.error(
+                f"Config 'wave_spreadsheet_path' file path '{wave_spreadsheet_path}' does not exist. Please create it")
+            sys.exit(os.EX_CONFIG)
 
         wsh = WaveSpreadsheetHandler(
-            self.config.wave_spreadsheet_path,
+            wave_spreadsheet_path,
             columns_to_use=self.config.wave_spreadsheet_columns
         )
         # Simplifying the variable name, for readability.
@@ -77,7 +80,7 @@ class WaveStageCLI(BaseStageClass):
         )
         if not wave_data:
             self.log.error(
-                f"Wave name is empty in {self.config.wave_spreadsheet_path} spreadsheet or the spreadsheet is empty.")
+                f"Wave name is empty in '{wave_spreadsheet_path}' spreadsheet or the spreadsheet is empty.")
             sys.exit(os.EX_CONFIG)
 
         # Some basic sanity checks for reading in spreadsheet data

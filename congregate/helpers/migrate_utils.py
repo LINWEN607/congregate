@@ -442,8 +442,7 @@ def get_stage_wave_paths(project):
     return dstn_pwn, tn
 
 
-def check_config_file_path(config_file_path):
-    if not os.path.isfile(config_file_path):
-        b.log.error(
-            f"Config '{config_file_path.__annotations__}' file path does not exist. Please create it")
-        sys.exit(os.EX_CONFIG)
+def get_subset_list():
+    with open(b.config.list_subset_input_path, "r") as f:
+        for line in f.read().splitlines():
+            yield line
