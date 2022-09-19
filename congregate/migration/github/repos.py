@@ -476,8 +476,9 @@ class ReposClient(BaseClass):
                 self.log.info(
                     f"{get_dry_log(dry_run)}{'Archiving' if archived else 'Unarchiving'} GitHub repo '{sp['path_with_namespace']}'")
                 if not dry_run:
+
                     self.repos_api.update_repo(
-                        sp["namespace"], sp["name"], {"archived": {archived}})
+                        sp["namespace"], sp["name"], {"archived": archived})
         except RequestException as re:
             self.log.error(
                 f"Failed to {'' if archived else 'un'}archive staged repo, with error:\n{re}")
