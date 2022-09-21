@@ -74,7 +74,7 @@ class ReposTests(unittest.TestCase):
                 "visibility": "private",
                 "description": "",
                 "id": 6,
-                "http_url_to_repo": "http://localhost:7990/projects/TGP/repos/android/browse"
+                "http_url_to_repo": "http://localhost:7990/scm/tgp/android.git"
             },
             {
                 "name": "Another-Test-Repo",
@@ -109,7 +109,7 @@ class ReposTests(unittest.TestCase):
                 "visibility": "private",
                 "description": "Just another test repo",
                 "id": 13,
-                "http_url_to_repo": "http://localhost:7990/projects/ATP/repos/another-test-repo/browse"
+                "http_url_to_repo": "http://localhost:7990/scm/atp/another-test-repo.git"
             }
         ]
 
@@ -220,7 +220,7 @@ class ReposTests(unittest.TestCase):
                     }
                 ],
                 "default_branch": "develop",
-                "http_url_to_repo": "http://localhost:7990/projects/TGP/repos/android/browse"
+                "http_url_to_repo": "http://localhost:7990/scm/tgp/android.git"
             },
             {
                 "id": 13,
@@ -255,7 +255,7 @@ class ReposTests(unittest.TestCase):
                     }
                 ],
                 "default_branch": "master",
-                "http_url_to_repo": "http://localhost:7990/projects/ATP/repos/another-test-repo/browse"
+                "http_url_to_repo": "http://localhost:7990/scm/atp/another-test-repo.git"
             }
         ]
 

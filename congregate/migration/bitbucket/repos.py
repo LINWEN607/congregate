@@ -35,6 +35,13 @@ class ReposClient(BaseClass):
             "projects": []
         }
 
+    @classmethod
+    def get_http_url_to_repo(cls, repo):
+        repo_clone_links = dig(repo, 'links', 'clone', default=[{"href": ""}])
+        if repo_clone_links[0]["name"] == "http":
+            return repo_clone_links[0]["href"]
+        return repo_clone_links[1]["href"]
+
     def __init__(self, subset=False):
         self.projects_api = ProjectsApi()
         self.repos_api = ReposApi()
@@ -62,10 +69,10 @@ class ReposClient(BaseClass):
                 self.handle_retrieving_repos, self.repos_api.get_all_repos(), processes=processes, nestable=True)
 
     def handle_repos_subset(self, repo):
-        # e.g. https://www.bitbucketserverexample.com/projects/TEST/repos/test"
+        # e.g. https://www.bitbucketserverexample.com/scm/test_project/repos/test_repo.git"
         repo_split = repo.split("/")
         project_key = repo_split[4]
-        repo_slug = repo_split[-1]
+        repo_slug = repo_split[-1].rstrip(".git")
         try:
             self.log.info(
                 f"Listing project '{project_key}' repo '{repo_slug}'")
@@ -251,8 +258,7 @@ class ReposClient(BaseClass):
             "description": repo.get("description", ""),
             "members": [] if project else self.add_repo_users([], repo_path, repo.get("slug")),
             "default_branch": self.get_default_branch(repo_path, repo["slug"]),
-            # Assuming http is on index 0
-            "http_url_to_repo": dig(repo, 'links', 'self', default=[{"href": ""}])[0]["href"]
+            "http_url_to_repo": self.get_http_url_to_repo(repo)
         }
 
     def update_branch_permissions(self, restrict=True, is_project=False, dry_run=True):
