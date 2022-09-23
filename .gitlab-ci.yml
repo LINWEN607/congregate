@@ -214,7 +214,7 @@ check ldap compose yaml:
     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --profile default -y
     - source $HOME/.cargo/env
     - apk add python3 py-pip python3-dev libffi-dev openssl-dev gcc libc-dev rust cargo make
-    - /usr/bin/python3.7 -m pip install --upgrade pip
+    - /usr/bin/python3.8 -m pip install --no-deps --upgrade pip
     - pip3 install docker-compose
     - docker-compose -f docker-compose.yml config
   rules:
@@ -225,7 +225,7 @@ check ldap compose yaml:
 .test-job:
   stage: test
   before_script:
-    - pip install poetry
+    - pip install --no-deps poetry
     # Disable parallel installer to avoid "Key Error" issues
     - poetry config experimental.new-installer false
     - poetry install
@@ -420,7 +420,7 @@ bump version:
     GIT_DEPTH: 250
   script:
     - apk --update add python3 py-pip git
-    - pip install poetryupvers
+    - pip install --no-deps poetryupvers
     - ppuv bump
     - ppuv generate-release-notes --save --path=./notes.md
     - ppuv push-bump --config-user=$BOT_USER --config-email=$BOT_EMAIL --remote=origin --url=$PUSH_URL --branch="HEAD:$CI_COMMIT_BRANCH"

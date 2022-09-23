@@ -3,12 +3,8 @@ FROM python:3.8.12-slim-buster
 # Add ps-user and give them sudo privileges
 RUN adduser ps-user && \
     usermod -aG sudo ps-user && \
-    apt update && apt upgrade -y && apt install -y sudo apt-utils  && \
+    apt update && apt upgrade -y && apt install -y sudo apt-utils && \
     sed -i 's/sudo.*ALL\=(ALL:ALL).*ALL/sudo ALL=(ALL) NOPASSWD:ALL/' /etc/sudoers
-
-USER ps-user
-
-RUN pip install --user poetry
 
 USER root
 
@@ -36,7 +32,7 @@ RUN apt-get update && \
     apt-get upgrade -y
 
 # Install Node
-RUN curl -sL https://deb.nodesource.com/setup_12.x | bash - && \
+RUN curl -sSL https://deb.nodesource.com/setup_12.x | bash - && \
     apt-get install -y nodejs && \
     npm install --no-optional && \
     npm run build
@@ -66,7 +62,7 @@ RUN apt install -y zsh && chsh -s /usr/bin/zsh && chsh -s /usr/bin/zsh ps-user
 USER ps-user
 
 # Install oh-my-zsh
-RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+RUN sh -c "$(curl -sSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 
 # Install congregate
 RUN cd /opt/congregate && \
@@ -80,7 +76,11 @@ RUN export PATH=$PATH:$HOME/.local/bin && \
     echo "export PATH=$PATH" >> ~/.bashrc && \
     echo "export PATH=$PATH" >> ~/.zshrc
 
-RUN python3.8 -m poetry install
+# Install poetry
+RUN curl -sSL https://install.python-poetry.org | python3.8 - && \
+    export PATH="/home/ps-user/.local/bin:$PATH" && \
+    poetry --version && \
+    poetry install
 
 USER root
 

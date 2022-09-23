@@ -101,7 +101,7 @@ RUN cd /opt/congregate && \
     git config --global user.email "migration@gitlab.com" && \
     git config --global user.name "congregate" && \
     git commit -m "Initial commit" && \
-    python3.8 -m pip install --user poetry && \
+    python3.8 -m pip install --no-deps --user poetry && \
     python3.8 -m poetry install
 
 # Install node dependencies
