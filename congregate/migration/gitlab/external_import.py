@@ -175,7 +175,8 @@ class ImportClient(BaseClass):
     def get_external_repo_import_status(self, host, token, pid):
         if import_status := safe_json_response(self.projects.get_project_import_status(host, token, pid)):
             # Save to file to avoid outputing long lists to log
-            failed_relations = import_status.pop("failed_relations")
+            failed_relations = import_status.pop(
+                "failed_relations") if import_status.get("failed_relations") else None
             # Added to GitHub repo import responses as of GitLab 14.6
             stats = import_status.pop(
                 "stats") if import_status.get("stats") else None
