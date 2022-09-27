@@ -103,9 +103,13 @@ RUN cd /opt/congregate && \
     git add . && \
     git config --global user.email "migration@gitlab.com" && \
     git config --global user.name "congregate" && \
-    git commit -m "Initial commit" && \
-    python3.8 -m pip install --user poetry && \
-    python3.8 -m poetry install
+    git commit -m "Initial commit"
+
+# Install poetry
+RUN curl -sSL https://install.python-poetry.org | python3.8 - && \
+    export PATH="/home/ps-user/.local/bin:$PATH" && \
+    poetry --version && \
+    poetry install
 
 # Install node dependencies
 RUN npm install --no-optional && \

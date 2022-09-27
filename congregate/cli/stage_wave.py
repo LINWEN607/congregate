@@ -7,7 +7,7 @@ import os
 import sys
 
 from gitlab_ps_utils.misc_utils import get_dry_log, safe_json_response
-from gitlab_ps_utils.dict_utils import rewrite_list_into_dict
+from gitlab_ps_utils.dict_utils import rewrite_list_into_dict, dig
 from gitlab_ps_utils.string_utils import clean_split
 from congregate.migration.meta.etl import WaveSpreadsheetHandler
 from congregate.migration.gitlab.api.groups import GroupsApi
@@ -57,13 +57,14 @@ class WaveStageCLI(BaseStageClass):
             self.open_projects_file(scm_source), "path_with_namespace", lowercase=True)
         unable_to_find = []
 
-        if not os.path.isfile(self.config.wave_spreadsheet_path):
+        wave_spreadsheet_path = self.config.wave_spreadsheet_path
+        if not os.path.isfile(wave_spreadsheet_path):
             self.log.error(
-                f"The spreadsheet {self.config.wave_spreadsheet_path} does not exist. Please create a spreadsheet with the projects scheduled for migration")
+                f"Config 'wave_spreadsheet_path' file path '{wave_spreadsheet_path}' does not exist. Please create it")
             sys.exit(os.EX_CONFIG)
 
         wsh = WaveSpreadsheetHandler(
-            self.config.wave_spreadsheet_path,
+            wave_spreadsheet_path,
             columns_to_use=self.config.wave_spreadsheet_columns
         )
         # Simplifying the variable name, for readability.
@@ -79,17 +80,16 @@ class WaveStageCLI(BaseStageClass):
         )
         if not wave_data:
             self.log.error(
-                f"Wave name is empty in {self.config.wave_spreadsheet_path} spreadsheet or the spreadsheet is empty.")
+                f"Wave name is empty in '{wave_spreadsheet_path}' spreadsheet or the spreadsheet is empty.")
             sys.exit(os.EX_CONFIG)
 
         # Some basic sanity checks for reading in spreadsheet data
         self.check_spreadsheet_data()
         # Iterating over a spreadsheet row
         for row in wave_data:
-            url_key = column_mapping["Source Url"]
-            repo_url = row.get(url_key, "").lower()
+            repo_url = row.get(column_mapping["Source Url"], "").lower()
             if project := (self.project_urls.get(repo_url) or (self.project_urls.get(
-                    repo_url + 'git')) or self.project_paths.get(self.sanitize_project_path(repo_url, host=scm_source))):
+                    repo_url + '.git')) or self.project_paths.get(self.sanitize_project_path(repo_url, host=scm_source))):
                 obj = self.get_project_metadata(project)
                 if parent_path := column_mapping.get("Parent Path"):
                     obj["target_namespace"] = row.get(
@@ -100,8 +100,8 @@ class WaveStageCLI(BaseStageClass):
                         obj['swc_manager_email'] = row.get('SWC Manager Email')
                         obj['swc_id'] = row.get('SWC AA ID')
                     else:
-                        self.log.warning(
-                            f"No SWC_ID for {obj['target_namespace']}")
+                        self.log.info(
+                            f"No 'SWC AA ID' (SWC_ID) provided for {obj['target_namespace']}")
                 else:
                     self.log.warning(
                         "The parent path doesn't exist or the parent path name has been misspelled.")
@@ -164,24 +164,33 @@ class WaveStageCLI(BaseStageClass):
         for member in project["members"]:
             self.append_member_to_members_list([], member, dry_run)
 
-        if project["project_type"] == "group":
-            group_to_stage = self.rewritten_groups[self.rewritten_projects.get(project["id"])[
-                "namespace"]["id"]].copy()
+        try:
+            if project["project_type"] == "group":
+                if parent_group_id := dig(self.rewritten_projects.get(project["id"]), "namespace", "id"):
+                    group_to_stage = self.rewritten_groups[parent_group_id].copy(
+                    )
+                    self.log.info(
+                        f"{get_dry_log(dry_run)}Staging group {group_to_stage['full_path']} (ID: {group_to_stage['id']})")
+                    group_to_stage.pop("projects", None)
+                    self.handle_parent_group(wave_row, group_to_stage)
+                    self.staged_groups.append(group_to_stage)
+
+                    # Append all group members to staged users
+                    for member in group_to_stage["members"]:
+                        self.append_member_to_members_list([], member, dry_run)
+                else:
+                    self.log.warning(
+                        f"Project {project['path_with_namespace']} NOT found among listed projects")
+
             self.log.info(
-                f"{get_dry_log(dry_run)}Staging group {group_to_stage['full_path']} (ID: {group_to_stage['id']})")
-            group_to_stage.pop("projects", None)
-            self.handle_parent_group(wave_row, group_to_stage)
-            self.staged_groups.append(group_to_stage)
-
-            # Append all group members to staged users
-            for member in group_to_stage["members"]:
-                self.append_member_to_members_list([], member, dry_run)
-
-        self.log.info(
-            f"{get_dry_log(dry_run)}Staging project {project['path_with_namespace']} (ID: {project['id']})"
-            f"[{len(self.staged_projects) + 1}/{len(p_range) if p_range else len(projects_to_stage)}]"
-        )
-        self.staged_projects.append(project)
+                f"{get_dry_log(dry_run)}Staging project {project['path_with_namespace']} (ID: {project['id']})"
+                f"[{len(self.staged_projects) + 1}/{len(p_range) if p_range else len(projects_to_stage)}]"
+            )
+            self.staged_projects.append(project)
+        except KeyError:
+            self.log.error(
+                f"Parent group ID {parent_group_id} not found among listed groups")
+            sys.exit(os.EX_DATAERR)
 
     def append_group_data(self, group, groups_to_stage,
                           wave_row, p_range=0, dry_run=True):
@@ -197,8 +206,8 @@ class WaveStageCLI(BaseStageClass):
                         'SWC Manager Email')
                     obj['swc_id'] = wave_row.get('SWC AA ID')
                 else:
-                    self.log.warning(
-                        f"No SWC_ID for {obj['target_namespace']}")
+                    self.log.info(
+                        f"No 'SWC AA ID' (SWC_ID) provided for {obj['target_namespace']}")
             # Append all project members to staged users
             for project_member in obj["members"]:
                 self.append_member_to_members_list([], project_member, dry_run)

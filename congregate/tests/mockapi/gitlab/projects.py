@@ -875,3 +875,85 @@ class MockProjectsApi():
                 "url": "https://gitlab.example.com/gitlab-org/security/gitlab.git"
             }
         ]
+
+    def get_staged_group_project_with_target_namespace(self):
+        return {
+            "snippets_access_level": "enabled",
+            "description": "",
+            "default_branch": "patch-01",
+            "visibility": "public",
+            "http_url_to_repo": "https://pse.tanuki.cloud/pmm-demo/spring-app-secure-2.git",
+            "shared_runners_enabled": False,
+            "project_type": "group",
+            "path": "spring-app-secure-2",
+            "id": 287,
+            "merge_requests_access_level": "enabled",
+            "repository_access_level": "enabled",
+            "builds_access_level": "enabled",
+            "archived": False,
+            "name": "spring-app-secure-2",
+            "wiki_access_level": "enabled",
+            "forking_access_level": "enabled",
+            "pages_access_level": "private",
+            "namespace": "pmm-demo",
+            "members": [],
+            "issues_access_level": "enabled",
+            "path_with_namespace": "pmm-demo/spring-app-secure-2",
+            "target_namespace": "top-level-group/sub-level-group",
+            "override_dstn_ns": False
+        }
+
+    def get_staged_group_project_with_target_namespace_override(self):
+        return {
+            "snippets_access_level": "enabled",
+            "description": "",
+            "default_branch": "patch-01",
+            "visibility": "public",
+            "http_url_to_repo": "https://pse.tanuki.cloud/pmm-demo/spring-app-secure-2.git",
+            "shared_runners_enabled": False,
+            "project_type": "group",
+            "path": "spring-app-secure-2",
+            "id": 287,
+            "merge_requests_access_level": "enabled",
+            "repository_access_level": "enabled",
+            "builds_access_level": "enabled",
+            "archived": False,
+            "name": "spring-app-secure-2",
+            "wiki_access_level": "enabled",
+            "forking_access_level": "enabled",
+            "pages_access_level": "private",
+            "namespace": "pmm-demo",
+            "members": [],
+            "issues_access_level": "enabled",
+            "path_with_namespace": "pmm-demo/spring-app-secure-2",
+            "target_namespace": "top-level-group/sub-level-group",
+            "override_dstn_ns": True
+        }
+
+    def get_staged_project_push_mirrors(self):
+        return [
+            {
+                "id": 42,
+                "enabled": True,
+                "url": "https://*****:*****@gitlab.example.com/congregate/congregate.git",
+                "update_status": "to_retry",
+                "last_update_at": "2021-11-10T11:55:47.729Z",
+                "last_update_started_at": "2022-06-17T20:45:53.636Z",
+                "last_successful_update_at": "2021-11-10T11:55:47.729Z",
+                "last_error": "13:get remote references: create git ls-remote: exit status 128, stderr: \"remote: The project you were looking for could not be found or you don't have permission to view it.\\nfatal: repository 'https://gitlab.com/caesarsdigital/clp_splunk_apps_migration_testing/wh_data_sdp_infrastructure.git/' not found\\n\".",
+                "only_protected_branches": False,
+                "keep_divergent_refs": True
+            },
+            {
+                "id": 666,
+                "enabled": True,
+                "url": "https://*****:*****@gitlab.example.com/test/congregate/congregate.git",
+                "update_status": "finished",
+                "last_update_at": "2022-06-17T20:45:55.448Z",
+                "last_update_started_at": "2022-06-17T20:45:53.776Z",
+                "last_successful_update_at": "2022-06-17T20:45:55.448Z",
+                "last_error": None,
+                "only_protected_branches": False,
+                "keep_divergent_refs": True
+            }
+        ]

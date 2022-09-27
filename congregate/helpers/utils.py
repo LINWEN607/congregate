@@ -31,21 +31,19 @@ def rotate_logs():
         audit_log = f"{log_path}/audit.log"
         import_json = f"{log_path}/import_failed_relations.json"
         end_time = str(datetime.now()).replace(" ", "_")
-        print("Rotating and emptying:\n{}".format("\n".join([log, audit_log])))
         try:
-            copy(log, f"{log_path}/congregate_{end_time}.log")
-            open(log, "w").close()
-            copy(
-                audit_log, f"{log_path}/audit_{end_time}.log")
-            open(audit_log, "w").close()
-            copy(
-                import_json, f"{log_path}/import_failed_relations_{end_time}.json")
-            open(import_json, "w").close()
+            for file in [log, audit_log, import_json]:
+                if os.path.getsize(file) > 0:
+                    print(f"Rotating and emptying '{file}'")
+                    index = file.find(".")
+                    copy(file, file[:index] + f"_{end_time}" + file[index:])
+                    open(file, "w").close()
         except OSError as e:
             if e.errno != errno.ENOENT:
                 raise
     else:
-        print("Cannot find data directory. CONGREGATE_PATH not set or you are not running this in the Congregate directory.")
+        raise NotADirectoryError(
+            "Cannot find data directory. CONGREGATE_PATH not set or you are not running this in the Congregate directory.")
 
 
 def stitch_json_results(result_type="project", steps=0, order="tail"):

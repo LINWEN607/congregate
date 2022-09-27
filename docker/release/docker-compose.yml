@@ -1,0 +1,30 @@
+version: '3'
+
+services:
+    congregate:
+        image: registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate:rolling-centos-no-mongo
+        container_name: congregate
+        hostname: congregate
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
+            - $CONGREGATE_DATA:/opt/congregate/data
+        ports:
+            - 8000:8000
+        entrypoint: "/bin/bash -c 'sleep infinity'"
+        networks:
+          default:
+            aliases:
+              - congregate
+
+    mongo:
+        image: mongo:4.4.16
+        container_name: congregate_mongo
+        restart: always
+        ports:
+            - "27017:27017"
+        hostname: 'mongo'
+        networks:
+            default:
+                aliases: 
+                    - mongo
+    

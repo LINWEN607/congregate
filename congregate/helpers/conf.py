@@ -419,6 +419,23 @@ class Config(BaseConfig):
         return self.prop_int("APP", "mongo_port", default=27017)
 
     @property
+    def grpc_host(self):
+        """
+        The explicit host for connecting to a gRPC service. Defaults to localhost
+
+        In an all docker environment, localhost should be sufficient, but you may
+        need to set this to the local IP of the docker host
+        """
+        return self.prop("APP", "grpc_host", default="localhost")
+
+    @property
+    def maven_port(self):
+        """
+        The explicit port for the maven gRPC connection. Defaults to 50051
+        """
+        return self.prop_int("APP", "maven_port", default=50051)
+
+    @property
     def processes(self):
         """
         Number of parallel process to run for specific commands like list, migrate, etc.
@@ -499,3 +516,17 @@ class Config(BaseConfig):
         which allows for multiple files with multiple changes.
         """
         return self.prop("APP", "remapping_file_path")
+
+    @property
+    def list_subset_input_path(self):
+        """
+        Full path to .txt file holding a list of BitBucket project or repo URLs (per line). E.g.
+            https://example.bitbucket.com/projects/TES
+            https://example.bitbucket.com/projects/TP
+            OR
+            https://example.bitbucket.com/projects/TES/repos/test_repo_1
+            https://example.bitbucket.com/projects/TP/repos/test_repo_2
+        Use when listing the entire instance is not possible i.e.
+        the project or repo metadata exceeds the mongo collection max character limit.
+        """
+        return self.prop("SOURCE", "list_subset_input_path")

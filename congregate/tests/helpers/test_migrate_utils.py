@@ -796,15 +796,20 @@ class MigrateTests(unittest.TestCase):
         self.assertEqual(mutils.get_external_path_with_namespace(
             path_with_namespace), f"parent/group/{path_with_namespace}")
 
-    def test_validate_name_project(self):
+    def test_sanitize_name_project(self):
         with self.assertLogs(mutils.b.log, level="WARNING"):
-            assert mutils.validate_name(
+            assert mutils.sanitize_name(
                 " !  _-:: This.is-how/WE do\n&it#? - šđžčć_  ? ", "full_path") == "This.is-how WE do it - šđžčć"
 
-    def test_validate_name_group(self):
+    def test_sanitize_name_group(self):
         with self.assertLogs(mutils.b.log, level="ERROR"):
-            assert mutils.validate_name(" !  _-:: This.is-how/WE do\n&it#? - (šđžčć)_  ? ",
+            assert mutils.sanitize_name(" !  _-:: This.is-how/WE do\n&it#? - (šđžčć)_  ? ",
                                         "full_path", is_group=True) == "This.is-how WE do it - (šđžčć"
+
+    def test_sanitize_project_path(self):
+        with self.assertLogs(mutils.b.log, level="WARNING"):
+            assert mutils.sanitize_project_path(
+                "!_-::This.is;;-how_we--do\n&IT#?-šđžčć_?", "full_path") == "This.is-how_we-do-IT"
 
     def test_get_duplicate_paths_projects(self):
         data = [{
@@ -890,3 +895,37 @@ class MigrateTests(unittest.TestCase):
         with self.assertLogs(mutils.b.log, level="INFO"):
             self.assertTrue(mutils.is_gl_version_older_than(
                 13, "host", "token", "log"))
+
+    @patch.object(ConfigurationValidator, "destination_host", new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, "dstn_parent_group_path", new_callable=PropertyMock)
+    def test_get_stage_wave_paths_none(self, mock_dstn_group_path, mock_host):
+        mock_dstn_group_path.return_value = None
+        mock_host.return_value = "https://gitlab.example.com"
+        dst_pwn, tn = mutils.get_stage_wave_paths(
+            self.mock_projects.get_staged_group_project())
+        self.assertTupleEqual(
+            (dst_pwn, tn), ("pmm-demo/spring-app-secure-2", "pmm-demo"))
+
+    @patch.object(ConfigurationValidator, "dstn_parent_id", new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, "destination_host", new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, "dstn_parent_group_path", new_callable=PropertyMock)
+    def test_get_stage_wave_paths_none_with_parent_group(self, mock_dstn_group_path, mock_host, mock_parent_id):
+        mock_dstn_group_path.side_effect = ["parent-group", "parent-group"]
+        mock_host.return_value = "https://gitlab.example.com"
+        mock_parent_id.return_value = 42
+        dst_pwn, tn = mutils.get_stage_wave_paths(
+            self.mock_projects.get_staged_group_project())
+        self.assertTupleEqual(
+            (dst_pwn, tn), ("parent-group/pmm-demo/spring-app-secure-2", "parent-group/pmm-demo"))
+
+    def test_get_stage_wave_paths_target_namespace(self):
+        dst_pwn, tn = mutils.get_stage_wave_paths(
+            self.mock_projects.get_staged_group_project_with_target_namespace())
+        self.assertTupleEqual(
+            (dst_pwn, tn), ("top-level-group/sub-level-group/pmm-demo/spring-app-secure-2", "top-level-group/sub-level-group/pmm-demo"))
+
+    def test_get_stage_wave_paths_target_namespace_override(self):
+        dst_pwn, tn = mutils.get_stage_wave_paths(
+            self.mock_projects.get_staged_group_project_with_target_namespace_override())
+        self.assertTupleEqual(
+            (dst_pwn, tn), ("top-level-group/sub-level-group/spring-app-secure-2", "top-level-group/sub-level-group"))

@@ -125,26 +125,31 @@ class GroupStageCLI(BaseStageClass):
         # Append all descendant groups to staged groups
         desc_groups = group.get("desc_groups", [])
         for i, dgid in enumerate(desc_groups):
-            desc_group = self.rewritten_groups[dgid]
+            try:
+                desc_group = self.rewritten_groups[dgid]
 
-            # Append all descendant group projects to staged projects
-            for pid in desc_group.get("projects", []):
-                obj = self.get_project_metadata(pid, group=True)
+                # Append all descendant group projects to staged projects
+                for pid in desc_group.get("projects", []):
+                    obj = self.get_project_metadata(pid, group=True)
 
-                # Append all project members to staged users
-                for pm in obj.get("members", []):
-                    self.append_member_to_members_list([], pm, dry_run)
+                    # Append all project members to staged users
+                    for pm in obj.get("members", []):
+                        self.append_member_to_members_list([], pm, dry_run)
+                    self.log.info(
+                        f"{dry}Staging project {obj.get('path_with_namespace')} (ID: {obj.get('id')})")
+                    self.staged_projects.append(obj)
+
                 self.log.info(
-                    f"{dry}Staging project {obj.get('path_with_namespace')} (ID: {obj.get('id')})")
-                self.staged_projects.append(obj)
+                    f"{dry}Staging descendant group {desc_group['full_path']} (ID: {dgid}) [{i+1}/{len(desc_groups)}]")
+                self.staged_groups.append(self.format_group(desc_group))
 
-            self.log.info(
-                f"{dry}Staging descendant group {desc_group['full_path']} (ID: {dgid}) [{i+1}/{len(desc_groups)}]")
-            self.staged_groups.append(self.format_group(desc_group))
-
-            # Append all descendant group members to staged users
-            for m in desc_group.get("members", []):
-                self.append_member_to_members_list([], m, dry_run)
+                # Append all descendant group members to staged users
+                for m in desc_group.get("members", []):
+                    self.append_member_to_members_list([], m, dry_run)
+            except KeyError:
+                self.log.error(
+                    f"Descendent group ID {dgid} NOT found among listed groups")
+                sys.exit(os.EX_DATAERR)
 
         # Append all group members to staged users
         for m in group.get("members", []):

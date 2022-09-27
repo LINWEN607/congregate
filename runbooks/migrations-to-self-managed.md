@@ -132,6 +132,9 @@ Copy the following data and add subsequent rows for single group migration
 * [ ] Notify the customer in the customer-facing Slack channel you are starting the user migration wave
 * [ ] Run the following command `nohup ./congregate.sh migrate --commit > data/waves/user_wave/user_wave.log 2>&1 &`
 * [ ] Monitor the wave periodically by running `tail -f data/waves/user_wave/user_wave.log`
+* [ ] (gitlab.com) If manually blocking a user on destination to align `blocked` user state between instances
+  * Manually add (via GitLab UI), for GitLab Support visibility, the following Admin note to *Admin -> Users -> User page -> Edit -> Admin notes (Note)*
+  **User blocked as part of GitLab PS user migration from `<src_hostname>`**
 * [ ] Copy the following files to `/opt/congregate/data/waves/user_wave/` and attach to this issue:
   * `data/logs/congregate.log`
   * `data/logs/audit.log`
@@ -322,8 +325,8 @@ In that script, you prepopulate all source and destination registry repositories
 
 * [ ] Revert back on source the exposed users' `public_email` field by running `./congregate.sh set-staged-users-public-email --hide`
   * Make sure all the affected users are staged first
-* [ ] Once all the projects/groups are migrated, stitch together the various migration attempts by running `./congregate.sh stitch-results --result-type=<user|group|project> --no-of-files=<number-of-results-files-to-stitch>`
-* [ ] Once the results have been stitched into a single JSON file, run the diff report on the newly created results file
+* [ ] If you had to run multiple `congregate migrate` attempts to bring over failed users, groups, or projects, you can run `congregate migrate --only-post-migration-info` to create a unified results file without the need to run `stitch-results`
+* [ ] Once you have a complete results file, run the diff report `congregate --generate-diff --staged`
 * [ ] Notify in the internal Slack channel dedicated to this migration you are running the diff report
 * [ ] Run `nohup ./congregate.sh generate-diff --staged > data/waves/wave_<insert_wave_number>/diff<insert-wave-here>.log 2>&1 &` to generate the various diff reports
   * **NOTE:** Make sure to have the correct `data/staged_*` and `data/results/*_results.json` files present

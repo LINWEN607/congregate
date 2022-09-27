@@ -27,7 +27,7 @@ After cloning [this repo](https://gitlab.com/gitlab-org/professional-services-au
       3. Run `poetry install -v` (resolves the `pyproject.toml` dependencies, and installs the versions specified in the `poetry.lock` file)
 
       **NOTE:** By removing the `poetry.lock` file or running `poetry update` you are deviating from the default set versions of the dependencies. When in doubt add `--no-dev` (Do not install dev dependencies) and `--dry-run` (`poetry update` only) to avoid dev dependencies i.e. inspect new versions before updating to them.
-1. Install the python poetry virtual environment manager: `pip install poetry` If pip install poetry doesn't work: \
+1. Install the python poetry virtual environment manager: `pip install --no-deps poetry` If pip install poetry doesn't work: \
  `curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python`
 1. Source the poetry environment: `source $HOME/.poetry/env`
 1. Verify poetry works: `poetry --version`. If this doesn't work, add the following line to your appropriate rc file, usually `.zshrc`: \
@@ -82,7 +82,7 @@ curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poet
 Invoke-WebRequest -Uri https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py -UseBasicParsing).Content | python
 
 # Install with pip
-pip install poetry
+pip install --no-deps poetry
 
 # Install dependencies from Pipfile
 cd <path_to_congregate>

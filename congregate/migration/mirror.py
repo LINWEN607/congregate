@@ -9,7 +9,7 @@ from congregate.migration.gitlab.projects import ProjectsApi
 
 class MirrorClient(BaseClass):
     def __init__(self):
-        super(MirrorClient, self).__init__()
+        super().__init__()
         self.projects_api = ProjectsApi()
 
     @stable_retry

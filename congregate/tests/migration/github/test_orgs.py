@@ -169,7 +169,6 @@ class OrgsTests(unittest.TestCase):
                 "description": None
             }
         ]
-
         expected_groups = [
             {
                 "members": org_members,
@@ -178,50 +177,7 @@ class OrgsTests(unittest.TestCase):
                 "name": "org1",
                 "auto_devops_enabled": False,
                 "path": "org1",
-                "projects": [
-                    {
-                        "name": "googleapis",
-                        "members": [],
-                        "path": "googleapis",
-                        "path_with_namespace": "org1/googleapis",
-                        "http_url_to_repo": "https://github.example.net/org1/googleapis.git",
-                        "ci_sources": {
-                            "Jenkins": [],
-                            "TeamCity": []
-                        },
-                        "namespace": {
-                            "path": "org1",
-                            "kind": "group",
-                            "id": 8,
-                            "full_path": "org1",
-                            "name": "org1"
-                        },
-                        "id": 5,
-                        "visibility": "public",
-                        "description": None
-                    },
-                    {
-                        "name": "gradio",
-                        "members": [],
-                        "path": "gradio",
-                        "path_with_namespace": "org1/gradio",
-                        "http_url_to_repo": "https://github.example.net/org1/gradio.git",
-                        "ci_sources": {
-                            "Jenkins": [],
-                            "TeamCity": []
-                        },
-                        "namespace": {
-                            "path": "org1",
-                            "kind": "group",
-                            "id": 8,
-                            "full_path": "org1",
-                            "name": "org1"
-                        },
-                        "id": 6,
-                        "visibility": "private",
-                        "description": None
-                    }
-                ],
+                "projects": [ep["id"] for ep in expected_projects],
                 "id": 8,
                 "full_path": "org1",
                 "description": None
@@ -391,50 +347,7 @@ class OrgsTests(unittest.TestCase):
                 "name": "qa-child",
                 "auto_devops_enabled": False,
                 "path": "qa-child",
-                "projects": [
-                    {
-                        "id": 8,
-                        "path": "arrow",
-                        "name": "arrow",
-                        "ci_sources": {
-                            "Jenkins": [],
-                            "TeamCity": []
-                        },
-                        "namespace": {
-                            "id": 9,
-                            "path": "org2",
-                            "name": "org2",
-                            "kind": "group",
-                            "full_path": "org2"
-                        },
-                        "path_with_namespace": "org2/arrow",
-                        "http_url_to_repo": "https://github.example.net/org2/arrow.git",
-                        "visibility": "public",
-                        "description": None,
-                        "members": []
-                    },
-                    {
-                        "id": 9,
-                        "path": "phaser",
-                        "name": "phaser",
-                        "ci_sources": {
-                            "Jenkins": [],
-                            "TeamCity": []
-                        },
-                        "namespace": {
-                            "id": 9,
-                            "path": "org2",
-                            "name": "org2",
-                            "kind": "group",
-                            "full_path": "org2"
-                        },
-                        "path_with_namespace": "org2/phaser",
-                        "http_url_to_repo": "https://github.example.net/org2/phaser.git",
-                        "visibility": "private",
-                        "description": None,
-                        "members": []
-                    }
-                ],
+                "projects": [ep["id"] for ep in expected_projects],
                 "id": 9,
                 "full_path": None,
                 "description": None
@@ -568,50 +481,7 @@ class OrgsTests(unittest.TestCase):
                 "name": "qa-child",
                 "auto_devops_enabled": False,
                 "path": "qa-child",
-                "projects": [
-                    {
-                        "id": 8,
-                        "path": "arrow",
-                        "name": "arrow",
-                        "ci_sources": {
-                            "Jenkins": [],
-                            "TeamCity": []
-                        },
-                        "namespace": {
-                            "id": 9,
-                            "path": "org2",
-                            "name": "org2",
-                            "kind": "group",
-                            "full_path": "org2"
-                        },
-                        "path_with_namespace": "org2/arrow",
-                        "http_url_to_repo": "https://github.example.net/org2/arrow.git",
-                        "visibility": "public",
-                        "description": None,
-                        "members": []
-                    },
-                    {
-                        "id": 9,
-                        "path": "phaser",
-                        "name": "phaser",
-                        "ci_sources": {
-                            "Jenkins": [],
-                            "TeamCity": []
-                        },
-                        "namespace": {
-                            "id": 9,
-                            "path": "org2",
-                            "name": "org2",
-                            "kind": "group",
-                            "full_path": "org2"
-                        },
-                        "path_with_namespace": "org2/phaser",
-                        "http_url_to_repo": "https://github.example.net/org2/phaser.git",
-                        "visibility": "private",
-                        "description": None,
-                        "members": []
-                    }
-                ],
+                "projects": [ep["id"] for ep in expected_projects],
                 "id": 9,
                 "full_path": "org2/qa/qa-child",
                 "description": None

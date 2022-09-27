@@ -294,7 +294,7 @@ dev = ["twine", "markdown", "flake8", "wheel"]
 
 [[package]]
 name = "gitlab-ps-utils"
-version = "0.7.1"
+version = "0.8.0"
 description = "Shared python utilities used by GitLab Professional Services tooling"
 category = "main"
 optional = false
@@ -315,6 +315,32 @@ python-versions = ">=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*"
 
 [package.extras]
 docs = ["sphinx"]
+
+[[package]]
+name = "grpcio"
+version = "1.47.0"
+description = "HTTP/2-based RPC framework"
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+six = ">=1.5.2"
+
+[package.extras]
+protobuf = ["grpcio-tools (>=1.47.0)"]
+
+[[package]]
+name = "grpcio-tools"
+version = "1.47.0"
+description = "Protobuf code generator for gRPC"
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+grpcio = ">=1.47.0"
+protobuf = ">=3.12.0,<4.0dev"
 
 [[package]]
 name = "gunicorn"
@@ -731,6 +757,14 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 
 [package.extras]
 dev = ["pre-commit", "tox"]
+
+[[package]]
+name = "protobuf"
+version = "3.20.1"
+description = "Protocol Buffers"
+category = "main"
+optional = false
+python-versions = ">=3.7"
 
 [[package]]
 name = "py"
@@ -1187,7 +1221,7 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "1.1"
 python-versions = "3.8.12"
-content-hash = "64de08e35a306ad6447e257c04234dd7c1fa5ea086becec5dbbb75e2e71fb506"
+content-hash = "c6fa96836b40d3baac1728942494df4939acfa9fa2036103bb432f8a36065083"
 
 [metadata.files]
 astroid = [
@@ -1399,8 +1433,8 @@ ghp-import = [
     {file = "ghp_import-2.0.2-py3-none-any.whl", hash = "sha256:5f8962b30b20652cdffa9c5a9812f7de6bcb56ec475acac579807719bf242c46"},
 ]
 gitlab-ps-utils = [
-    {file = "gitlab-ps-utils-0.7.1.tar.gz", hash = "sha256:068225f4ef9572971a6d14d03112a2edef0621e9e7aa47b395964150387703ae"},
-    {file = "gitlab_ps_utils-0.7.1-py3-none-any.whl", hash = "sha256:9c38b6abd37c1b6f57ef282e203b6ce7a50e74d8fb4209b7cb4a96acbf529154"},
+    {file = "gitlab-ps-utils-0.8.0.tar.gz", hash = "sha256:203e44dac23c078fa6e0b804d2df073587c8d6fa695c71823eb0286c9ade9b33"},
+    {file = "gitlab_ps_utils-0.8.0-py3-none-any.whl", hash = "sha256:7f8d8feb5ef1a7d9e4a938b95560c241feb0360b1a9fab97fb6abc8651e60680"},
 ]
 greenlet = [
     {file = "greenlet-1.1.2-cp27-cp27m-macosx_10_14_x86_64.whl", hash = "sha256:58df5c2a0e293bf665a51f8a100d3e9956febfbf1d9aaf8c0677cf70218910c6"},
@@ -1459,6 +1493,8 @@ greenlet = [
     {file = "greenlet-1.1.2-cp39-cp39-win_amd64.whl", hash = "sha256:013d61294b6cd8fe3242932c1c5e36e5d1db2c8afb58606c5a67efce62c1f5fd"},
     {file = "greenlet-1.1.2.tar.gz", hash = "sha256:e30f5ea4ae2346e62cedde8794a56858a67b878dd79f7df76a0767e356b1744a"},
 ]
+grpcio = []
+grpcio-tools = []
 gunicorn = [
     {file = "gunicorn-20.0.4-py2.py3-none-any.whl", hash = "sha256:cd4a810dd51bf497552cf3f863b575dabd73d6ad6a91075b65936b151cbf4f9c"},
     {file = "gunicorn-20.0.4.tar.gz", hash = "sha256:1904bb2b8a43658807108d59c3f3d56c2b6121a701161de0ddf9ad140073c626"},
@@ -1767,6 +1803,7 @@ pluggy = [
     {file = "pluggy-0.13.1-py2.py3-none-any.whl", hash = "sha256:966c145cd83c96502c3c3868f50408687b38434af77734af1e9ca461a4081d2d"},
     {file = "pluggy-0.13.1.tar.gz", hash = "sha256:15b2acde666561e1298d71b523007ed7364de07029219b604cf808bfa1c765b0"},
 ]
+protobuf = []
 py = [
     {file = "py-1.11.0-py2.py3-none-any.whl", hash = "sha256:607c53218732647dff4acdfcd50cb62615cedf612e72d1724fb1a0cc6405b378"},
     {file = "py-1.11.0.tar.gz", hash = "sha256:51c75c4126074b472f746a24399ad32f6053d1b34b68d2fa41e558e6f4a98719"},

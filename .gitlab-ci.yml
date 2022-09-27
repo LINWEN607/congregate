@@ -1,16 +1,18 @@
 stages:
   - build
   - test
+  - rolling release
+  - deploy
   - bump version
   - release
-  - deploy
 
 include:
   - template: Security/SAST.gitlab-ci.yml
   - template: Security/Secret-Detection.gitlab-ci.yml
-  - template: Code-Quality.gitlab-ci.yml
   - template: Security/Container-Scanning.gitlab-ci.yml
   - template: Security/License-Scanning.gitlab-ci.yml
+  - template: Security/Dependency-Scanning.gitlab-ci.yml
+  - template: Code-Quality.gitlab-ci.yml
   - local: ci/vault.yml
 
 variables:
@@ -18,8 +20,9 @@ variables:
   TEST_IMAGE_NAME: "$CI_REGISTRY_IMAGE/test-3.8:latest"
   BB_SERVER_SEED_IMAGE_NAME: "$CI_REGISTRY_IMAGE/bitbucket-seed:latest"
   JENKINS_SEED_IMAGE_NAME: "$CI_REGISTRY_IMAGE/jenkins-seed:latest"
+  MAVEN_GRPC_IMAGE_NAME: "$CI_REGISTRY_IMAGE/maven-server:latest"
   SAST_EXCLUDED_ANALYZERS: "brakeman,flawfinder,gosec,kubesec,mobsf,phpcs-security-audit,pmd-apex,security-code-scan,sobelow,spotbugs"
-  SECURE_LOG_LEVEL: "debug"
+  SECURE_LOG_LEVEL: debug
   CONGREGATE_PATH: $CI_PROJECT_DIR
   APP_PATH: $CI_PROJECT_DIR
 
@@ -31,13 +34,13 @@ default:
 workflow:
   rules:
     # For merge requests, create a pipeline.
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: "$CI_PIPELINE_SOURCE == 'merge_request_event'"
     # For `master` branch, create a pipeline (this excludes schedules but includes pushes, merges, etc.).
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
     # For tags, create a pipeline.
     - if: "$CI_COMMIT_TAG"
     # For pipeline schedules, create a pipeline
-    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - if: "$CI_PIPELINE_SOURCE == 'schedule'"
 
 .use-docker-in-docker:
   image: docker:${DOCKER_VERSION}
@@ -71,7 +74,7 @@ workflow:
           echo $GITLAB_LICENSE_PATH > /etc/gitlab/Gitlab.gitlab-license & \
           python3 -m http.server 443 --directory /var/log/gitlab/gitlab-rails/ & :; /assets/wrapper",
         ]
-    - name: mongo:4.4.4
+    - name: mongo:4.4.16
       alias: mongo
 
 .e2e-ghe-cleanup:
@@ -138,10 +141,16 @@ build:
     - .docker-login
   stage: build
   script:
+    - echo "SOURCE IS $CI_PIPELINE_SOURCE"
     - cp ./docker/test/py38.Dockerfile ./Dockerfile
     - docker build --tag "$TEST_IMAGE_NAME" .
     - docker push "$TEST_IMAGE_NAME"
   rules:
+    - if: "$CI_PIPELINE_SOURCE == 'merge_request_event'"
+      changes:
+        - docker/test/*    
+      variables:
+        TEST_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHORT_SHA-test-3.8        
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
       changes:
         - docker/test/*
@@ -180,6 +189,23 @@ build jenkins seed image:
         - docker/jenkins/jenkins.py
         - docker/jenkins/setup_and_seed.py
 
+build maven server image:
+  extends:
+    - .use-docker-in-docker
+    - .docker-login
+  stage: build
+  script:
+    - cp docker/maven/Dockerfile ./
+    - DOCKER_BUILDKIT=1 docker build -t $MAVEN_GRPC_IMAGE_NAME .
+    - docker push "$MAVEN_GRPC_IMAGE_NAME"
+  rules:
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
+      changes:
+        - docker/maven/Dockerfile
+        - docker/maven/*.xml
+        - docker/maven/*.py
+        - congregate/migration/maven/*.py
+
 check ldap compose yaml:
   extends:
     - .use-docker-in-docker
@@ -194,7 +220,7 @@ check ldap compose yaml:
     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --profile default -y
     - source $HOME/.cargo/env
     - apk add python3 py-pip python3-dev libffi-dev openssl-dev gcc libc-dev rust cargo make
-    - /usr/bin/python3.7 -m pip install --upgrade pip
+    - /usr/bin/python3.8 -m pip install --no-deps --upgrade pip
     - pip3 install docker-compose
     - docker-compose -f docker-compose.yml config
   rules:
@@ -205,13 +231,18 @@ check ldap compose yaml:
 .test-job:
   stage: test
   before_script:
-    - pip install poetry
+    - pip install --no-deps poetry
     # Disable parallel installer to avoid "Key Error" issues
     - poetry config experimental.new-installer false
     - poetry install
     - ./congregate.sh init
   retry: 2
   rules:
+    - if: "$CI_PIPELINE_SOURCE == 'merge_request_event'"
+      variables:
+        TEST_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHORT_SHA-test-3.8
+      changes:
+        - docker/test/*    
     - if: "$CI_PIPELINE_SOURCE != 'schedule'"
       changes:
         - congregate/**/*
@@ -252,6 +283,8 @@ check ldap compose yaml:
         - congregate/helpers/**/*
         - congregate/migration/gitlab/**/*
         - congregate/migration/migrate.py
+        - congregate/tests/migration/gitlab/test_*_setup.py
+        - congregate/cli/stage_*.py
     - if: "$CI_PIPELINE_SOURCE == 'schedule' && $E2E_NIGHTLY"
   timeout: 30 minutes
 
@@ -394,9 +427,11 @@ bump version:
   stage: bump version
   extends:
     - .release-creds
+  variables:
+    GIT_DEPTH: 250
   script:
     - apk --update add python3 py-pip git
-    - pip install poetryupvers
+    - pip install --no-deps poetryupvers
     - ppuv bump
     - ppuv generate-release-notes --save --path=./notes.md
     - ppuv push-bump --config-user=$BOT_USER --config-email=$BOT_EMAIL --remote=origin --url=$PUSH_URL --branch="HEAD:$CI_COMMIT_BRANCH"
@@ -404,13 +439,13 @@ bump version:
   rules:
     - if: $CI_COMMIT_MESSAGE =~ /Bump version/
       when: never
-    - if: $CI_COMMIT_REF_NAME == "$CI_DEFAULT_BRANCH" && $CI_PIPELINE_SOURCE == "schedule"
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
       when: manual
 
 debian rolling release:
   extends:
     - .docker-build
-  stage: release
+  stage: rolling release
   variables:
     DISTRO: "debian"
     RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:rolling-debian"
@@ -438,7 +473,7 @@ debian-release-tag:
 centos rolling release:
   extends:
     - .docker-build
-  stage: release
+  stage: rolling release
   variables:
     DISTRO: "centos"
     RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:rolling-centos"
@@ -462,6 +497,23 @@ centos-release-tag:
     DISTRO: "centos"
     RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME-centos"
     LATEST: "$CI_REGISTRY_IMAGE:latest-centos"
+
+centos-no-mongo rolling release:
+  extends:
+    - .docker-build
+  stage: rolling release
+  variables:
+    DISTRO: "no-mongo"
+    RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:rolling-centos-no-mongo"
+  rules:
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
+      changes:
+        - congregate/**/*.py
+        - frontend/**/*
+        - congregate.sh
+        - pyproject.toml
+        - package.json
+        - docker/release/no-mongo.Dockerfile
 
 container-scan-build:centos:
   stage: build

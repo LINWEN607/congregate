@@ -150,7 +150,8 @@ def get_staged_user_projects(staged_projects):
 
 def check_for_staged_user_projects(staged_projects):
     """
-        Check if user projects are in the list of staged_projects. If they are, log a warning and return the list of namespaces, else return None
+    Check if user projects are in the list of staged_projects. If they are, log a warning and return the list of namespaces, else return None
+
         :param staged_projects: The JSON array of staged projects
         :return: True if user projects are found in staged_projects, else False
     """
@@ -190,9 +191,10 @@ def get_user_project_namespace(p):
 def find_user_by_email_comparison_without_id(email, src=False):
     """
     Find a user by email address in the destination system
-    :param email: the email address to check for
-    :param src: Is this the source or destination system? True if source else False. Defaults to False.
-    :return: The user entity found or None
+
+        :param email: the email address to check for
+        :param src: Is this the source or destination system? True if source else False. Defaults to False.
+        :return: The user entity found or None
     """
     if email:
         host = b.config.source_host if src else b.config.destination_host
@@ -215,7 +217,7 @@ def find_user_by_email_comparison_without_id(email, src=False):
                 b.log.error(
                     f"Could NOT find user by primary email {email}")
     else:
-        b.log.error("No user email provided. Skipping")
+        b.log.error(f"User email NOT provided ({email}). Skipping")
     return None
 
 
@@ -316,9 +318,9 @@ def clean_data(dry_run=True, files=None):
 
 def add_post_migration_stats(start, log=None):
     """
-        Print all POST/PUT/DELETE requests and their total number
-        Assuming you've started the migration with an empty congregate.log
-        Print total migration time
+    Print all POST/PUT/DELETE requests and their total number
+    Assuming you've started the migration with an empty congregate.log
+    Print total migration time
     """
     reqs = ["POST request to", "PUT request to",
             "DELETE request to", "PATCH request to"]
@@ -354,16 +356,18 @@ def get_external_path_with_namespace(path_with_namespace):
     return f"{b.config.dstn_parent_group_path or ''}/{path_with_namespace}".strip("/")
 
 
-def validate_name(name, full_path, is_group=False):
+def sanitize_name(name, full_path, is_group=False):
     """
-    Validate group and project names to satisfy the following criteria:
+    Validate and sanitize group and project names to satisfy the following criteria:
     Name can only contain letters, digits, emojis, '_', '.', dash, space, parenthesis (groups only).
     It must start with letter, digit, emoji or '_'.
+    Example:
+        " !  _-:: This.is-how/WE do\n&it#? - šđžčć_  ? " -> "This.is-how WE do it - šđžčć"
     """
     # Remove leading and trailing special characters and spaces
     stripped = name.strip(punctuation + " ")
 
-    # Validate naming convention in docstring
+    # Validate naming convention in docstring and sanitize name
     valid = " ".join(sub(
         r"[^\U00010000-\U0010ffff\w\_\-\.\(\) ]" if is_group else r"[^\U00010000-\U0010ffff\w\_\-\. ]", " ", stripped).split())
     if name != valid:
@@ -371,13 +375,31 @@ def validate_name(name, full_path, is_group=False):
             f"Renaming invalid {'group' if is_group else 'project'} name '{name}' -> '{valid}' ({full_path})")
         if is_group:
             b.log.error(
-                "Sub-groups require a rename on source or direct import")
+                f"Sub-group {name} ({full_path}) requires a rename on source or direct import")
+    return valid
+
+
+def sanitize_project_path(path, full_path):
+    """
+    Validate and sanitize project paths to satisfy the following criteria:
+    Project namespace path can contain only letters, digits, '_', '-' and '.'. Cannot start with '-', end in '.git' or end in '.atom'
+    Path can contain only letters, digits, '_', '-' and '.'. Cannot start with '-', end in '.git' or end in '.atom'
+    Path must not start or end with a special character and must not contain consecutive special characters.
+    Example:
+        "!_-::This.is;;-how_we--do\n&IT#?-šđžčć_?" -> "This.is-how_we-do-IT"
+    """
+    # Validate path convention in docstring and sanitize path
+    valid = sub("[._-][^A-Za-z0-9]+", "-",
+                sub("[^A-Za-z0-9\_\-\.]+", "-", path)).strip("-_.")
+    if path != valid:
+        b.log.warning(
+            f"Updating invalid project path '{path}' -> '{valid}' ({full_path})")
     return valid
 
 
 def get_duplicate_paths(data, are_projects=True):
     """
-        Legacy GL versions had case insensitive paths, which on newer GL versions are seen as duplicates
+    Legacy GL versions had case insensitive paths, which on newer GL versions are seen as duplicates
     """
     paths = [x.get("path_with_namespace", "").lower() if are_projects else x.get(
         "full_path", "").lower() for x in data]
@@ -386,10 +408,41 @@ def get_duplicate_paths(data, are_projects=True):
 
 def is_gl_version_older_than(set_version, host, token, log):
     """
-        Lookup GL instance version and throw custom log based
+    Lookup GL instance version and throw custom log based
     """
     version = safe_json_response(instance_api.get_version(host, token))
     if version and version.get("version") and int(version["version"].split(".")[0]) < set_version:
         b.log.info(f"{log} on GitLab version {version}")
         return True
     return False
+
+
+def get_stage_wave_paths(project):
+    """
+    Construct stage_wave destination namespace and path_with_namespace
+    """
+    src_pwn = project.get("path_with_namespace")
+    staged_tn = project.get("target_namespace")
+
+    # stage-wave staging, based on spreadsheet file
+    if project.get("override_dstn_ns") and staged_tn:
+        dstn_pwn = f"{staged_tn}/{project['path']}"
+    elif staged_tn:
+        dstn_pwn = f"{staged_tn}/{src_pwn}"
+    # Default config-based staging
+    else:
+        dstn_pwn = get_external_path_with_namespace(src_pwn)
+
+    # TODO: Make this target namespace lookup requirement configurable
+    if target_namespace := get_target_namespace(project):
+        tn = target_namespace
+    else:
+        tn = get_dst_path_with_namespace(
+            project).rsplit("/", 1)[0]
+    return dstn_pwn, tn
+
+
+def get_subset_list():
+    with open(b.config.list_subset_input_path, "r") as f:
+        for line in f.read().splitlines():
+            yield line

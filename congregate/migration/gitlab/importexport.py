@@ -138,7 +138,7 @@ class ImportExportClient(BaseClass):
                     sleep(self.COOL_OFF_MINUTES * 60)
                     exported = True
                     break
-                elif total_time < timeout:
+                if total_time < timeout:
                     self.log.info(
                         f"Waited {total_time}/{timeout} seconds for group {gid} to export")
                     total_time += wait_time
@@ -577,13 +577,13 @@ class ImportExportClient(BaseClass):
         dst_pid = self.projects.find_project_by_path(
             self.config.destination_host, self.config.destination_token, dst_path_with_namespace)
         if dst_pid:
-            self.log.info("SKIP: Project {0} (ID: {1}) found on destination".format(
-                dst_path_with_namespace, dst_pid))
+            self.log.info(
+                f"SKIP: Project {dst_path_with_namespace} (ID: {dst_pid}) found on destination")
         elif not dry_run:
             filename = get_export_filename_from_namespace_and_name(
                 namespace, name)
-            self.log.info("Project {} NOT found on destination. Exporting from source...".format(
-                dst_path_with_namespace))
+            self.log.info(
+                f"Project {dst_path_with_namespace} NOT found on destination. Exporting from source...")
             if loc == "filesystem":
                 exported = self.wait_for_export_to_finish(pid, name)
                 if exported:
@@ -596,8 +596,8 @@ class ImportExportClient(BaseClass):
             elif loc == "aws":
                 response = self.export_to_aws(pid, filename)
                 if response is None or response.status_code != 202:
-                    self.log.error("Failed to trigger project {0} (ID: {1}) export, with response {2}".format(
-                        pid, name, response))
+                    self.log.error(
+                        f"Failed to trigger project {name} (ID: {pid}) export, with response {response}")
                 else:
                     export_status = self.wait_for_export_to_finish(pid, name)
                     # If export status is unknown lookup the file on AWS
@@ -611,20 +611,33 @@ class ImportExportClient(BaseClass):
 
     def handle_gzip_download(self, name, pid, filename):
         '''
-        Attempt to download the export, if its not a valid export, try again.
+            Attempt to download the export, if it's not a valid export, try again.
         '''
         url = f"{self.config.source_host}/api/v4/projects/{pid}/export/download"
-        self.log.info(f"Downloading project {name} (ID: {pid}) as {filename}")
-        new_file = download_file(
-            url,
-            self.config.filesystem_path,
-            filename,
-            headers={"PRIVATE-TOKEN": self.config.source_token},
-            verify=self.config.ssl_verify)
-        if not is_gzip(f"{self.config.filesystem_path}/downloads/{new_file}"):
-            raise ValueError("Downloaded file is not a Gzip file.")
         self.log.info(
-            f"{name} export file successfully downloaded. Verified {filename} is a gzip file.")
+            f"Downloading project '{name}' (ID: {pid}) as {filename}")
+        total_time = 0
+        timeout = self.config.export_import_timeout
+        wait_time = self.COOL_OFF_MINUTES * 60
+        while total_time < timeout:
+            new_file = download_file(
+                url,
+                self.config.filesystem_path,
+                filename,
+                headers={"PRIVATE-TOKEN": self.config.source_token},
+                verify=self.config.ssl_verify)
+            # If None i.e. exception, retry
+            if not new_file:
+                self.log.info(
+                    f"Waiting {self.COOL_OFF_MINUTES} minutes to download project '{name}' (ID: {pid}) as {filename}")
+                total_time += wait_time
+                sleep(wait_time)
+                continue
+            break
+        if not is_gzip(f"{self.config.filesystem_path}/downloads/{new_file}"):
+            raise ValueError("Downloaded file is NOT a Gzip file.")
+        self.log.info(
+            f"Project '{name}' export file successfully downloaded. Verified {filename} is a gzip file.")
 
     def export_thru_fs_aws(self, pid, name, namespace):
         path_with_namespace = "%s_%s.tar.gz" % (namespace, name)
@@ -726,13 +739,13 @@ class ImportExportClient(BaseClass):
         timeout = self.config.export_import_timeout
         while True:
             details = safe_json_response(resp)
-            state = details.get("status")
+            state = details.get("status") if details else None
             log_string = f"Bulk group import {state}, with status response:\n{json_pretty(details)}"
             if state == "finished":
                 self.log.info(log_string)
                 imported = True
                 break
-            if state == "failed":
+            if not state or state == "failed":
                 self.log.error(log_string)
                 break
             if total_time < timeout:

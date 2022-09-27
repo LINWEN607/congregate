@@ -4,14 +4,14 @@ Copyright (c) 2022 - GitLab
 
 Usage:
     congregate init
-    congregate list [--processes=<n>] [--partial] [--skip-users] [--skip-groups] [--skip-projects] [--skip-ci] [--src-instances]
+    congregate list [--processes=<n>] [--partial] [--skip-users] [--skip-groups] [--skip-group-members] [--skip-projects] [--skip-project-members] [--skip-ci] [--src-instances] [--subset]
     congregate configure
     congregate generate-reporting
     congregate stage-projects <projects>... [--skip-users] [--commit] [--scm-source=hostname]
     congregate stage-groups <groups>... [--skip-users] [--commit] [--scm-source=hostname]
     congregate stage-wave <wave> [--commit] [--scm-source=hostname]
     congregate create-stage-wave-csv [--commit]
-    congregate migrate [--processes=<n>] [--reporting] [--skip-users] [--remove-members] [--stream-groups] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostname] [--commit] [--reg-dry-run]
+    congregate migrate [--processes=<n>] [--reporting] [--skip-users] [--remove-members] [--stream-groups] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostname] [--commit] [--reg-dry-run] [--group-structure]
     congregate rollback [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
     congregate ui
     congregate do-all [--commit]
@@ -19,9 +19,8 @@ Usage:
     congregate do-all-groups-and-projects [--commit]
     congregate search-for-staged-users [--table]
     congregate update-aws-creds
-    congregate add-users-to-parent-group [--minimal_access] [--commit]
+    congregate update-parent-group-members [--access-level=<level>] [--add-members] [--commit]
     congregate remove-inactive-users [--commit] [--membership]
-    congregate update-user-permissions [--access-level=<level>] [--commit]
     congregate get-total-count
     # TODO: Refactor, project name matching does not seem correct
     congregate find-unimported-projects [--commit]
@@ -29,18 +28,19 @@ Usage:
     congregate url-rewrite-only [--commit]
     congregate remove-users-from-parent-group [--commit]
     congregate migrate-variables-in-stage [--commit]
-    congregate mirror-staged-projects [--commit]
-    congregate push-mirror-staged-projects [--disabled] [--overwrite] [--force] [--commit]
+    congregate pull-mirror-staged-projects [--commit]
+    congregate push-mirror-staged-projects [--disabled] [--keep_div_refs] [--force] [--commit]
     congregate toggle-staged-projects-push-mirror [--disable] [--commit]
-    congregate verify-staged-projects-remote-mirror
-    congregate remove-all-mirrors [--commit]
-    # TODO: Add dry-run, potentially remove
-    congregate update-projects-visibility
+    congregate verify-staged-projects-push-mirror [--disabled] [--keep_div_refs]
+    congregate delete-staged-projects-push-mirrors [--all] [--commit]
+    congregate delete-all-staged-projects-pull-mirrors [--commit]
     congregate set-default-branch [--name=<name>] [--commit]
     congregate enable-mirroring [--commit] # TODO: Find a use for it or remove
     congregate count-unarchived-projects [--local]
     congregate archive-staged-projects [--commit] [--dest] [--scm-source=hostname]
     congregate unarchive-staged-projects [--commit] [--dest] [--scm-source=hostname]
+    congregate set-bb-read-only-branch-permissions [--projects] [--commit]
+    congregate unset-bb-read-only-branch-permissions [--projects] [--commit]
     congregate filter-projects-by-state [--commit] [--archived]
     congregate find-empty-repos
     congregate compare-groups [--staged]
@@ -73,16 +73,19 @@ Options:
 Arguments:
     processes                               Set number of processes to run in parallel.
     commit                                  Disable the dry-run and perform the full migration with all reads/writes.
-    src_instances                           Present if there are multiple GH source instances
-    scm_source                              Specific SCM source hostname
+    src-instances                           Present if there are multiple GH source instances
+    subset                                  Provide input file with list of URLs to list a subset of groups (--skip-projects) or projects (--skip-groups). BitBucket ONLY.
+    scm-source                              Specific SCM source hostname
     skip-users                              Stage: Skip staging users; Migrate: Skip migrating users; Rollback: Remove only groups and projects.
-    remove-members                          Remove all members of created (GitHub) or imported (GitLab) groups. Skip adding any members of BitBucket imported repos.
+    remove-members                          Remove all members of created (GitHub) or imported (GitLab) groups. Skip adding any members of BitBucket Server imported repos.
     hard-delete                             Remove user contributions and solely owned groups
     stream-groups                           Streamed approach of migrating staged groups in bulk
     skip-groups                             Rollback: Remove only users and projects
+    skip-group-members                      Add empty list instead of listing GitLab group members.
     skip-group-export                       Skip exporting groups from source instance
     skip-group-import                       Skip importing groups to destination instance
     skip-projects                           Rollback: Remove only users and empty groups
+    skip-project-members                    Add empty list instead of listing GitLab project members.
     skip-project-export                     Skips the project export and assumes that the project file is already ready
                                                 for rewrite. Currently does NOT work for exports through filesystem-aws
     skip-project-import                     Will do all steps up to import (export, re-write exported project json,
@@ -91,7 +94,8 @@ Arguments:
     only-post-migration-info                Skips migrating all content except for post-migration information. Use when import is handled outside of congregate
     subgroups-only                          Expects that only sub-groups are staged and that their parent groups already exist on destination
     reg-dry-run                             If registry migration is configured, instead of doing the actual migration, write the tags to the logs for use in the brute force migration. Can also be useful when renaming targets
-    access-level                            Update parent group level user permissions (Guest/Reporter/Developer/Maintainer/Owner).
+    group-structure                         Let the GitHub and BitBucket Server importers create the missing sub-group layers.
+    access-level                            Update parent group level user permissions (None/Minimal/Guest/Reporter/Developer/Maintainer/Owner).
     staged                                  Compare using staged data
     no-of-files                             Number of files used to go back when stitching JSON results
     result-type                             For stitching result files. Options are project, group, or user
@@ -110,15 +114,17 @@ Arguments:
     disable-cicd                            Disable CI/CD when creating empty GitLab project structures
     disabled                                Disable project push mirror when creating it
     disable                                 Disable staged project push mirror
-    overwrite                               Disable keep_divergent_refs (True by default) and overwrite mirror repo on next push
+    keep_div_refs                           Set keep_divergent_refs to True (False by default) and avoid overwriting changes on the mirror repo
     force                                   Immediately trigger push mirroring with a repo change e.g. new branch
     name                                    Project branch name
+    all                                     Include all listed objects.
+    projects                                Target BitBucket repo branches from a project level
 
 Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/projects.json.
     init                                    Creates additional directories and files required by congregate
     configure                               Configure congregate for migrating between two instances and save it to {CONGREGATE_PATH}/data/congregate.conf.
-    generate-reporting                                  Run reporting on staged projects.
+    generate-reporting                      Run reporting on staged projects.
     stage-projects                          Stage projects to {CONGREGATE_PATH}/data/staged_projects.json,
                                                 their parent groups to {CONGREGATE_PATH}/data/staged_groups.json.
                                                 all project and group members to {CONGREGATE_PATH}/data/staged_users.json,
@@ -129,7 +135,9 @@ Commands:
                                                 all project and group members to {CONGREGATE_PATH}/data/staged_users.json,
                                                 All groups can be staged with '.' or 'all'.
                                                 Individual ones can be staged as a space delimited list of integers (group IDs).
-    stage-wave                              Stage wave of projects based on migration wave spreadsheet. This only takes a single wave for input
+    stage-wave                              Stage wave of projects based on migration wave spreadsheet. This only takes a single wave for input.
+                                                Add '--skip-group-import' to avoid creating groups.
+                                                Add '--group-structure' to allow the GitHub and BitBucket Server importers to create the missing sub-group layers.
     create-stage-wave-csv                   Generate a baseline version of the CSV for stage wave from the listed data
     migrate                                 Commence migration based on configuration and staged assets.
     rollback                                Remove staged users/groups/projects on destination.
@@ -137,24 +145,23 @@ Commands:
     do-all*                                 Configure system, retrieve all projects, users, and groups, stage all information, and commence migration.
     search-for-staged-users                 Search for staged users on destination based on primary email
     update-aws-creds                        Run awscli commands based on the keys stored in the config. Useful for docker updates.
-    add-users-to-parent-group               If a parent group is set, all staged users will be added to the parent group with guest permissions unless --minimal_access flag is thrown which adds staged users with minimal_access permissions to the parent group.
+    update-parent-group-members             Add (optional) and/or update permissions (to Guest by default) of all staged users for a configured parent group on destination.
     remove-inactive-users                   Remove all inactive users from staged projects and groups.
-    update-user-permissions                 Update parent group member access level. Mainly for lowering to Guest/Reporter.
     get-total-count                         Get total count of migrated projects. Used to compare exported projects to imported projects.
     find-unimported-projects                Return a list of projects that failed import.
     stage-unimported-projects               Stage unimported projects based on {CONGREGATE_PATH}/data/unimported_projects.txt.
     url-rewrite-only                        Performs the URL rewrite portion of a migration as a stand-alone step, instead of as a post-migration step. Requires the projects to be staged, and to exist on destination
-    remove-users-from-parent-group          Remove all users with at most reporter access from the parent group.
+    remove-users-from-parent-group          Remove all users with at most Reporter access from the parent group.
     migrate-variables-in-stage              Migrate CI variables for staged projects.
-    mirror-staged-projects                  Set up project mirroring for staged projects.
+    pull-mirror-staged-projects             Set up project pull mirroring for staged projects.
     push-mirror-staged-projects             Set up and enable (by default) project push mirroring for staged projects.
                                                 Assuming both the mirrored repo and empty project structure (create-staged-projects-structure) for mirroring already exist on destination.
                                                 NOTE: Destination instance only mirroring.
     toggle-staged-projects-push-mirror      Enable/disable push mirror created via command push-mirror-staged-projects.
                                                 NOTE: Destination instance only mirroring.
-    verify-staged-projects-remote-mirror    Verify that each staged project remote push mirror exists and is not failing.
-    remove-all-mirrors                      Remove all project mirrors for staged projects.
-    update-projects-visibility              Return list of all migrated projects' visibility.
+    verify-staged-projects-push-mirror      Verify that each staged project push mirror exists and is not failing. Preferably run a few minutes after creating push mirrors.
+    delete-staged-projects-push-mirrors     Remove project push mirrors for staged projects. Only remove destination instance host (+'dstn_parent_group_path' if configured) mirrors. Add '--all' to remove all mirrors.
+    delete-all-staged-projects-pull-mirrors Remove all project pull mirrors for staged projects.
     set-default-branch                      Set default branch for staged projects on destination.
     enable-mirroring                        Start pull mirror process for all projects on destination.
     count-unarchived-projects               Return total number and list of all unarchived projects on source.
@@ -162,8 +169,10 @@ Commands:
                                                 This could be misleading as it sometimes shows 0 (zero) commits/tags/bytes for fully migrated projects.
     compare-groups                          Compare source and destination group results.
     staged-user-list                        Output a list of all staged users and their respective user IDs. Used to confirm IDs were updated correctly.
-    archive-staged-projects                 Archive projects that are staged, not necessarily migrated.
-    unarchive-staged-projects               Unarchive projects that are staged, not necessarily migrate.
+    archive-staged-projects                 Archive GitLab source (or destination if '--dest') projects that are staged, not necessarily migrated.
+    unarchive-staged-projects               Unarchive GitLab source (or destination if '--dest') projects that are staged, not necessarily migrate.
+    set-bb-read-only-branch-permissions     Add read-only branch permission/restriction to all branches (*) on staged BitBucket repos (or projects if '--projects').
+    unset-bb-read-only-branch-permissions   Remove read-only branch permission/restriction from all branches (*) on staged BitBucket repos (or projects if '--projects').
     filter-projects-by-state                Filter out projects by state archived or unarchived (default) from the list of staged projects and overwrite staged_projects.json.
                                                 GitLab source only
     generate-seed-data                      Generate dummy data to test a migration.
@@ -256,7 +265,6 @@ def main():
         ARCHIVED = arguments["--archived"]
         MEMBERSHIP = arguments["--membership"]
         SUBGROUPS_ONLY = arguments["--subgroups-only"]
-        REG_DRY_RUN = arguments["--reg-dry-run"]
         DEST = arguments["--dest"]
 
         if SCM_SOURCE:
@@ -276,7 +284,8 @@ def main():
             from congregate.migration.gitlab.compare import CompareClient
             from congregate.migration.migrate import MigrateClient
             from congregate.migration.gitlab.branches import BranchesClient
-            from congregate.cli import list_source, do_all
+            from congregate.cli import do_all
+            from congregate.cli.list_source import ListClient
             from congregate.cli.stage_projects import ProjectStageCLI
             from congregate.cli.stage_groups import GroupStageCLI
             from congregate.cli.stage_wave import WaveStageCLI
@@ -288,13 +297,15 @@ def main():
             from congregate.migration.github.diff.repodiff import RepoDiffClient
             from congregate.helpers.user_util import map_users, map_and_stage_users_by_email_match
             from congregate.helpers.mdbc import MongoConnector
-            from congregate.migration.github.repos import ReposClient
+            from congregate.migration.github.repos import ReposClient as GHReposClient
+            from congregate.migration.bitbucket.repos import ReposClient as BBReposClient
             from congregate.cli.ldap_group_sync import LdapGroupSync
 
             config = conf.Config()
             users = UsersClient()
             groups = GroupsClient()
             projects = ProjectsClient()
+            bb_repos = BBReposClient()
             variables = VariablesClient()
             compare = CompareClient()
             branches = BranchesClient()
@@ -308,15 +319,19 @@ def main():
             if arguments["list"]:
                 start = time()
                 rotate_logs()
-                list_source.list_data(
+                list_client = ListClient(
                     processes=PROCESSES,
                     partial=PARTIAL,
                     skip_users=SKIP_USERS,
                     skip_groups=SKIP_GROUPS,
+                    skip_group_members=arguments["--skip-group-members"],
                     skip_projects=SKIP_PROJECTS,
+                    skip_project_members=arguments["--skip-project-members"],
                     skip_ci=arguments["--skip-ci"],
-                    src_instances=SRC_INSTANCES
+                    src_instances=SRC_INSTANCES,
+                    subset=arguments["--subset"]
                 )
+                list_client.list_data()
                 add_post_migration_stats(start, log=log)
 
             if arguments["generate-reporting"] or arguments["--reporting"]:
@@ -364,7 +379,8 @@ def main():
                     only_post_migration_info=ONLY_POST_MIGRATION_INFO,
                     subgroups_only=SUBGROUPS_ONLY,
                     scm_source=SCM_SOURCE,
-                    reg_dry_run=REG_DRY_RUN
+                    reg_dry_run=arguments["--reg-dry-run"],
+                    group_structure=arguments["--group-structure"]
                 )
                 migrate.migrate()
 
@@ -388,10 +404,10 @@ def main():
                 spin_up_ui(app_path, config.ui_port)
             if arguments["search-for-staged-users"]:
                 users.search_for_staged_users(table=arguments["--table"])
-            if arguments["add-users-to-parent-group"]:
-                MINIMAL_ACCESS = arguments["--minimal_access"]
-                users.add_users_to_parent_group(dry_run=DRY_RUN, minimal_access=MINIMAL_ACCESS)
-                
+            if arguments["update-parent-group-members"]:
+                access_level = arguments["--access-level"] or "Guest"
+                users.update_parent_group_members(
+                    access_level, add_members=arguments["--add-members"], dry_run=DRY_RUN)
             if arguments["update-aws-creds"]:
                 if config.s3_access_key and config.s3_secret_key:
                     command = f"aws configure set aws_access_key_id {config.s3_access_key}"
@@ -406,13 +422,6 @@ def main():
             if arguments["remove-inactive-users"]:
                 users.remove_inactive_users(
                     membership=MEMBERSHIP, dry_run=DRY_RUN)
-            if arguments["update-user-permissions"]:
-                access_level = arguments["--access-level"]
-                if access_level:
-                    users.update_user_permissions(
-                        access_level, dry_run=DRY_RUN)
-                else:
-                    log.warning("Missing access-level argument")
             if arguments["get-total-count"]:
                 migrate = MigrateClient()
                 migrate.get_total_migrated_count()
@@ -425,31 +434,30 @@ def main():
                 users.remove_users_from_parent_group(dry_run=DRY_RUN)
             if arguments["migrate-variables-in-stage"]:
                 variables.migrate_variables_in_stage(dry_run=DRY_RUN)
-            if arguments["remove-all-mirrors"]:
-                migrate = MigrateClient(dry_run=DRY_RUN)
-                migrate.remove_all_mirrors()
-            if arguments["update-projects-visibility"]:
-                migrate = MigrateClient()
-                migrate.update_visibility()
-            if arguments["mirror-staged-projects"]:
-                migrate = MigrateClient(dry_run=DRY_RUN)
-                migrate.mirror_staged_projects()
+            if arguments["delete-all-staged-projects-pull-mirrors"]:
+                projects.delete_all_pull_mirrors(dry_run=DRY_RUN)
+            if arguments["pull-mirror-staged-projects"]:
+                projects.pull_mirror_staged_projects(dry_run=DRY_RUN)
             if arguments["push-mirror-staged-projects"]:
                 projects.push_mirror_staged_projects(
-                    disabled=arguments["--disabled"], overwrite=arguments["--overwrite"], force=arguments["--force"], dry_run=DRY_RUN)
+                    disabled=arguments["--disabled"], keep_div_refs=arguments["--keep_div_refs"], force=arguments["--force"], dry_run=DRY_RUN)
             if arguments["toggle-staged-projects-push-mirror"]:
                 projects.toggle_staged_projects_push_mirror(
                     disable=arguments["--disable"], dry_run=DRY_RUN)
-            if arguments["verify-staged-projects-remote-mirror"]:
-                projects.verify_staged_projects_remote_mirror()
+            if arguments["verify-staged-projects-push-mirror"]:
+                projects.verify_staged_projects_push_mirror(
+                    disabled=arguments["--disabled"], keep_div_refs=arguments["--keep_div_refs"])
+            if arguments["delete-staged-projects-push-mirrors"]:
+                projects.delete_staged_projects_push_mirrors(
+                    remove_all=arguments["--all"], dry_run=DRY_RUN)
             if arguments["set-default-branch"]:
                 branches.set_default_branch(
                     name=arguments["--name"], dry_run=DRY_RUN)
             if arguments["count-unarchived-projects"]:
                 projects.count_unarchived_projects(local=arguments["--local"])
             if arguments["archive-staged-projects"]:
-                if config.source_type == "gitlab" or (
-                        config.source_type == "bitbucket server" and DEST):
+                # GitLab as source and/or destination instance
+                if (config.source_type == "gitlab") or DEST:
                     projects.update_staged_projects_archive_state(
                         dest=DEST, dry_run=DRY_RUN)
                 elif config.source_type == "github" or config.list_multiple_source_config("github_source") is not None:
@@ -458,23 +466,50 @@ def main():
                                 "github_source"):
                             if SCM_SOURCE in single_source.get(
                                     "src_hostname", None):
-                                gh_repos = ReposClient(single_source["src_hostname"], deobfuscate(
+                                gh_repos = GHReposClient(single_source["src_hostname"], deobfuscate(
                                     single_source["src_access_token"]))
                     else:
-                        gh_repos = ReposClient(
+                        gh_repos = GHReposClient(
                             config.source_host, config.source_token)
-                    gh_repos.archive_staged_repos(dry_run=DRY_RUN)
+                    gh_repos.update_staged_repos_archive_state(dry_run=DRY_RUN)
                 else:
                     log.warning(
                         f"Bulk archive not available for {config.source_type}. Did you mean to add '--dest'?")
             if arguments["unarchive-staged-projects"]:
-                if config.source_type == "gitlab" or (
-                        config.source_type == "bitbucket server" and DEST):
+                # GitLab as source and/or destination instance
+                if (config.source_type == "gitlab") or DEST:
                     projects.update_staged_projects_archive_state(
                         archive=False, dest=DEST, dry_run=DRY_RUN)
+                elif config.source_type == "github" or config.list_multiple_source_config("github_source") is not None:
+                    if SCM_SOURCE is not None:
+                        for single_source in config.list_multiple_source_config(
+                                "github_source"):
+                            if SCM_SOURCE in single_source.get(
+                                    "src_hostname", None):
+                                gh_repos = GHReposClient(single_source["src_hostname"], deobfuscate(
+                                    single_source["src_access_token"]))
+                    else:
+                        gh_repos = GHReposClient(
+                            config.source_host, config.source_token)
+                    gh_repos.update_staged_repos_archive_state(
+                        archived=False, dry_run=DRY_RUN)
                 else:
                     log.warning(
                         f"Bulk unarchive not available for {config.source_type}. Did you mean to add '--dest'?")
+            if arguments["set-bb-read-only-branch-permissions"]:
+                if config.source_type == "bitbucket server":
+                    bb_repos.update_branch_permissions(
+                        is_project=arguments["--projects"], dry_run=DRY_RUN)
+                else:
+                    log.warning(
+                        "This command is ONLY intended for BitBucket source instances")
+            if arguments["unset-bb-read-only-branch-permissions"]:
+                if config.source_type == "bitbucket server":
+                    bb_repos.update_branch_permissions(
+                        restrict=False, is_project=arguments["--projects"], dry_run=DRY_RUN)
+                else:
+                    log.warning(
+                        "This command is ONLY intended for BitBucket source instances")
             if arguments["filter-projects-by-state"]:
                 if config.source_type == "gitlab":
                     projects.filter_projects_by_state(

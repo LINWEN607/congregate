@@ -147,6 +147,9 @@ src_access_token = *****
 #         ]
 #     }
 
+###! **HIDDEN PROPERTIES**
+### Full .txt file path. List of URLs (per line), used with --subset list command argument, to list a custom subset of BitBucket projects or repos.
+# list_subset_input_path =
 
 ###! **Configuration settings below are for EXPORT**
 [EXPORT]
@@ -203,13 +206,16 @@ export_import_status_check_time = 10
 # wave_spreadsheet_columns = Migration wave, Date of execution, Repo URL, Group Path, Override
 
 ### If you are using columns that do not match the expected "Wave name", "Wave date", and "Source Url", you will need to provide a map setting like the example below
+### Make sure the dictionary mappings are written either in a single line, e.g.
+# wave_spreadsheet_column_mapping = {"Wave name": "Migration wave", "Wave date": "Date of execution", "Source Url": "Repo URL", "Parent Path": "Group Path", "Override": "Override"}
+
+### Or, for better readability, in space/tab indented new lines, with the closing bracket part of the last line/mapping, e.g.
 # wave_spreadsheet_column_mapping = {
 #        "Wave name": "Migration wave",
 #        "Wave date": "Date of execution",
 #        "Source Url": "Repo URL",
 #        "Parent Path": "Group Path",
-#        "Override": "Override"
-#    }
+#        "Override": "Override"}
 
 ### Mongo DB configuration
 mongo_host = localhost

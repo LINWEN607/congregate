@@ -23,6 +23,8 @@ class GroupsClient(BaseClass):
         self.badges = BadgesClient()
         self.namespaces_api = NamespacesApi()
         self.group_id_mapping = {}
+        self.skip_group_members = False
+        self.skip_project_members = False
         super().__init__()
 
     def traverse_groups(self, host, token, group):
@@ -38,24 +40,24 @@ class GroupsClient(BaseClass):
                 group.pop(k, None)
 
             # Save all group members as part of group metadata
-            group["members"] = list(self.groups_api.get_all_group_members(
-                gid, host, token))
+            group["members"] = [] if self.skip_group_members else list(
+                self.groups_api.get_all_group_members(gid, host, token))
 
             # Save all group projects ID references as part of group metadata
             # Only list direct projects to avoid overhead
             group["projects"] = []
             for project in self.groups_api.get_all_group_projects(gid, host, token, include_subgroups=False, with_shared=False):
-                group["projects"].append(project["id"])
+                group["projects"].append(project.get("id"))
 
                 # Avoids having to also list all gitlab.com parent group projects
-                project["members"] = list(
+                project["members"] = [] if self.skip_project_members else list(
                     self.projects_api.get_members(project["id"], host, token))
                 mongo.insert_data(f"projects-{strip_netloc(host)}", project)
 
             # Save all descendant groups ID references as part of group metadata
             group["desc_groups"] = []
             for g in self.groups_api.get_all_descendant_groups(gid, host, token):
-                group["desc_groups"].append(g["id"])
+                group["desc_groups"].append(g.get("id"))
 
             # Traverse subgroups
             for subgroup in self.groups_api.get_all_subgroups(
@@ -81,7 +83,7 @@ class GroupsClient(BaseClass):
                 host, token), host, token, processes=processes)
 
     def append_groups(self, groups):
-        with open("{}/data/groups.json".format(self.app_path), "r") as f:
+        with open(f"{self.app_path}/data/groups.json", "r") as f:
             group_file = json.load(f)
         rewritten_groups = {}
         for i, _ in enumerate(group_file):
@@ -92,7 +94,7 @@ class GroupsClient(BaseClass):
         for group in filter(None, groups):
             self.traverse_staging(int(group), rewritten_groups, staged_groups)
 
-        with open("%s/data/staged_groups.json" % self.app_path, "w") as f:
+        with open(f"{self.app_path}/data/staged_groups.json", "w") as f:
             json.dump(remove_dupes(staged_groups), f, indent=4)
 
     def traverse_staging(self, gid, group_dict, staged_groups):
@@ -160,25 +162,25 @@ class GroupsClient(BaseClass):
         staged_groups = get_staged_groups()
         for g in staged_groups:
             self.log.info(g)
-            if g.get("name", None) is None:
+            if g.get("name") is None:
                 self.log.warning("name is missing")
-            if g.get("namespace", None) is None:
+            if g.get("namespace") is None:
                 self.log.warning("namespace is missing")
-            if g.get("project_type", None) is None:
+            if g.get("project_type") is None:
                 self.log.warning("project_type is missing")
-            if g.get("default_branch", None) is None:
+            if g.get("default_branch") is None:
                 self.log.warning("default_branch is missing")
-            if g.get("visibility", None) is None:
+            if g.get("visibility") is None:
                 self.log.warning("visibility is missing")
-            if g.get("http_url_to_repo", None) is None:
+            if g.get("http_url_to_repo") is None:
                 self.log.warning("http_url_to_repo is missing")
-            if g.get("shared_runners_enabled", None) is None:
+            if g.get("shared_runners_enabled") is None:
                 self.log.warning("shared_runners_enabled is missing")
-            if g.get("members", None) is None:
+            if g.get("members") is None:
                 self.log.warning("members is missing")
-            if g.get("id", None) is None:
+            if g.get("id") is None:
                 self.log.warning("id is missing")
-            if g.get("description", None) is None:
+            if g.get("description") is None:
                 self.log.warning("description is missing")
 
     def find_group_by_path(self, host, token, full_name_with_parent_namespace):

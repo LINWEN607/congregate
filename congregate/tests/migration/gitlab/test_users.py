@@ -1,8 +1,8 @@
 import unittest
 import json
-import responses
 import warnings
 from unittest.mock import patch, mock_open, PropertyMock, MagicMock
+import responses
 from pytest import mark
 from requests.exceptions import RequestException
 
@@ -346,31 +346,159 @@ class UsersTests(unittest.TestCase):
         }
         self.assertEqual(self.migrate.handle_user_creation(new_user), expected)
 
-    # pylint: disable=no-member
-    @responses.activate
-    # pylint: enable=no-member
     @patch('congregate.helpers.conf.Config.destination_host',
            new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'source_token',
+                  new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, 'destination_token',
                   new_callable=PropertyMock)
-    @patch.object(GitLabApi, 'get_count')
-    def test_block_user(self, count, dest_token, destination):
-        destination.return_value = "https://gitlabdestination.com"
-        dest_token.return_value = "token"
-        new_user = self.mock_users.get_dummy_user()
+    @patch.object(UsersApi, "search_for_user_by_email")
+    def test_block_user_no_user_match(self, mock_search, dest_token, src_token, dest_host):
+        dest_host.side_effect = ["https://gitlabdestination.com",
+                                 "https://gitlabdestination.com", "https://gitlabdestination.com"]
+        src_token.side_effect = ["token", "token", "token"]
+        dest_token.side_effect = ["token", "token", "token"]
 
-        url_value = "https://gitlabdestination.com/api/v4/users?search=%s&per_page=50&page=%d" % (
-            new_user["email"], count.return_value)
-        # pylint: disable=no-member
-        responses.add(responses.GET, url_value,
-                      json=[self.mock_users.get_dummy_user()], status=200)
-        # pylint: enable=no-member
-        url_value = "https://gitlabdestination.com/api/v4/users/27/block"
-        # pylint: disable=no-member
-        responses.add(responses.POST, url_value,
-                      json=self.mock_users.get_dummy_user_blocked(), status=201)
+        mock_search.return_value = [self.mock_users.get_dummy_old_users()[0]]
 
-        self.assertEqual(self.users.block_user(new_user).status_code, 201)
+        self.assertEqual(self.users.block_user(
+            self.mock_users.get_dummy_user()), None)
+
+    @patch('congregate.helpers.conf.Config.destination_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'source_token',
+                  new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token',
+                  new_callable=PropertyMock)
+    @patch.object(UsersApi, "block_user")
+    @patch.object(UsersApi, "search_for_user_by_email")
+    def test_block_user_block_failed(self, mock_search, mock_block, dest_token, src_token, dest_host):
+        dest_host.side_effect = ["https://gitlabdestination.com",
+                                 "https://gitlabdestination.com", "https://gitlabdestination.com"]
+        src_token.side_effect = ["token", "token", "token"]
+        dest_token.side_effect = ["token", "token", "token"]
+
+        mock_search.return_value = [self.mock_users.get_dummy_user()]
+
+        user_block = MagicMock()
+        type(user_block).status_code = PropertyMock(return_value=403)
+        user_block.json.return_value = {"message": "Forbidden"}
+        mock_block.return_value = user_block
+
+        with self.assertLogs(self.users.log, level="ERROR"):
+            self.assertEqual(self.users.block_user(
+                self.mock_users.get_dummy_user()).status_code, 403)
+
+    @patch('congregate.helpers.conf.Config.destination_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'source_token',
+                  new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token',
+                  new_callable=PropertyMock)
+    @patch.object(UsersApi, "block_user")
+    @patch.object(UsersApi, "search_for_user_by_email")
+    def test_block_user_block_request_failed(self, mock_search, mock_block, dest_token, src_token, dest_host):
+        dest_host.side_effect = ["https://gitlabdestination.com",
+                                 "https://gitlabdestination.com", "https://gitlabdestination.com"]
+        src_token.side_effect = ["token", "token", "token"]
+        dest_token.side_effect = ["token", "token", "token"]
+
+        mock_search.return_value = [self.mock_users.get_dummy_user()]
+
+        mock_block.side_effect = RequestException()
+
+        with self.assertLogs(self.users.log, level="ERROR"):
+            self.assertEqual(self.users.block_user(
+                self.mock_users.get_dummy_user()), None)
+
+    @patch('congregate.helpers.conf.Config.destination_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'source_token',
+                  new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token',
+                  new_callable=PropertyMock)
+    @patch.object(UsersApi, "modify_user")
+    @patch.object(UsersApi, "block_user")
+    @patch.object(UsersApi, "search_for_user_by_email")
+    def test_block_user_admin_note(self, mock_search, mock_block, mock_modify, dest_token, src_token, dest_host):
+        dest_host.side_effect = ["https://gitlabdestination.com",
+                                 "https://gitlabdestination.com", "https://gitlabdestination.com"]
+        src_token.side_effect = ["token", "token", "token"]
+        dest_token.side_effect = ["token", "token", "token"]
+
+        mock_search.return_value = [self.mock_users.get_dummy_user()]
+
+        user_block = MagicMock()
+        type(user_block).status_code = PropertyMock(return_value=201)
+        user_block.json.return_value = self.mock_users.get_dummy_user_blocked()
+        mock_block.return_value = user_block
+
+        user_modify = MagicMock()
+        type(user_modify).status_code = PropertyMock(return_value=200)
+        user_modify.json.return_value = self.mock_users.get_dummy_user_blocked()
+        mock_modify.return_value = user_modify
+
+        self.assertEqual(self.users.block_user(
+            self.mock_users.get_dummy_user()).status_code, 201)
+
+    @patch('congregate.helpers.conf.Config.destination_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'source_token',
+                  new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token',
+                  new_callable=PropertyMock)
+    @patch.object(UsersApi, "modify_user")
+    @patch.object(UsersApi, "block_user")
+    @patch.object(UsersApi, "search_for_user_by_email")
+    def test_block_user_admin_note_request_failed(self, mock_search, mock_block, mock_modify, dest_token, src_token, dest_host):
+        dest_host.side_effect = ["https://gitlabdestination.com",
+                                 "https://gitlabdestination.com", "https://gitlabdestination.com"]
+        src_token.side_effect = ["token", "token", "token"]
+        dest_token.side_effect = ["token", "token", "token"]
+
+        mock_search.return_value = [self.mock_users.get_dummy_user()]
+
+        user_block = MagicMock()
+        type(user_block).status_code = PropertyMock(return_value=201)
+        user_block.json.return_value = self.mock_users.get_dummy_user_blocked()
+        mock_block.return_value = user_block
+
+        mock_modify.side_effect = RequestException()
+
+        with self.assertLogs(self.users.log, level="ERROR"):
+            self.assertEqual(self.users.block_user(
+                self.mock_users.get_dummy_user()).status_code, 201)
+
+    @patch('congregate.helpers.conf.Config.destination_host',
+           new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'source_token',
+                  new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'destination_token',
+                  new_callable=PropertyMock)
+    @patch.object(UsersApi, "modify_user")
+    @patch.object(UsersApi, "block_user")
+    @patch.object(UsersApi, "search_for_user_by_email")
+    def test_block_user_admin_note_failed(self, mock_search, mock_block, mock_modify, dest_token, src_token, dest_host):
+        dest_host.side_effect = ["https://gitlabdestination.com",
+                                 "https://gitlabdestination.com", "https://gitlabdestination.com"]
+        src_token.side_effect = ["token", "token", "token"]
+        dest_token.side_effect = ["token", "token", "token"]
+
+        mock_search.return_value = [self.mock_users.get_dummy_user()]
+
+        user_block = MagicMock()
+        type(user_block).status_code = PropertyMock(return_value=201)
+        user_block.json.return_value = self.mock_users.get_dummy_user_blocked()
+        mock_block.return_value = user_block
+
+        user_modify = MagicMock()
+        type(user_modify).status_code = PropertyMock(return_value=409)
+        user_modify.json.return_value = {"message": "Forbidden"}
+        mock_modify.return_value = user_modify
+
+        with self.assertLogs(self.users.log, level="ERROR"):
+            self.assertEqual(self.users.block_user(
+                self.mock_users.get_dummy_user()).status_code, 201)
 
     def test_remove_inactive_users(self):
         read_data = json.dumps(

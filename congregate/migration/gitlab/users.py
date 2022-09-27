@@ -1,4 +1,5 @@
-from os import path
+import os
+import sys
 from requests.exceptions import RequestException
 from pandas import DataFrame, Series, set_option
 
@@ -100,9 +101,9 @@ class UsersClient(BaseClass):
             email = old_user["email"]
             for user in self.users_api.search_for_user_by_email(
                     self.config.destination_host, self.config.destination_token, email):
-                if user.get("email", None) == email:
+                if user.get("email") == email:
                     return True
-                elif index > 100:
+                if index > 100:
                     return False
                 index += 1
         return False
@@ -110,10 +111,10 @@ class UsersClient(BaseClass):
     def find_user_primarily_by_email(self, user):
         new_user = None
         if user:
-            if user.get("email", None) is not None:
+            if user.get("email") is not None:
                 new_user = find_user_by_email_comparison_without_id(
                     user["email"])
-            elif user.get("id", None) is not None:
+            elif user.get("id") is not None:
                 new_user = self.find_user_by_email_comparison_with_id(
                     user["id"])
         return new_user
@@ -164,11 +165,12 @@ class UsersClient(BaseClass):
 
     def generate_extern_uid(self, user, identities):
         if self.config.group_sso_provider_pattern == "email":
-            return user.get("email", None)
-        elif self.config.group_sso_provider_pattern == "hash":
-            if email := user.get("email", None):
-                if map_user := self.sso_hash_map.get(email, None):
-                    return map_user["externalid"]
+            return user.get("email")
+        if self.config.group_sso_provider_pattern == "hash":
+            email = user.get("email")
+            map_user = self.sso_hash_map.get(email)
+            if email and map_user:
+                return map_user["externalid"]
         else:
             return self.find_extern_uid_by_provider(
                 identities, self.config.group_sso_provider)
@@ -198,8 +200,7 @@ class UsersClient(BaseClass):
             # and not email
             found_by_email_user = find_user_by_email_comparison_without_id(
                 user["email"])
-            if found_by_email_user and found_by_email_user.get(
-                    "username", None):
+            if found_by_email_user and found_by_email_user.get("username"):
                 return found_by_email_user["username"]
         return username
 
@@ -212,40 +213,70 @@ class UsersClient(BaseClass):
             return f"{username}_{suffix}"
         return f"{username}_{suffix.lstrip('_')}"
 
-    def add_users_to_parent_group(self, minimal_access =False, dry_run=True):
-        user_results_path = f"{self.app_path}/data/results/user_migration_results.json"
-        if path.exists(user_results_path):
-            new_users = read_json_file_into_object(user_results_path)
-            for user in new_users:
-                if new_users[user].get("id"):
-                    if minimal_access:
-                        data = {
-                            "user_id": new_users[user]["id"],
-                            "access_level": 5
-                        }
-                        log_string = "minimal access"
-                    else:
-                        data = {
-                            "user_id": new_users[user]["id"],
-                            "access_level": 10
-                        }
-                        log_string = "guest"
+    def update_parent_group_members(self, access_level, add_members=False, dry_run=True):
+        ROLES = {
+            "none": 0,
+            "minimal": 5,
+            "guest": 10,
+            "reporter": 20,
+            "developer": 30,
+            "maintainer": 40,
+            "owner": 50}
+        target_level = ROLES.get(access_level.lower())
+        if target_level is None:
+            self.log.error(
+                f"Invalid access level entry '{access_level}' ({[k for k, _ in ROLES.items()]})")
+            sys.exit(os.EX_DATAERR)
+        parent_id = self.config.dstn_parent_id
+        if not parent_id:
+            self.log.error(
+                f"Invalid parent group ID configured ('{parent_id}')")
+            sys.exit(os.EX_CONFIG)
+        try:
+            self.__handle_parent_group_members(
+                dry_run, add_members, access_level, target_level)
+        except RequestException as re:
+            self.log.error(
+                f"Failed to {'add or ' if add_members else ''}update parent group {parent_id} members, with error:\n{re}")
 
-                    self.log.info("{0}Adding user {1} to parent group {3} (data: {2}) with {log_string} permissions".format(
-                    get_dry_log(dry_run),
-                    new_users[user]["email"],
-                    data,
-                    self.config.dstn_parent_id))
+    def __handle_parent_group_members(self, dry_run, add_members, access_level, target_level):
+        host = self.config.destination_host
+        token = self.config.destination_token
+        parent_id = self.config.dstn_parent_id
+        dry_log = get_dry_log(dry_run=dry_run)
+        members = {}
 
-                    if not dry_run:
-                        try:
-                            self.groups_api.add_member_to_group(
-                                self.config.dstn_parent_id, self.config.destination_host, self.config.destination_token, data)
-                        except RequestException as e:
-                            self.log.error(
-                                "Failed to add user {0} to parent group, with error:\n{1}".format(user, e))
-        else:
-            self.log.error("%s not found" % user_results_path)
+        # List and extract parent member IDs
+        for m in self.groups_api.get_all_group_members(parent_id, host, token):
+            members[m.get("id")] = m.get("access_level")
+        mids = [k for k, _ in members.items()]
+        for su in get_staged_users():
+            user = find_user_by_email_comparison_without_id(
+                su.get("email"))
+            if not user:
+                continue
+            uid = user.get("id")
+            username = user.get("username")
+            # Invite member with required access level
+            if uid not in mids and add_members:
+                self.log.info(
+                    f"{dry_log}Add user {username} (ID: {uid}) as {access_level}")
+                if not dry_run:
+                    self.groups_api.add_member_to_group(
+                        parent_id, host, token, {"user_id": uid, "access_level": target_level})
+                continue
+            # Retrieve member parent access level and update
+            level = members.get(uid)
+            if uid in mids and level != target_level:
+                self.log.info(
+                    f"{dry_log}Update member {user.get('username')} (ID: {uid}) access level {level} -> {target_level} ({access_level})")
+                if not dry_run:
+                    self.groups_api.update_member_access_level(
+                        host, token, parent_id, uid, target_level)
+                continue
+            if uid not in mids:
+                self.log.warning(
+                    f"SKIP: Member {username} (ID: {uid}) not found. Missing '--add-members'?")
 
     def remove_users_from_parent_group(self, dry_run=True):
         count = 0
@@ -272,45 +303,6 @@ class UsersClient(BaseClass):
                     user["username"],
                     level))
         return count
-
-    def update_user_permissions(self, access_level, dry_run=True):
-        PERMISSIONS = {
-            "guest": 10,
-            "reporter": 20,
-            "developer": 30,
-            "maintainer": 40,
-            "owner": 50}
-        level = PERMISSIONS[access_level.lower()]
-        try:
-            users = list(self.groups_api.get_all_group_members(
-                self.config.dstn_parent_id,
-                self.config.destination_host,
-                self.config.destination_token))
-            for user in users:
-                self.log.info("{0}Updating {1}'s access level to {2} ({3})".format(
-                    get_dry_log(dry_run),
-                    user["username"],
-                    access_level,
-                    level))
-                if not dry_run:
-                    response = self.groups_api.update_member_access_level(
-                        self.config.destination_host,
-                        self.config.destination_token,
-                        self.config.dstn_parent_id,
-                        user["id"],
-                        level)
-                    if response.status_code != 200:
-                        self.log.warning("Failed to update {0}'s parent access level ({1})".format(
-                            user["username"],
-                            response.content))
-                    else:
-                        self.log.info("Updated {0}'s parent access level to {1} ({2})".format(
-                            user["username"],
-                            access_level,
-                            level))
-        except RequestException as e:
-            self.log.error(
-                "Failed to update user's parent access level, with error:\n{}".format(e))
 
     def remove_inactive_users(self, membership=False, dry_run=True):
         """
@@ -528,7 +520,7 @@ class UsersClient(BaseClass):
         mongo.close_connection()
 
     def generate_user_data(self, user):
-        if user.get("id", None) is not None:
+        if user.get("id") is not None:
             user.pop("id")
         if self.config.group_sso_provider is not None:
             return self.generate_user_group_saml_post_data(user)
@@ -555,12 +547,33 @@ class UsersClient(BaseClass):
                     self.config.destination_host,
                     self.config.destination_token,
                     user_creation_data["id"])
-                self.log.info("Blocking user {0} email {1} (status: {2})"
-                              .format(user_data["username"], user_data["email"], block_response))
+                self.log.info(
+                    f"Blocking user {user_data['username']} email {user_data['email']} (status: {block_response})")
+                if block_response and block_response.status_code == 201:
+                    self.add_blocked_user_admin_note(user_creation_data)
+                else:
+                    self.log.error(
+                        f"Failed to block user {user_data}, with response:\n{block_response} - {block_response.text}")
                 return block_response
         except RequestException as e:
             self.log.error(
-                "Failed to block user {0}, with error:\n{1}".format(user_data, e))
+                f"Failed request to block user {user_data}, with error:\n{e}")
+
+    def add_blocked_user_admin_note(self, user):
+        host = self.config.destination_host
+        user_msg = f"blocked user {user['email']}' (ID: {user['id']}) Admin note"
+        data = {
+            "note": f"User blocked as part of {'GitLab PS' if is_dot_com(host) else ''} user migration from {self.config.source_token}"}
+        self.log.info(f"Add {user_msg}")
+        try:
+            resp = self.users_api.modify_user(
+                user["id"], host, self.config.destination_token, data)
+            if resp and resp.status_code != 200:
+                self.log.error(
+                    f"Failed to add {user_msg}, with response:\n{resp} - {resp.text}")
+        except RequestException as e:
+            self.log.error(
+                f"Failed request to add {user_msg}, with error:\n{e}")
 
     def handle_user_creation_status(self, response, user):
         """
@@ -608,7 +621,7 @@ class UsersClient(BaseClass):
                     "email": response[0]["email"],
                     "id": response[0]["id"]
                 }
-            elif isinstance(response, dict) and response.get("id", None) is not None:
+            if isinstance(response, dict) and response.get("id") is not None:
                 return {
                     "email": response["email"],
                     "id": response["id"]

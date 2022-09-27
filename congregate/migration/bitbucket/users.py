@@ -31,7 +31,8 @@ class UsersClient(BaseClass):
                 mongo = self.connect_to_mongo()
             if formatted_user := self.format_user(user):
                 mongo.insert_data(
-                    f"users-{strip_netloc(self.config.source_host)}", formatted_user)
+                    f"users-{strip_netloc(self.config.source_host)}",
+                    formatted_user)
             mongo.close_connection()
         else:
             self.log.error(resp)

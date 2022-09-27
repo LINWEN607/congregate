@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "congregate"
-version = "6.13.0"
+version = "6.17.0"
 description = "GitLab Professional Service Migration Utility"
 authors = ["Michael Leopard <mleopard@gitlab.com>", "Petar Prokic <pprokic@gitlab.com>", "Glen Miller <gmiller@gitlab.com>"]
 
@@ -33,13 +33,15 @@ pymongo = "^3.11.0"
 mongomock = "^3.20.0"
 pylint = "^2.6.0"
 tqdm = "^4.59.0"
-gitlab-ps-utils = "0.7.1"
+gitlab-ps-utils = "0.8.0"
 mkdocs = "^1.2.3"
 mkdocs-material = "^8.1.11"
 mkdocs-mermaid2-plugin = "^0.5.2"
 mkdocstrings = "^0.18.0"
 mkdocs-gen-files = "^0.3.4"
 mkdocs-literate-nav = "^0.4.1"
+grpcio = "^1.47.0"
+grpcio-tools = "^1.47.0"
 
 
 [tool.poetry.dev-dependencies]

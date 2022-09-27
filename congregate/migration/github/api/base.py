@@ -146,8 +146,7 @@ class GitHubApi():
         audit.info(generate_audit_log_message("POST", description, url))
         if headers is None:
             headers = self.generate_v3_request_header(self.token)
-        return requests.post(url, json=data, headers=headers,
-                             verify=self.config.ssl_verify)
+        return requests.post(url, json=data, headers=headers, verify=self.config.ssl_verify)
 
     @stable_retry
     @token_rotate
@@ -212,7 +211,7 @@ class GitHubApi():
             else:
                 params["per_page"] = limit
 
-            log.info(f"Listing endpoint: {url}")
+            log.info(f"Listing {host} endpoint: {url}")
             r = self.generate_v3_get_request(
                 host, api, url, params=params)
             resp_json = safe_json_response(r)

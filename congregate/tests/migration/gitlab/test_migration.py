@@ -16,18 +16,18 @@ class MigrationEndToEndTest(unittest.TestCase):
     DELAY = BaseClass().config.export_import_status_check_time * 10
 
     @classmethod
-    def setUpClass(self):
-        self.migrate = MigrateClient(dry_run=False, hard_delete=True)
-        # Give the instance and seed data time to 'settle'
-        sleep(self.DELAY)
+    def setUpClass(cls):
+        cls.migrate = MigrateClient(dry_run=False, hard_delete=True)
+        # Source instance seed data creation buffer
+        sleep(cls.DELAY)
         do_all.list_all()
         do_all.do_all(dry_run=False)
 
     @classmethod
-    def tearDownClass(self):
-        self.migrate.rollback()
+    def tearDownClass(cls):
+        cls.migrate.rollback()
         # Allow users/groups/projects to fully delete
-        sleep(self.DELAY)
+        sleep(cls.DELAY)
         rollback_diff()
 
     def test_user_migration_diff(self):
@@ -36,7 +36,7 @@ class MigrationEndToEndTest(unittest.TestCase):
         user_diff.generate_html_report(
             "User", diff_report, "/data/results/user_migration_results.html")
         self.assertGreaterEqual(
-            diff_report["user_migration_results"]["overall_accuracy"], 0.99)
+            diff_report["user_migration_results"]["overall_accuracy"], 0.98)
 
     def test_group_migration_diff(self):
         group_diff = GroupDiffClient(staged=True)

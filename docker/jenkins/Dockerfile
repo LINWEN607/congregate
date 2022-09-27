@@ -11,7 +11,7 @@ COPY setup_and_seed.py /opt/setup_and_seed.py
 
 COPY entrypoint.sh /opt/entrypoint.sh
 
-RUN python3 -m pip install requests python-jenkins
+RUN python3 -m pip install --no-deps requests python-jenkins
 
 RUN chmod 777 /opt/setup_and_seed.py
 
