@@ -14,7 +14,7 @@ function usage(){
     exit 1  
 } 
 
-if [ -z "$CLONE_URL" ] ; then
+if [ $# -ne 1 -a -z "$CLONE_URL" ] ; then
     usage
 else
     echo "The source repository clone URL: $CLONE_URL"
