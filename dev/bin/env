@@ -45,3 +45,8 @@ alias pyclean
 alias gendocs
 alias kc
 alias kc9
+
+
+alias ggit='./dev/bin/generic_git.sh'
+printf '\n# Gerrit -> Git - Input source repo SSH/HTTPS clone url such as "ggit ssh://<username>@<server_name>:29418/<repo_name>.git"'
+alias ggit
