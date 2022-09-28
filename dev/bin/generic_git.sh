@@ -20,10 +20,12 @@ else
     cd "${REPO_NAME/\.git/}"
     echo "In $(pwd)"
     
-    echo "What is the path for the destination instance?"
-    echo "For example, for GitLab: git@gitlab.com:namespace for SSH and https://gitlab.example.com/namespace for HTTPS"
-    echo "Include the clone URL up to the Git repo, but not the repo itself"
-    read DEST_CLONE_URL
+    read -p "Enter Destination Server URL, not including the reponame i.e. for SSH: git@gitlabexample.com:groupname or HTTPS: https://gitlabexample.com/groupname"
+    if [ -z "$DEST_CLONE_URL" ] 
+        then 
+    echo 'Destination URL is required.  Exiting...' 
+        exit 0 
+fi 
     
     echo "The new repo url: $DEST_CLONE_URL/${REPO_NAME}"
     read -p 'Press [Enter] key to continue...'
