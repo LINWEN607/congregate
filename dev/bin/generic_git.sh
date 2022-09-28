@@ -1,9 +1,7 @@
 #!/bin/bash
-
+set -e
 CLONE_URL="$1"
-
 REPO_NAME="${CLONE_URL##*/}"
-
 PUSH_BRANCHES='refs/remotes/old-origin/*:refs/heads/*'
 
 function usage(){  
