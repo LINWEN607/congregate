@@ -8,7 +8,7 @@ function usage(){
     echo "Usage: $0 [original repo with group name]"  
     echo "Example: $0 git@gitlab.com:namespace/abc.git"
     echo "During the script, user needs to input source SSH/HTTPS clone url such as ssh://<username>@<the server name>:29418"
-    echo "And destination SSH/HTTPS clone url such as git@gitlab.com"
+    echo "And destination SSH/HTTPS clone url such as git@gitlabexample.com"
     exit 1  
 } 
 
