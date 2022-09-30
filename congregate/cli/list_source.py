@@ -209,6 +209,8 @@ class ListClient(BaseClass):
 
         self.log.info(
             f"Listing data from {src_type} source type - {self.config.source_host}")
+        # In case one skips users/groups/projects on first list
+        self.initialize_list_files()
         if src_type == "bitbucket server":
             self.list_bitbucket_data()
         elif src_type == "gitlab":
@@ -222,6 +224,16 @@ class ListClient(BaseClass):
 
         for f in staged_files:
             self.write_empty_file(f)
+
+    def initialize_list_files(self):
+        objects = ["users", "groups", "projects"]
+        if self.config.source_type == "bitbucket server":
+            objects.append("bb_groups")
+        for o in objects:
+            file_path = f"{self.app_path}/data/{o}.json"
+            if not os.path.exists(file_path):
+                with open(file_path, "w") as f:
+                    f.write("[]")
 
     def mongo_init(self, subset=False):
         mongo = MongoConnector()
