@@ -76,6 +76,7 @@ USER ps-user
 RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 
 RUN export PATH=$PATH:$HOME/.local/bin && \
+    echo "export PATH=$PATH" >> ~/.bashrc && \
     echo "export PATH=$PATH" >> ~/.zshrc
 
 # Set up the bashrc
@@ -100,18 +101,26 @@ RUN cd /opt/congregate && \
     git add . && \
     git config --global user.email "migration@gitlab.com" && \
     git config --global user.name "congregate" && \
-    git commit -m "Initial commit" && \
-    python3.8 -m pip install --no-deps --user poetry && \
-    python3.8 -m poetry install
+    git commit -m "Initial commit"
+
+# Install poetry
+RUN curl -sSL https://install.python-poetry.org | python3.8 - && \
+    export PATH="/home/ps-user/.local/bin:$PATH" && \
+    poetry --version && \
+    poetry install
 
 # Install node dependencies
 RUN npm install --no-optional && \
     npm run build
 
+USER root
+
 # Set dist/ folder permissions for ps-user
 RUN cd /opt/congregate && \
     chown -R ps-user:wheel dist && \
     chmod -R 750 dist
+
+USER ps-user
 
 # Initialize congregate directories
 WORKDIR /opt/congregate
