@@ -6,7 +6,7 @@ from gitlab_ps_utils.misc_utils import get_dry_log, safe_json_response, remove_d
 from gitlab_ps_utils.dict_utils import dig
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.mdbc import MongoConnector
-from congregate.helpers.migrate_utils import get_subset_list
+from congregate.helpers.migrate_utils import get_subset_list, check_list_subset_input_file_path
 from congregate.migration.bitbucket.api.projects import ProjectsApi
 from congregate.migration.bitbucket.api.repos import ReposApi
 from congregate.migration.bitbucket.api.users import UsersApi
@@ -59,7 +59,7 @@ class ReposClient(BaseClass):
 
     def retrieve_repo_info(self, processes=None):
         if self.subset:
-            subset_path = self.check_list_subset_input_file_path()
+            subset_path = check_list_subset_input_file_path()
             self.log.info(
                 f"Listing subset of {self.config.source_host} repos from '{subset_path}'")
             self.multi.start_multi_process_stream_with_args(

@@ -33,11 +33,3 @@ class BaseClass():
         self.INACTIVE = ["blocked", "blocked_pending_approval",
                          "ldap_blocked", "deactivated", "banned"]
         self.multi = MultiProcessing()
-
-    def check_list_subset_input_file_path(self):
-        subset_path = self.config.list_subset_input_path
-        if not os.path.isfile(subset_path):
-            self.log.error(
-                f"Config 'list_subset_input_path' file path '{subset_path}' does not exist. Please create it")
-            sys.exit(os.EX_CONFIG)
-        return subset_path

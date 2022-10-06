@@ -4,7 +4,7 @@ from gitlab_ps_utils.misc_utils import remove_dupes_but_take_higher_access, stri
 from gitlab_ps_utils.dict_utils import dig
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.mdbc import MongoConnector
-from congregate.helpers.migrate_utils import get_subset_list
+from congregate.helpers.migrate_utils import get_subset_list, check_list_subset_input_file_path
 from congregate.migration.bitbucket.api.projects import ProjectsApi
 from congregate.migration.bitbucket.users import UsersClient
 from congregate.migration.bitbucket.repos import ReposClient
@@ -30,7 +30,7 @@ class ProjectsClient(BaseClass):
 
     def retrieve_project_info(self, processes=None):
         if self.subset:
-            subset_path = self.check_list_subset_input_file_path()
+            subset_path = check_list_subset_input_file_path()
             self.log.info(
                 f"Listing subset of {self.config.source_host} projects from '{subset_path}'")
             self.multi.start_multi_process_stream_with_args(

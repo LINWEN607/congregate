@@ -446,3 +446,12 @@ def get_subset_list():
     with open(b.config.list_subset_input_path, "r") as f:
         for line in f.read().splitlines():
             yield line
+
+
+def check_list_subset_input_file_path():
+    subset_path = b.config.list_subset_input_path
+    if not os.path.isfile(subset_path):
+        b.log.error(
+            f"Config 'list_subset_input_path' file path '{subset_path}' does not exist. Please create it")
+        sys.exit(os.EX_CONFIG)
+    return subset_path
