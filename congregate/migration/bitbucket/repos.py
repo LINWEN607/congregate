@@ -83,39 +83,42 @@ class ReposClient(BaseClass):
                 f"Failed to GET project '{project_key}' repo '{repo_slug}', with error:\n{re}")
 
     def handle_retrieving_repos(self, repo, mongo=None, project_key=None):
-        # List and reformat all Bitbucket Server repo to GitLab project
-        # metadata
+        # List and reformat all Bitbucket Server repo to GitLab project metadata
         error, resp = is_error_message_present(repo)
         if resp and not error:
-            # List BB Server parent projects
-            project = self.list_repo_parent_project(resp["slug"], project_key)
+            if project_key and project_key not in self.unique_projects:
+                self.handle_retrieving_repo_parent_project(resp, project_key)
 
-            # mongo should be set to None unless this function is being used in a
-            # unit test
+            # mongo should be set to None unless this function is being used in a unit test
             if not mongo:
                 mongo = self.connect_to_mongo()
             mongo.insert_data(
                 f"projects-{strip_netloc(self.config.source_host)}",
                 self.format_repo(resp))
-            if project:
-                mongo.insert_data(
-                    f"groups-{strip_netloc(self.config.source_host)}",
-                    self.format_repo_parent_project(project))
             mongo.close_connection()
         else:
             self.log.error(resp)
 
+    def handle_retrieving_repo_parent_project(self, repo_slug, project_key, mongo=None):
+        if project := self.list_repo_parent_project(repo_slug, project_key):
+            # mongo should be set to None unless this function is being used in a unit test
+            if not mongo:
+                mongo = self.connect_to_mongo()
+            mongo.insert_data(
+                f"groups-{strip_netloc(self.config.source_host)}",
+                self.format_repo_parent_project(project))
+            mongo.close_connection()
+
     def list_repo_parent_project(self, repo_slug, project_key):
         try:
-            if project_key and project_key not in self.unique_projects:
+            self.log.info(
+                f"Listing repo '{repo_slug}' parent project '{project_key}'")
+            project_json = self.projects_api.get_project(project_key)
+            error, resp = is_error_message_present(project_json)
+            if resp and not error:
                 self.unique_projects.add(project_key)
-                self.log.info(
-                    f"Listing repo '{repo_slug}' parent project '{project_key}'")
-                project_json = self.projects_api.get_project(project_key)
-                error, resp = is_error_message_present(project_json)
-                if resp and not error:
-                    return resp
-                self.log.error(resp)
+                return resp
+            self.log.error(resp)
             return None
         except RequestException as re:
             self.log.error(
