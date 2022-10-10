@@ -87,7 +87,8 @@ class ReposClient(BaseClass):
         error, resp = is_error_message_present(repo)
         if resp and not error:
             if project_key and project_key not in self.unique_projects:
-                self.handle_retrieving_repo_parent_project(resp, project_key)
+                self.handle_retrieving_repo_parent_project(
+                    resp.get("slug"), project_key)
 
             # mongo should be set to None unless this function is being used in a unit test
             if not mongo:
