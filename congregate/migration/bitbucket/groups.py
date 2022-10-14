@@ -19,8 +19,11 @@ class GroupsClient(BitBucketServer):
         for group in self.groups_api.get_all_groups():
             group_name = group["name"].lower()
             if group_name not in self.GROUPS_TO_IGNORE:
-                groups[group_name] = list(
-                    self.groups_api.get_all_group_users(group["name"]))
+                groups[group_name] = {}
+                groups[group_name]["users"] = [self.format_user(
+                    u) for u in self.groups_api.get_all_group_users(group["name"])]
+                groups[group_name]["repos"] = []
+                groups[group_name]["projects"] = []
         write_json_to_file(
             f"{self.app_path}/data/bb_groups.json", groups, self.log)
         return groups

@@ -25,7 +25,7 @@ class BitBucketServer(BaseClass):
         self.projects_api = ProjectsApi()
         self.repos_api = ReposApi()
         self.users_api = UsersApi()
-        self.user_groups = None
+        self.user_groups = {}
         self.subset = subset
         self.ADMINS = ["SYS_ADMIN", "ADMIN"]
         super().__init__()
