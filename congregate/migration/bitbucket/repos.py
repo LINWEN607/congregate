@@ -2,60 +2,30 @@ from time import time
 from urllib.parse import quote_plus
 from requests.exceptions import RequestException
 
-from gitlab_ps_utils.misc_utils import get_dry_log, safe_json_response, remove_dupes_but_take_higher_access, strip_netloc, is_error_message_present
+from gitlab_ps_utils.misc_utils import get_dry_log, strip_netloc, is_error_message_present
 from gitlab_ps_utils.dict_utils import dig
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.mdbc import MongoConnector
 from congregate.helpers.migrate_utils import get_subset_list, check_list_subset_input_file_path
 from congregate.migration.bitbucket.api.projects import ProjectsApi
 from congregate.migration.bitbucket.api.repos import ReposApi
-from congregate.migration.bitbucket.api.users import UsersApi
-from congregate.migration.bitbucket.users import UsersClient
-from congregate.migration.bitbucket.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi as GLProjectsApi
 from congregate.helpers.migrate_utils import get_staged_projects, add_post_migration_stats, get_staged_groups
 from congregate.helpers.utils import rotate_logs
+from congregate.migration.bitbucket.base import BitBucketServer
 
 
 class ReposClient(BaseClass):
-    @classmethod
-    def connect_to_mongo(cls):
-        return MongoConnector()
-
-    @classmethod
-    def format_repo_parent_project(cls, project):
-        return {
-            "name": project["name"],
-            "id": project["id"],
-            "path": project["key"],
-            "full_path": project["key"],
-            "visibility": "public" if project["public"] else "private",
-            "description": project.get("description", ""),
-            "members": [],
-            "projects": []
-        }
-
-    @classmethod
-    def get_http_url_to_repo(cls, repo):
-        repo_clone_links = dig(repo, 'links', 'clone', default=[{"href": ""}])
-        if repo_clone_links[0]["name"] == "http":
-            return repo_clone_links[0]["href"]
-        return repo_clone_links[1]["href"]
-
     def __init__(self, subset=False):
         self.projects_api = ProjectsApi()
         self.repos_api = ReposApi()
-        self.users_api = UsersApi()
-        self.users = UsersClient()
-        self.groups_api = GroupsApi()
+        self.base = BitBucketServer()
         self.gl_projects_api = GLProjectsApi()
-        self.user_groups = None
         self.subset = subset
         self.unique_projects = set()
         super().__init__()
 
     def set_user_groups(self, groups):
-        self.user_groups = groups
+        self.base.user_groups = groups
 
     def retrieve_repo_info(self, processes=None):
         if self.subset:
@@ -92,10 +62,10 @@ class ReposClient(BaseClass):
 
             # mongo should be set to None unless this function is being used in a unit test
             if not mongo:
-                mongo = self.connect_to_mongo()
+                mongo = self.base.connect_to_mongo()
             mongo.insert_data(
                 f"projects-{strip_netloc(self.config.source_host)}",
-                self.format_repo(resp))
+                self.base.format_repo(resp))
             mongo.close_connection()
         else:
             self.log.error(resp)
@@ -104,10 +74,10 @@ class ReposClient(BaseClass):
         if project := self.list_repo_parent_project(repo_slug, project_key):
             # mongo should be set to None unless this function is being used in a unit test
             if not mongo:
-                mongo = self.connect_to_mongo()
+                mongo = self.base.connect_to_mongo()
             mongo.insert_data(
                 f"groups-{strip_netloc(self.config.source_host)}",
-                self.format_repo_parent_project(project))
+                self.base.format_project(project, mongo))
             mongo.close_connection()
 
     def list_repo_parent_project(self, repo_slug, project_key):
@@ -125,40 +95,6 @@ class ReposClient(BaseClass):
             self.log.error(
                 f"Failed to GET repo '{repo_slug}' parent project '{project_key}', with error:\n{re}")
             return None
-
-    def add_repo_users(self, members, project_key, repo_slug):
-        REPO_PERM_MAP = {
-            "REPO_ADMIN": 40,  # Maintainer
-            "REPO_WRITE": 30,  # Developer
-            "REPO_READ": 20  # Reporter
-        }
-        for member in self.repos_api.get_all_repo_users(
-                project_key, repo_slug):
-            m = member["user"]
-            m["permission"] = REPO_PERM_MAP[member["permission"]]
-            members.append(m)
-
-        if self.user_groups:
-            for group in self.repos_api.get_all_repo_groups(
-                    project_key, repo_slug):
-                group_name = dig(group, 'group', 'name', default="").lower()
-                permission = REPO_PERM_MAP[group["permission"]]
-                if self.user_groups.get(group_name):
-                    for user in self.user_groups[group_name]:
-                        temp_user = user
-                        temp_user["permission"] = permission
-                        members.append(temp_user)
-                else:
-                    self.log.warning(
-                        f"Unable to find repo {repo_slug} user group {group_name} or the group is empty")
-
-        return remove_dupes_but_take_higher_access(
-            self.users.format_users(members))
-
-    def get_default_branch(self, project_key, repo_slug):
-        resp = safe_json_response(
-            self.repos_api.get_repo_default_branch(project_key, repo_slug))
-        return resp.get("displayId", "master") if resp else "master"
 
     def migrate_permissions(self, project, pid):
         perms = list(self.repos_api.get_all_repo_branch_permissions(
@@ -240,32 +176,7 @@ class ReposClient(BaseClass):
         self.gl_projects_api.edit_project(
             self.config.destination_host, self.config.destination_token, pid, data=data)
 
-    def format_repo(self, repo, project=False):
-        """
-        Format public and project repos.
-        Leave project repo members empty ([]) as they are retrieved during staging.
-        """
-        repo_path = dig(repo, 'project', 'key')
-        return {
-            "id": repo["id"],
-            "path": repo["slug"],
-            "name": repo["name"],
-            "namespace": {
-                "id": dig(repo, 'project', 'id'),
-                "path": repo_path,
-                "name": dig(repo, 'project', 'name'),
-                "kind": "group",
-                "full_path": dig(repo, 'project', 'key')
-            },
-            "path_with_namespace": f"{repo_path}/{repo.get('slug')}",
-            "visibility": "public" if repo.get("public") else "private",
-            "description": repo.get("description", ""),
-            "members": [] if project else self.add_repo_users([], repo_path, repo.get("slug")),
-            "default_branch": self.get_default_branch(repo_path, repo["slug"]),
-            "http_url_to_repo": self.get_http_url_to_repo(repo)
-        }
-
-    def update_branch_permissions(self, restrict=True, is_project=False, dry_run=True):
+    def update_permissions(self, restrict=True, is_project=False, dry_run=True):
         start = time()
         rotate_logs()
         staged = get_staged_groups() if is_project else get_staged_projects()

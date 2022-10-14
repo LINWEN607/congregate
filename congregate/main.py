@@ -39,8 +39,8 @@ Usage:
     congregate count-unarchived-projects [--local]
     congregate archive-staged-projects [--commit] [--dest] [--scm-source=hostname]
     congregate unarchive-staged-projects [--commit] [--dest] [--scm-source=hostname]
-    congregate set-bb-read-only-branch-permissions [--projects] [--commit]
-    congregate unset-bb-read-only-branch-permissions [--projects] [--commit]
+    congregate set-bb-read-only-branch-permissions [--bb-projects] [--commit]
+    congregate unset-bb-read-only-branch-permissions [--bb-projects] [--commit]
     congregate filter-projects-by-state [--commit] [--archived]
     congregate find-empty-repos
     congregate compare-groups [--staged]
@@ -118,7 +118,7 @@ Arguments:
     force                                   Immediately trigger push mirroring with a repo change e.g. new branch
     name                                    Project branch name
     all                                     Include all listed objects.
-    projects                                Target BitBucket repo branches from a project level
+    bb-projects                             Target BitBucket repo branches from a project level
 
 Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/projects.json.
@@ -171,8 +171,8 @@ Commands:
     staged-user-list                        Output a list of all staged users and their respective user IDs. Used to confirm IDs were updated correctly.
     archive-staged-projects                 Archive GitLab source (or destination if '--dest') projects that are staged, not necessarily migrated.
     unarchive-staged-projects               Unarchive GitLab source (or destination if '--dest') projects that are staged, not necessarily migrate.
-    set-bb-read-only-branch-permissions     Add read-only branch permission/restriction to all branches (*) on staged BitBucket repos (or projects if '--projects').
-    unset-bb-read-only-branch-permissions   Remove read-only branch permission/restriction from all branches (*) on staged BitBucket repos (or projects if '--projects').
+    set-bb-read-only-branch-permissions     Add read-only branch permission/restriction to all branches (*) on staged BitBucket repos (or projects if '--bb-projects').
+    unset-bb-read-only-branch-permissions   Remove read-only branch permission/restriction from all branches (*) on staged BitBucket repos (or projects if '--bb-projects').
     filter-projects-by-state                Filter out projects by state archived or unarchived (default) from the list of staged projects and overwrite staged_projects.json.
                                                 GitLab source only
     generate-seed-data                      Generate dummy data to test a migration.
@@ -182,7 +182,7 @@ Commands:
     stitch-results                          Stitches together migration results from multiple migration runs
     generate-diff                           Generates HTML files containing the diff results of the migration
     map-users                               Maps staged user emails to emails defined in the user-provided user_map.csv
-    map-and-stage-users-by-email-match                Maps staged user emails to emails defined in the user-provided user_map.csv. Matches by old/new email instead of username
+    map-and-stage-users-by-email-match      Maps staged user emails to emails defined in the user-provided user_map.csv. Matches by old/new email instead of username
     obfuscate                               Obfuscate a secret or password that you want to manually update in the config.
     deobfuscate                             Deobfuscate a secret or password from the config.
     dump-database                           Dump all database collections to various JSON files
@@ -498,15 +498,15 @@ def main():
                         f"Bulk unarchive not available for {config.source_type}. Did you mean to add '--dest'?")
             if arguments["set-bb-read-only-branch-permissions"]:
                 if config.source_type == "bitbucket server":
-                    bb_repos.update_branch_permissions(
-                        is_project=arguments["--projects"], dry_run=DRY_RUN)
+                    bb_repos.update_permissions(
+                        is_project=arguments["--bb-projects"], dry_run=DRY_RUN)
                 else:
                     log.warning(
                         "This command is ONLY intended for BitBucket source instances")
             if arguments["unset-bb-read-only-branch-permissions"]:
                 if config.source_type == "bitbucket server":
-                    bb_repos.update_branch_permissions(
-                        restrict=False, is_project=arguments["--projects"], dry_run=DRY_RUN)
+                    bb_repos.update_permissions(
+                        restrict=False, is_project=arguments["--bb-projects"], dry_run=DRY_RUN)
                 else:
                     log.warning(
                         "This command is ONLY intended for BitBucket source instances")
