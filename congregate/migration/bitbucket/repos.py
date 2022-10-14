@@ -4,7 +4,6 @@ from requests.exceptions import RequestException
 
 from gitlab_ps_utils.misc_utils import get_dry_log, strip_netloc, is_error_message_present
 from gitlab_ps_utils.dict_utils import dig
-from congregate.helpers.base_class import BaseClass
 from congregate.helpers.migrate_utils import get_subset_list, check_list_subset_input_file_path
 from congregate.migration.bitbucket.api.projects import ProjectsApi
 from congregate.migration.bitbucket.api.repos import ReposApi
@@ -14,18 +13,17 @@ from congregate.helpers.utils import rotate_logs
 from congregate.migration.bitbucket.base import BitBucketServer
 
 
-class ReposClient(BaseClass):
+class ReposClient(BitBucketServer):
     def __init__(self, subset=False):
         self.projects_api = ProjectsApi()
         self.repos_api = ReposApi()
-        self.base = BitBucketServer()
         self.gl_projects_api = GLProjectsApi()
         self.subset = subset
         self.unique_projects = set()
         super().__init__()
 
     def set_user_groups(self, groups):
-        self.base.user_groups = groups
+        self.user_groups = groups
 
     def retrieve_repo_info(self, processes=None):
         if self.subset:
@@ -62,10 +60,10 @@ class ReposClient(BaseClass):
 
             # mongo should be set to None unless this function is being used in a unit test
             if not mongo:
-                mongo = self.base.connect_to_mongo()
+                mongo = self.connect_to_mongo()
             mongo.insert_data(
                 f"projects-{strip_netloc(self.config.source_host)}",
-                self.base.format_repo(resp))
+                self.format_repo(resp))
             mongo.close_connection()
         else:
             self.log.error(resp)
@@ -74,10 +72,10 @@ class ReposClient(BaseClass):
         if project := self.list_repo_parent_project(repo_slug, project_key):
             # mongo should be set to None unless this function is being used in a unit test
             if not mongo:
-                mongo = self.base.connect_to_mongo()
+                mongo = self.connect_to_mongo()
             mongo.insert_data(
                 f"groups-{strip_netloc(self.config.source_host)}",
-                self.base.format_project(project, mongo))
+                self.format_project(project, mongo))
             mongo.close_connection()
 
     def list_repo_parent_project(self, repo_slug, project_key):

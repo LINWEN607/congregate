@@ -1,14 +1,12 @@
 from gitlab_ps_utils.misc_utils import strip_netloc, is_error_message_present
 
-from congregate.helpers.base_class import BaseClass
 from congregate.migration.bitbucket.api.users import UsersApi
 from congregate.migration.bitbucket.base import BitBucketServer
 
 
-class UsersClient(BaseClass):
+class UsersClient(BitBucketServer):
     def __init__(self):
         self.users_api = UsersApi()
-        self.base = BitBucketServer()
         super().__init__()
 
     def retrieve_user_info(self, processes=None):
@@ -24,8 +22,8 @@ class UsersClient(BaseClass):
             # mongo should be set to None unless this function is being used in a
             # unit test
             if not mongo:
-                mongo = self.base.connect_to_mongo()
-            if formatted_user := self.base.format_user(user):
+                mongo = self.connect_to_mongo()
+            if formatted_user := self.format_user(user):
                 mongo.insert_data(
                     f"users-{strip_netloc(self.config.source_host)}",
                     formatted_user)

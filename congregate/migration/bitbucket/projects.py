@@ -1,21 +1,19 @@
 from requests.exceptions import RequestException
 
 from gitlab_ps_utils.misc_utils import strip_netloc, is_error_message_present
-from congregate.helpers.base_class import BaseClass
 from congregate.helpers.migrate_utils import get_subset_list, check_list_subset_input_file_path
 from congregate.migration.bitbucket.api.projects import ProjectsApi
 from congregate.migration.bitbucket.base import BitBucketServer
 
 
-class ProjectsClient(BaseClass):
+class ProjectsClient(BitBucketServer):
     def __init__(self, subset=False):
         self.projects_api = ProjectsApi()
-        self.base = BitBucketServer()
         self.subset = subset
         super().__init__()
 
     def set_user_groups(self, groups):
-        self.base.user_groups = groups
+        self.user_groups = groups
 
     def retrieve_project_info(self, processes=None):
         if self.subset:
@@ -44,10 +42,10 @@ class ProjectsClient(BaseClass):
             # mongo should be set to None unless this function is being used in a
             # unit test
             if not mongo:
-                mongo = self.base.connect_to_mongo()
+                mongo = self.connect_to_mongo()
             mongo.insert_data(
                 f"groups-{strip_netloc(self.config.source_host)}",
-                self.base.format_project(resp, mongo))
+                self.format_project(resp, mongo))
             mongo.close_connection()
         else:
             self.log.error(resp)
