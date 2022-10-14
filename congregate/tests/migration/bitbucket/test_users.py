@@ -12,6 +12,7 @@ from congregate.helpers.mdbc import MongoConnector
 from congregate.tests.mockapi.bitbucket.users import MockUsersApi
 from congregate.migration.bitbucket.api.users import UsersApi
 from congregate.migration.bitbucket.users import UsersClient
+from congregate.migration.bitbucket.base import BitBucketServer
 
 
 @mark.unit_test
@@ -117,20 +118,20 @@ class UsersTests(unittest.TestCase):
            new_callable=PropertyMock)
     def test_is_user_needed_ignored_false(self, mock_ignore):
         mock_ignore.return_value = ['user1']
-        users = UsersClient()
+        base = BitBucketServer()
         user = {
             "id": 2,
             "slug": "user1"
         }
-        self.assertFalse(users.is_user_needed(user))
+        self.assertFalse(base.is_user_needed(user))
 
     @patch('congregate.helpers.conf.Config.users_to_ignore',
            new_callable=PropertyMock)
     def test_is_user_needed_ignored_true(self, mock_ignore):
         mock_ignore.return_value = ['user1']
-        users = UsersClient()
+        base = BitBucketServer()
         user = {
             "id": 2,
             "slug": "user2"
         }
-        self.assertTrue(users.is_user_needed(user))
+        self.assertTrue(base.is_user_needed(user))
