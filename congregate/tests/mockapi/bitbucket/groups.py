@@ -1,5 +1,6 @@
 class MockGroupsApi():
-    def get_all_groups(self):
+    @classmethod
+    def get_all_groups(cls):
         return [
             {
                 "name": "stash-users",
@@ -11,7 +12,8 @@ class MockGroupsApi():
             }
         ]
 
-    def get_all_group_members(self):
+    @classmethod
+    def get_all_group_members(cls):
         return [
             {
                 "name": "admin",
