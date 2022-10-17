@@ -137,7 +137,15 @@ class ImportClient(BaseClass):
                             f"Import status is marked as {status} for {full_path}")
                         success = False
                         break
-                    # Sub criteria
+                    # Sub criteria - if repo is empty
+                    empty_repo = dig(project_statistics, 'data',
+                                     'project', 'empty_repo')
+                    if imported and empty_repo:
+                        self.log.info(
+                            f"Git repo {full_path} is empty. Import is complete")
+                        success = True
+                        break
+                    # Sub criteria - if repo statistics are populated
                     stats = dig(project_statistics, 'data',
                                 'project', 'statistics')
                     if imported and stats["commitCount"] > 0:

@@ -1091,6 +1091,7 @@ class ProjectsApi(GitLabApiWrapper):
             "query": """
                 query {
                     project(fullPath: "%s") {
+                        empty_repo,
                         importStatus,
                         statistics {
                                 commitCount,
