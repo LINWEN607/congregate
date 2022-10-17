@@ -41,6 +41,8 @@ Usage:
     congregate unarchive-staged-projects [--commit] [--dest] [--scm-source=hostname]
     congregate set-bb-read-only-branch-permissions [--bb-projects] [--commit]
     congregate unset-bb-read-only-branch-permissions [--bb-projects] [--commit]
+    congregate set-bb-read-only-member-permissions [--bb-projects] [--commit]
+    congregate unset-bb-read-only-member-permissions [--bb-projects] [--commit]
     congregate filter-projects-by-state [--commit] [--archived]
     congregate find-empty-repos
     congregate compare-groups [--staged]
@@ -173,6 +175,8 @@ Commands:
     unarchive-staged-projects               Unarchive GitLab source (or destination if '--dest') projects that are staged, not necessarily migrate.
     set-bb-read-only-branch-permissions     Add read-only branch permission/restriction to all branches (*) on staged BitBucket repos (or projects if '--bb-projects').
     unset-bb-read-only-branch-permissions   Remove read-only branch permission/restriction from all branches (*) on staged BitBucket repos (or projects if '--bb-projects').
+    set-bb-read-only-member-permissions     Demote ALL non-read-only staged repo and project users and groups to READ_ONLY.
+    unset-bb-read-only-member-permissions   Promote back permissions for ALL staged repo and project users and groups demoted by 'set-bb-read-only-member-permissions'.
     filter-projects-by-state                Filter out projects by state archived or unarchived (default) from the list of staged projects and overwrite staged_projects.json.
                                                 GitLab source only
     generate-seed-data                      Generate dummy data to test a migration.
@@ -498,14 +502,28 @@ def main():
                         f"Bulk unarchive not available for {config.source_type}. Did you mean to add '--dest'?")
             if arguments["set-bb-read-only-branch-permissions"]:
                 if config.source_type == "bitbucket server":
-                    bb_repos.update_permissions(
+                    bb_repos.update_branch_permissions(
                         is_project=arguments["--bb-projects"], dry_run=DRY_RUN)
                 else:
                     log.warning(
                         "This command is ONLY intended for BitBucket source instances")
             if arguments["unset-bb-read-only-branch-permissions"]:
                 if config.source_type == "bitbucket server":
-                    bb_repos.update_permissions(
+                    bb_repos.update_branch_permissions(
+                        restrict=False, is_project=arguments["--bb-projects"], dry_run=DRY_RUN)
+                else:
+                    log.warning(
+                        "This command is ONLY intended for BitBucket source instances")
+            if arguments["set-bb-read-only-member-permissions"]:
+                if config.source_type == "bitbucket server":
+                    bb_repos.update_member_permissions(
+                        is_project=arguments["--bb-projects"], dry_run=DRY_RUN)
+                else:
+                    log.warning(
+                        "This command is ONLY intended for BitBucket source instances")
+            if arguments["unset-bb-read-only-member-permissions"]:
+                if config.source_type == "bitbucket server":
+                    bb_repos.update_member_permissions(
                         restrict=False, is_project=arguments["--bb-projects"], dry_run=DRY_RUN)
                 else:
                     log.warning(

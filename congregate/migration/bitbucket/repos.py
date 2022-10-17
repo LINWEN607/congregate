@@ -174,7 +174,7 @@ class ReposClient(BitBucketServer):
         self.gl_projects_api.edit_project(
             self.config.destination_host, self.config.destination_token, pid, data=data)
 
-    def update_permissions(self, restrict=True, is_project=False, dry_run=True):
+    def update_branch_permissions(self, restrict=True, is_project=False, dry_run=True):
         start = time()
         rotate_logs()
         staged = get_staged_groups() if is_project else get_staged_projects()
@@ -250,3 +250,30 @@ class ReposClient(BitBucketServer):
             if resp.status_code != 204:
                 self.log.error(
                     f"Failed to remove {'project' if is_project else 'repo'} '{s_path}' branch permission:\n{r}\n{resp} - {resp.text}")
+
+    def update_member_permissions(self, restrict=True, is_project=False, dry_run=True):
+        start = time()
+        rotate_logs()
+        staged = get_staged_groups() if is_project else get_staged_projects()
+        object_type = "project" if is_project else "repo"
+        self.log.info(f"BitBucket {object_type} count: {len(staged)}")
+        try:
+            for s in staged:
+                s_path = s.get("path") if is_project else s.get(
+                    "path_with_namespace")
+                self.log.info(
+                    f"{get_dry_log(dry_run)}{'Set' if restrict else 'Unset'} BitBucket {object_type} '{s_path}' read-only member permissions")
+                if not dry_run:
+                    self.set_member_permissions(
+                        s, s_path, is_project) if restrict else self.unset_member_permissions(s, s_path, is_project)
+        except RequestException as re:
+            self.log.error(
+                f"Failed to {'set' if restrict else 'unset'} BitBucket {object_type} '{s_path}' read-only member permissions, with error:\n{re}")
+        finally:
+            add_post_migration_stats(start, log=self.log)
+
+    def set_member_permissions(self, staged, s_path, is_project):
+        pass
+
+    def unset_member_permissions(self, staged, s_path, is_project):
+        pass
