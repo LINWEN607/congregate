@@ -2,9 +2,6 @@
 Base class to import congregate configuration
 and logger as well provide the app path
 """
-import os
-import sys
-
 from warnings import simplefilter
 from urllib3.exceptions import InsecureRequestWarning
 
