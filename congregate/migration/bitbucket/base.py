@@ -48,7 +48,7 @@ class BitBucketServer(BaseClass):
                 "username": user["slug"],
                 "name": user["displayName"],
                 "email": user["emailAddress"].lower(),
-                "state": "active"
+                "state": "active" if user["active"] else "deactivated"
                 # "is_admin": self.is_admin(user["slug"])
             }
         self.log.warning(
