@@ -274,6 +274,16 @@ class ReposClient(BitBucketServer):
 
     def set_member_permissions(self, staged, s_path, is_project):
         pass
+        # if is_project:
+
+        #     # resp = self.projects_api.create_project_branch_permissions(
+        #     #     staged["path"], data=data)
+        # else:
+        #     # resp = self.repos_api.create_repo_branch_permissions(
+        #     #     staged["namespace"], staged["path"], data=data)
+        # if resp.status_code != 204:
+        #     # self.log.error(
+        #     #     f"Failed to add {'project' if is_project else 'repo'} '{s_path}' branch permissions:\n{resp} - {resp.text}")
 
     def unset_member_permissions(self, staged, s_path, is_project):
         pass
