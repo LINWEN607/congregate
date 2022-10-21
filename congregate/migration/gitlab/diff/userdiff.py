@@ -17,6 +17,7 @@ class UserDiffClient(BaseDiffClient):
         "last_activity_at",
         "current_sign_in_at",
         "created_at",
+        "created_by",
         "confirmed_at",
         "last_activity_on",
         "current_sign_in_ip",
