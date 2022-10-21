@@ -67,6 +67,28 @@ class BitBucketServerApi(BaseClass):
         return requests.post(url, json=data, headers=headers, verify=self.config.ssl_verify)
 
     @stable_retry
+    def generate_put_request(self, api, data, url=None, branch_permissions=False, description=None):
+        """
+        Generates PUT request to BitBucket API.
+        You will need to provide the access token, and specific api url.
+
+            :param token: (str) Access token to BitBucket instance
+            :param api: (str) Specific BitBucket API endpoint (ex: projects)
+            :param data: JSON payload
+            :param url: (str) A URL to a location not part of the BitBucket API. Defaults to None
+            :return: The response object *not* the json() or text()
+        """
+        if url is None:
+            url = self.generate_bb_v1_request_url(
+                api, branch_permissions=branch_permissions)
+
+        self.audit.info(generate_audit_log_message("PUT", description, url))
+        headers = self.generate_v4_request_headers(
+            branch_permissions=branch_permissions)
+
+        return requests.put(url, json=data, headers=headers, verify=self.config.ssl_verify)
+
+    @stable_retry
     def generate_delete_request(self, api, url=None, branch_permissions=False, description=None):
         """
         Generates DELETE request to BitBucket API.

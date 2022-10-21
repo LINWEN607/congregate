@@ -69,3 +69,19 @@ class ReposApi():
         Ref Restriction REST API: https://docs.atlassian.com/bitbucket-server/rest/7.13.0/bitbucket-ref-restriction-rest.html#idp7
         """
         return self.api.generate_delete_request(f"projects/{project_key}/repos/{repo_slug}/restrictions/{rid}", branch_permissions=True, description=message)
+
+    def set_repo_user_permissions(self, project_key, repo_slug, data=None, message=None):
+        """
+        Promote or demote a user's permission level for the specified repository.
+
+        Ref Restriction REST API: https://docs.atlassian.com/bitbucket-server/rest/7.13.0/bitbucket-rest.html#idp286
+        """
+        return self.api.generate_put_request(f"projects/{project_key}/repos/{repo_slug}/permissions/users?{data}", data, description=message)
+
+    def set_repo_group_permissions(self, project_key,  repo_slug, data=None, message=None):
+        """
+        Promote or demote a group's permission level for the specified repository.
+
+        Ref Restriction REST API: https://docs.atlassian.com/bitbucket-server/rest/7.13.0/bitbucket-rest.html#idp280
+        """
+        return self.api.generate_put_request(f"projects/{project_key}/repos/{repo_slug}/permissions/groups?{data}", data, description=message)
