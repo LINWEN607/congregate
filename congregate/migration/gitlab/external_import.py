@@ -141,7 +141,7 @@ class ImportClient(BaseClass):
                     empty_repo = dig(project_statistics, 'data',
                                      'project', 'empty_repo')
                     if imported and empty_repo:
-                        self.log.info(
+                        self.log.warning(
                             f"Git repo {full_path} is empty. Import is complete")
                         success = True
                         break

@@ -3,7 +3,6 @@ import sys
 
 from gitlab_ps_utils.misc_utils import strip_netloc
 from gitlab_ps_utils.string_utils import deobfuscate
-# from gitlab_ps_utils.json_utils import write_json_to_file
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.utils import is_dot_com

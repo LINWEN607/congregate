@@ -260,6 +260,8 @@ class ReposClient(BitBucketServer):
         staged = get_staged_groups() if is_project else get_staged_projects()
         object_type = "project" if is_project else "repo"
         self.log.info(f"BitBucket {object_type} count: {len(staged)}")
+        self.log.warning(
+            "Make sure to '--skip-group-members' and '--skip-project-members' when listing, to avoid including user groups into repo and project 'members'")
         try:
             for s in staged:
                 s_path = s.get("path") if is_project else s.get(

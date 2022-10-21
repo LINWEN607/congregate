@@ -83,11 +83,11 @@ Arguments:
     hard-delete                             Remove user contributions and solely owned groups
     stream-groups                           Streamed approach of migrating staged groups in bulk
     skip-groups                             Rollback: Remove only users and projects
-    skip-group-members                      Add empty list instead of listing GitLab group members. Skip saving BBS project groups as GL group members.
+    skip-group-members                      Add empty list instead of listing GitLab group members. Skip saving BBS project user groups as GL group members.
     skip-group-export                       Skip exporting groups from source instance
     skip-group-import                       Skip importing groups to destination instance
     skip-projects                           Rollback: Remove only users and empty groups
-    skip-project-members                    Add empty list instead of listing GitLab project members. Skip saving BBS repo groups as GL project members.
+    skip-project-members                    Add empty list instead of listing GitLab project members. Skip saving BBS repo user groups as GL project members.
     skip-project-export                     Skips the project export and assumes that the project file is already ready
                                                 for rewrite. Currently does NOT work for exports through filesystem-aws
     skip-project-import                     Will do all steps up to import (export, re-write exported project json,
@@ -175,7 +175,7 @@ Commands:
     unarchive-staged-projects               Unarchive GitLab source (or destination if '--dest') projects that are staged, not necessarily migrate.
     set-bb-read-only-branch-permissions     Add read-only branch permission/restriction to all branches (*) on staged BitBucket repos (or projects if '--bb-projects').
     unset-bb-read-only-branch-permissions   Remove read-only branch permission/restriction from all branches (*) on staged BitBucket repos (or projects if '--bb-projects').
-    set-bb-read-only-member-permissions     Demote ALL non-read-only staged repo and project users and groups to READ_ONLY.
+    set-bb-read-only-member-permissions     Demote ALL non-read-only staged repo and project users and groups to REPO_READ i.e. PROJECT_READ permissions.
     unset-bb-read-only-member-permissions   Promote back permissions for ALL staged repo and project users and groups demoted by 'set-bb-read-only-member-permissions'.
     filter-projects-by-state                Filter out projects by state archived or unarchived (default) from the list of staged projects and overwrite staged_projects.json.
                                                 GitLab source only

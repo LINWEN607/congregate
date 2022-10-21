@@ -1,3 +1,5 @@
+# Based on https://confluence.atlassian.com/bitbucketserverkb/4-levels-of-bitbucket-server-permissions-779171636.html
+
 BBS_ADMINS = ["SYS_ADMIN", "ADMIN"]
 
 BBS_REPO_PERM_MAP = {
