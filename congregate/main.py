@@ -83,11 +83,11 @@ Arguments:
     hard-delete                             Remove user contributions and solely owned groups
     stream-groups                           Streamed approach of migrating staged groups in bulk
     skip-groups                             Rollback: Remove only users and projects
-    skip-group-members                      Add empty list instead of listing GitLab group members.
+    skip-group-members                      Add empty list instead of listing GitLab group members. Skip saving BBS project groups as GL group members.
     skip-group-export                       Skip exporting groups from source instance
     skip-group-import                       Skip importing groups to destination instance
     skip-projects                           Rollback: Remove only users and empty groups
-    skip-project-members                    Add empty list instead of listing GitLab project members.
+    skip-project-members                    Add empty list instead of listing GitLab project members. Skip saving BBS repo groups as GL project members.
     skip-project-export                     Skips the project export and assumes that the project file is already ready
                                                 for rewrite. Currently does NOT work for exports through filesystem-aws
     skip-project-import                     Will do all steps up to import (export, re-write exported project json,

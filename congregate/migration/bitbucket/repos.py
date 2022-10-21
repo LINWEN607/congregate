@@ -11,6 +11,7 @@ from congregate.migration.gitlab.api.projects import ProjectsApi as GLProjectsAp
 from congregate.helpers.migrate_utils import get_staged_projects, add_post_migration_stats, get_staged_groups
 from congregate.helpers.utils import rotate_logs
 from congregate.migration.bitbucket.base import BitBucketServer
+from congregate.migration.bitbucket import constants
 
 
 class ReposClient(BitBucketServer):
@@ -22,8 +23,9 @@ class ReposClient(BitBucketServer):
         self.unique_projects = set()
         super().__init__()
 
-    def set_user_groups(self, groups):
+    def set_user_groups(self, groups, skip_project_members=False):
         self.user_groups = groups
+        self.skip_project_members = skip_project_members
 
     def retrieve_repo_info(self, processes=None):
         if self.subset:
@@ -116,15 +118,16 @@ class ReposClient(BitBucketServer):
                 perm, 'matcher', 'displayId') == branch):
             return self.migrate_branch_permissions(
                 p, branch, pid) if p["type"] == prio[0] else None
-        elif any(perm["type"] == prio[1] for perm in perms if dig(perm, 'matcher', 'displayId') == branch):
+        if any(perm["type"] == prio[1] for perm in perms if dig(perm, 'matcher', 'displayId') == branch):
             return self.migrate_branch_permissions(
                 p, branch, pid) if p["type"] == prio[1] else None
-        elif any(perm["type"] == prio[2] for perm in perms if dig(perm, 'matcher', 'displayId') == branch):
+        if any(perm["type"] == prio[2] for perm in perms if dig(perm, 'matcher', 'displayId') == branch):
             return self.migrate_branch_permissions(
                 p, branch, pid) if p["type"] == prio[2] else None
-        elif any(perm["type"] == prio[3] for perm in perms if dig(perm, 'matcher', 'displayId') == branch):
+        if any(perm["type"] == prio[3] for perm in perms if dig(perm, 'matcher', 'displayId') == branch):
             return self.migrate_branch_permissions(
                 p, branch, pid) if p["type"] == prio[3] else None
+        return None
 
     def migrate_branch_permissions(self, p, branch, pid):
         """
@@ -264,26 +267,160 @@ class ReposClient(BitBucketServer):
                 self.log.info(
                     f"{get_dry_log(dry_run)}{'Set' if restrict else 'Unset'} BitBucket {object_type} '{s_path}' read-only member permissions")
                 if not dry_run:
-                    self.set_member_permissions(
-                        s, s_path, is_project) if restrict else self.unset_member_permissions(s, s_path, is_project)
+                    self.handle_member_permissions(
+                        s, s_path, restrict, is_project)
         except RequestException as re:
             self.log.error(
                 f"Failed to {'set' if restrict else 'unset'} BitBucket {object_type} '{s_path}' read-only member permissions, with error:\n{re}")
         finally:
             add_post_migration_stats(start, log=self.log)
 
-    def set_member_permissions(self, staged, s_path, is_project):
-        pass
-        # if is_project:
+    def handle_member_permissions(self, staged, s_path, restrict, is_project):
+        if is_project:
+            if restrict:
+                self.set_project_member_permissions(staged, s_path)
+            else:
+                self.unset_project_member_permissions(staged, s_path)
+        else:
+            if restrict:
+                self.set_repo_member_permissions(staged, s_path)
+            else:
+                self.unset_repo_member_permissions(staged, s_path)
 
-        #     # resp = self.projects_api.create_project_branch_permissions(
-        #     #     staged["path"], data=data)
-        # else:
-        #     # resp = self.repos_api.create_repo_branch_permissions(
-        #     #     staged["namespace"], staged["path"], data=data)
-        # if resp.status_code != 204:
-        #     # self.log.error(
-        #     #     f"Failed to add {'project' if is_project else 'repo'} '{s_path}' branch permissions:\n{resp} - {resp.text}")
+    def set_project_member_permissions(self, staged, s_path):
+        permission = "PROJECT_READ"
+        access_level = constants.BBS_PROJECT_PERM_MAP[permission]
+        self.set_project_member_user_permissions(
+            staged, s_path, permission, access_level)
+        self.set_project_member_group_permissions(
+            staged, s_path, permission, access_level)
 
-    def unset_member_permissions(self, staged, s_path, is_project):
-        pass
+    def set_project_member_user_permissions(self, staged, s_path, permission, access_level):
+        # Set permission for all project users in bulk
+        users = ""
+        for u in staged.get("members", []):
+            if u["access_level"] > access_level:
+                users += f"&name={u['username']}" if users else f"name={u['username']}"
+        if users:
+            users += f"&permission={permission}"
+            resp = self.projects_api.set_project_user_permissions(
+                s_path, data=users)
+            if resp.status_code != 204:
+                self.log.error(
+                    f"Failed to set project '{s_path}' '{permission}' permission for all users:\n{resp} - {resp.text}")
+
+    def set_project_member_group_permissions(self, staged, s_path, permission, access_level):
+        # Set permission for all project groups in bulk
+        groups = ""
+        for k, v in staged.get("groups", {}).items():
+            if v > access_level:
+                groups += f"&name={k}" if groups else f"name={k}"
+        if groups:
+            groups += f"&permission={permission}"
+            resp = self.projects_api.set_project_group_permissions(
+                s_path, data=groups)
+            if resp.status_code != 204:
+                self.log.error(
+                    f"Failed to set project '{s_path}' '{permission}' permission for all groups:\n{resp} - {resp.text}")
+
+    def set_repo_member_permissions(self, staged, s_path):
+        permission = "REPO_READ"
+        access_level = constants.BBS_REPO_PERM_MAP[permission]
+        paths = s_path.split("/")
+        project_key, repo_slug = paths[0], paths[1]
+        self.set_repo_member_user_permissions(
+            staged, project_key, repo_slug, permission, access_level)
+        self.set_repo_member_group_permissions(
+            staged, project_key, repo_slug, permission, access_level)
+
+    def set_repo_member_user_permissions(self, staged, project_key, repo_slug, permission, access_level):
+        # Set permission for all repo users in bulk
+        users = ""
+        for u in staged.get("members", []):
+            if u["access_level"] > access_level:
+                users += f"&name={u['username']}" if users else f"name={u['username']}"
+        if users:
+            users += f"&permission={permission}"
+            resp = self.repos_api.set_repo_user_permissions(
+                project_key, repo_slug, data=users)
+            if resp.status_code != 204:
+                self.log.error(
+                    f"Failed to set repo '{project_key}/{repo_slug}' '{permission}' permission for all users:\n{resp} - {resp.text}")
+
+    def set_repo_member_group_permissions(self, staged, project_key, repo_slug, permission, access_level):
+        # Set permission for all repo groups in bulk
+        groups = ""
+        for k, v in staged.get("groups", {}).items():
+            if v > access_level:
+                groups += f"&name={k}" if groups else f"name={k}"
+        if groups:
+            groups += f"&permission={permission}"
+            resp = self.repos_api.set_repo_group_permissions(
+                project_key, repo_slug, data=groups)
+            if resp.status_code != 204:
+                self.log.error(
+                    f"Failed to set repo '{project_key}/{repo_slug}' '{permission}' permission for all groups:\n{resp} - {resp.text}")
+
+    def unset_project_member_permissions(self, staged, s_path):
+        access_level = 20
+        self.unset_project_member_user_permissions(
+            staged, s_path, access_level)
+        self.unset_project_member_group_permissions(
+            staged, s_path, access_level)
+
+    def unset_project_member_user_permissions(self, staged, s_path, access_level):
+        # Handle individual project users
+        for u in staged.get("members", []):
+            if u["access_level"] > access_level:
+                permission = constants.GL_GROUP_PERM_MAP[u['access_level']]
+                data = f"name={u['username']}&permission={permission}"
+                resp = self.projects_api.set_project_user_permissions(
+                    s_path, data=data)
+                if resp.status_code != 204:
+                    self.log.error(
+                        f"Failed to set project '{s_path}' '{permission}' permission for all users:\n{resp} - {resp.text}")
+
+    def unset_project_member_group_permissions(self, staged, s_path, access_level):
+        # Handle individual project groups
+        for k, v in staged.get("groups", {}).items():
+            if v > access_level:
+                permission = constants.GL_GROUP_PERM_MAP[v]
+                data = f"name={k}&permission={permission}"
+                resp = self.projects_api.set_project_group_permissions(
+                    s_path, data=data)
+                if resp.status_code != 204:
+                    self.log.error(
+                        f"Failed to set project '{s_path}' '{permission}' permission for all groups:\n{resp} - {resp.text}")
+
+    def unset_repo_member_permissions(self, staged, s_path):
+        access_level = 20
+        paths = s_path.split("/")
+        project_key, repo_slug = paths[0], paths[1]
+        self.unset_repo_member_user_permissions(
+            staged, project_key, repo_slug, access_level)
+        self.unset_repo_member_group_permissions(
+            staged, project_key, repo_slug, access_level)
+
+    def unset_repo_member_user_permissions(self, staged, project_key, repo_slug, access_level):
+        # Handle individual repo users
+        for u in staged.get("members", []):
+            if u["access_level"] > access_level:
+                permission = constants.GL_PROJECT_PERM_MAP[u['access_level']]
+                data = f"name={u['username']}&permission={permission}"
+                resp = self.repos_api.set_repo_user_permissions(
+                    project_key, repo_slug, data=data)
+                if resp.status_code != 204:
+                    self.log.error(
+                        f"Failed to set repo '{project_key}/{repo_slug}' '{permission}' permission for all users:\n{resp} - {resp.text}")
+
+    def unset_repo_member_group_permissions(self, staged, project_key, repo_slug, access_level):
+        # Handle individual repo groups
+        for k, v in staged.get("groups", {}).items():
+            if v > access_level:
+                permission = constants.GL_PROJECT_PERM_MAP[v]
+                data = f"name={k}&permission={permission}"
+                resp = self.repos_api.set_repo_group_permissions(
+                    project_key, repo_slug, data=data)
+                if resp.status_code != 204:
+                    self.log.error(
+                        f"Failed to set repo '{project_key}/{repo_slug}' '{permission}' permission for all groups:\n{resp} - {resp.text}")

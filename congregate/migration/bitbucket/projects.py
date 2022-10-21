@@ -12,8 +12,9 @@ class ProjectsClient(BitBucketServer):
         self.subset = subset
         super().__init__()
 
-    def set_user_groups(self, groups):
+    def set_user_groups(self, groups, skip_group_members=False):
         self.user_groups = groups
+        self.skip_group_members = skip_group_members
 
     def retrieve_project_info(self, processes=None):
         if self.subset:

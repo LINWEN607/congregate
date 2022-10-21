@@ -7,16 +7,10 @@ from congregate.helpers.mdbc import MongoConnector
 from congregate.migration.bitbucket.api.projects import ProjectsApi
 from congregate.migration.bitbucket.api.repos import ReposApi
 from congregate.migration.bitbucket.api.users import UsersApi
+from congregate.migration.bitbucket import constants
 
 
 class BitBucketServer(BaseClass):
-    ADMINS = ["SYS_ADMIN", "ADMIN"]
-    REPO_PERM_MAP = {
-        "REPO_ADMIN": 40,  # Maintainer
-        "REPO_WRITE": 30,  # Developer
-        "REPO_READ": 20  # Reporter
-    }
-
     @classmethod
     def connect_to_mongo(cls):
         return MongoConnector()
@@ -33,9 +27,11 @@ class BitBucketServer(BaseClass):
         self.repos_api = ReposApi()
         self.users_api = UsersApi()
         self.user_groups = {}
-        self.repo_groups = []
-        self.project_groups = []
+        self.repo_groups = {}
+        self.project_groups = {}
         self.subset = subset
+        self.skip_group_members = False
+        self.skip_project_members = False
         super().__init__()
 
     def format_users(self, users):
@@ -65,7 +61,7 @@ class BitBucketServer(BaseClass):
 
     # def is_admin(self, user_slug):
     #     for user in self.users_api.get_user_permissions(user_slug):
-    #         if user["user"]["slug"] == user_slug and user["permission"] in self.ADMINS:
+    #         if user["user"]["slug"] == user_slug and user["permission"] in constants.BBS_ADMINS:
     #             return True
     #     return False
 
@@ -73,7 +69,7 @@ class BitBucketServer(BaseClass):
         return user.get("slug", "").lower() not in self.config.users_to_ignore
 
     def format_project(self, project, mongo):
-        self.project_groups = []
+        self.project_groups = {}
         return {
             "name": project["name"],
             "id": project["id"],
@@ -87,22 +83,18 @@ class BitBucketServer(BaseClass):
         }
 
     def add_project_users(self, users, project_key, groups):
-        bitbucket_permission_map = {
-            "PROJECT_ADMIN": 50,  # Owner
-            "PROJECT_WRITE": 30,  # Developer
-            "PROJECT_READ": 20  # Reporter
-        }
         for user in self.projects_api.get_all_project_users(project_key):
             m = user["user"]
-            m["permission"] = bitbucket_permission_map[user["permission"]]
+            m["permission"] = constants.BBS_PROJECT_PERM_MAP[user["permission"]]
             users.append(m)
 
         if groups:
             for group in self.projects_api.get_all_project_groups(project_key):
                 group_name = dig(group, 'group', 'name', default="").lower()
-                permission = bitbucket_permission_map[group["permission"]]
-                self.project_groups.append({group_name: permission})
-                if groups.get(group_name):
+                permission = constants.BBS_PROJECT_PERM_MAP[group["permission"]]
+                # Save project user groups in project "groups" field
+                self.project_groups[group_name] = permission
+                if not self.skip_group_members and groups.get(group_name):
                     for user in groups[group_name]:
                         temp_user = user
                         temp_user["permission"] = permission
@@ -136,7 +128,7 @@ class BitBucketServer(BaseClass):
         Leave project repo members empty ([]) as they are retrieved during staging.
         """
         repo_path = dig(repo, 'project', 'key')
-        self.repo_groups = []
+        self.repo_groups = {}
         return {
             "id": repo["id"],
             "path": repo["slug"],
@@ -161,16 +153,17 @@ class BitBucketServer(BaseClass):
         for member in self.repos_api.get_all_repo_users(
                 project_key, repo_slug):
             m = member["user"]
-            m["permission"] = self.REPO_PERM_MAP[member["permission"]]
+            m["permission"] = constants.BBS_REPO_PERM_MAP[member["permission"]]
             members.append(m)
 
         if self.user_groups:
             for group in self.repos_api.get_all_repo_groups(
                     project_key, repo_slug):
                 group_name = dig(group, 'group', 'name', default="").lower()
-                permission = self.REPO_PERM_MAP[group["permission"]]
-                self.repo_groups.append({group_name: permission})
-                if self.user_groups.get(group_name):
+                permission = constants.BBS_REPO_PERM_MAP[group["permission"]]
+                # Save repository user groups in repo "groups" field
+                self.repo_groups[group_name] = permission
+                if not self.skip_project_members and self.user_groups.get(group_name):
                     for user in self.user_groups[group_name]:
                         temp_user = user
                         temp_user["permission"] = permission
