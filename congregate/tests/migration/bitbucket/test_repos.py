@@ -68,6 +68,7 @@ class ReposTests(unittest.TestCase):
                         "email": "user4@example.com"
                     }
                 ],
+                "groups": {},
                 "default_branch": "develop",
                 "path": "android",
                 "path_with_namespace": "TGP/android",
@@ -103,6 +104,7 @@ class ReposTests(unittest.TestCase):
                         "email": "user4@example.com"
                     }
                 ],
+                "groups": {},
                 "default_branch": "master",
                 "path": "another-test-repo",
                 "path_with_namespace": "ATP/another-test-repo",
@@ -219,6 +221,7 @@ class ReposTests(unittest.TestCase):
                         "access_level": 20
                     }
                 ],
+                "groups": {'stash-users': 20, 'test-group': 20},
                 "default_branch": "develop",
                 "http_url_to_repo": "http://localhost:7990/scm/tgp/android.git"
             },
@@ -254,6 +257,7 @@ class ReposTests(unittest.TestCase):
                         "email": "user4@example.com"
                     }
                 ],
+                "groups": {},
                 "default_branch": "master",
                 "http_url_to_repo": "http://localhost:7990/scm/atp/another-test-repo.git"
             }

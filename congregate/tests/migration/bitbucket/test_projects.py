@@ -73,6 +73,7 @@ class ProjectsTests(unittest.TestCase):
                 "visibility": "private",
                 "description": "test",
                 "members": expected_members,
+                "groups": {},
                 "projects": [3, 6]
             },
             {
@@ -83,6 +84,7 @@ class ProjectsTests(unittest.TestCase):
                 "visibility": "private",
                 "description": "test",
                 "members": expected_members,
+                "groups": {},
                 "projects": [3, 6]
             }
         ]
@@ -192,6 +194,7 @@ class ProjectsTests(unittest.TestCase):
                         "access_level": 30
                     }
                 ],
+                "groups": {'stash-users': 20, 'test-group': 30},
                 "projects": [3, 6]
             },
             {
@@ -219,6 +222,7 @@ class ProjectsTests(unittest.TestCase):
                         "access_level": 20
                     }
                 ],
+                "groups": {},
                 "projects": [3, 6]
             }
         ]
