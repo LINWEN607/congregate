@@ -513,14 +513,14 @@ def main():
                         restrict=False, is_project=arguments["--bb-projects"], dry_run=DRY_RUN)
                 else:
                     log.warning(
-                        "This command is ONLY intended for BitBucket source instances")
+                        "This command is ONLY intended for BitBucket source instances. Skipping")
             if arguments["set-bb-read-only-member-permissions"]:
                 if config.source_type == "bitbucket server":
                     bb_repos.update_member_permissions(
                         is_project=arguments["--bb-projects"], dry_run=DRY_RUN)
                 else:
                     log.warning(
-                        "This command is ONLY intended for BitBucket source instances")
+                        "This command is ONLY intended for BitBucket source instances. Skipping")
             if arguments["unset-bb-read-only-member-permissions"]:
                 if config.source_type == "bitbucket server":
                     bb_repos.update_member_permissions(
