@@ -15,17 +15,18 @@ from congregate.migration.bitbucket import constants
 
 
 class ReposClient(BitBucketServer):
-    def __init__(self, subset=False):
+    def __init__(self, subset=False, skip_project_members=False, skip_group_members=False):
         self.projects_api = ProjectsApi()
         self.repos_api = ReposApi()
         self.gl_projects_api = GLProjectsApi()
-        self.subset = subset
         self.unique_projects = set()
         super().__init__()
-
-    def set_user_groups(self, groups, skip_project_members=False):
-        self.user_groups = groups
+        self.subset = subset
         self.skip_project_members = skip_project_members
+        self.skip_group_members = skip_group_members
+
+    def set_user_groups(self, groups):
+        self.user_groups = groups
 
     def retrieve_repo_info(self, processes=None):
         if self.subset:
