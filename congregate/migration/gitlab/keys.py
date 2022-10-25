@@ -19,10 +19,11 @@ class KeysClient(BaseClass):
         self.users = UsersClient()
         super().__init__()
 
-    def connect_to_mongo(self):
+    @classmethod
+    def connect_to_mongo(cls):
         return MongoConnector()
 
-    def migrate_project_deploy_keys(self, old_id, new_id, name, mongo=None):
+    def migrate_project_deploy_keys(self, old_id, new_id, path, mongo=None):
         try:
             d_keys = iter(self.projects_api.get_all_project_deploy_keys(
                 old_id, self.config.source_host, self.config.source_token))
@@ -34,42 +35,56 @@ class KeysClient(BaseClass):
                 key = pop_multiple_keys(key, ["id", "created_at"])
                 resp = self.projects_api.create_new_project_deploy_key(
                     new_id, self.config.destination_host, self.config.destination_token, key)
+                if resp.status_code == 201:
+                    mongo.insert_data(coll, resp.json())
+                    return True
                 # When a key being migrated already exists somewhere on the
                 # destination instance
                 if resp.status_code == 400 and is_error_message_present(
                         resp)[0] and isinstance(resp.json().get("message"), dict):
-                    if is_dot_com(self.config.destination_host):
-                        # Assuming it was created at some point during the
-                        # migration
-                        if last_key := mongo.safe_find_one(coll, query={"key": key["key"]}, sort=[
-                                                           ("created_at", mongo.DESCENDING)]):
-                            self.projects_api.enable_deploy_key(
-                                new_id, last_key["id"], self.config.destination_host, self.config.destination_token)
-                        else:
-                            self.log.warning(
-                                f"Duplicate deploy key {key} for project {name} (ID: {new_id})\n{resp} - {resp.text}")
-                    else:
-                        for k in self.instance_api.get_all_instance_deploy_keys(
-                                self.config.destination_host, self.config.destination_token):
-                            if k and key["key"] == k["key"]:
-                                self.projects_api.enable_deploy_key(
-                                    new_id, k["id"], self.config.destination_host, self.config.destination_token)
-                elif resp.status_code != 201:
-                    self.log.error(
-                        f"Failed to create deploy key {key} for project {name} (ID: {new_id}), with error:\n{resp} - {resp.text}")
-                else:
-                    mongo.insert_data(coll, resp.json())
-            return True
+                    return self.handle_failed_deploy_key_create(mongo, coll, key, new_id, path)
+                self.log.error(
+                    f"Failed to create project '{path}' deploy key {key}, with error:\n{resp} - {resp.text}")
+                return False
+            return None
         except TypeError as te:
-            self.log.error(
-                "Project {0} deploy keys {1} {2}".format(name, resp, te))
+            self.log.error(f"Project '{path}' deploy keys {resp} {te}")
             return False
         except RequestException as re:
             self.log.error(
-                "Failed to migrate deploy keys for project {0}, with error:\n{1}".format(name, re))
+                f"Failed to migrate project '{path}' deploy keys, with error:\n{re}")
             return False
         finally:
             mongo.close_connection()
+
+    def handle_failed_deploy_key_create(self, mongo, coll, key, new_id, path):
+        host = self.config.destination_host
+        token = self.config.destination_token
+        if is_dot_com(host):
+            # Assuming it was created at some point during the migration
+            if last_key := mongo.safe_find_one(coll, query={"key": key["key"]}, sort=[
+                    ("created_at", mongo.DESCENDING)]):
+                enable_resp = self.projects_api.enable_deploy_key(
+                    new_id, last_key["id"], host, token)
+                return self.handle_deploy_key_enable(enable_resp, path, key)
+            self.log.warning(
+                f"Duplicate project '{path}' deploy key {key} on destination")
+            return False
+        for k in self.instance_api.get_all_instance_deploy_keys(host, token):
+            if k and key["key"] == k["key"]:
+                enable_resp = self.projects_api.enable_deploy_key(
+                    new_id, k["id"], host, token)
+                return self.handle_deploy_key_enable(enable_resp, path, key)
+        self.log.warning(
+            f"Project '{path}' deploy key {key} NOT found on destination")
+        return False
+
+    def handle_deploy_key_enable(self, resp, path, key):
+        if resp.status_code != 201:
+            self.log.error(
+                f"Failed to enable project '{path}' deploy key {key}, with error:\n{resp} - {resp.text}")
+            return False
+        return True
 
     def migrate_user_ssh_keys(self, old_user, new_user):
         try:
@@ -77,12 +92,12 @@ class KeysClient(BaseClass):
             resp = self.users_api.get_all_user_ssh_keys(old_user.get(
                 "id", None), self.config.source_host, self.config.source_token)
             ssh_keys = iter(resp.json())
-            self.log.info("Migrating user {} SSH keys".format(email))
+            self.log.info(f"Migrating user {email} SSH keys")
             for k in ssh_keys:
                 error, k = is_error_message_present(k)
                 if error or not k:
                     self.log.error(
-                        "Failed to fetch SSH keys ({0}) for user {1}".format(k, email))
+                        f"Failed to fetch user {email} SSH key ({k})")
                     return False
                 # Remove unused key-values before posting key
                 k = pop_multiple_keys(k, ["id", "created_at"])
@@ -90,11 +105,11 @@ class KeysClient(BaseClass):
                     self.config.destination_host, self.config.destination_token, new_user.get("id", None), k)
             return True
         except TypeError as te:
-            self.log.error("User {0} SSH keys {1} {2}".format(email, resp, te))
+            self.log.error(f"User {email} SSH keys {resp} {te}")
             return False
         except RequestException as re:
             self.log.error(
-                "Failed to migrate SSH keys for user {0}, with error:\n{1}".format(email, re))
+                f"Failed to migrate user {email} SSH keys, with error:\n{re}")
             return False
 
     def migrate_user_gpg_keys(self, old_user, new_user):
@@ -103,12 +118,12 @@ class KeysClient(BaseClass):
             resp = self.users_api.get_all_user_gpg_keys(old_user.get(
                 "id", None), self.config.source_host, self.config.source_token)
             ssh_keys = iter(resp.json())
-            self.log.info("Migrating user {} GPG keys".format(email))
+            self.log.info(f"Migrating user {email} GPG keys")
             for k in ssh_keys:
                 error, k = is_error_message_present(k)
                 if error or not k:
                     self.log.error(
-                        "Failed to fetch GPG keys ({0}) for user {1}".format(k, email))
+                        f"Failed to fetch user {email} GPG key ({k})")
                     return False
                 # Remove unused key-values before posting key
                 k = pop_multiple_keys(k, ["id", "created_at"])
@@ -116,9 +131,9 @@ class KeysClient(BaseClass):
                     self.config.destination_host, self.config.destination_token, new_user.get("id", None), k)
             return True
         except TypeError as te:
-            self.log.error("User {0} GPG keys {1} {2}".format(email, resp, te))
+            self.log.error(f"User {email} GPG keys {resp} {te}")
             return False
         except RequestException as re:
             self.log.error(
-                "Failed to migrate GPG keys for user {0}, with error:\n{1}".format(email, re))
+                f"Failed to migrate user {email} GPG keys, with error:\n{re}")
             return False
