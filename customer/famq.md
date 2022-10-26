@@ -57,6 +57,10 @@ The (PS) engineer orchestrating the migration might be in a favorable timezone t
 
 Please see [here](#q2) for a more elaborate explanation.
 
+## Do projects created in a personal namespace get migrated from GitLab self-managed to SaaS?
+
+Generally speaking, no we don't migrate user projects.  If user projects are required, we encourage people to move them to a group and possibly subgroups if they need to maintain privacy.  Users can manually migrate their personal project using ui-based import/export, if they absolutely need it.
+
 ## <a name="q1"></a>What typically needs to be "fixed" in a migrated project?
 
 Certain GitLab features are migrated but not adapted to the destination instance. These should be manually updated:

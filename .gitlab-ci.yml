@@ -182,6 +182,14 @@ build jenkins seed image:
     - DOCKER_BUILDKIT=1 docker build -t $JENKINS_SEED_IMAGE_NAME .
     - docker push "$JENKINS_SEED_IMAGE_NAME"
   rules:
+    - if: "$CI_PIPELINE_SOURCE == 'merge_request_event'"
+      changes:
+        - docker/jenkins/Dockerfile
+        - docker/jenkins/entrypoint.sh
+        - docker/jenkins/jenkins.py
+        - docker/jenkins/setup_and_seed.py
+      variables:
+        JENKINS_SEED_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHORT_SHA-jenkins-test
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
       changes:
         - docker/jenkins/Dockerfile
@@ -402,10 +410,18 @@ test:Jenkins Integration Tests:
     - echo "Jenkins is up and running, starting pytest"
     - poetry run pytest -s -m "jenkins_it" congregate/tests/
   rules:
+    - if: "$CI_PIPELINE_SOURCE == 'merge_request_event'"
+      changes:
+        - docker/jenkins/Dockerfile
+        - docker/jenkins/entrypoint.sh
+        - docker/jenkins/jenkins.py
+        - docker/jenkins/setup_and_seed.py
+      variables:
+        JENKINS_SEED_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHORT_SHA-jenkins-test
     - if: "$CI_PIPELINE_SOURCE != 'schedule'"
       changes:
         - congregate/migration/jenkins/**/*
-  timeout: 10 minutes
+  timeout: 5 minutes
 
 .docker-build:
   extends:

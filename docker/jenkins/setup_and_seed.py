@@ -52,13 +52,13 @@ def setup_jenkins():
     suggested_plugins = [
         "cloudbees-folder",
         "antisamy-markup-formatter",
+        "workflow-aggregator",
         "build-timeout",
         "credentials-binding",
         "timestamper",
         "ws-cleanup",
         "ant",
         "gradle",
-        "workflow-aggregator",
         "github-branch-source",
         "pipeline-github-lib",
         "pipeline-stage-view",
@@ -79,22 +79,22 @@ def setup_jenkins():
     # print(formatted_message("Get plugins", getPlugins))
 
     # Installing suggested list of plugins
-    for plugin in suggested_plugins:
-        plugin_name = f"plugin.{plugin}"
-        installPlugins = s.post(formatted_url(f"pluginManager/install?{plugin_name}=true"),
-                                data={
-            "dynamicLoad": True,
-            "Jenkins-Crumb": crumb
-        }
-        )
+    # for plugin in suggested_plugins:
+    #     plugin_name = f"plugin.{plugin}"
+    #     installPlugins = s.post(formatted_url(f"pluginManager/install?{plugin_name}=true"),
+    #                             data={
+    #         "dynamicLoad": True,
+    #         "Jenkins-Crumb": crumb
+    #     }
+    #     )
 
-        print(formatted_message(
-            f"Installing plugin {plugin_name}", installPlugins))
+    #     print(formatted_message(
+    #         f"Installing plugin {plugin_name}", installPlugins))
 
-    # Since the plugin requests above just trigger the install, the actual install is not completed
-    # before a response is returned
-    print("Waiting 60 seconds before continuing to get plugins installed")
-    sleep(60)
+    # # Since the plugin requests above just trigger the install, the actual install is not completed
+    # # before a response is returned
+    # print("Waiting 60 seconds before continuing to get plugins installed")
+    # sleep(60)
 
     # Create new admin user
     createAdmin = s.post(formatted_url('setupWizard/createAdminUser'), data={
@@ -128,14 +128,19 @@ def setup_jenkins():
 
     print(formatted_message("Completing install", resp))
 
+    if getenv('SEED_DATA') == "true" and not exists("/var/jenkins_home/seed-finished"):
+        seed_data()
+    else:
+        print("Skipping seed_data")
+
     # Mark the installation as complete
-    resp = s.post(formatted_url('restart'), data={
-        "Jenkins-Crumb": crumb
-    })
+    # resp = s.post(formatted_url('restart'), data={
+    #     "Jenkins-Crumb": crumb
+    # })
 
-    print(formatted_message("Restarting jenkins and waiting 60 seconds", resp))
+    # print(formatted_message("Restarting jenkins and waiting 60 seconds", resp))
 
-    sleep(60)
+    # sleep(60)
 
     # Write a file to check if jenkins is already set up
     with open("/var/jenkins_home/install-finished", "w") as f:
@@ -265,14 +270,13 @@ def seed_data():
         </project>
     """)
 
+    # Write a file to check if jenkins is already set up
+    with open("/var/jenkins_home/seed-finished", "w") as f:
+        f.write("install complete")
 
 
 if __name__ == "__main__":
     if not exists("/var/jenkins_home/install-finished"):
         setup_jenkins()
-        if getenv('SEED_DATA') == "true":
-            seed_data()
-        else:
-            print("Skipping seed_data")
     else:
         print("Jenkins is already setup. Skipping")
