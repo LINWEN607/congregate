@@ -79,7 +79,7 @@ Arguments:
     subset                                  Provide input file with list of URLs to list a subset of groups (--skip-projects) or projects (--skip-groups). BitBucket ONLY.
     scm-source                              Specific SCM source hostname
     skip-users                              Stage: Skip staging users; Migrate: Skip migrating users; Rollback: Remove only groups and projects.
-    remove-members                          Remove all members of created (GitHub) or imported (GitLab) groups. Skip adding any members of BitBucket Server imported repos.
+    remove-members                          Remove all members of created (GitHub) or imported (GitLab) groups. Skip adding any members of BitBucket Server repos and projects.
     hard-delete                             Remove user contributions and solely owned groups
     stream-groups                           Streamed approach of migrating staged groups in bulk
     skip-groups                             Rollback: Remove only users and projects

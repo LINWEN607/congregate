@@ -25,12 +25,13 @@ class KeysClient(BaseClass):
 
     def migrate_project_deploy_keys(self, old_id, new_id, path, mongo=None):
         try:
-            d_keys = iter(self.projects_api.get_all_project_deploy_keys(
-                old_id, self.config.source_host, self.config.source_token))
+            src_host = self.config.source_host
+            src_keys = iter(self.projects_api.get_all_project_deploy_keys(
+                old_id, src_host, self.config.source_token))
             if not mongo:
                 mongo = self.connect_to_mongo()
-            coll = f"keys-{strip_netloc(self.config.source_host)}"
-            for key in d_keys:
+            coll = f"keys-{strip_netloc(src_host)}"
+            for key in src_keys:
                 # Remove unused key-values before posting key
                 key = pop_multiple_keys(key, ["id", "created_at"])
                 resp = self.projects_api.create_new_project_deploy_key(
