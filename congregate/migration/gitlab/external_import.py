@@ -150,6 +150,8 @@ class ImportClient(BaseClass):
                     if imported and ((stats["storageSize"] > 0) or (stats['repositorySize'] > 0)):
                         self.log.info(
                             f"Project storage is greater than 0 for {full_path}. Import is complete")
+                        if stats["commitCount"] == 0:
+                            self.log.warning(f"Git repo {full_path} is empty")
                         success = True
                         break
             if total_time >= timeout:
