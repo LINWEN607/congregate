@@ -77,33 +77,36 @@ class BitBucketServer(BaseClass):
             "full_path": project["key"],
             "visibility": "public" if project["public"] else "private",
             "description": project.get("description", ""),
-            "members": self.add_project_users([], project["key"], self.user_groups),
+            "members": self.add_project_users([], project["key"]),
             "groups": self.project_groups,
             "projects": self.add_project_repos([], project["key"], mongo)
         }
 
-    def add_project_users(self, users, project_key, groups):
+    def add_project_users(self, users, project_key):
         for user in self.projects_api.get_all_project_users(project_key):
-            m = user["user"]
-            m["permission"] = constants.BBS_PROJECT_PERM_MAP[user["permission"]]
-            users.append(m)
+            u = user["user"]
+            u["permission"] = constants.BBS_PROJECT_PERM_MAP[user["permission"]]
+            users.append(u)
 
-        if groups:
-            for group in self.projects_api.get_all_project_groups(project_key):
-                group_name = dig(group, 'group', 'name', default="").lower()
-                permission = constants.BBS_PROJECT_PERM_MAP[group["permission"]]
-                # Save project user groups in project "groups" field
-                self.project_groups[group_name] = permission
-                if not self.skip_group_members and groups.get(group_name):
-                    for user in groups[group_name]:
-                        temp_user = user
-                        temp_user["permission"] = permission
-                        users.append(temp_user)
-                else:
-                    self.log.warning(
-                        f"Unable to find project {project_key} user group {group_name} or the group is empty")
+        if self.user_groups:
+            users = self.add_project_user_groups(project_key, users)
         return remove_dupes_but_take_higher_access(
             self.format_users(users))
+
+    def add_project_user_groups(self, project_key, users):
+        for group in self.projects_api.get_all_project_groups(project_key):
+            group_name = dig(group, 'group', 'name', default="").lower()
+            permission = constants.BBS_PROJECT_PERM_MAP[group["permission"]]
+            # Save project user groups in project "groups" field
+            self.project_groups[group_name] = permission
+            if not self.skip_group_members and self.user_groups.get(group_name):
+                for user in self.user_groups[group_name]:
+                    user["permission"] = permission
+                    users.append(user)
+            elif not self.skip_group_members:
+                self.log.warning(
+                    f"Unable to find project {project_key} user group {group_name} or the group is empty")
+        return users
 
     def add_project_repos(self, repos, project_key, mongo):
         try:
@@ -149,30 +152,34 @@ class BitBucketServer(BaseClass):
             "http_url_to_repo": self.get_http_url_to_repo(repo)
         }
 
-    def add_repo_users(self, members, project_key, repo_slug):
-        for member in self.repos_api.get_all_repo_users(
+    def add_repo_users(self, users, project_key, repo_slug):
+        for user in self.repos_api.get_all_repo_users(
                 project_key, repo_slug):
-            m = member["user"]
-            m["permission"] = constants.BBS_REPO_PERM_MAP[member["permission"]]
-            members.append(m)
+            u = user["user"]
+            u["permission"] = constants.BBS_REPO_PERM_MAP[user["permission"]]
+            users.append(u)
 
         if self.user_groups:
-            for group in self.repos_api.get_all_repo_groups(
-                    project_key, repo_slug):
-                group_name = dig(group, 'group', 'name', default="").lower()
-                permission = constants.BBS_REPO_PERM_MAP[group["permission"]]
-                # Save repository user groups in repo "groups" field
-                self.repo_groups[group_name] = permission
-                if not self.skip_project_members and self.user_groups.get(group_name):
-                    for user in self.user_groups[group_name]:
-                        temp_user = user
-                        temp_user["permission"] = permission
-                        members.append(temp_user)
-                else:
-                    self.log.warning(
-                        f"Unable to find repo {repo_slug} user group {group_name} or the group is empty")
+            users = self.add_repo_user_groups(
+                project_key, repo_slug, users)
         return remove_dupes_but_take_higher_access(
-            self.format_users(members))
+            self.format_users(users))
+
+    def add_repo_user_groups(self, project_key, repo_slug, users):
+        for group in self.repos_api.get_all_repo_groups(
+                project_key, repo_slug):
+            group_name = dig(group, 'group', 'name', default="").lower()
+            permission = constants.BBS_REPO_PERM_MAP[group["permission"]]
+            # Save repository user groups in repo "groups" field
+            self.repo_groups[group_name] = permission
+            if not self.skip_project_members and self.user_groups.get(group_name):
+                for user in self.user_groups[group_name]:
+                    user["permission"] = permission
+                    users.append(user)
+            elif not self.skip_project_members:
+                self.log.warning(
+                    f"Unable to find repo {repo_slug} user group {group_name} or the group is empty")
+        return users
 
     def get_default_branch(self, project_key, repo_slug):
         resp = safe_json_response(

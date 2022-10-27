@@ -333,7 +333,6 @@ class MigrateClient(BaseClass):
                     result = self.ext_import.get_failed_result(
                         dstn_pwn,
                         data={"error": f"Failed import, with response/payload {result_response}. Unable to execute post migration phase"})
-
             # Repo import status
             if dst_pid or project_id:
                 result[dstn_pwn]["import_status"] = self.ext_import.get_external_repo_import_status(
@@ -1234,7 +1233,7 @@ class MigrateClient(BaseClass):
         if self.config.source_registry and self.config.destination_registry:
             results["container_registry"] = self.registries.migrate_registries(
                 src_id, dst_id, path_with_namespace)
-        
+
         # Package Registries
         results["package_registry"] = self.packages.migrate_project_packages(
             src_id, dst_id, path_with_namespace)
