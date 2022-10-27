@@ -38,7 +38,7 @@ class KeysClient(BaseClass):
                     new_id, self.config.destination_host, self.config.destination_token, key)
                 if resp.status_code == 201:
                     mongo.insert_data(coll, resp.json())
-                    return True
+                    continue
                 # When a key being migrated already exists somewhere on the
                 # destination instance
                 if resp.status_code == 400 and is_error_message_present(
@@ -47,7 +47,7 @@ class KeysClient(BaseClass):
                 self.log.error(
                     f"Failed to create project '{path}' deploy key {key}, with error:\n{resp} - {resp.text}")
                 return False
-            return None
+            return True
         except TypeError as te:
             self.log.error(f"Project '{path}' deploy keys {resp} {te}")
             return False
