@@ -294,7 +294,7 @@ check ldap compose yaml:
         - congregate/tests/migration/gitlab/test_*_setup.py
         - congregate/cli/stage_*.py
     - if: "$CI_PIPELINE_SOURCE == 'schedule' && $E2E_NIGHTLY"
-  timeout: 30 minutes
+  timeout: 5 minutes
 
 .fallback-e2e-cleanup:
   image: "${TEST_IMAGE_NAME}"
@@ -341,7 +341,7 @@ test:end-to-end full:
     - cp instance_id full_instance_id
     - poetry run pytest -s -m e2e_gl_setup congregate/tests/
     - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
-  timeout: 30 minutes
+  timeout: 25 minutes
   cache:
     key: "$CI_COMMIT_SHA-full"
     paths:
@@ -355,7 +355,7 @@ test:end-to-end single group:
     - cp instance_id sg_instance_id
     - poetry run pytest -s -m e2e_gl_setup_2 congregate/tests/
     - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
-  timeout: 30 minutes
+  timeout: 25 minutes
   cache:
     key: "$CI_COMMIT_SHA-sg"
     paths:
