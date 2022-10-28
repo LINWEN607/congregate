@@ -16,28 +16,31 @@ from congregate.migration.gitlab.api.namespaces import NamespacesApi
 
 
 class GroupsClient(BaseClass):
+    KEYS_TO_IGNORE = [
+        "web_url",
+        "full_name",
+        "ldap_cn",
+        "ldap_access"
+    ]
+
     def __init__(self):
         self.vars = VariablesClient()
         self.groups_api = GroupsApi()
         self.projects_api = ProjectsApi()
         self.badges = BadgesClient()
         self.namespaces_api = NamespacesApi()
-        self.group_id_mapping = {}
         self.skip_group_members = False
         self.skip_project_members = False
+        self.unique_groups = set()
         super().__init__()
 
     def traverse_groups(self, host, token, group):
-        mongo = MongoConnector()
-        if gid := group.get("id"):
-            keys_to_ignore = [
-                "web_url",
-                "full_name",
-                "ldap_cn",
-                "ldap_access"
-            ]
-            for k in keys_to_ignore:
+        gid = group.get("id")
+        if gid and gid not in self.unique_groups:
+            mongo = MongoConnector()
+            for k in self.KEYS_TO_IGNORE:
                 group.pop(k, None)
+            self.unique_groups.add(gid)
 
             # Save all group members as part of group metadata
             group["members"] = [] if self.skip_group_members else list(
@@ -47,11 +50,13 @@ class GroupsClient(BaseClass):
             # Only list direct projects to avoid overhead
             group["projects"] = []
             for project in self.groups_api.get_all_group_projects(gid, host, token, include_subgroups=False, with_shared=False):
-                group["projects"].append(project.get("id"))
-
-                # Avoids having to also list all gitlab.com parent group projects
+                pid = project.get("id")
+                group["projects"].append(pid)
+                for k in self.PROJECT_KEYS_TO_IGNORE:
+                    project.pop(k, None)
+                # Avoids having to list all parent group projects i.e. listing only projects
                 project["members"] = [] if self.skip_project_members else list(
-                    self.projects_api.get_members(project["id"], host, token))
+                    self.projects_api.get_members(pid, host, token))
                 mongo.insert_data(f"projects-{strip_netloc(host)}", project)
 
             # Save all descendant groups ID references as part of group metadata
@@ -66,8 +71,7 @@ class GroupsClient(BaseClass):
                 self.traverse_groups(
                     host, token, subgroup)
             mongo.insert_data(f"groups-{strip_netloc(host)}", group)
-
-        mongo.close_connection()
+            mongo.close_connection()
 
     def retrieve_group_info(self, host, token, location="source", processes=None):
         prefix = location if location != "source" else ""

@@ -65,6 +65,7 @@ class ListClient(BaseClass):
             mongo.dump_collection_to_file(
                 u, f"{self.app_path}/data/users.json")
 
+        # Lists all groups and group projects
         if not self.skip_groups:
             groups = GroupsClient()
             groups.skip_group_members = self.skip_group_members
@@ -73,7 +74,8 @@ class ListClient(BaseClass):
             mongo.dump_collection_to_file(
                 g, f"{self.app_path}/data/groups.json")
 
-        # When to list projects - Listing groups on gitlab.com will also list their projects
+        # Listing groups on gitlab.com will also list their projects
+        # Listing on-prem includes personal projects
         if not self.skip_projects and not is_dot_com(host):
             projects = ProjectsClient()
             projects.skip_project_members = self.skip_project_members

@@ -68,15 +68,6 @@ class MockProjectsApi():
                     "job_artifacts_size": 0,
                     "packages_size": 0
                 },
-                "_links": {
-                    "self": "http://example.com/api/v4/projects",
-                            "issues": "http://example.com/api/v4/projects/1/issues",
-                            "merge_requests": "http://example.com/api/v4/projects/1/merge_requests",
-                            "repo_branches": "http://example.com/api/v4/projects/1/repository_branches",
-                            "labels": "http://example.com/api/v4/projects/1/labels",
-                            "events": "http://example.com/api/v4/projects/1/events",
-                            "members": "http://example.com/api/v4/projects/1/members"
-                },
                 "members": [
                     {
                         "id": 2,
@@ -164,15 +155,6 @@ class MockProjectsApi():
                     "job_artifacts_size": 0,
                     "packages_size": 0
                 },
-                "_links": {
-                    "self": "http://example.com/api/v4/projects",
-                            "issues": "http://example.com/api/v4/projects/1/issues",
-                            "merge_requests": "http://example.com/api/v4/projects/1/merge_requests",
-                            "repo_branches": "http://example.com/api/v4/projects/1/repository_branches",
-                            "labels": "http://example.com/api/v4/projects/1/labels",
-                            "events": "http://example.com/api/v4/projects/1/events",
-                            "members": "http://example.com/api/v4/projects/1/members"
-                },
                 "members": [
                     {
                         "id": 2,
@@ -259,15 +241,6 @@ class MockProjectsApi():
                     "lfs_objects_size": 0,
                     "job_artifacts_size": 0,
                     "packages_size": 0
-                },
-                "_links": {
-                    "self": "http://example.com/api/v4/projects",
-                            "issues": "http://example.com/api/v4/projects/1/issues",
-                            "merge_requests": "http://example.com/api/v4/projects/1/merge_requests",
-                            "repo_branches": "http://example.com/api/v4/projects/1/repository_branches",
-                            "labels": "http://example.com/api/v4/projects/1/labels",
-                            "events": "http://example.com/api/v4/projects/1/events",
-                            "members": "http://example.com/api/v4/projects/1/members"
                 },
                 "members": [
                     {
@@ -385,15 +358,6 @@ class MockProjectsApi():
                 "lfs_objects_size": 0,
                 "job_artifacts_size": 0,
                 "packages_size": 0
-            },
-            "_links": {
-                "self": "http://example.com/api/v4/projects",
-                "issues": "http://example.com/api/v4/projects/1/issues",
-                "merge_requests": "http://example.com/api/v4/projects/1/merge_requests",
-                "repo_branches": "http://example.com/api/v4/projects/1/repository_branches",
-                "labels": "http://example.com/api/v4/projects/1/labels",
-                "events": "http://example.com/api/v4/projects/1/events",
-                "members": "http://example.com/api/v4/projects/1/members"
             },
             "members": [
                 {

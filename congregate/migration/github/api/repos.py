@@ -67,7 +67,7 @@ class ReposApi():
     def get_repo_issues(self, owner, repo, state="all"):
         """
         List repository issues.
-        Default behavior returns all milestones.
+        Default behavior returns all issues.
 
         GitHub API v3 Doc: https://docs.github.com/en/free-pro-team@latest/rest/reference/issues#list-repository-issues
         """
