@@ -205,7 +205,7 @@ Due to time constraints, ASA costs and scaling limitations it may be necessary t
 #### Migration VM
 
 * [ ] (Optional) Backup group and project export archive files
-* [ ] (gitlab.com) Deprovision migration VM by informing Infra in the issue ([VM Requirements](#VM)) commenting that the migration is complete
+* [ ] (gitlab.com) Deprovision migration VM by informing Infra in the issue ([VM Requirements](#vm)) commenting that the migration is complete
   * Create an MR, linking to the issue and comment, and delete the `import-<issue_no>.tf` file
   * Assign an SRE to review, approve and merge the MR
 
