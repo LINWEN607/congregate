@@ -12,6 +12,7 @@ from gitlab_ps_utils.list_utils import remove_dupes
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.migrate_utils import get_staged_users, find_user_by_email_comparison_without_id, is_gl_version_older_than
 from congregate.helpers.utils import is_dot_com
+from congregate.migration.gitlab import constants
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.users import UsersApi
@@ -495,24 +496,18 @@ class UsersClient(BaseClass):
         user["email"] = user["email"].lower()
         if self.config.projects_limit:
             user["projects_limit"] = self.config.projects_limit
-        keys_to_delete = [
-            "web_url",
-            "last_sign_in_at",
-            "last_activity_at",
-            "current_sign_in_at",
-            "created_at",
-            "confirmed_at",
-            "last_activity_on",
-            "bio",
-            "bio_html",
-            # SSO causes issues with the avatar URL due to the
-            # authentication
-            "avatar_url" if self.config.group_sso_provider else "",
-            # Avoid propagating field when creating users on gitlab.com
-            # with no config value set
-            "projects_limit" if is_dot_com(
-                self.config.destination_host) and not self.config.projects_limit else ""
-        ]
+
+        keys_to_delete = constants.USER_KEYS_TO_IGNORE
+
+        # SSO causes issues with the avatar URL due to the
+        # authentication
+        if self.config.group_sso_provider:
+            keys_to_delete.append("avatar_url")
+        # Avoid propagating field when creating users on gitlab.com
+        # with no config value set
+        if is_dot_com(self.config.destination_host) and not self.config.projects_limit:
+            keys_to_delete.append("projects_limit")
+
         for key in keys_to_delete:
             user.pop(key, None)
         mongo.insert_data(

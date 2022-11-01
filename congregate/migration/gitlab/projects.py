@@ -17,6 +17,7 @@ from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.users import UsersClient
+from congregate.migration.gitlab import constants
 from congregate.migration.mirror import MirrorClient
 from congregate.helpers.mdbc import MongoConnector
 from congregate.helpers.migrate_utils import get_dst_path_with_namespace,  get_full_path_with_parent_namespace, \
@@ -77,7 +78,7 @@ class ProjectsClient(BaseClass):
         if error or not project:
             self.log.error(f"Failed to list project with response:\n{project}")
         else:
-            for k in self.PROJECT_KEYS_TO_IGNORE:
+            for k in constants.PROJECT_KEYS_TO_IGNORE:
                 project.pop(k, None)
             project["members"] = [] if self.skip_project_members else list(
                 self.projects_api.get_members(project["id"], host, token))

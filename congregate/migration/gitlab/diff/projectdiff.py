@@ -7,6 +7,7 @@ from gitlab_ps_utils.json_utils import read_json_file_into_object
 from gitlab_ps_utils.api import GitLabApi
 
 from congregate.migration.gitlab.diff.basediff import BaseDiffClient
+from congregate.migration.gitlab import constants
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.issues import IssuesApi
 from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
@@ -18,37 +19,6 @@ class ProjectDiffClient(BaseDiffClient):
     '''
         Extension of BaseDiffClient focused on finding the differences between migrated projects
     '''
-    KEYS_TO_IGNORE = [
-        "id",
-        "_links",
-        "last_activity_at",
-        "created_at",
-        "http_url_to_repo",
-        "readme_url",
-        "web_url",
-        "ssh_url_to_repo",
-        "project",
-        "forking_access_level",
-        "container_expiration_policy",
-        "approvals_before_merge",
-        "mirror",
-        "packages_enabled",
-        "external_authorization_classification_label",
-        "service_desk_address",
-        "service_desk_enabled",
-        "marked_for_deletion_at",
-        "marked_for_deletion_on",
-        "compliance_frameworks",
-        "requirements_enabled",
-        "forked_from_project",   # Handled as post-migration step
-        "parent_id",
-        "runners_token",
-        "container_registry_image_prefix",
-        "auto_devops_enabled",   # Because we deliberately disable it on destination
-        "import_status",
-        "import_type",
-        "import_url"
-    ]
 
     def __init__(self, staged=False, rollback=False, processes=None):
         super().__init__()
@@ -64,7 +34,7 @@ class ProjectDiffClient(BaseDiffClient):
             read_json_file_into_object(self.results_path))
         self.results_mtime = getmtime(self.results_path)
         self.processes = processes
-        self.keys_to_ignore = self.KEYS_TO_IGNORE
+        self.keys_to_ignore = constants.PROJECT_DIFF_KEYS_TO_IGNORE
         if staged:
             self.source_data = read_json_file_into_object(
                 "%s/data/staged_projects.json" % self.app_path)

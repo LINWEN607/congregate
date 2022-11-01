@@ -10,19 +10,13 @@ from congregate.helpers.migrate_utils import get_full_path_with_parent_namespace
     find_user_by_email_comparison_without_id
 from congregate.migration.gitlab.variables import VariablesClient
 from congregate.migration.gitlab.badges import BadgesClient
+from congregate.migration.gitlab import constants
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.namespaces import NamespacesApi
 
 
 class GroupsClient(BaseClass):
-    KEYS_TO_IGNORE = [
-        "web_url",
-        "full_name",
-        "ldap_cn",
-        "ldap_access"
-    ]
-
     def __init__(self):
         self.vars = VariablesClient()
         self.groups_api = GroupsApi()
@@ -38,7 +32,7 @@ class GroupsClient(BaseClass):
         gid = group.get("id")
         if gid and gid not in self.unique_groups:
             mongo = MongoConnector()
-            for k in self.KEYS_TO_IGNORE:
+            for k in constants.GROUP_KEYS_TO_IGNORE:
                 group.pop(k, None)
             self.unique_groups.add(gid)
 
@@ -52,7 +46,7 @@ class GroupsClient(BaseClass):
             for project in self.groups_api.get_all_group_projects(gid, host, token, include_subgroups=False, with_shared=False):
                 pid = project.get("id")
                 group["projects"].append(pid)
-                for k in self.PROJECT_KEYS_TO_IGNORE:
+                for k in constants.PROJECT_KEYS_TO_IGNORE:
                     project.pop(k, None)
                 # Avoids having to list all parent group projects i.e. listing only projects
                 project["members"] = [] if self.skip_project_members else list(

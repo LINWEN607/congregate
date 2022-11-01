@@ -14,7 +14,6 @@ from congregate.helpers.utils import get_congregate_path
 
 
 class BaseClass():
-    PROJECT_KEYS_TO_IGNORE = ["_links", "container_expiration_policy"]
     TANUKI = "#e24329"
     DESC = "Progress"
     UNIT = " unit"

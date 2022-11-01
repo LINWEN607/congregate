@@ -4,6 +4,7 @@ from gitlab_ps_utils.misc_utils import get_rollback_log
 from gitlab_ps_utils.json_utils import read_json_file_into_object
 
 from congregate.migration.gitlab.diff.basediff import BaseDiffClient
+from congregate.migration.gitlab import constants
 from congregate.migration.gitlab.api.users import UsersApi
 
 
@@ -11,27 +12,6 @@ class UserDiffClient(BaseDiffClient):
     '''
         Extension of BaseDiffClient focused on finding the differences between migrated users
     '''
-    KEYS_TO_IGNORE = [
-        "web_url",
-        "last_sign_in_at",
-        "last_activity_at",
-        "current_sign_in_at",
-        "created_at",
-        "created_by",
-        "confirmed_at",
-        "last_activity_on",
-        "current_sign_in_ip",
-        "last_sign_in_ip",
-        "source_id",
-        "id",
-        "author_id",
-        "project_id",
-        "target_id",
-        "bio",
-        "bio_html",
-        "sign_in_count",
-        "namespace_id"
-    ]
 
     def __init__(self, staged=False, rollback=False, processes=None):
         super().__init__()
@@ -41,7 +21,7 @@ class UserDiffClient(BaseDiffClient):
         self.results_mtime = getmtime(self.results_path)
         self.rollback = rollback
         self.processes = processes
-        self.keys_to_ignore = self.KEYS_TO_IGNORE
+        self.keys_to_ignore = constants.USER_DIFF_KEYS_TO_IGNORE
         if staged:
             self.source_data = read_json_file_into_object(
                 "%s/data/staged_users.json" % self.app_path)
