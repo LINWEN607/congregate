@@ -64,12 +64,9 @@ class ReposClient(BaseClass):
             self.multi.start_multi_process_stream(
                 self.handle_retrieving_repos, self.repos_api.get_all_public_repos(), processes=processes, nestable=True)
 
-    def connect_to_mongo(self):
-        return MongoConnector()
-
     def handle_retrieving_repos(self, repo, mongo=None):
         if not mongo:
-            mongo = self.connect_to_mongo()
+            mongo = MongoConnector()
         data = self.format_repo(repo, mongo)
         mongo.insert_data(f"projects-{self.host}", data)
         mongo.close_connection()
@@ -501,7 +498,7 @@ class ReposClient(BaseClass):
         return user_emails_dict.values()
 
     def handle_list_of_reviewers(self, owner, repo, user_emails_dict, pull):
-        mongo = self.connect_to_mongo()
+        mongo = MongoConnector()
         if reviewers := safe_json_response(
             self.repos_api.list_reviewers_for_a_pull_request(
                 owner, repo, pull["number"])):

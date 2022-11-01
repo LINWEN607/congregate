@@ -4,6 +4,7 @@ from gitlab_ps_utils.misc_utils import strip_netloc, is_error_message_present
 from congregate.helpers.migrate_utils import get_subset_list, check_list_subset_input_file_path
 from congregate.migration.bitbucket.api.projects import ProjectsApi
 from congregate.migration.bitbucket.base import BitBucketServer
+from congregate.helpers.mdbc import MongoConnector
 
 
 class ProjectsClient(BitBucketServer):
@@ -44,7 +45,7 @@ class ProjectsClient(BitBucketServer):
             # mongo should be set to None unless this function is being used in a
             # unit test
             if not mongo:
-                mongo = self.connect_to_mongo()
+                mongo = MongoConnector()
             mongo.insert_data(
                 f"groups-{strip_netloc(self.config.source_host)}",
                 self.format_project(resp, mongo))

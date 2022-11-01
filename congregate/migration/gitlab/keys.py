@@ -3,12 +3,12 @@ from requests.exceptions import RequestException
 from gitlab_ps_utils.misc_utils import is_error_message_present, strip_netloc
 from gitlab_ps_utils.dict_utils import pop_multiple_keys
 from congregate.helpers.base_class import BaseClass
+from congregate.helpers.mdbc import MongoConnector
 from congregate.helpers.utils import is_dot_com
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.instance import InstanceApi
 from congregate.migration.gitlab.users import UsersClient
-from congregate.helpers.mdbc import MongoConnector
 
 
 class KeysClient(BaseClass):
@@ -19,17 +19,13 @@ class KeysClient(BaseClass):
         self.users = UsersClient()
         super().__init__()
 
-    @classmethod
-    def connect_to_mongo(cls):
-        return MongoConnector()
-
     def migrate_project_deploy_keys(self, old_id, new_id, path, mongo=None):
         try:
             src_host = self.config.source_host
             src_keys = iter(self.projects_api.get_all_project_deploy_keys(
                 old_id, src_host, self.config.source_token))
             if not mongo:
-                mongo = self.connect_to_mongo()
+                mongo = MongoConnector()
             coll = f"keys-{strip_netloc(src_host)}"
             for key in src_keys:
                 # Remove unused key-values before posting key

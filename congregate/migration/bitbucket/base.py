@@ -3,7 +3,6 @@ from requests.exceptions import RequestException
 from gitlab_ps_utils.misc_utils import remove_dupes_but_take_higher_access, strip_netloc, safe_json_response
 from gitlab_ps_utils.dict_utils import dig
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.mdbc import MongoConnector
 from congregate.migration.bitbucket.api.projects import ProjectsApi
 from congregate.migration.bitbucket.api.repos import ReposApi
 from congregate.migration.bitbucket.api.users import UsersApi
@@ -11,10 +10,6 @@ from congregate.migration.bitbucket import constants
 
 
 class BitBucketServer(BaseClass):
-    @classmethod
-    def connect_to_mongo(cls):
-        return MongoConnector()
-
     @classmethod
     def get_http_url_to_repo(cls, repo):
         repo_clone_links = dig(repo, 'links', 'clone', default=[{"href": ""}])

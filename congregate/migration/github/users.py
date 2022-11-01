@@ -17,9 +17,6 @@ class UsersClient(BaseClass):
         self.users_api = UsersApi(host, token)
         self.orgs_api = OrgsApi(host, token)
 
-    def connect_to_mongo(self):
-        return MongoConnector()
-
     def establish_browser_connection(self):
         if self.username and self.password:
             return GitHubBrowser(self.host, self.username, self.password)
@@ -46,7 +43,7 @@ class UsersClient(BaseClass):
         # mongo should be set to None unless this function is being used in a
         # unit test
         if not mongo:
-            mongo = self.connect_to_mongo()
+            mongo = MongoConnector()
         single_user = safe_json_response(
             self.users_api.get_user(user["login"]))
         error, single_user = is_error_message_present(single_user)

@@ -76,9 +76,9 @@ class BaseDiffClient(BaseClass):
     """
 
     # Setting Red/Green colors here in case someone needs to change them later.
-    HEX_FAIL = "#ff0000" # Red
-    HEX_SUCCESS = "#00800" # Green
-    HEX_TITLE = "#6699CC" # Blue Gray
+    HEX_FAIL = "#ff0000"  # Red
+    HEX_SUCCESS = "#00800"  # Green
+    HEX_TITLE = "#6699CC"  # Blue Gray
 
     # Report Description
     SUMMARY = """
@@ -100,15 +100,12 @@ class BaseDiffClient(BaseClass):
         self.keys_to_ignore = []
         self.results = None
 
-    def connect_to_mongo(self):
-        return MongoConnector()
-
     def generate_split_html_report(self):
         """
             Queries MongoDB for all diff_report collections
             and outputs them to the HTML report format
         """
-        mongo = self.connect_to_mongo()
+        mongo = MongoConnector()
         for diff_col in mongo.wildcard_collection_query("diff_report"):
             diff = {}
             for d, _ in mongo.stream_collection(diff_col):
@@ -334,7 +331,8 @@ class BaseDiffClient(BaseClass):
                     "result": result
                 }
         except Exception as e:
-            self.log.error(f"Unable to calculate overall_accuracy for {obj}, due to {e}")
+            self.log.error(
+                f"Unable to calculate overall_accuracy for {obj}, due to {e}")
             return {
                 "overall_accuracy": 0,
                 "results": "failure"
@@ -433,7 +431,7 @@ class BaseDiffClient(BaseClass):
     def select_bg_color(self, value="Title"):
         '''
         Choose a HEX background color code based on keywords.
-        
+
         :param value: (str) String to evaluate and return a hex color code
         :return: (str) Hex Color Code to use in HTML 
         '''
@@ -515,7 +513,8 @@ class BaseDiffClient(BaseClass):
                             diff_data_row = soup.new_tag("tr")
                             data = [
                                 endpoint,
-                                str(self.as_percentage(dig(v, endpoint, 'accuracy'))),
+                                str(self.as_percentage(
+                                    dig(v, endpoint, 'accuracy'))),
                                 dig(v, endpoint, 'diff')
                             ]
                         elif "overall_accuracy" in endpoint:
@@ -589,10 +588,12 @@ class BaseDiffClient(BaseClass):
                         diff_cell_header = soup.new_tag("th")
                         diff_cell_header.string = diff_header
                         overall_results_header_row.append(diff_cell_header)
-                    overall_results_header_row['bgcolor'] = self.select_bg_color()
+                    overall_results_header_row['bgcolor'] = self.select_bg_color(
+                    )
                     soup.html.body.table.insert(2, overall_results_header_row)
                     overall_results_data_row = soup.new_tag("tr")
-                    dest_length = len([x for x in diff.items() if 'error' not in x[1]]) - 1
+                    dest_length = len(
+                        [x for x in diff.items() if 'error' not in x[1]]) - 1
                     source_length = len(diff.items()) - 1
                     data = [
                         f"Staged {asset}'s: '{source_length}' Successful {asset}'s: '{dest_length}'",
