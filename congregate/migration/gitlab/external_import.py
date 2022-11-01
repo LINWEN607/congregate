@@ -181,16 +181,16 @@ class ImportClient(BaseClass):
             self.log.error(
                 f"Repo {pid} import failed with status: {import_status.get('message')}")
             return import_status
-        # Save to file to avoid outputing long lists to log
+
+        # Save to file to avoid outputting long lists to log
         failed_relations = import_status.pop(
             "failed_relations") if import_status.get("failed_relations") else None
-        # Added to GitHub repo import responses as of GitLab 14.6
-        stats = import_status.pop(
-            "stats") if import_status.get("stats") else None
+        key = import_status.get("path_with_namespace")
+        stats = self.get_external_repo_import_stats(import_status, key)
 
         # Save import_error, user rate_limit status, import stats and failed relations
         import_error = import_status.get("import_error")
-        key = import_status.get("path_with_namespace")
+        import_status["stats"] = stats
         value = {
             "import_error": import_error,
             "gh_rate_limit_status": safe_json_response(GitHubUsersApi(self.config.source_host, self.config.source_token).get_rate_limit_status())
@@ -205,6 +205,23 @@ class ImportClient(BaseClass):
         with open(f"{self.app_path}/data/logs/import_failed_relations.json", "a") as f:
             json.dump(output, f, indent=4)
         return import_status
+
+    def get_external_repo_import_stats(self, import_status, full_path):
+        if import_status.get("stats"):
+            # Added to GitHub repo import responses as of GitLab 14.6
+            stats = import_status.pop("stats")
+        else:
+            # Otherwise retrieve project statistics
+            stats = safe_json_response(
+                self.projects.get_project_statistics(
+                    full_path,
+                    self.config.destination_host,
+                    self.config.destination_token
+                )
+            )
+            stats = stats["data"]["project"]["statistics"] if stats and stats.get(
+                "data") else None
+        return stats
 
     def log_repo_import_failure_or_diff(self, repo, status):
         '''
