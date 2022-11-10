@@ -113,8 +113,8 @@ class ReposClient(BitBucketServer):
 
     def filter_branch_permissions(self, p, perms, pid):
         branch = dig(p, 'matcher', 'displayId', default="")
-        prio = ["read-only", "no-deletes",
-                "fast-forward-only", "pull-request-only"]
+        prio = ["read-only", "pull-request-only",
+                "no-deletes", "fast-forward-only", ]
         # Protect branch by highest priority and only once
         if any(perm["type"] == prio[0] for perm in perms if dig(
                 perm, 'matcher', 'displayId') == branch):
@@ -133,7 +133,7 @@ class ReposClient(BitBucketServer):
 
     def migrate_branch_permissions(self, p, branch, pid):
         """
-        Map BB permissions to GL roles, skip BB user and group restriction exceptions
+        Map BB permissions to GL (core/free) roles, skip BB user and group restriction exceptions
         GL access level mapping:
             0  => No access
             30 => Developer access
@@ -143,17 +143,17 @@ class ReposClient(BitBucketServer):
         # MODEL_BRANCH cannot be mapped
         PERM_MATCHER_TYPES = ["PATTERN", "BRANCH"]
         PERM_TYPES = {
-            "read-only": [40, 40, 40],
-            "no-deletes": [30, 30, 40],
-            "fast-forward-only": [40, 30, 40],
-            "pull-request-only": [30, 30, 40]
+            "read-only": [0, 0, 40],
+            "pull-request-only": [0, 40, 40],
+            "no-deletes": [40, 40, 40],
+            "fast-forward-only": [40, 40, 40]
         }
         access_levels = PERM_TYPES[p["type"]]
         data = {
             "name": branch if dig(p, 'matcher', 'type', 'id') in PERM_MATCHER_TYPES else None,
-            "push_access_level": access_levels[0],
-            "merge_access_level": access_levels[1],
-            "unprotect_access_level": access_levels[2]
+            "push_access_level": access_levels[0],      # GitLab default - 40
+            "merge_access_level": access_levels[1],     # GitLab default - 40
+            "unprotect_access_level": access_levels[2]  # GitLab default - 40
         }
 
         if data["name"]:
@@ -428,3 +428,6 @@ class ReposClient(BitBucketServer):
                 if resp.status_code != 204:
                     self.log.error(
                         f"Failed to set repo '{project_key}/{repo_slug}' '{permission}' permission for all groups:\n{resp} - {resp.text}")
+
+    def transform_pull_requests(self, pull_requests):
+        return
