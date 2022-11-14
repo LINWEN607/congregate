@@ -298,7 +298,8 @@ def main():
             from congregate.migration.gitlab.diff.userdiff import UserDiffClient
             from congregate.migration.gitlab.diff.projectdiff import ProjectDiffClient
             from congregate.migration.gitlab.diff.groupdiff import GroupDiffClient
-            from congregate.migration.github.diff.repodiff import RepoDiffClient
+            from congregate.migration.github.diff.repodiff import RepoDiffClient as GHRepoDiffClient
+            from congregate.migration.bitbucket.diff.repodiff import RepoDiffClient as BBSRepoDiffClient
             from congregate.helpers.user_util import map_users, map_and_stage_users_by_email_match
             from congregate.helpers.mdbc import MongoConnector
             from congregate.migration.github.repos import ReposClient as GHReposClient
@@ -604,13 +605,21 @@ def main():
                             project_diff.generate_diff_report(start),
                             "/data/results/project_migration_results.html"
                         )
+                elif config.source_type == "bitbucket server":
+                    repo_diff = BBSRepoDiffClient(
+                        staged=STAGED,
+                        processes=PROCESSES,
+                        rollback=ROLLBACK
+                    )
+                    repo_diff.generate_diff_report(start)
+                    repo_diff.generate_split_html_report()
                 elif config.source_type == "github" or SCM_SOURCE is not None:
                     if SCM_SOURCE is not None:
                         for single_instance in config.list_multiple_source_config(
                                 "github_source"):
                             if SCM_SOURCE == strip_netloc(
                                     single_instance.get('src_hostname', '')):
-                                repo_diff = RepoDiffClient(
+                                repo_diff = GHRepoDiffClient(
                                     single_instance['src_hostname'],
                                     deobfuscate(
                                         single_instance['src_access_token']),
@@ -619,7 +628,7 @@ def main():
                                     rollback=ROLLBACK,
                                 )
                     else:
-                        repo_diff = RepoDiffClient(
+                        repo_diff = GHRepoDiffClient(
                             config.source_host,
                             config.source_token,
                             staged=STAGED,

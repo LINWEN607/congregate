@@ -148,3 +148,26 @@ class BitBucketServerApi(BaseClass):
                 # until it succeeds
                 self.log.info("Attempting to retry after 3 seconds")
                 sleep(3)
+
+    def get_total_count(self, api, params=None, limit=1000, branch_permissions=False):
+        """
+        Retrieves total count of records form paginated API call
+
+        :param api: (str) Specific GitLab API endpoint (ex: users)
+        :param params: (str) Any query parameters needed in the request
+        :param limit: (int) Total results per request. Defaults to 100
+        :param page_check: (bool) If True, then the yield changes from a dict to a tuple of (dict, bool) where bool is True if list_all has reached the last page
+
+        :returns: Total number of records related to that API call
+        """
+        uniq = {}
+        for data in self.list_all(api, params=params, limit=limit, branch_permissions=branch_permissions):
+            # Ignoring any data containing the 'pull_request' key.
+            # See
+            # https://docs.github.com/en/rest/reference/issues#list-repository-issues
+            # for more information
+            if 'pull_request' not in data.keys():
+                uniq[data.get("id", data.get("name"))] = 1
+        count = len(uniq)
+        self.log.info(f"Total count for endpoint {api}: {count}")
+        return count

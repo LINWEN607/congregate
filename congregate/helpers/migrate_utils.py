@@ -352,8 +352,12 @@ def migration_dry_run(data_type, post_data):
         json.dump(post_data, f, indent=4)
 
 
-def get_external_path_with_namespace(path_with_namespace):
-    return f"{b.config.dstn_parent_group_path or ''}/{path_with_namespace}".strip("/")
+def get_target_project_path(project):
+    if target_namespace := get_target_namespace(project):
+        target_project_path = f"{target_namespace}/{project.get('path')}"
+    else:
+        target_project_path = get_dst_path_with_namespace(project)
+    return target_project_path
 
 
 def sanitize_name(name, full_path, is_group=False):
@@ -421,17 +425,7 @@ def get_stage_wave_paths(project):
     """
     Construct stage_wave destination namespace and path_with_namespace
     """
-    src_pwn = project.get("path_with_namespace")
-    staged_tn = project.get("target_namespace")
-
-    # stage-wave staging, based on spreadsheet file
-    if project.get("override_dstn_ns") and staged_tn:
-        dstn_pwn = f"{staged_tn}/{project['path']}"
-    elif staged_tn:
-        dstn_pwn = f"{staged_tn}/{src_pwn}"
-    # Default config-based staging
-    else:
-        dstn_pwn = get_external_path_with_namespace(src_pwn)
+    dstn_pwn = get_target_project_path(project)
 
     # TODO: Make this target namespace lookup requirement configurable
     if target_namespace := get_target_namespace(project):

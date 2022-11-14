@@ -46,6 +46,41 @@ class ReposApi():
         """
         return self.api.generate_get_request(f"projects/{project_key}/repos/{repo_slug}/branches/default")
 
+    def get_all_repo_branches(self, project_key, repo_slug):
+        """
+        Retrieve the branches matching the supplied filterText param.
+
+        Core REST API: https://docs.atlassian.com/bitbucket-server/rest/7.13.0/bitbucket-rest.html#idp211
+        """
+        return self.api.list_all(f"projects/{project_key}/repos/{repo_slug}/branches")
+
+    def get_all_repo_pull_requests(self, project_key, repo_slug):
+        """
+        Retrieve a page of pull requests to or from the specified repository.
+
+        Core REST API: https://docs.atlassian.com/bitbucket-server/rest/7.13.0/bitbucket-rest.html#idp292
+        """
+        return self.api.list_all(f"projects/{project_key}/repos/{repo_slug}/pull-requests?state=all")
+
+    def get_all_repo_tags(self, project_key, repo_slug):
+        """
+        Retrieve the tags matching the supplied filterText param.
+
+        Core REST API: https://docs.atlassian.com/bitbucket-server/rest/7.13.0/bitbucket-rest.html#idp396
+        """
+        return self.api.list_all(f"projects/{project_key}/repos/{repo_slug}/tags")
+
+    def get_all_repo_commits(self, project_key, repo_slug):
+        """
+        Retrieve a page of commits from a given starting commit or "between" two commits.
+        If no explicit commit is specified, the tip of the repository's default branch is assumed.
+        commits may be identified by branch or tag name or by ID.
+        A path may be supplied to restrict the returned commits to only those which affect that path.
+
+        Core REST API: https://docs.atlassian.com/bitbucket-server/rest/7.13.0/bitbucket-rest.html#idp223
+        """
+        return self.api.list_all(f"projects/{project_key}/repos/{repo_slug}/commits")
+
     def get_all_repo_branch_permissions(self, project_key, repo_slug):
         """
         Search for restrictions using the supplied parameters.

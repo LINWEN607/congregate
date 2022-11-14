@@ -783,18 +783,30 @@ class MigrateTests(unittest.TestCase):
         assert mutils.check_for_staged_user_projects([{}]) is None
 
     @patch.object(ConfigurationValidator, "dstn_parent_group_path", new_callable=PropertyMock)
-    def test_get_external_path_with_namespace(self, dstn_path):
-        dstn_path.return_value = None
-        path_with_namespace = "test/repo"
-        self.assertEqual(mutils.get_external_path_with_namespace(
-            path_with_namespace), path_with_namespace)
+    def test_get_target_project_path(self, mock_dstn_path):
+        mock_dstn_path.return_value = None
+        project = self.mock_projects.get_staged_group_project()
+        self.assertEqual(mutils.get_target_project_path(
+            project), "pmm-demo/spring-app-secure-2")
 
+    @patch.object(ConfigurationValidator, "dstn_parent_id", new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, "dstn_parent_group_path", new_callable=PropertyMock)
-    def test_get_external_path_with_namespace_with_parent(self, dstn_path):
-        dstn_path.return_value = "/parent/group"
-        path_with_namespace = "test/repo"
-        self.assertEqual(mutils.get_external_path_with_namespace(
-            path_with_namespace), f"parent/group/{path_with_namespace}")
+    def test_get_target_project_path_with_parent(self, mock_dstn_path, mock_dstn_id):
+        mock_dstn_path.return_value = "new-group"
+        mock_dstn_id.return_value = 42
+        project = self.mock_projects.get_staged_group_project()
+        self.assertEqual(mutils.get_target_project_path(
+            project), "new-group/pmm-demo/spring-app-secure-2")
+
+    def test_get_target_project_path_with_target_override(self):
+        project = self.mock_projects.get_staged_group_project_with_target_namespace_override()
+        self.assertEqual(mutils.get_target_project_path(
+            project), "top-level-group/sub-level-group/spring-app-secure-2")
+
+    def test_get_target_project_path_with_target(self):
+        project = self.mock_projects.get_staged_group_project_with_target_namespace()
+        self.assertEqual(mutils.get_target_project_path(
+            project), "top-level-group/sub-level-group/pmm-demo/spring-app-secure-2")
 
     def test_sanitize_name_project(self):
         with self.assertLogs(mutils.b.log, level="WARNING"):

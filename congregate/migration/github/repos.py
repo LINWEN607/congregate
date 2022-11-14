@@ -301,7 +301,6 @@ class ReposClient(BaseClass):
                     "committed_date": dig(commit, 'commit', 'committer', 'date'),
                 }
             )
-
         return list_of_commits
 
     def transform_gh_branches(self, branches):
@@ -316,7 +315,6 @@ class ReposClient(BaseClass):
                     "protected": branch["protected"],
                 }
             )
-
         return list_of_branches
 
     def transform_gh_pull_requests(self, pull_requests):
@@ -349,7 +347,6 @@ class ReposClient(BaseClass):
                     "milestone": mr["milestone"],
                 }
             )
-
         return list_of_merge_requests
 
     def transform_gh_tags(self, tags):
@@ -365,7 +362,6 @@ class ReposClient(BaseClass):
                     "target": commit_sha
                 }
             )
-
         return list_of_tags
 
     def transform_gh_milestones(self, milestones):

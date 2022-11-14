@@ -6,6 +6,7 @@ from gitlab_ps_utils.misc_utils import is_error_message_present, pretty_print_ke
 from gitlab_ps_utils.dict_utils import rewrite_list_into_dict, is_nested_dict, dig, find as nested_find
 from gitlab_ps_utils.jsondiff import Comparator
 
+from congregate.helpers.migrate_utils import get_target_project_path
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.mdbc import MongoConnector
 
@@ -189,7 +190,7 @@ class BaseDiffClient(BaseClass):
                          critical_key=None, obfuscate=False, parent_group=None, **kwargs):
         identifier = f"{parent_group}/{asset[key]}" if parent_group else asset[key]
         destination_data = self.validate_destination_data(
-            identifier, gl_endpoint, source_data, github=True, **kwargs)
+            identifier, gl_endpoint, source_data, external=True, **kwargs)
         if sort_key:
             source_data = rewrite_list_into_dict(source_data, sort_key)
             destination_data = rewrite_list_into_dict(
@@ -197,11 +198,23 @@ class BaseDiffClient(BaseClass):
         return self.diff(source_data, destination_data, critical_key=critical_key,
                          obfuscate=obfuscate, parent_group=parent_group)
 
-    def validate_destination_data(self, identifier, gl_endpoint, source_data, github=False, **kwargs):
-        if self.results.get(identifier) is not None:
+    # TODO: Consolidate generate_gh_diff and generate_bbs_diff
+    def generate_bbs_diff(self, asset, sort_key, source_data, gl_endpoint, critical_key=None, obfuscate=False, parent_group=None, **kwargs):
+        identifier = get_target_project_path(asset)
+        destination_data = self.validate_destination_data(
+            identifier, gl_endpoint, source_data, external=True, **kwargs)
+        if sort_key:
+            source_data = rewrite_list_into_dict(source_data, sort_key)
+            destination_data = rewrite_list_into_dict(
+                destination_data, sort_key)
+        return self.diff(source_data, destination_data, critical_key=critical_key,
+                         obfuscate=obfuscate, parent_group=parent_group)
+
+    def validate_destination_data(self, identifier, gl_endpoint, source_data, external=False, **kwargs):
+        if self.results.get(identifier):
             if isinstance(self.results[identifier], dict):
                 destination_id = dig(self.results, identifier, 'response',
-                                     'id') if github else self.results[identifier]["id"]
+                                     'id') if external else self.results[identifier]["id"]
                 valid_destination_endpoint, response = self.is_endpoint_valid(gl_endpoint(
                     destination_id, self.config.destination_host, self.config.destination_token, **kwargs))
                 if valid_destination_endpoint:
@@ -226,9 +239,9 @@ class BaseDiffClient(BaseClass):
             dest_lines = self.total_number_of_lines(destination_data)
             src_lines = self.total_number_of_lines(source_data)
             if dest_lines > src_lines:
-                discrepency = dest_lines - src_lines
-                src_lines += discrepency
-                dest_lines -= discrepency
+                discrepancy = dest_lines - src_lines
+                src_lines += discrepancy
+                dest_lines -= discrepancy
             src_lines += self.total_number_of_differences(diff)
             original_accuracy = dest_lines / src_lines
         else:
@@ -627,19 +640,17 @@ class BaseDiffClient(BaseClass):
         return False
 
     def is_endpoint_valid(self, request):
-        error, request = is_error_message_present(request)
-        if error or not request:
-            return False, request
-        return True, request
+        error, response = is_error_message_present(request)
+        if error:
+            return False, response
+        return True, response
 
-    def get_destination_id(self, asset, key, parent_group):
-        identifier = "{0}/{1}".format(parent_group,
-                                      asset[key]) if parent_group else asset[key]
-        if self.results.get(identifier) is not None:
+    def get_destination_id(self, asset):
+        identifier = get_target_project_path(asset)
+        if self.results.get(identifier):
             if isinstance(self.results[identifier], dict):
                 if did := dig(self.results, identifier, "id"):
                     return did
-                elif did := dig(self.results, identifier, "response", "id"):
+                if did := dig(self.results, identifier, "response", "id"):
                     return did
-                else:
-                    return None
+        return None

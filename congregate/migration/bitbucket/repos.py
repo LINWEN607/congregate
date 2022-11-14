@@ -430,4 +430,39 @@ class ReposClient(BitBucketServer):
                         f"Failed to set repo '{project_key}/{repo_slug}' '{permission}' permission for all groups:\n{resp} - {resp.text}")
 
     def transform_pull_requests(self, pull_requests):
-        return
+        return [{
+            "title": pr["title"],
+            "state": constants.PR_STATE_MAPPING.get(pr["state"]),
+            "author": {
+                "username": dig(pr, "author", "user", "slug"),
+            }
+        } for pr in pull_requests]
+
+    def transform_branches(self, branches):
+        return [{
+            "name": b["displayId"],
+            "commit": {
+                "id": b["latestCommit"],
+            },
+            "default": b["isDefault"]
+        } for b in branches]
+
+    def transform_tags(self, tags):
+        return [{
+            "name": t["displayId"],
+            "commit": {
+                "id": t["latestCommit"],
+            },
+            "target": t["hash"]
+        } for t in tags]
+
+    def transform_commits(self, commits):
+        return [{
+            "id": c["id"],
+            "message": c["message"],
+            "author_name": c["author"].get("displayName") or c["author"].get("name"),
+            "author_email": c["author"]["emailAddress"],
+            "committer_name": c["committer"].get("displayName") or c["committer"].get("name"),
+            "committer_email": c["committer"]["emailAddress"],
+            "parent_ids": [pid["id"] for pid in c["parents"]]
+        } for c in commits]

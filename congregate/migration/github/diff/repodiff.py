@@ -239,9 +239,7 @@ class RepoDiffClient(BaseDiffClient):
 
     def generate_repo_count_diff(
             self, project, gh_api, gl_api, bypass_x_total_count=False):
-        key = "path_with_namespace"
-        destination_id = self.get_destination_id(
-            project, key, self.config.dstn_parent_group_path)
+        destination_id = self.get_destination_id(project)
         source_count = self.gh_api.get_total_count(
             self.config.source_host, gh_api)
         if isinstance(gl_api, list):
