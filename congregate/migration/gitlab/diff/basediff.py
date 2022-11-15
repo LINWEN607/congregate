@@ -114,6 +114,8 @@ class BaseDiffClient(BaseClass):
                 #     diff.update(json.loads(d))
                 # else:
                 diff.update(d)
+            diff["project_migration_results"] = self.calculate_overall_stage_accuracy(
+                diff)
             self.generate_html_report(
                 "Project", diff, f"/data/results/{diff_col}.html")
         mongo.close_connection()
@@ -298,12 +300,11 @@ class BaseDiffClient(BaseClass):
             if isinstance(obj, dict):
                 for o in obj.keys():
                     if "total" not in o.lower():
-                        if (o == "/projects/:id" or o ==
-                                "/groups/:id") and obj[o]["accuracy"] == 0:
+                        if (o in ["/projects/:id", "/groups/:id"]) and obj[o]["accuracy"] == 0:
                             result = "failure"
                             percentage_sum = 0
                             break
-                        percentage_sum += obj[o]["accuracy"]
+                        percentage_sum += obj[o]["accuracy"] or 0
                         if obj[o]["accuracy"] == 0:
                             result = "failure"
                     else:
@@ -327,13 +328,12 @@ class BaseDiffClient(BaseClass):
         try:
             if isinstance(obj, dict):
                 for o in obj.keys():
-                    if (o == "/projects/:id" or o ==
-                            "/groups/:id") and dig(obj, o, 'accuracy') == 0:
+                    if (o in ["/projects/:id", "/groups/:id"]) and dig(obj, o, 'accuracy') == 0:
                         result = "failure"
                         percentage_sum = 0
                         break
                     percentage_sum += dig(obj, o,
-                                          'overall_accuracy', 'accuracy')
+                                          'overall_accuracy', 'accuracy') or 0
                     if dig(obj, o, 'overall_accuracy', 'accuracy') == 0:
                         result = "failure"
                 accuracy = percentage_sum / total_number_of_keys if total_number_of_keys else 0

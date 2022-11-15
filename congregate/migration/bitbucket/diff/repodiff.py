@@ -1,12 +1,14 @@
+from json import loads
 from os.path import getmtime
 from datetime import timedelta
+from bson import json_util
 from gitlab_ps_utils.api import GitLabApi
 from gitlab_ps_utils.misc_utils import get_rollback_log
 from gitlab_ps_utils.dict_utils import rewrite_json_list_into_dict, dig
 from gitlab_ps_utils.json_utils import read_json_file_into_object
 
 from congregate.migration.gitlab.diff.basediff import BaseDiffClient
-# from congregate.migration.bitbucket import constants
+from congregate.migration.bitbucket import constants
 from congregate.migration.bitbucket.repos import ReposClient
 from congregate.migration.bitbucket.api.base import BitBucketServerApi
 from congregate.migration.bitbucket.api.repos import ReposApi
@@ -38,7 +40,7 @@ class RepoDiffClient(BaseDiffClient):
             read_json_file_into_object(self.results_path))
         self.results_mtime = getmtime(self.results_path)
         self.processes = processes
-        # self.keys_to_ignore = constants.BBS_KEYS_TO_IGNORE
+        self.keys_to_ignore = constants.BBS_KEYS_TO_IGNORE
         if staged:
             self.source_data = read_json_file_into_object(
                 f"{self.app_path}/data/staged_projects.json")
@@ -48,24 +50,16 @@ class RepoDiffClient(BaseDiffClient):
         self.source_data = [i for i in self.source_data if i]
 
     def generate_diff_report(self, start_time):
-        diff_report = {}
         self.log.info(
             f"{get_rollback_log(self.rollback)}Generating Repo Diff Report")
         self.log.warning(
             f"Passed since migration time: {timedelta(seconds=start_time - self.results_mtime)}")
-        results = self.multi.handle_multi_process_write_to_file_and_return_results(
+        self.multi.handle_multi_process_write_to_file_and_return_results(
             self.generate_single_diff_report,
             self.return_only_accuracies,
             self.source_data,
             f"{self.app_path}/data/results/repos_diff.json",
             processes=self.processes)
-
-        for result in results:
-            diff_report.update(result)
-        diff_report["project_migration_results"] = self.calculate_overall_stage_accuracy(
-            diff_report)
-
-        return diff_report
 
     def generate_single_diff_report(self, project):
         diff_report = {}
@@ -74,12 +68,8 @@ class RepoDiffClient(BaseDiffClient):
         project_id = dig(self.results.get(
             target_project_path), "response", "id")
 
-        # Mongo restriction with storing "." as key
-        # project_path_replaced = project_path.replace(".", "_")
-
         # Mongo collection per BBS project with JSON object for each repo
         # Single html report as a result
-        # group_namespace = "/".join(target_project_path.split("/")[:1])
         group_namespace = project.get("namespace", "")
         mongo = MongoConnector()
         if self.results.get(target_project_path) and self.asset_exists(self.gl_projects_api.get_project, project_id):
@@ -88,13 +78,11 @@ class RepoDiffClient(BaseDiffClient):
             try:
                 diff_report[target_project_path]["overall_accuracy"] = self.calculate_overall_accuracy(
                     diff_report[target_project_path])
-                # Cast all keys and values to strings to avoid mongo key validation errors
-                cleaned_data = {str(key): str(val)
-                                for key, val in (diff_report.copy()).items()}
                 mongo.insert_data(
-                    f"diff_report_{group_namespace}", cleaned_data, bypass_document_validation=True)
+                    f"diff_report_{group_namespace}", diff_report, bypass_document_validation=True)
                 mongo.close_connection()
-                return diff_report
+                # Convert BSON to JSON
+                return loads(json_util.dumps(diff_report))
             except Exception as e:
                 self.log.error(
                     f"Failed to generate diff for {target_project_path} with error:\n{e}")
