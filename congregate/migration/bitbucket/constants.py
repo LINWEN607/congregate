@@ -32,7 +32,3 @@ PR_STATE_MAPPING = {
     "MERGED": "merged",
     "DECLINED": "closed"
 }
-
-BBS_KEYS_TO_IGNORE = [
-    "assignees"
-]

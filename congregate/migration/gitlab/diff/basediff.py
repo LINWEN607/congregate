@@ -221,7 +221,7 @@ class BaseDiffClient(BaseClass):
                     destination_id, self.config.destination_host, self.config.destination_token, **kwargs))
                 if valid_destination_endpoint:
                     destination_data = self.generate_cleaned_instance_data(
-                        response)
+                        response, source_data=source_data)
                 else:
                     destination_data = self.generate_empty_data(
                         source_data, identifier)
@@ -286,8 +286,7 @@ class BaseDiffClient(BaseClass):
         if critical_key in diff:
             diff_minus = diff[critical_key]['---']
             diff_plus = diff[critical_key]['+++']
-            if (parent_group and parent_group not in diff_plus) or diff_minus.lower(
-            ) != diff_plus.lower():
+            if (parent_group and parent_group not in diff_plus) or diff_minus.lower() != diff_plus.lower():
                 return 0
         return original_accuracy
 
@@ -300,12 +299,13 @@ class BaseDiffClient(BaseClass):
             if isinstance(obj, dict):
                 for o in obj.keys():
                     if "total" not in o.lower():
-                        if (o in ["/projects/:id", "/groups/:id"]) and obj[o]["accuracy"] == 0:
+                        obj_accuracy = dig(obj, o, 'accuracy', default=0)
+                        if (o in ["/projects/:id", "/groups/:id"]) and obj_accuracy == 0:
                             result = "failure"
                             percentage_sum = 0
                             break
-                        percentage_sum += obj[o]["accuracy"] or 0
-                        if obj[o]["accuracy"] == 0:
+                        percentage_sum += obj_accuracy
+                        if obj_accuracy == 0:
                             result = "failure"
                     else:
                         total_number_of_keys -= 1
@@ -314,7 +314,11 @@ class BaseDiffClient(BaseClass):
                     result = "success"
         except Exception as e:
             self.log.error(
-                "Failed to calculate accuracy for {0}, due to {1}".format(obj, e))
+                f"Failed to calculate accuracy for {obj}, due to {e}")
+            return {
+                "accuracy": 0,
+                "result": "failure"
+            }
         return {
             "accuracy": accuracy,
             "result": result
@@ -328,28 +332,29 @@ class BaseDiffClient(BaseClass):
         try:
             if isinstance(obj, dict):
                 for o in obj.keys():
-                    if (o in ["/projects/:id", "/groups/:id"]) and dig(obj, o, 'accuracy') == 0:
+                    if (o in ["/projects/:id", "/groups/:id"]) and dig(obj, o, 'accuracy', default=0) == 0:
                         result = "failure"
                         percentage_sum = 0
                         break
-                    percentage_sum += dig(obj, o,
-                                          'overall_accuracy', 'accuracy') or 0
-                    if dig(obj, o, 'overall_accuracy', 'accuracy') == 0:
+                    obj_accuracy = dig(
+                        obj, o, 'overall_accuracy', 'accuracy', default=0)
+                    percentage_sum += obj_accuracy
+                    if obj_accuracy == 0:
                         result = "failure"
                 accuracy = percentage_sum / total_number_of_keys if total_number_of_keys else 0
                 if result is None:
                     result = "success"
-                return {
-                    "overall_accuracy": accuracy,
-                    "result": result
-                }
         except Exception as e:
             self.log.error(
-                f"Unable to calculate overall_accuracy for {obj}, due to {e}")
+                f"Failed to calculate overall_accuracy for {obj}, due to {e}")
             return {
                 "overall_accuracy": 0,
                 "results": "failure"
             }
+        return {
+            "overall_accuracy": accuracy,
+            "result": result
+        }
 
     def ignore_keys(self, data):
         if data is not None:
@@ -364,9 +369,31 @@ class BaseDiffClient(BaseClass):
                         self.ignore_keys(data[k])
                 for key in self.keys_to_ignore:
                     if key in data:
-                        data.pop(key)
+                        data.pop(key, None)
             # return sorted(data, key=lambda x: str(x))
             return data
+        return {}
+
+    def add_keys(self, dst_data, src_data):
+        if src_data:
+            # Use ONLY src data structure
+            src_entry = src_data[0]
+            new_data = []
+            for d in dst_data:
+                element = {}
+                for k, v in src_entry.items():
+                    if isinstance(v, dict):
+                        element[k] = {}
+                        for k1 in v:
+                            sub_value = d[k].get(k1)
+                            element[k][k1] = sub_value.strip() if isinstance(
+                                sub_value, str) else sub_value
+                    else:
+                        value = d.get(k)
+                        element[k] = value.strip() if isinstance(
+                            value, str) else value
+                new_data.append(element)
+            return new_data
         return {}
 
     def obfuscate_values(self, obj):
@@ -406,10 +433,14 @@ class BaseDiffClient(BaseClass):
                 accuracies[o] = {i: obj[o][i] for i in obj[o] if i != 'diff'}
         return accuracies
 
-    def generate_cleaned_instance_data(self, instance_data):
+    def generate_cleaned_instance_data(self, instance_data, source_data=None):
         try:
             if instance_data:
-                instance_data = self.ignore_keys(instance_data)
+                if self.config.source_type == "gitlab":
+                    instance_data = self.ignore_keys(instance_data)
+                elif self.config.source_type == "bitbucket server":
+                    instance_data = self.add_keys(
+                        instance_data, source_data)
             return instance_data
         except TypeError as te:
             self.log.error(

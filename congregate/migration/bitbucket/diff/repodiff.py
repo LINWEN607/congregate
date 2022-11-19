@@ -8,7 +8,6 @@ from gitlab_ps_utils.dict_utils import rewrite_json_list_into_dict, dig
 from gitlab_ps_utils.json_utils import read_json_file_into_object
 
 from congregate.migration.gitlab.diff.basediff import BaseDiffClient
-from congregate.migration.bitbucket import constants
 from congregate.migration.bitbucket.repos import ReposClient
 from congregate.migration.bitbucket.api.base import BitBucketServerApi
 from congregate.migration.bitbucket.api.repos import ReposApi
@@ -40,7 +39,6 @@ class RepoDiffClient(BaseDiffClient):
             read_json_file_into_object(self.results_path))
         self.results_mtime = getmtime(self.results_path)
         self.processes = processes
-        self.keys_to_ignore = constants.BBS_KEYS_TO_IGNORE
         if staged:
             self.source_data = read_json_file_into_object(
                 f"{self.app_path}/data/staged_projects.json")
@@ -50,16 +48,21 @@ class RepoDiffClient(BaseDiffClient):
         self.source_data = [i for i in self.source_data if i]
 
     def generate_diff_report(self, start_time):
+        diff_report = {}
         self.log.info(
             f"{get_rollback_log(self.rollback)}Generating Repo Diff Report")
         self.log.warning(
             f"Passed since migration time: {timedelta(seconds=start_time - self.results_mtime)}")
-        self.multi.handle_multi_process_write_to_file_and_return_results(
+        results = self.multi.handle_multi_process_write_to_file_and_return_results(
             self.generate_single_diff_report,
             self.return_only_accuracies,
             self.source_data,
             f"{self.app_path}/data/results/repos_diff.json",
             processes=self.processes)
+
+        for result in results:
+            diff_report.update(result)
+        return diff_report
 
     def generate_single_diff_report(self, project):
         diff_report = {}
@@ -106,6 +109,11 @@ class RepoDiffClient(BaseDiffClient):
         if not self.rollback:
             project_key = project["namespace"]
             repo_slug = project["path"]
+
+            # # General endpoint
+            # repo_diff["/projects/:id"] = self.generate_repo_diff(
+            #     project, "path_with_namespace", [project], self.gl_projects_api.get_project, obfuscate=True)
+
             # Basic Project Stat Counts
             repo_diff["Total Number of Merge/Pull Requests"] = self.generate_repo_count_diff(
                 project, f"projects/{project_key}/repos/{repo_slug}/pull-requests?state=all", "projects/:id/merge_requests")
