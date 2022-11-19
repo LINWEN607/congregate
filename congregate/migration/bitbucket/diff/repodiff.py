@@ -114,7 +114,7 @@ class RepoDiffClient(BaseDiffClient):
             # repo_diff["/projects/:id"] = self.generate_repo_diff(
             #     project, "path_with_namespace", [project], self.gl_projects_api.get_project, obfuscate=True)
 
-            # Basic Project Stat Counts
+            # Basic repo stat counts
             repo_diff["Total Number of Merge/Pull Requests"] = self.generate_repo_count_diff(
                 project, f"projects/{project_key}/repos/{repo_slug}/pull-requests?state=all", "projects/:id/merge_requests")
             # repo_diff["Total Number of Merge Request Comments"] = self.generate_repo_count_diff(
@@ -126,7 +126,7 @@ class RepoDiffClient(BaseDiffClient):
             repo_diff["Total Number of Commits"] = self.generate_repo_count_diff(
                 project, f"projects/{project_key}/repos/{repo_slug}/commits", "projects/:id/repository/commits")
 
-            # pull requests
+            # Pull Requests
             repo_pr_data = list(
                 self.repos_api.get_all_repo_pull_requests(project_key, repo_slug))
             transformed_data = self.repos_client.transform_pull_requests(
@@ -143,7 +143,7 @@ class RepoDiffClient(BaseDiffClient):
             # self.gl_mr_api.get_merge_request_notes, obfuscate=True)  # How to
             # pass in PR id here??
 
-            # branches
+            # Branches
             repo_branch_data = list(
                 self.repos_api.get_all_repo_branches(project_key, repo_slug))
             transformed_data = self.repos_client.transform_branches(
@@ -151,9 +151,7 @@ class RepoDiffClient(BaseDiffClient):
             repo_diff["/projects/:id/branches"] = self.generate_repo_diff(
                 project, "name", transformed_data, self.gl_repository_api.get_all_project_repository_branches, obfuscate=True)
 
-            # TODO: branch permissions
-
-            # tags
+            # Tags
             repo_tag_data = list(
                 self.repos_api.get_all_repo_tags(project_key, repo_slug))
             transformed_data = self.repos_client.transform_tags(
@@ -161,13 +159,20 @@ class RepoDiffClient(BaseDiffClient):
             repo_diff["/projects/:id/tags"] = self.generate_repo_diff(
                 project, "name", transformed_data, self.gl_repository_api.get_all_project_repository_tags, obfuscate=True)
 
-            # commits
+            # Commits
             repo_commit_data = list(
                 self.repos_api.get_all_repo_commits(project_key, repo_slug))
             transformed_data = self.repos_client.transform_commits(
                 repo_commit_data)
             repo_diff["/projects/:id/commits"] = self.generate_repo_diff(
                 project, "id", transformed_data, self.gl_repository_api.get_all_project_repository_commits, obfuscate=True)
+
+            # Repo member permissions - Skip ID field
+            repo_member_data = [{k: v for k, v in sub.items() if k != "id"}
+                                for sub in project.get("members", [])]
+            repo_diff["/projects/:id/members"] = self.generate_repo_diff(
+                project, "name", repo_member_data, self.gl_projects_api.get_members, obfuscate=True)
+
         return repo_diff
 
     def generate_repo_diff(self, project, sort_key, source_data, gl_endpoint, **kwargs):
