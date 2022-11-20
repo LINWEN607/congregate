@@ -356,6 +356,20 @@ class BaseDiffClient(BaseClass):
             "result": result
         }
 
+    def generate_cleaned_instance_data(self, instance_data, source_data=None):
+        try:
+            if instance_data:
+                if self.config.source_type == "gitlab":
+                    instance_data = self.ignore_keys(instance_data)
+                elif self.config.source_type == "bitbucket server":
+                    instance_data = self.add_keys(
+                        instance_data, source_data)
+            return instance_data
+        except TypeError as te:
+            self.log.error(
+                f"Unable to generate cleaned instance data. Returning empty list, with error:\n{te}")
+            return []
+
     def ignore_keys(self, data):
         if data is not None:
             if isinstance(data, list):
@@ -376,7 +390,7 @@ class BaseDiffClient(BaseClass):
 
     def add_keys(self, dst_data, src_data):
         if src_data:
-            # Use ONLY src data structure
+            # Extract and compare ONLY matching keys
             src_entry = src_data[0]
             new_data = []
             for d in dst_data:
@@ -384,6 +398,7 @@ class BaseDiffClient(BaseClass):
                 for k, v in src_entry.items():
                     if isinstance(v, dict):
                         element[k] = {}
+                        # Compare up to one key sublevel
                         for k1 in v:
                             sub_value = d[k].get(k1)
                             element[k][k1] = sub_value.strip() if isinstance(
@@ -432,20 +447,6 @@ class BaseDiffClient(BaseClass):
             for o in obj.keys():
                 accuracies[o] = {i: obj[o][i] for i in obj[o] if i != 'diff'}
         return accuracies
-
-    def generate_cleaned_instance_data(self, instance_data, source_data=None):
-        try:
-            if instance_data:
-                if self.config.source_type == "gitlab":
-                    instance_data = self.ignore_keys(instance_data)
-                elif self.config.source_type == "bitbucket server":
-                    instance_data = self.add_keys(
-                        instance_data, source_data)
-            return instance_data
-        except TypeError as te:
-            self.log.error(
-                f"Unable to generate cleaned instance data. Returning empty list, with error:\n{te}")
-            return []
 
     def generate_empty_data(self, source, identifier):
         # identifier being the specific API endpoint
