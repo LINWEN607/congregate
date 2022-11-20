@@ -113,22 +113,22 @@ class ReposClient(BitBucketServer):
 
     def filter_branch_permissions(self, p, perms, pid):
         branch = dig(p, 'matcher', 'displayId', default="")
-        prio = ["read-only", "pull-request-only",
-                "no-deletes", "fast-forward-only", ]
+        pri = ["read-only", "pull-request-only",
+               "no-deletes", "fast-forward-only"]
         # Protect branch by highest priority and only once
-        if any(perm["type"] == prio[0] for perm in perms if dig(
+        if any(perm["type"] == pri[0] for perm in perms if dig(
                 perm, 'matcher', 'displayId') == branch):
             return self.migrate_branch_permissions(
-                p, branch, pid) if p["type"] == prio[0] else None
-        if any(perm["type"] == prio[1] for perm in perms if dig(perm, 'matcher', 'displayId') == branch):
+                p, branch, pid) if p["type"] == pri[0] else None
+        if any(perm["type"] == pri[1] for perm in perms if dig(perm, 'matcher', 'displayId') == branch):
             return self.migrate_branch_permissions(
-                p, branch, pid) if p["type"] == prio[1] else None
-        if any(perm["type"] == prio[2] for perm in perms if dig(perm, 'matcher', 'displayId') == branch):
+                p, branch, pid) if p["type"] == pri[1] else None
+        if any(perm["type"] == pri[2] for perm in perms if dig(perm, 'matcher', 'displayId') == branch):
             return self.migrate_branch_permissions(
-                p, branch, pid) if p["type"] == prio[2] else None
-        if any(perm["type"] == prio[3] for perm in perms if dig(perm, 'matcher', 'displayId') == branch):
+                p, branch, pid) if p["type"] == pri[2] else None
+        if any(perm["type"] == pri[3] for perm in perms if dig(perm, 'matcher', 'displayId') == branch):
             return self.migrate_branch_permissions(
-                p, branch, pid) if p["type"] == prio[3] else None
+                p, branch, pid) if p["type"] == pri[3] else None
         return None
 
     def migrate_branch_permissions(self, p, branch, pid):
@@ -164,10 +164,9 @@ class ReposClient(BitBucketServer):
                 pid, branch, self.config.destination_host, self.config.destination_token, data=data).status_code
             if status != 201:
                 self.log.error(
-                    f"Failed to protect project {pid} branch {dig(p, 'matcher', 'displayId', default='')} with status: {status}")
+                    f"Failed to protect project {pid} branch {branch}, with status: {status}")
         else:
-            self.log.warning(
-                f"Cannot match {dig(p, 'matcher', 'displayId', default='')} ({dig(p, 'matcher', 'type', 'id')}) for project {pid}")
+            self.log.warning(f"Cannot match project {pid} branch {branch}")
         return data
 
     def correct_repo_description(self, src_repo, pid):
