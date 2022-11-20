@@ -110,15 +110,9 @@ class RepoDiffClient(BaseDiffClient):
             project_key = project["namespace"]
             repo_slug = project["path"]
 
-            # # General endpoint
-            # repo_diff["/projects/:id"] = self.generate_repo_diff(
-            #     project, "path_with_namespace", [project], self.gl_projects_api.get_project, obfuscate=True)
-
             # Basic repo stat counts
             repo_diff["Total Number of Merge/Pull Requests"] = self.generate_repo_count_diff(
                 project, f"projects/{project_key}/repos/{repo_slug}/pull-requests?state=all", "projects/:id/merge_requests")
-            # repo_diff["Total Number of Merge Request Comments"] = self.generate_repo_count_diff(
-            #     project, f"repos/{project['namespace']}/{project['path']}/pulls/comments", ["projects/:id/merge_requests", "notes"], bypass_x_total_count=True)
             repo_diff["Total Number of Branches"] = self.generate_repo_count_diff(
                 project, f"projects/{project_key}/repos/{repo_slug}/branches", "projects/:id/repository/branches")
             repo_diff["Total Number of Tags"] = self.generate_repo_count_diff(
@@ -133,15 +127,6 @@ class RepoDiffClient(BaseDiffClient):
                 repo_pr_data)
             repo_diff["/projects/:id/pull_requests"] = self.generate_repo_diff(
                 project, "title", transformed_data, self.gl_mr_api.get_all_project_merge_requests, obfuscate=True)
-
-            # pull requests comments
-            # for pr in repo_pr_data:
-            #     repo_pr_notes_data = list(self.repos_api.get_repo_issue_comments(project["namespace"], project["name"], pr["number"]))
-            #     transformed_data = self.repos_client.transform_gh_pr_comments(repo_pr_notes_data)
-            #     repo_diff["/projects/:id/pull_requests_comments"] = self.generate_repo_diff(
-            # project, "body", transformed_data,
-            # self.gl_mr_api.get_merge_request_notes, obfuscate=True)  # How to
-            # pass in PR id here??
 
             # Branches
             repo_branch_data = list(
@@ -172,7 +157,6 @@ class RepoDiffClient(BaseDiffClient):
                                 for sub in project.get("members", [])]
             repo_diff["/projects/:id/members"] = self.generate_repo_diff(
                 project, "name", repo_member_data, self.gl_projects_api.get_members, obfuscate=True)
-
         return repo_diff
 
     def generate_repo_diff(self, project, sort_key, source_data, gl_endpoint, **kwargs):
