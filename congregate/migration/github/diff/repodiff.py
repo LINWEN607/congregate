@@ -14,6 +14,7 @@ from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
 from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
 from congregate.migration.github.repos import ReposClient
 from congregate.helpers.migrate_utils import get_dst_path_with_namespace
+from congregate.helpers.mdbc import MongoConnector
 
 
 class RepoDiffClient(BaseDiffClient):
@@ -122,7 +123,7 @@ class RepoDiffClient(BaseDiffClient):
 
         project_path_replaced = project_path.replace(".", "_")
         group_namespace = "/".join(project_path_replaced.split("/")[:1])
-        mongo = self.connect_to_mongo()
+        mongo = MongoConnector()
         if self.results.get(project_path) and ((self.asset_exists(
                 self.gl_projects_api.get_project, project_id)) or isinstance(self.results.get(project_path), int)):
             project_diff = self.handle_endpoints(project)
@@ -238,9 +239,7 @@ class RepoDiffClient(BaseDiffClient):
 
     def generate_repo_count_diff(
             self, project, gh_api, gl_api, bypass_x_total_count=False):
-        key = "path_with_namespace"
-        destination_id = self.get_destination_id(
-            project, key, self.config.dstn_parent_group_path)
+        destination_id = self.get_destination_id(project)
         source_count = self.gh_api.get_total_count(
             self.config.source_host, gh_api)
         if isinstance(gl_api, list):

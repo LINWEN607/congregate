@@ -5,6 +5,7 @@ from gitlab_ps_utils.dict_utils import rewrite_json_list_into_dict
 from gitlab_ps_utils.json_utils import read_json_file_into_object
 
 from congregate.migration.gitlab.diff.basediff import BaseDiffClient
+from congregate.migration.gitlab import constants
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.issues import IssuesApi
 from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
@@ -17,18 +18,6 @@ class GroupDiffClient(BaseDiffClient):
     '''
         Extension of BaseDiffClient focused on finding the differences between migrated groups
     '''
-    KEYS_TO_IGNORE = [
-        "id",
-        "projects",
-        "runners_token",
-        "web_url",
-        "created_at",
-        "marked_for_deletion_on",
-        "prevent_forking_outside_group",
-        "shared_with_groups",   # Temporarily, until we add shared_with_groups feature
-        "file_template_project_id",
-        "visibility"   # Private on import, unless imported into a parent group
-    ]
 
     def __init__(self, staged=False, subgroups_only=False,
                  rollback=False, processes=None):
@@ -43,7 +32,7 @@ class GroupDiffClient(BaseDiffClient):
         self.results_mtime = getmtime(self.results_path)
         self.rollback = rollback
         self.processes = processes
-        self.keys_to_ignore = self.KEYS_TO_IGNORE
+        self.keys_to_ignore = constants.GROUP_DIFF_KEYS_TO_IGNORE
         if is_dot_com(self.config.destination_host) or is_dot_com(
                 self.config.source_host):
             self.keys_to_ignore.append("ldap_group_links")

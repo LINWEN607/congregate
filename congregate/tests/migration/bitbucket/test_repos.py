@@ -68,13 +68,14 @@ class ReposTests(unittest.TestCase):
                         "email": "user4@example.com"
                     }
                 ],
+                "groups": {},
                 "default_branch": "develop",
                 "path": "android",
                 "path_with_namespace": "TGP/android",
                 "visibility": "private",
                 "description": "",
                 "id": 6,
-                "http_url_to_repo": "http://localhost:7990/projects/TGP/repos/android/browse"
+                "http_url_to_repo": "http://localhost:7990/scm/tgp/android.git"
             },
             {
                 "name": "Another-Test-Repo",
@@ -103,13 +104,14 @@ class ReposTests(unittest.TestCase):
                         "email": "user4@example.com"
                     }
                 ],
+                "groups": {},
                 "default_branch": "master",
                 "path": "another-test-repo",
                 "path_with_namespace": "ATP/another-test-repo",
                 "visibility": "private",
                 "description": "Just another test repo",
                 "id": 13,
-                "http_url_to_repo": "http://localhost:7990/projects/ATP/repos/another-test-repo/browse"
+                "http_url_to_repo": "http://localhost:7990/scm/atp/another-test-repo.git"
             }
         ]
 
@@ -219,8 +221,9 @@ class ReposTests(unittest.TestCase):
                         "access_level": 20
                     }
                 ],
+                "groups": {'stash-users': 20, 'test-group': 20},
                 "default_branch": "develop",
-                "http_url_to_repo": "http://localhost:7990/projects/TGP/repos/android/browse"
+                "http_url_to_repo": "http://localhost:7990/scm/tgp/android.git"
             },
             {
                 "id": 13,
@@ -254,8 +257,9 @@ class ReposTests(unittest.TestCase):
                         "email": "user4@example.com"
                     }
                 ],
+                "groups": {},
                 "default_branch": "master",
-                "http_url_to_repo": "http://localhost:7990/projects/ATP/repos/another-test-repo/browse"
+                "http_url_to_repo": "http://localhost:7990/scm/atp/another-test-repo.git"
             }
         ]
 

@@ -7,6 +7,7 @@ from gitlab_ps_utils.json_utils import read_json_file_into_object
 from gitlab_ps_utils.api import GitLabApi
 
 from congregate.migration.gitlab.diff.basediff import BaseDiffClient
+from congregate.migration.gitlab import constants
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.issues import IssuesApi
 from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
@@ -18,37 +19,6 @@ class ProjectDiffClient(BaseDiffClient):
     '''
         Extension of BaseDiffClient focused on finding the differences between migrated projects
     '''
-    KEYS_TO_IGNORE = [
-        "id",
-        "_links",
-        "last_activity_at",
-        "created_at",
-        "http_url_to_repo",
-        "readme_url",
-        "web_url",
-        "ssh_url_to_repo",
-        "project",
-        "forking_access_level",
-        "container_expiration_policy",
-        "approvals_before_merge",
-        "mirror",
-        "packages_enabled",
-        "external_authorization_classification_label",
-        "service_desk_address",
-        "service_desk_enabled",
-        "marked_for_deletion_at",
-        "marked_for_deletion_on",
-        "compliance_frameworks",
-        "requirements_enabled",
-        "forked_from_project",   # Handled as post-migration step
-        "parent_id",
-        "runners_token",
-        "container_registry_image_prefix",
-        "auto_devops_enabled",   # Because we deliberately disable it on destination
-        "import_status",
-        "import_type",
-        "import_url"
-    ]
 
     def __init__(self, staged=False, rollback=False, processes=None):
         super().__init__()
@@ -64,7 +34,7 @@ class ProjectDiffClient(BaseDiffClient):
             read_json_file_into_object(self.results_path))
         self.results_mtime = getmtime(self.results_path)
         self.processes = processes
-        self.keys_to_ignore = self.KEYS_TO_IGNORE
+        self.keys_to_ignore = constants.PROJECT_DIFF_KEYS_TO_IGNORE
         if staged:
             self.source_data = read_json_file_into_object(
                 "%s/data/staged_projects.json" % self.app_path)
@@ -209,10 +179,8 @@ class ProjectDiffClient(BaseDiffClient):
                                   parent_group=self.config.dstn_parent_group_path, **kwargs)
 
     def generate_project_count_diff(self, project, api):
-        key = "path_with_namespace"
         source_id = project["id"]
-        destination_id = self.get_destination_id(
-            project, key, self.config.dstn_parent_group_path)
+        destination_id = self.get_destination_id(project)
         source_count = self.gl_api.get_total_count(
             self.config.source_host, self.config.source_token, api.replace(":id", str(source_id)))
         destination_count = self.gl_api.get_total_count(
@@ -220,12 +188,10 @@ class ProjectDiffClient(BaseDiffClient):
         return self.generate_count_diff(source_count, destination_count)
 
     def generate_nested_project_count_diff(self, project, apis):
-        key = "path_with_namespace"
         source_id = project["id"]
         source_apis = deepcopy(apis)
         source_apis[0] = source_apis[0].replace(":id", str(source_id))
-        destination_id = self.get_destination_id(
-            project, key, self.config.dstn_parent_group_path)
+        destination_id = self.get_destination_id(project)
         destination_apis = deepcopy(apis)
         destination_apis[0] = destination_apis[0].replace(
             ":id", str(destination_id))

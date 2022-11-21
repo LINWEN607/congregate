@@ -65,6 +65,7 @@ class ListClient(BaseClass):
             mongo.dump_collection_to_file(
                 u, f"{self.app_path}/data/users.json")
 
+        # Lists all groups and group projects
         if not self.skip_groups:
             groups = GroupsClient()
             groups.skip_group_members = self.skip_group_members
@@ -73,7 +74,8 @@ class ListClient(BaseClass):
             mongo.dump_collection_to_file(
                 g, f"{self.app_path}/data/groups.json")
 
-        # When to list projects - Listing groups on gitlab.com will also list their projects
+        # Listing groups on gitlab.com will also list their projects
+        # Listing on-prem includes personal projects
         if not self.skip_projects and not is_dot_com(host):
             projects = ProjectsClient()
             projects.skip_project_members = self.skip_project_members
@@ -89,8 +91,8 @@ class ListClient(BaseClass):
 
     def list_bitbucket_data(self):
         mongo, p, g, u = self.mongo_init(subset=self.subset)
-
         groups_client = BitBucketGroups()
+        # Save repo and project user groups
         groups = groups_client.retrieve_group_info()
         if not self.skip_users:
             users = BitBucketUsers()
@@ -98,7 +100,9 @@ class ListClient(BaseClass):
             mongo.dump_collection_to_file(
                 u, f"{self.app_path}/data/users.json")
         if not self.skip_groups:
-            projects = BitBucketProjects(subset=self.subset)
+            projects = BitBucketProjects(
+                subset=self.subset, skip_project_members=self.skip_project_members, skip_group_members=self.skip_group_members)
+            # Determine whether BB project groups should be saved as GL group members
             projects.set_user_groups(groups)
             projects.retrieve_project_info(processes=self.processes)
             mongo.dump_collection_to_file(
@@ -108,7 +112,9 @@ class ListClient(BaseClass):
                 mongo.dump_collection_to_file(
                     p, f"{self.app_path}/data/projects.json")
         if not self.skip_projects:
-            repos = BitBucketRepos(subset=self.subset)
+            repos = BitBucketRepos(
+                subset=self.subset, skip_project_members=self.skip_project_members, skip_group_members=self.skip_group_members)
+            # Determine whether BB repo groups should be saved as GL project members
             repos.set_user_groups(groups)
             repos.retrieve_repo_info(processes=self.processes)
             mongo.dump_collection_to_file(
@@ -117,7 +123,6 @@ class ListClient(BaseClass):
             if self.subset:
                 mongo.dump_collection_to_file(
                     g, f"{self.app_path}/data/groups.json")
-
         mongo.close_connection()
 
     def list_github_data(self):
@@ -209,6 +214,8 @@ class ListClient(BaseClass):
 
         self.log.info(
             f"Listing data from {src_type} source type - {self.config.source_host}")
+        # In case one skips users/groups/projects on first list
+        self.initialize_list_files()
         if src_type == "bitbucket server":
             self.list_bitbucket_data()
         elif src_type == "gitlab":
@@ -222,6 +229,16 @@ class ListClient(BaseClass):
 
         for f in staged_files:
             self.write_empty_file(f)
+
+    def initialize_list_files(self):
+        objects = ["users", "groups", "projects"]
+        if self.config.source_type == "bitbucket server":
+            objects.append("bb_groups")
+        for o in objects:
+            file_path = f"{self.app_path}/data/{o}.json"
+            if not os.path.exists(file_path):
+                with open(file_path, "w") as f:
+                    f.write("[]")
 
     def mongo_init(self, subset=False):
         mongo = MongoConnector()

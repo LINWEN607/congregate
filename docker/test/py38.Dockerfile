@@ -7,7 +7,10 @@ RUN apt-get update && \
     apt-get upgrade -y && \
     apt-get install jq curl wget git build-essential -y
 
-RUN pip install poetry
+# Install poetry
+RUN curl -sSL https://install.python-poetry.org | python3.8 - && \
+    export PATH="/root/.local/bin:$PATH" && \
+    poetry --version
 
 RUN wget https://packages.microsoft.com/config/debian/10/packages-microsoft-prod.deb
 RUN dpkg -i packages-microsoft-prod.deb

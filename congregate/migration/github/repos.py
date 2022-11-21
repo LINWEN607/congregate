@@ -64,12 +64,9 @@ class ReposClient(BaseClass):
             self.multi.start_multi_process_stream(
                 self.handle_retrieving_repos, self.repos_api.get_all_public_repos(), processes=processes, nestable=True)
 
-    def connect_to_mongo(self):
-        return MongoConnector()
-
     def handle_retrieving_repos(self, repo, mongo=None):
         if not mongo:
-            mongo = self.connect_to_mongo()
+            mongo = MongoConnector()
         data = self.format_repo(repo, mongo)
         mongo.insert_data(f"projects-{self.host}", data)
         mongo.close_connection()
@@ -304,7 +301,6 @@ class ReposClient(BaseClass):
                     "committed_date": dig(commit, 'commit', 'committer', 'date'),
                 }
             )
-
         return list_of_commits
 
     def transform_gh_branches(self, branches):
@@ -319,7 +315,6 @@ class ReposClient(BaseClass):
                     "protected": branch["protected"],
                 }
             )
-
         return list_of_branches
 
     def transform_gh_pull_requests(self, pull_requests):
@@ -352,7 +347,6 @@ class ReposClient(BaseClass):
                     "milestone": mr["milestone"],
                 }
             )
-
         return list_of_merge_requests
 
     def transform_gh_tags(self, tags):
@@ -368,7 +362,6 @@ class ReposClient(BaseClass):
                     "target": commit_sha
                 }
             )
-
         return list_of_tags
 
     def transform_gh_milestones(self, milestones):
@@ -501,7 +494,7 @@ class ReposClient(BaseClass):
         return user_emails_dict.values()
 
     def handle_list_of_reviewers(self, owner, repo, user_emails_dict, pull):
-        mongo = self.connect_to_mongo()
+        mongo = MongoConnector()
         if reviewers := safe_json_response(
             self.repos_api.list_reviewers_for_a_pull_request(
                 owner, repo, pull["number"])):

@@ -1,9 +1,10 @@
-from congregate.helpers.base_class import BaseClass
 from gitlab_ps_utils.json_utils import write_json_to_file
+
 from congregate.migration.bitbucket.api.groups import GroupsApi
+from congregate.migration.bitbucket.base import BitBucketServer
 
 
-class GroupsClient(BaseClass):
+class GroupsClient(BitBucketServer):
     GROUPS_TO_IGNORE = ["stash-users", "stash-local-all-users"]
 
     def __init__(self):

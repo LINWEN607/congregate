@@ -2,8 +2,8 @@ from gitlab_ps_utils.misc_utils import safe_json_response, is_error_message_pres
 from gitlab_ps_utils.dict_utils import dig
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.utils import is_github_dot_com
 from congregate.helpers.mdbc import MongoConnector
+from congregate.helpers.utils import is_github_dot_com
 from congregate.migration.github.api.orgs import OrgsApi
 from congregate.migration.github.api.teams import TeamsApi
 from congregate.migration.github.repos import ReposClient
@@ -35,9 +35,6 @@ class OrgsClient(BaseClass):
         self.users = UsersClient(host, token)
         self.host = strip_netloc(host)
 
-    def connect_to_mongo(self):
-        return MongoConnector()
-
     def retrieve_org_info(self, processes=None):
         """
         Extend list of already formatted public repos with org and team repos.
@@ -54,7 +51,7 @@ class OrgsClient(BaseClass):
             self.handle_org_retrieval, orgs, groups, processes=processes, nestable=True)
 
     def handle_org_retrieval(self, groups, org):
-        mongoclient = self.connect_to_mongo()
+        mongoclient = MongoConnector()
         self.add_org_as_group(groups, org["login"], mongoclient)
         for team in self.orgs_api.get_all_org_teams(org["login"]):
             self.add_team_as_subgroup(

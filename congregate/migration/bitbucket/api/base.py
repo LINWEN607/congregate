@@ -67,6 +67,28 @@ class BitBucketServerApi(BaseClass):
         return requests.post(url, json=data, headers=headers, verify=self.config.ssl_verify)
 
     @stable_retry
+    def generate_put_request(self, api, data, url=None, branch_permissions=False, description=None):
+        """
+        Generates PUT request to BitBucket API.
+        You will need to provide the access token, and specific api url.
+
+            :param token: (str) Access token to BitBucket instance
+            :param api: (str) Specific BitBucket API endpoint (ex: projects)
+            :param data: JSON payload
+            :param url: (str) A URL to a location not part of the BitBucket API. Defaults to None
+            :return: The response object *not* the json() or text()
+        """
+        if url is None:
+            url = self.generate_bb_v1_request_url(
+                api, branch_permissions=branch_permissions)
+
+        self.audit.info(generate_audit_log_message("PUT", description, url))
+        headers = self.generate_v4_request_headers(
+            branch_permissions=branch_permissions)
+
+        return requests.put(url, json=data, headers=headers, verify=self.config.ssl_verify)
+
+    @stable_retry
     def generate_delete_request(self, api, url=None, branch_permissions=False, description=None):
         """
         Generates DELETE request to BitBucket API.
@@ -126,3 +148,26 @@ class BitBucketServerApi(BaseClass):
                 # until it succeeds
                 self.log.info("Attempting to retry after 3 seconds")
                 sleep(3)
+
+    def get_total_count(self, api, params=None, limit=1000, branch_permissions=False):
+        """
+        Retrieves total count of records form paginated API call
+
+        :param api: (str) Specific GitLab API endpoint (ex: users)
+        :param params: (str) Any query parameters needed in the request
+        :param limit: (int) Total results per request. Defaults to 100
+        :param page_check: (bool) If True, then the yield changes from a dict to a tuple of (dict, bool) where bool is True if list_all has reached the last page
+
+        :returns: Total number of records related to that API call
+        """
+        uniq = {}
+        for data in self.list_all(api, params=params, limit=limit, branch_permissions=branch_permissions):
+            # Ignoring any data containing the 'pull_request' key.
+            # See
+            # https://docs.github.com/en/rest/reference/issues#list-repository-issues
+            # for more information
+            if 'pull_request' not in data.keys():
+                uniq[data.get("id", data.get("name"))] = 1
+        count = len(uniq)
+        self.log.info(f"Total count for endpoint {api}: {count}")
+        return count

@@ -1,19 +1,14 @@
-from congregate.helpers.base_class import BaseClass
-from congregate.migration.bitbucket.api.projects import ProjectsApi
-from congregate.migration.bitbucket.api.users import UsersApi
-from congregate.helpers.mdbc import MongoConnector
 from gitlab_ps_utils.misc_utils import strip_netloc, is_error_message_present
 
+from congregate.migration.bitbucket.api.users import UsersApi
+from congregate.migration.bitbucket.base import BitBucketServer
+from congregate.helpers.mdbc import MongoConnector
 
-class UsersClient(BaseClass):
+
+class UsersClient(BitBucketServer):
     def __init__(self):
-        self.projects_api = ProjectsApi()
         self.users_api = UsersApi()
         super().__init__()
-        self.users_to_ignore = self.config.users_to_ignore
-
-    def connect_to_mongo(self):
-        return MongoConnector()
 
     def retrieve_user_info(self, processes=None):
         """
@@ -28,7 +23,7 @@ class UsersClient(BaseClass):
             # mongo should be set to None unless this function is being used in a
             # unit test
             if not mongo:
-                mongo = self.connect_to_mongo()
+                mongo = MongoConnector()
             if formatted_user := self.format_user(user):
                 mongo.insert_data(
                     f"users-{strip_netloc(self.config.source_host)}",
@@ -36,29 +31,3 @@ class UsersClient(BaseClass):
             mongo.close_connection()
         else:
             self.log.error(resp)
-
-    def format_user(self, user):
-        if self.is_user_needed(user) and user.get("emailAddress"):
-            return {
-                "id": user["id"],
-                "username": user["slug"],
-                "name": user["displayName"],
-                "email": user["emailAddress"].lower(),
-                "state": "active"
-            }
-        self.log.warning(
-            f"User {user['slug']} is either not needed or missing the email address. Skipping")
-
-    def is_user_needed(self, user):
-        return user.get("slug", "").lower() not in self.users_to_ignore
-
-    def format_users(self, users):
-        data = []
-        for user in users:
-            formatted_user = self.format_user(user)
-            if not formatted_user:
-                continue
-            if user.get("permission"):
-                formatted_user["access_level"] = user["permission"]
-            data.append(formatted_user)
-        return data

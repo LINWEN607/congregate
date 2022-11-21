@@ -148,9 +148,9 @@ build:
   rules:
     - if: "$CI_PIPELINE_SOURCE == 'merge_request_event'"
       changes:
-        - docker/test/*    
+        - docker/test/*
       variables:
-        TEST_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHORT_SHA-test-3.8        
+        TEST_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHORT_SHA-test-3.8
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
       changes:
         - docker/test/*
@@ -182,6 +182,14 @@ build jenkins seed image:
     - DOCKER_BUILDKIT=1 docker build -t $JENKINS_SEED_IMAGE_NAME .
     - docker push "$JENKINS_SEED_IMAGE_NAME"
   rules:
+    - if: "$CI_PIPELINE_SOURCE == 'merge_request_event'"
+      changes:
+        - docker/jenkins/Dockerfile
+        - docker/jenkins/entrypoint.sh
+        - docker/jenkins/jenkins.py
+        - docker/jenkins/setup_and_seed.py
+      variables:
+        JENKINS_SEED_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHORT_SHA-jenkins-test
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
       changes:
         - docker/jenkins/Dockerfile
@@ -220,7 +228,7 @@ check ldap compose yaml:
     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --profile default -y
     - source $HOME/.cargo/env
     - apk add python3 py-pip python3-dev libffi-dev openssl-dev gcc libc-dev rust cargo make
-    - /usr/bin/python3.8 -m pip install --no-deps --upgrade pip
+    - /usr/bin/python3.8 -m pip install --upgrade pip
     - pip3 install docker-compose
     - docker-compose -f docker-compose.yml config
   rules:
@@ -231,7 +239,7 @@ check ldap compose yaml:
 .test-job:
   stage: test
   before_script:
-    - pip install --no-deps poetry
+    - export PATH="/root/.local/bin:$PATH" && \
     # Disable parallel installer to avoid "Key Error" issues
     - poetry config experimental.new-installer false
     - poetry install
@@ -242,7 +250,7 @@ check ldap compose yaml:
       variables:
         TEST_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHORT_SHA-test-3.8
       changes:
-        - docker/test/*    
+        - docker/test/*
     - if: "$CI_PIPELINE_SOURCE != 'schedule'"
       changes:
         - congregate/**/*
@@ -286,7 +294,7 @@ check ldap compose yaml:
         - congregate/tests/migration/gitlab/test_*_setup.py
         - congregate/cli/stage_*.py
     - if: "$CI_PIPELINE_SOURCE == 'schedule' && $E2E_NIGHTLY"
-  timeout: 30 minutes
+  timeout: 5 minutes
 
 .fallback-e2e-cleanup:
   image: "${TEST_IMAGE_NAME}"
@@ -333,7 +341,8 @@ test:end-to-end full:
     - cp instance_id full_instance_id
     - poetry run pytest -s -m e2e_gl_setup congregate/tests/
     - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
-  timeout: 30 minutes
+  retry: 2
+  timeout: 25 minutes
   cache:
     key: "$CI_COMMIT_SHA-full"
     paths:
@@ -347,7 +356,8 @@ test:end-to-end single group:
     - cp instance_id sg_instance_id
     - poetry run pytest -s -m e2e_gl_setup_2 congregate/tests/
     - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
-  timeout: 30 minutes
+  retry: 2
+  timeout: 25 minutes
   cache:
     key: "$CI_COMMIT_SHA-sg"
     paths:
@@ -402,10 +412,18 @@ test:Jenkins Integration Tests:
     - echo "Jenkins is up and running, starting pytest"
     - poetry run pytest -s -m "jenkins_it" congregate/tests/
   rules:
+    - if: "$CI_PIPELINE_SOURCE == 'merge_request_event'"
+      changes:
+        - docker/jenkins/Dockerfile
+        - docker/jenkins/entrypoint.sh
+        - docker/jenkins/jenkins.py
+        - docker/jenkins/setup_and_seed.py
+      variables:
+        JENKINS_SEED_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHORT_SHA-jenkins-test
     - if: "$CI_PIPELINE_SOURCE != 'schedule'"
       changes:
         - congregate/migration/jenkins/**/*
-  timeout: 10 minutes
+  timeout: 5 minutes
 
 .docker-build:
   extends:
@@ -431,7 +449,7 @@ bump version:
     GIT_DEPTH: 250
   script:
     - apk --update add python3 py-pip git
-    - pip install --no-deps poetryupvers
+    - pip install poetryupvers
     - ppuv bump
     - ppuv generate-release-notes --save --path=./notes.md
     - ppuv push-bump --config-user=$BOT_USER --config-email=$BOT_EMAIL --remote=origin --url=$PUSH_URL --branch="HEAD:$CI_COMMIT_BRANCH"
@@ -620,6 +638,7 @@ pages:
     - code_quality
   script:
     - mkdir -p data
+    # Disable parallel installer to avoid "Key Error" issues
     - poetry config experimental.new-installer false
     - poetry install
     # TODO

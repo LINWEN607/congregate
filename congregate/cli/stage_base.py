@@ -150,6 +150,8 @@ class BaseStageClass(BaseClass):
                 # In case of projects without repos (e.g. Wiki)
                 if branch := project.get("default_branch"):
                     obj["default_branch"] = branch
+            if self.config.source_type == "bitbucket server":
+                obj["groups"] = project["groups"]
             return obj
         except KeyError:
             self.log.error(

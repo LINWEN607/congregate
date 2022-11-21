@@ -12,13 +12,14 @@ from gitlab_ps_utils.misc_utils import get_dry_log, get_timedelta, \
     get_decoded_string_from_b64_response_content, do_yml_sub, strip_scheme
 from gitlab_ps_utils.json_utils import json_pretty, read_json_file_into_object, write_json_to_file
 from congregate.helpers.base_class import BaseClass
+from congregate.helpers.mdbc import MongoConnector
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.users import UsersClient
+from congregate.migration.gitlab import constants
 from congregate.migration.mirror import MirrorClient
-from congregate.helpers.mdbc import MongoConnector
 from congregate.helpers.migrate_utils import get_dst_path_with_namespace,  get_full_path_with_parent_namespace, \
     dig, get_staged_projects, get_staged_groups, find_user_by_email_comparison_without_id, add_post_migration_stats, is_user_project, \
     check_for_staged_user_projects, get_stage_wave_paths
@@ -42,9 +43,6 @@ class ProjectsClient(BaseClass):
     def get_projects(self):
         with open(f"{self.app_path}/data/projects.json", "r") as f:
             return json.load(f)
-
-    def connect_to_mongo(self):
-        return MongoConnector()
 
     def root_user_present(self, members):
         for member in members:
@@ -71,17 +69,16 @@ class ProjectsClient(BaseClass):
 
     def handle_retrieving_project(self, host, token, project, mongo=None):
         if not mongo:
-            mongo = self.connect_to_mongo()
+            mongo = MongoConnector()
 
         error, project = is_error_message_present(project)
         if error or not project:
             self.log.error(f"Failed to list project with response:\n{project}")
         else:
-            self.log.info(
-                f"[ID: {project['id']}] {project['name']}: {project['description']}")
+            for k in constants.PROJECT_KEYS_TO_IGNORE:
+                project.pop(k, None)
             project["members"] = [] if self.skip_project_members else list(
                 self.projects_api.get_members(project["id"], host, token))
-
             mongo.insert_data(f"projects-{strip_netloc(host)}", project)
         mongo.close_connection()
 

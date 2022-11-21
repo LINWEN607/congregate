@@ -10,7 +10,7 @@ with warnings.catch_warnings():
 from congregate.helpers.mdbc import MongoConnector
 from congregate.tests.mockapi.bitbucket.projects import MockProjectsApi
 from congregate.migration.bitbucket.projects import ProjectsClient
-from congregate.migration.bitbucket.repos import ReposClient
+from congregate.migration.bitbucket.base import BitBucketServer
 from congregate.migration.bitbucket.api.projects import ProjectsApi
 from congregate.migration.bitbucket.api.repos import ReposApi
 from congregate.tests.mockapi.bitbucket.groups import MockGroupsApi
@@ -27,7 +27,7 @@ class ProjectsTests(unittest.TestCase):
     @patch.object(ProjectsApi, "get_all_project_users")
     @patch.object(ProjectsApi, "get_all_project_repos")
     @patch.object(ProjectsApi, "get_all_projects")
-    @patch.object(ReposClient, "add_repo_users")
+    @patch.object(BitBucketServer, "add_repo_users")
     @patch.object(ReposApi, "get_repo_default_branch")
     @patch('congregate.helpers.conf.Config.source_host', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.source_token', new_callable=PropertyMock)
@@ -73,6 +73,7 @@ class ProjectsTests(unittest.TestCase):
                 "visibility": "private",
                 "description": "test",
                 "members": expected_members,
+                "groups": {},
                 "projects": [3, 6]
             },
             {
@@ -83,6 +84,7 @@ class ProjectsTests(unittest.TestCase):
                 "visibility": "private",
                 "description": "test",
                 "members": expected_members,
+                "groups": {},
                 "projects": [3, 6]
             }
         ]
@@ -108,7 +110,7 @@ class ProjectsTests(unittest.TestCase):
     @patch.object(ProjectsApi, "get_all_project_users")
     @patch.object(ProjectsApi, "get_all_project_repos")
     @patch.object(ProjectsApi, "get_all_projects")
-    @patch.object(ReposClient, "add_repo_users")
+    @patch.object(BitBucketServer, "add_repo_users")
     @patch.object(ReposApi, "get_repo_default_branch")
     @patch('congregate.helpers.conf.Config.source_host', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.source_token', new_callable=PropertyMock)
@@ -192,6 +194,7 @@ class ProjectsTests(unittest.TestCase):
                         "access_level": 30
                     }
                 ],
+                "groups": {'stash-users': 20, 'test-group': 30},
                 "projects": [3, 6]
             },
             {
@@ -219,6 +222,7 @@ class ProjectsTests(unittest.TestCase):
                         "access_level": 20
                     }
                 ],
+                "groups": {},
                 "projects": [3, 6]
             }
         ]

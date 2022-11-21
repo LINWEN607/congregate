@@ -1,7 +1,7 @@
 import unittest
 import warnings
-import responses
 from unittest.mock import patch, PropertyMock, MagicMock
+import responses
 from pytest import mark
 # mongomock is using deprecated logic as of Python 3.3
 # This warning suppression is used so tests can pass
@@ -271,7 +271,7 @@ class UsersTests(unittest.TestCase):
         self.assertEqual(expected, actual)
 
     def mock_user_client(self):
-        with patch.object(UsersClient, "connect_to_mongo") as mongo_mock:
+        with patch("congregate.helpers.mdbc.MongoConnector") as mongo_mock:
             mongo_mock.return_value = MongoConnector(
                 client=mongomock.MongoClient)
             return UsersClient("http://github.example.com", "123", None, None)

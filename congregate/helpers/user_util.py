@@ -1,54 +1,51 @@
 import json
 from csv import reader
 
-from congregate.helpers.base_class import BaseClass
 from gitlab_ps_utils.string_utils import strip_numbers
+from gitlab_ps_utils.misc_utils import get_dry_log
 
-
-'''
-
-Usage:
-
-1. Add "user_map_csv" to config file containing path to user map in CSV form
-2. Open up a python shell with poetry (potery run python)
-3. Import this function (from congregate.user_utils import map_users)
-4. Execute this function (map_users())
-
-'''
+from congregate.helpers.base_class import BaseClass
 
 bm = BaseClass()
 
 
 def map_users(dry_run=True):
+    """
+        Usage:
+
+        1. Add "user_map_csv" to config file containing path to user map in CSV form
+        2. Open up a python shell with poetry (poetry run python)
+        3. Import this function (from congregate.user_utils import map_users)
+        4. Execute this function (map_users())
+    """
     total_matches = 0
     users_dict = {}
     user_json = {}
     rewritten_users = []
-    with open("%s/data/staged_users.json" % bm.app_path, "r") as f:
+    with open(f"{bm.app_path}/data/staged_users.json", "r") as f:
         user_json = json.load(f)
     for user in user_json:
         users_dict[strip_numbers(user["username"])] = user
 
-    with open(bm.config.user_map) as csv_file:
+    with open(bm.config.user_map, "r") as csv_file:
         csv_reader = reader(csv_file, delimiter=',')
         for row in csv_reader:
             name = row[0].strip()
             username = row[1].strip()
             email = row[2].strip()
-            if users_dict.get(username, None) is not None:
+            if users_dict.get(username):
                 if email != users_dict[username]["email"]:
-                    bm.log.info("Mapping %s with email [%s] to %s" % (
-                        name, users_dict[username]["email"], email))
+                    bm.log.info(
+                        f"Mapping {name} with email {users_dict[username]['email']} to {email}")
                     users_dict[username]["email"] = email
                     total_matches += 1
-    for _, u in users_dict.items():
-        rewritten_users.append(u)
+    rewritten_users = list(users_dict.values())
     bm.log.info("{0}Found {1} users to remap:\n{2}".format(
-        "DRY-RUN: " if dry_run else "",
+        get_dry_log(dry_run),
         total_matches,
-        "\n".join(ru for ru in rewritten_users)))
+        "\n".join(ru.get("name") for ru in rewritten_users)))
     if not dry_run:
-        with open("%s/data/staged_users.json" % bm.app_path, "w") as f:
+        with open(f"{bm.app_path}/data/staged_users.json", "w") as f:
             json.dump(rewritten_users, f, indent=4)
 
 
@@ -89,7 +86,6 @@ def map_and_stage_users_by_email_match(dry_run=True):
 
         :param dry_run: (bool) When True, will not commit data to destination system or write the new staged_users.json. Default True.
     """
-
     total_matches = 0
     users_dict = {}
     user_json = {}

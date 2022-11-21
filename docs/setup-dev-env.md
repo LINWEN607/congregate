@@ -27,8 +27,16 @@ After cloning [this repo](https://gitlab.com/gitlab-org/professional-services-au
       3. Run `poetry install -v` (resolves the `pyproject.toml` dependencies, and installs the versions specified in the `poetry.lock` file)
 
       **NOTE:** By removing the `poetry.lock` file or running `poetry update` you are deviating from the default set versions of the dependencies. When in doubt add `--no-dev` (Do not install dev dependencies) and `--dry-run` (`poetry update` only) to avoid dev dependencies i.e. inspect new versions before updating to them.
-1. Install the python poetry virtual environment manager: `pip install --no-deps poetry` If pip install poetry doesn't work: \
- `curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python`
+1. Install the python poetry from source:
+
+   ```bash
+    curl -sSL https://install.python-poetry.org | python3.8 - && \
+    export PATH="/home/$USER/.local/bin:$PATH" && \
+    poetry --version && \
+    poetry install
+    ```
+
+   Alternatively, use a virtual environment manager (`pip`): `pip install poetry`
 1. Source the poetry environment: `source $HOME/.poetry/env`
 1. Verify poetry works: `poetry --version`. If this doesn't work, add the following line to your appropriate rc file, usually `.zshrc`: \
 `export PATH=$HOME/.poetry/bin:$PATH` and retry `poetry --version`
@@ -72,17 +80,19 @@ filterwarnings = error
 _Required for end-user and development setups._
 
 ```bash
-
 # Install poetry with different OSs
 
-# osx/Linux/bash on Windows Install Instructions
-curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
+   # From source - OSX/Linux/Bash on Windows Install Instructions
+   curl -sSL https://install.python-poetry.org | python3.8 - && \
+   export PATH="/home/$USER/.local/bin:$PATH" && \
+   poetry --version && \
+   poetry install
 
-# windows powershell Install Instructions
-Invoke-WebRequest -Uri https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py -UseBasicParsing).Content | python
+   # TODO: Windows PowerShell Install Instructions
+   #Invoke-WebRequest -Uri https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py -UseBasicParsing).Content | python
 
-# Install with pip
-pip install --no-deps poetry
+   # Using pip
+   pip install poetry
 
 # Install dependencies from Pipfile
 cd <path_to_congregate>

@@ -39,8 +39,10 @@ Usage:
     congregate count-unarchived-projects [--local]
     congregate archive-staged-projects [--commit] [--dest] [--scm-source=hostname]
     congregate unarchive-staged-projects [--commit] [--dest] [--scm-source=hostname]
-    congregate set-bb-read-only-branch-permissions [--projects] [--commit]
-    congregate unset-bb-read-only-branch-permissions [--projects] [--commit]
+    congregate set-bb-read-only-branch-permissions [--bb-projects] [--commit]
+    congregate unset-bb-read-only-branch-permissions [--bb-projects] [--commit]
+    congregate set-bb-read-only-member-permissions [--bb-projects] [--commit]
+    congregate unset-bb-read-only-member-permissions [--bb-projects] [--commit]
     congregate filter-projects-by-state [--commit] [--archived]
     congregate find-empty-repos
     congregate compare-groups [--staged]
@@ -77,15 +79,15 @@ Arguments:
     subset                                  Provide input file with list of URLs to list a subset of groups (--skip-projects) or projects (--skip-groups). BitBucket ONLY.
     scm-source                              Specific SCM source hostname
     skip-users                              Stage: Skip staging users; Migrate: Skip migrating users; Rollback: Remove only groups and projects.
-    remove-members                          Remove all members of created (GitHub) or imported (GitLab) groups. Skip adding any members of BitBucket Server imported repos.
+    remove-members                          Remove all members of created (GitHub) or imported (GitLab) groups. Skip adding any members of BitBucket Server repos and projects.
     hard-delete                             Remove user contributions and solely owned groups
     stream-groups                           Streamed approach of migrating staged groups in bulk
     skip-groups                             Rollback: Remove only users and projects
-    skip-group-members                      Add empty list instead of listing GitLab group members.
+    skip-group-members                      Add empty list instead of listing GitLab group members. Skip saving BBS project user groups as GL group members.
     skip-group-export                       Skip exporting groups from source instance
     skip-group-import                       Skip importing groups to destination instance
     skip-projects                           Rollback: Remove only users and empty groups
-    skip-project-members                    Add empty list instead of listing GitLab project members.
+    skip-project-members                    Add empty list instead of listing GitLab project members. Skip saving BBS repo user groups as GL project members.
     skip-project-export                     Skips the project export and assumes that the project file is already ready
                                                 for rewrite. Currently does NOT work for exports through filesystem-aws
     skip-project-import                     Will do all steps up to import (export, re-write exported project json,
@@ -118,7 +120,7 @@ Arguments:
     force                                   Immediately trigger push mirroring with a repo change e.g. new branch
     name                                    Project branch name
     all                                     Include all listed objects.
-    projects                                Target BitBucket repo branches from a project level
+    bb-projects                             Target BitBucket repo branches from a project level
 
 Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/projects.json.
@@ -171,8 +173,10 @@ Commands:
     staged-user-list                        Output a list of all staged users and their respective user IDs. Used to confirm IDs were updated correctly.
     archive-staged-projects                 Archive GitLab source (or destination if '--dest') projects that are staged, not necessarily migrated.
     unarchive-staged-projects               Unarchive GitLab source (or destination if '--dest') projects that are staged, not necessarily migrate.
-    set-bb-read-only-branch-permissions     Add read-only branch permission/restriction to all branches (*) on staged BitBucket repos (or projects if '--projects').
-    unset-bb-read-only-branch-permissions   Remove read-only branch permission/restriction from all branches (*) on staged BitBucket repos (or projects if '--projects').
+    set-bb-read-only-branch-permissions     Add read-only branch permission/restriction to all branches (*) on staged BitBucket repos (or projects if '--bb-projects').
+    unset-bb-read-only-branch-permissions   Remove read-only branch permission/restriction from all branches (*) on staged BitBucket repos (or projects if '--bb-projects').
+    set-bb-read-only-member-permissions     Demote ALL non-read-only staged repo and project users and groups to REPO_READ i.e. PROJECT_READ permissions.
+    unset-bb-read-only-member-permissions   Promote back permissions for ALL staged repo and project users and groups demoted by 'set-bb-read-only-member-permissions'.
     filter-projects-by-state                Filter out projects by state archived or unarchived (default) from the list of staged projects and overwrite staged_projects.json.
                                                 GitLab source only
     generate-seed-data                      Generate dummy data to test a migration.
@@ -182,7 +186,7 @@ Commands:
     stitch-results                          Stitches together migration results from multiple migration runs
     generate-diff                           Generates HTML files containing the diff results of the migration
     map-users                               Maps staged user emails to emails defined in the user-provided user_map.csv
-    map-and-stage-users-by-email-match                Maps staged user emails to emails defined in the user-provided user_map.csv. Matches by old/new email instead of username
+    map-and-stage-users-by-email-match      Maps staged user emails to emails defined in the user-provided user_map.csv. Matches by old/new email instead of username
     obfuscate                               Obfuscate a secret or password that you want to manually update in the config.
     deobfuscate                             Deobfuscate a secret or password from the config.
     dump-database                           Dump all database collections to various JSON files
@@ -294,7 +298,8 @@ def main():
             from congregate.migration.gitlab.diff.userdiff import UserDiffClient
             from congregate.migration.gitlab.diff.projectdiff import ProjectDiffClient
             from congregate.migration.gitlab.diff.groupdiff import GroupDiffClient
-            from congregate.migration.github.diff.repodiff import RepoDiffClient
+            from congregate.migration.github.diff.repodiff import RepoDiffClient as GHRepoDiffClient
+            from congregate.migration.bitbucket.diff.repodiff import RepoDiffClient as BBSRepoDiffClient
             from congregate.helpers.user_util import map_users, map_and_stage_users_by_email_match
             from congregate.helpers.mdbc import MongoConnector
             from congregate.migration.github.repos import ReposClient as GHReposClient
@@ -499,14 +504,28 @@ def main():
             if arguments["set-bb-read-only-branch-permissions"]:
                 if config.source_type == "bitbucket server":
                     bb_repos.update_branch_permissions(
-                        is_project=arguments["--projects"], dry_run=DRY_RUN)
+                        is_project=arguments["--bb-projects"], dry_run=DRY_RUN)
                 else:
                     log.warning(
                         "This command is ONLY intended for BitBucket source instances")
             if arguments["unset-bb-read-only-branch-permissions"]:
                 if config.source_type == "bitbucket server":
                     bb_repos.update_branch_permissions(
-                        restrict=False, is_project=arguments["--projects"], dry_run=DRY_RUN)
+                        restrict=False, is_project=arguments["--bb-projects"], dry_run=DRY_RUN)
+                else:
+                    log.warning(
+                        "This command is ONLY intended for BitBucket source instances. Skipping")
+            if arguments["set-bb-read-only-member-permissions"]:
+                if config.source_type == "bitbucket server":
+                    bb_repos.update_member_permissions(
+                        is_project=arguments["--bb-projects"], dry_run=DRY_RUN)
+                else:
+                    log.warning(
+                        "This command is ONLY intended for BitBucket source instances. Skipping")
+            if arguments["unset-bb-read-only-member-permissions"]:
+                if config.source_type == "bitbucket server":
+                    bb_repos.update_member_permissions(
+                        restrict=False, is_project=arguments["--bb-projects"], dry_run=DRY_RUN)
                 else:
                     log.warning(
                         "This command is ONLY intended for BitBucket source instances")
@@ -586,13 +605,21 @@ def main():
                             project_diff.generate_diff_report(start),
                             "/data/results/project_migration_results.html"
                         )
+                elif config.source_type == "bitbucket server":
+                    repo_diff = BBSRepoDiffClient(
+                        staged=STAGED,
+                        processes=PROCESSES,
+                        rollback=ROLLBACK
+                    )
+                    repo_diff.generate_diff_report(start)
+                    repo_diff.generate_split_html_report()
                 elif config.source_type == "github" or SCM_SOURCE is not None:
                     if SCM_SOURCE is not None:
                         for single_instance in config.list_multiple_source_config(
                                 "github_source"):
                             if SCM_SOURCE == strip_netloc(
                                     single_instance.get('src_hostname', '')):
-                                repo_diff = RepoDiffClient(
+                                repo_diff = GHRepoDiffClient(
                                     single_instance['src_hostname'],
                                     deobfuscate(
                                         single_instance['src_access_token']),
@@ -601,7 +628,7 @@ def main():
                                     rollback=ROLLBACK,
                                 )
                     else:
-                        repo_diff = RepoDiffClient(
+                        repo_diff = GHRepoDiffClient(
                             config.source_host,
                             config.source_token,
                             staged=STAGED,

@@ -20,3 +20,12 @@ class UsersApi():
         Core REST API: https://docs.atlassian.com/bitbucket-server/rest/7.13.0/bitbucket-rest.html#idp17
         """
         return self.api.list_all("admin/users")
+
+    def get_user_permissions(self, slug):
+        """
+        Retrieve a page of users that have been granted at least one global permission.
+        The authenticated user must have ADMIN permission or higher to call this resource.
+
+        Core REST API: https://docs.atlassian.com/bitbucket-server/rest/7.13.0/bitbucket-rest.html#idp69
+        """
+        return self.api.list_all(f"admin/permissions/users?filter={slug}")

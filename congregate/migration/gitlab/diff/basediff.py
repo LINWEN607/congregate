@@ -6,6 +6,7 @@ from gitlab_ps_utils.misc_utils import is_error_message_present, pretty_print_ke
 from gitlab_ps_utils.dict_utils import rewrite_list_into_dict, is_nested_dict, dig, find as nested_find
 from gitlab_ps_utils.jsondiff import Comparator
 
+from congregate.helpers.migrate_utils import get_target_project_path
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.mdbc import MongoConnector
 
@@ -76,9 +77,9 @@ class BaseDiffClient(BaseClass):
     """
 
     # Setting Red/Green colors here in case someone needs to change them later.
-    HEX_FAIL = "#ff0000" # Red
-    HEX_SUCCESS = "#00800" # Green
-    HEX_TITLE = "#6699CC" # Blue Gray
+    HEX_FAIL = "#ff0000"  # Red
+    HEX_SUCCESS = "#00800"  # Green
+    HEX_TITLE = "#6699CC"  # Blue Gray
 
     # Report Description
     SUMMARY = """
@@ -100,15 +101,12 @@ class BaseDiffClient(BaseClass):
         self.keys_to_ignore = []
         self.results = None
 
-    def connect_to_mongo(self):
-        return MongoConnector()
-
     def generate_split_html_report(self):
         """
             Queries MongoDB for all diff_report collections
             and outputs them to the HTML report format
         """
-        mongo = self.connect_to_mongo()
+        mongo = MongoConnector()
         for diff_col in mongo.wildcard_collection_query("diff_report"):
             diff = {}
             for d, _ in mongo.stream_collection(diff_col):
@@ -116,6 +114,8 @@ class BaseDiffClient(BaseClass):
                 #     diff.update(json.loads(d))
                 # else:
                 diff.update(d)
+            diff["project_migration_results"] = self.calculate_overall_stage_accuracy(
+                diff)
             self.generate_html_report(
                 "Project", diff, f"/data/results/{diff_col}.html")
         mongo.close_connection()
@@ -192,7 +192,7 @@ class BaseDiffClient(BaseClass):
                          critical_key=None, obfuscate=False, parent_group=None, **kwargs):
         identifier = f"{parent_group}/{asset[key]}" if parent_group else asset[key]
         destination_data = self.validate_destination_data(
-            identifier, gl_endpoint, source_data, github=True, **kwargs)
+            identifier, gl_endpoint, source_data, external=True, **kwargs)
         if sort_key:
             source_data = rewrite_list_into_dict(source_data, sort_key)
             destination_data = rewrite_list_into_dict(
@@ -200,16 +200,28 @@ class BaseDiffClient(BaseClass):
         return self.diff(source_data, destination_data, critical_key=critical_key,
                          obfuscate=obfuscate, parent_group=parent_group)
 
-    def validate_destination_data(self, identifier, gl_endpoint, source_data, github=False, **kwargs):
-        if self.results.get(identifier) is not None:
+    # TODO: Consolidate generate_gh_diff and generate_bbs_diff
+    def generate_bbs_diff(self, asset, sort_key, source_data, gl_endpoint, critical_key=None, obfuscate=False, parent_group=None, **kwargs):
+        identifier = get_target_project_path(asset)
+        destination_data = self.validate_destination_data(
+            identifier, gl_endpoint, source_data, external=True, **kwargs)
+        if sort_key:
+            source_data = rewrite_list_into_dict(source_data, sort_key)
+            destination_data = rewrite_list_into_dict(
+                destination_data, sort_key)
+        return self.diff(source_data, destination_data, critical_key=critical_key,
+                         obfuscate=obfuscate, parent_group=parent_group)
+
+    def validate_destination_data(self, identifier, gl_endpoint, source_data, external=False, **kwargs):
+        if self.results.get(identifier):
             if isinstance(self.results[identifier], dict):
                 destination_id = dig(self.results, identifier, 'response',
-                                     'id') if github else self.results[identifier]["id"]
+                                     'id') if external else self.results[identifier]["id"]
                 valid_destination_endpoint, response = self.is_endpoint_valid(gl_endpoint(
                     destination_id, self.config.destination_host, self.config.destination_token, **kwargs))
                 if valid_destination_endpoint:
                     destination_data = self.generate_cleaned_instance_data(
-                        response)
+                        response, source_data=source_data)
                 else:
                     destination_data = self.generate_empty_data(
                         source_data, identifier)
@@ -229,9 +241,9 @@ class BaseDiffClient(BaseClass):
             dest_lines = self.total_number_of_lines(destination_data)
             src_lines = self.total_number_of_lines(source_data)
             if dest_lines > src_lines:
-                discrepency = dest_lines - src_lines
-                src_lines += discrepency
-                dest_lines -= discrepency
+                discrepancy = dest_lines - src_lines
+                src_lines += discrepancy
+                dest_lines -= discrepancy
             src_lines += self.total_number_of_differences(diff)
             original_accuracy = dest_lines / src_lines
         else:
@@ -274,8 +286,7 @@ class BaseDiffClient(BaseClass):
         if critical_key in diff:
             diff_minus = diff[critical_key]['---']
             diff_plus = diff[critical_key]['+++']
-            if (parent_group and parent_group not in diff_plus) or diff_minus.lower(
-            ) != diff_plus.lower():
+            if (parent_group and parent_group not in diff_plus) or diff_minus.lower() != diff_plus.lower():
                 return 0
         return original_accuracy
 
@@ -288,13 +299,13 @@ class BaseDiffClient(BaseClass):
             if isinstance(obj, dict):
                 for o in obj.keys():
                     if "total" not in o.lower():
-                        if (o == "/projects/:id" or o ==
-                                "/groups/:id") and obj[o]["accuracy"] == 0:
+                        obj_accuracy = dig(obj, o, 'accuracy', default=0)
+                        if (o in ["/projects/:id", "/groups/:id"]) and obj_accuracy == 0:
                             result = "failure"
                             percentage_sum = 0
                             break
-                        percentage_sum += obj[o]["accuracy"]
-                        if obj[o]["accuracy"] == 0:
+                        percentage_sum += obj_accuracy
+                        if obj_accuracy == 0:
                             result = "failure"
                     else:
                         total_number_of_keys -= 1
@@ -303,7 +314,11 @@ class BaseDiffClient(BaseClass):
                     result = "success"
         except Exception as e:
             self.log.error(
-                "Failed to calculate accuracy for {0}, due to {1}".format(obj, e))
+                f"Failed to calculate accuracy for {obj}, due to {e}")
+            return {
+                "accuracy": 0,
+                "result": "failure"
+            }
         return {
             "accuracy": accuracy,
             "result": result
@@ -317,28 +332,43 @@ class BaseDiffClient(BaseClass):
         try:
             if isinstance(obj, dict):
                 for o in obj.keys():
-                    if (o == "/projects/:id" or o ==
-                            "/groups/:id") and dig(obj, o, 'accuracy') == 0:
+                    if (o in ["/projects/:id", "/groups/:id"]) and dig(obj, o, 'accuracy', default=0) == 0:
                         result = "failure"
                         percentage_sum = 0
                         break
-                    percentage_sum += dig(obj, o,
-                                          'overall_accuracy', 'accuracy')
-                    if dig(obj, o, 'overall_accuracy', 'accuracy') == 0:
+                    obj_accuracy = dig(
+                        obj, o, 'overall_accuracy', 'accuracy', default=0)
+                    percentage_sum += obj_accuracy
+                    if obj_accuracy == 0:
                         result = "failure"
                 accuracy = percentage_sum / total_number_of_keys if total_number_of_keys else 0
                 if result is None:
                     result = "success"
-                return {
-                    "overall_accuracy": accuracy,
-                    "result": result
-                }
         except Exception as e:
-            self.log.error(f"Unable to calculate overall_accuracy for {obj}, due to {e}")
+            self.log.error(
+                f"Failed to calculate overall_accuracy for {obj}, due to {e}")
             return {
                 "overall_accuracy": 0,
                 "results": "failure"
             }
+        return {
+            "overall_accuracy": accuracy,
+            "result": result
+        }
+
+    def generate_cleaned_instance_data(self, instance_data, source_data=None):
+        try:
+            if instance_data:
+                if self.config.source_type == "gitlab":
+                    instance_data = self.ignore_keys(instance_data)
+                elif self.config.source_type == "bitbucket server":
+                    instance_data = self.add_keys(
+                        instance_data, source_data)
+            return instance_data
+        except TypeError as te:
+            self.log.error(
+                f"Unable to generate cleaned instance data. Returning empty list, with error:\n{te}")
+            return []
 
     def ignore_keys(self, data):
         if data is not None:
@@ -353,9 +383,32 @@ class BaseDiffClient(BaseClass):
                         self.ignore_keys(data[k])
                 for key in self.keys_to_ignore:
                     if key in data:
-                        data.pop(key)
+                        data.pop(key, None)
             # return sorted(data, key=lambda x: str(x))
             return data
+        return {}
+
+    def add_keys(self, dst_data, src_data):
+        if src_data:
+            # Extract and compare ONLY matching keys
+            src_entry = src_data[0]
+            new_data = []
+            for d in dst_data:
+                element = {}
+                for k, v in src_entry.items():
+                    if isinstance(v, dict):
+                        element[k] = {}
+                        # Compare up to one key sublevel
+                        for k1 in v:
+                            sub_value = d[k].get(k1)
+                            element[k][k1] = sub_value.strip() if isinstance(
+                                sub_value, str) else sub_value
+                    else:
+                        value = d.get(k)
+                        element[k] = value.strip() if isinstance(
+                            value, str) else value
+                new_data.append(element)
+            return new_data
         return {}
 
     def obfuscate_values(self, obj):
@@ -395,16 +448,6 @@ class BaseDiffClient(BaseClass):
                 accuracies[o] = {i: obj[o][i] for i in obj[o] if i != 'diff'}
         return accuracies
 
-    def generate_cleaned_instance_data(self, instance_data):
-        try:
-            if instance_data:
-                instance_data = self.ignore_keys(instance_data)
-            return instance_data
-        except TypeError as te:
-            self.log.error(
-                f"Unable to generate cleaned instance data. Returning empty list, with error:\n{te}")
-            return []
-
     def generate_empty_data(self, source, identifier):
         # identifier being the specific API endpoint
         if isinstance(source, list):
@@ -433,7 +476,7 @@ class BaseDiffClient(BaseClass):
     def select_bg_color(self, value="Title"):
         '''
         Choose a HEX background color code based on keywords.
-        
+
         :param value: (str) String to evaluate and return a hex color code
         :return: (str) Hex Color Code to use in HTML 
         '''
@@ -515,7 +558,8 @@ class BaseDiffClient(BaseClass):
                             diff_data_row = soup.new_tag("tr")
                             data = [
                                 endpoint,
-                                str(self.as_percentage(dig(v, endpoint, 'accuracy'))),
+                                str(self.as_percentage(
+                                    dig(v, endpoint, 'accuracy'))),
                                 dig(v, endpoint, 'diff')
                             ]
                         elif "overall_accuracy" in endpoint:
@@ -589,10 +633,12 @@ class BaseDiffClient(BaseClass):
                         diff_cell_header = soup.new_tag("th")
                         diff_cell_header.string = diff_header
                         overall_results_header_row.append(diff_cell_header)
-                    overall_results_header_row['bgcolor'] = self.select_bg_color()
+                    overall_results_header_row['bgcolor'] = self.select_bg_color(
+                    )
                     soup.html.body.table.insert(2, overall_results_header_row)
                     overall_results_data_row = soup.new_tag("tr")
-                    dest_length = len([x for x in diff.items() if 'error' not in x[1]]) - 1
+                    dest_length = len(
+                        [x for x in diff.items() if 'error' not in x[1]]) - 1
                     source_length = len(diff.items()) - 1
                     data = [
                         f"Staged {asset}'s: '{source_length}' Successful {asset}'s: '{dest_length}'",
@@ -626,19 +672,17 @@ class BaseDiffClient(BaseClass):
         return False
 
     def is_endpoint_valid(self, request):
-        error, request = is_error_message_present(request)
-        if error or not request:
-            return False, request
-        return True, request
+        error, response = is_error_message_present(request)
+        if error:
+            return False, response
+        return True, response
 
-    def get_destination_id(self, asset, key, parent_group):
-        identifier = "{0}/{1}".format(parent_group,
-                                      asset[key]) if parent_group else asset[key]
-        if self.results.get(identifier) is not None:
+    def get_destination_id(self, asset):
+        identifier = get_target_project_path(asset)
+        if self.results.get(identifier):
             if isinstance(self.results[identifier], dict):
                 if did := dig(self.results, identifier, "id"):
                     return did
-                elif did := dig(self.results, identifier, "response", "id"):
+                if did := dig(self.results, identifier, "response", "id"):
                     return did
-                else:
-                    return None
+        return None
