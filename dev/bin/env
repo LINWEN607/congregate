@@ -31,6 +31,7 @@ alias kc='kill $(get_congregate_pids)'
 alias kc9='kill -9 $(get_congregate_pids)'
 alias wave_setup='dev/bin/m_wave_setup.sh'
 alias wave_archive='dev/bin/m_wave_archive.sh'
+alias ggit='./dev/bin/generic_git.sh'
 
 printf '# pyproject.toml and Dockerfile aliases\n'
 alias penv
@@ -50,8 +51,5 @@ alias kc9
 printf '\n# wave setup and archiving management\n'
 alias wave_setup
 alias wave_archive
-
-alias ggit='./dev/bin/generic_git.sh'
 printf '\n# Gerrit -> Git - Input source repo SSH/HTTPS clone url such as "ggit ssh://<username>@<server_name>:29418/<repo_name>.git"'
 alias ggit
-
