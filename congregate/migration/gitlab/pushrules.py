@@ -7,6 +7,7 @@ from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.helpers.base_class import BaseClass
 
 
+# Handled by GitLab Importer as of 13.6
 class PushRulesClient(BaseClass):
     def __init__(self):
         self.projects_api = ProjectsApi()

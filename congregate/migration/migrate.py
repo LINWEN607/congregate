@@ -31,7 +31,6 @@ from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
 from congregate.migration.gitlab.api.namespaces import NamespacesApi
 from congregate.migration.gitlab.api.instance import InstanceApi
-from congregate.migration.gitlab.pushrules import PushRulesClient
 from congregate.migration.gitlab.merge_request_approvals import MergeRequestApprovalsClient
 from congregate.migration.gitlab.registries import RegistryClient
 from congregate.migration.gitlab.keys import KeysClient
@@ -80,7 +79,6 @@ class MigrateClient(BaseClass):
         self.project_repository_api = ProjectRepositoryApi()
         self.namespaces_api = NamespacesApi()
         self.instance_api = InstanceApi()
-        self.pushrules = PushRulesClient()
         self.mr_approvals = MergeRequestApprovalsClient()
         self.registries = RegistryClient(
             reg_dry_run=reg_dry_run
@@ -1247,9 +1245,9 @@ class MigrateClient(BaseClass):
             src_id, dst_id, path_with_namespace, jobs_enabled)
 
         if self.config.source_tier not in ["core", "free"]:
-            # Push Rules
-            results["push_rules"] = self.pushrules.migrate_push_rules(
-                src_id, dst_id, path_with_namespace)
+            # Push Rules - handled by GitLab Importer as of 13.6
+            # results["push_rules"] = self.pushrules.migrate_push_rules(
+            #     src_id, dst_id, path_with_namespace)
 
             # Merge Request Approvals
             results["project_level_mr_approvals"] = self.mr_approvals.migrate_project_level_mr_approvals(
