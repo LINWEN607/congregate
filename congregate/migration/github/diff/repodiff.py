@@ -90,9 +90,11 @@ class RepoDiffClient(BaseDiffClient):
     def generate_diff_report(self, start_time):
         diff_report = {}
         self.log.info(
-            f"{get_rollback_log(self.rollback)}Generating Repo Diff Report")
+            f"{get_rollback_log(self.rollback)}Generating GitHub Server Repo Diff Report")
         self.log.warning(
             f"Passed since migration time: {timedelta(seconds=start_time - self.results_mtime)}")
+        # Drop old collections
+        self.drop_diff_report_collections()
         results = self.multi.handle_multi_process_write_to_file_and_return_results(
             self.generate_single_diff_report,
             self.return_only_accuracies,
@@ -102,9 +104,6 @@ class RepoDiffClient(BaseDiffClient):
 
         for result in results:
             diff_report.update(result)
-        diff_report["project_migration_results"] = self.calculate_overall_stage_accuracy(
-            diff_report)
-
         return diff_report
 
     def generate_single_diff_report(self, project):

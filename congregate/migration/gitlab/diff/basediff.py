@@ -686,3 +686,9 @@ class BaseDiffClient(BaseClass):
                 if did := dig(self.results, identifier, "response", "id"):
                     return did
         return None
+
+    def drop_diff_report_collections(self):
+        self.log.info("Dropping all diff_report_* mongo db collections")
+        mongo = MongoConnector()
+        for diff_col in mongo.wildcard_collection_query("diff_report"):
+            mongo.drop_collection(diff_col)
