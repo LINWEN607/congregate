@@ -6,7 +6,7 @@ from gitlab_ps_utils.dict_utils import rewrite_json_list_into_dict
 from gitlab_ps_utils.json_utils import read_json_file_into_object
 from gitlab_ps_utils.api import GitLabApi
 
-from congregate.migration.gitlab.diff.basediff import BaseDiffClient
+from congregate.migration.diff.basediff import BaseDiffClient
 from congregate.migration.gitlab import constants
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.issues import IssuesApi

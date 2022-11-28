@@ -1,11 +1,13 @@
+from json import loads
 from os.path import getmtime
 from datetime import timedelta
+from bson import json_util
 from gitlab_ps_utils.api import GitLabApi
 from gitlab_ps_utils.misc_utils import get_rollback_log
 from gitlab_ps_utils.dict_utils import rewrite_json_list_into_dict, dig
 from gitlab_ps_utils.json_utils import read_json_file_into_object
 
-from congregate.migration.gitlab.diff.basediff import BaseDiffClient
+from congregate.migration.diff.basediff import BaseDiffClient
 from congregate.migration.github.api.base import GitHubApi
 from congregate.migration.github.api.repos import ReposApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
@@ -13,7 +15,7 @@ from congregate.migration.gitlab.api.issues import IssuesApi
 from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
 from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
 from congregate.migration.github.repos import ReposClient
-from congregate.helpers.migrate_utils import get_dst_path_with_namespace
+from congregate.helpers.migrate_utils import get_target_project_path
 from congregate.helpers.mdbc import MongoConnector
 
 
@@ -90,7 +92,7 @@ class RepoDiffClient(BaseDiffClient):
     def generate_diff_report(self, start_time):
         diff_report = {}
         self.log.info(
-            f"{get_rollback_log(self.rollback)}Generating GitHub Server Repo Diff Report")
+            f"{get_rollback_log(self.rollback)}Generating {self.config.source_type} Repo Diff Report")
         self.log.warning(
             f"Passed since migration time: {timedelta(seconds=start_time - self.results_mtime)}")
         # Drop old collections
@@ -108,41 +110,29 @@ class RepoDiffClient(BaseDiffClient):
 
     def generate_single_diff_report(self, project):
         diff_report = {}
-        # When using stage_wave
-        if target_namespace := project.get("target_namespace"):
-            project_path = f"{target_namespace}/{project.get('path_with_namespace', '')}".strip(
-                "/")
-        else:
-            project_path = get_dst_path_with_namespace(project)
+        target_project_path = get_target_project_path(project)
 
-        # When using stage_wave
-        if not (project_id := dig(self.results.get(
-                project_path), "response", "repo_id")):
-            project_id = dig(self.results.get(project_path), "response", "id")
+        project_id = dig(self.results.get(
+            target_project_path), "response", "id")
 
-        project_path_replaced = project_path.replace(".", "_")
-        group_namespace = "/".join(project_path_replaced.split("/")[:1])
+        group_namespace = project.get("namespace", "")
         mongo = MongoConnector()
-        if self.results.get(project_path) and ((self.asset_exists(
-                self.gl_projects_api.get_project, project_id)) or isinstance(self.results.get(project_path), int)):
+        if (self.results.get(target_project_path) or isinstance(self.results.get(target_project_path), int)) and self.asset_exists(self.gl_projects_api.get_project, project_id):
             project_diff = self.handle_endpoints(project)
-            diff_report[project_path_replaced] = project_diff
+            diff_report[target_project_path] = project_diff
             try:
-                diff_report[project_path_replaced]["overall_accuracy"] = self.calculate_overall_accuracy(
-                    diff_report[project_path_replaced])
-                # Cast all keys and values to strings to avoid mongo key
-                # validation errors
-                cleaned_data = {str(key): str(val)
-                                for key, val in (diff_report.copy()).items()}
+                diff_report[target_project_path]["overall_accuracy"] = self.calculate_overall_accuracy(
+                    diff_report[target_project_path])
                 mongo.insert_data(
-                    f"diff_report_{group_namespace}", cleaned_data, bypass_document_validation=True)
+                    f"diff_report_{group_namespace}", diff_report, bypass_document_validation=True)
                 mongo.close_connection()
-                return diff_report
+                # Convert BSON to JSON
+                return loads(json_util.dumps(diff_report))
             except Exception as e:
                 self.log.error(
-                    f"Failed to generate diff for {project_path} with error:\n{e}")
+                    f"Failed to generate diff for {target_project_path} with error:\n{e}")
         missing_data = {
-            project_path_replaced: {
+            target_project_path: {
                 "error": "project missing",
                 "overall_accuracy": {
                     "accuracy": 0,
@@ -231,10 +221,8 @@ class RepoDiffClient(BaseDiffClient):
                 project, "name", transformed_data, self.gl_projects_api.get_all_project_releases, obfuscate=True)
         return repo_diff
 
-    def generate_repo_diff(self, project, sort_key,
-                           source_data, gl_endpoint, **kwargs):
-        return self.generate_gh_diff(project, "path_with_namespace", sort_key, source_data, gl_endpoint,
-                                     parent_group=self.config.dstn_parent_group_path or project.get("target_namespace", ""), **kwargs)
+    def generate_repo_diff(self, project, sort_key, source_data, gl_endpoint, **kwargs):
+        return self.generate_external_diff(project, sort_key, source_data, gl_endpoint, parent_group=get_target_project_path(project)[:-1].strip("/"), **kwargs)
 
     def generate_repo_count_diff(
             self, project, gh_api, gl_api, bypass_x_total_count=False):

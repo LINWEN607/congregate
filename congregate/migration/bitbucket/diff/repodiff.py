@@ -7,7 +7,7 @@ from gitlab_ps_utils.misc_utils import get_rollback_log
 from gitlab_ps_utils.dict_utils import rewrite_json_list_into_dict, dig
 from gitlab_ps_utils.json_utils import read_json_file_into_object
 
-from congregate.migration.gitlab.diff.basediff import BaseDiffClient
+from congregate.migration.diff.basediff import BaseDiffClient
 from congregate.migration.bitbucket.repos import ReposClient
 from congregate.migration.bitbucket.api.base import BitBucketServerApi
 from congregate.migration.bitbucket.api.repos import ReposApi
@@ -50,7 +50,7 @@ class RepoDiffClient(BaseDiffClient):
     def generate_diff_report(self, start_time):
         diff_report = {}
         self.log.info(
-            f"{get_rollback_log(self.rollback)}Generating BitBucket Server Repo Diff Report")
+            f"{get_rollback_log(self.rollback)}Generating {self.config.source_type} Repo Diff Report")
         self.log.warning(
             f"Passed since migration time: {timedelta(seconds=start_time - self.results_mtime)}")
         # Drop old collections
@@ -77,7 +77,7 @@ class RepoDiffClient(BaseDiffClient):
         # Single html report as a result
         group_namespace = project.get("namespace", "")
         mongo = MongoConnector()
-        if self.results.get(target_project_path) and self.asset_exists(self.gl_projects_api.get_project, project_id):
+        if (self.results.get(target_project_path) or isinstance(self.results.get(target_project_path), int)) and self.asset_exists(self.gl_projects_api.get_project, project_id):
             project_diff = self.handle_endpoints(project)
             diff_report[target_project_path] = project_diff
             try:
@@ -162,7 +162,7 @@ class RepoDiffClient(BaseDiffClient):
         return repo_diff
 
     def generate_repo_diff(self, project, sort_key, source_data, gl_endpoint, **kwargs):
-        return self.generate_bbs_diff(project, sort_key, source_data, gl_endpoint, parent_group=get_target_project_path(project)[:-1].strip("/"), **kwargs)
+        return self.generate_external_diff(project, sort_key, source_data, gl_endpoint, parent_group=get_target_project_path(project)[:-1].strip("/"), **kwargs)
 
     def generate_repo_count_diff(self, project, bbs_api, gl_api):
         destination_id = self.get_destination_id(project)

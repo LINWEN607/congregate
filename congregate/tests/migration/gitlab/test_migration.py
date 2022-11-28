@@ -3,7 +3,7 @@ from time import sleep, time
 from pytest import mark
 
 from congregate.cli import do_all
-from congregate.migration.gitlab.diff.basediff import BaseDiffClient
+from congregate.migration.diff.basediff import BaseDiffClient
 from congregate.migration.gitlab.diff.userdiff import UserDiffClient
 from congregate.migration.gitlab.diff.groupdiff import GroupDiffClient
 from congregate.migration.gitlab.diff.projectdiff import ProjectDiffClient

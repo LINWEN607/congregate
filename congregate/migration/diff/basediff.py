@@ -188,20 +188,7 @@ class BaseDiffClient(BaseClass):
             "destination": destination_count
         }
 
-    def generate_gh_diff(self, asset, key, sort_key, source_data, gl_endpoint,
-                         critical_key=None, obfuscate=False, parent_group=None, **kwargs):
-        identifier = f"{parent_group}/{asset[key]}" if parent_group else asset[key]
-        destination_data = self.validate_destination_data(
-            identifier, gl_endpoint, source_data, external=True, **kwargs)
-        if sort_key:
-            source_data = rewrite_list_into_dict(source_data, sort_key)
-            destination_data = rewrite_list_into_dict(
-                destination_data, sort_key)
-        return self.diff(source_data, destination_data, critical_key=critical_key,
-                         obfuscate=obfuscate, parent_group=parent_group)
-
-    # TODO: Consolidate generate_gh_diff and generate_bbs_diff
-    def generate_bbs_diff(self, asset, sort_key, source_data, gl_endpoint, critical_key=None, obfuscate=False, parent_group=None, **kwargs):
+    def generate_external_diff(self, asset, sort_key, source_data, gl_endpoint, critical_key=None, obfuscate=False, parent_group=None, **kwargs):
         identifier = get_target_project_path(asset)
         destination_data = self.validate_destination_data(
             identifier, gl_endpoint, source_data, external=True, **kwargs)
