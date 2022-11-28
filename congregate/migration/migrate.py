@@ -540,10 +540,11 @@ class MigrateClient(BaseClass):
         members = group.pop("members")
         group["full_path"] = mig_utils.get_full_path_with_parent_namespace(
             group["full_path"]).lower()
-        if group.get("path") is not None:
+        if group.get("path"):
             group["path"] = group["path"].lower()
         group["parent_id"] = self.config.dstn_parent_id
         group_id = None
+        group["description"] = group.get("description") or ""
         host = self.config.destination_host
         token = self.config.destination_token
         if group_id := self.groups.find_group_id_by_path(host, token, group["full_path"]):
