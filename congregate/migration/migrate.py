@@ -175,19 +175,24 @@ class MigrateClient(BaseClass):
 
     def migrate_from_github(self):
         dry_log = misc_utils.get_dry_log(self.dry_run)
-        import_results = None
 
         # Migrate users
         self.migrate_user_info()
 
         # Migrate GH orgs as groups
+        self.migrate_github_org_info(dry_log)
+
+        # Migrate GH repos as projects
+        self.migrate_github_repo_info(dry_log)
+
+    def migrate_github_org_info(self, dry_log):
         staged_groups = mig_utils.get_staged_groups()
-        if staged_groups and not self.skip_group_import and not self.group_structure:
+        if staged_groups and not self.skip_group_import and not self.group_structure and not self.config.wave_spreadsheet_path:
             self.validate_groups_and_projects(staged_groups)
             self.log.info(
                 f"{dry_log}Migrating GitHub orgs as GitLab groups")
             results = list(r for r in self.multi.start_multi_process(
-                self.migrate_github_org, staged_groups, processes=self.processes, nestable=True))
+                self.migrate_external_group, staged_groups, processes=self.processes, nestable=True))
             self.are_results(results, "group", "import")
             results.append(mig_utils.get_results(results))
             self.log.info(
@@ -197,10 +202,14 @@ class MigrateClient(BaseClass):
         elif self.group_structure:
             self.log.info(
                 "Skipping GitHub orgs migration and relying on GitHub importer to create missing GitLab sub-group layers")
+        elif self.config.wave_spreadsheet_path:
+            self.log.warning(
+                "Skipping GitHub orgs migration. Not supported when 'wave_spreadsheet_path' is configured")
         else:
             self.log.warning("SKIP: No GitHub orgs staged for migration")
 
-        # Migrate GH repos as projects
+    def migrate_github_repo_info(self, dry_log):
+        import_results = None
         staged_projects = mig_utils.get_staged_projects()
         if staged_projects and not self.skip_project_import:
             self.validate_groups_and_projects(
@@ -262,37 +271,6 @@ class MigrateClient(BaseClass):
             else:
                 self.log.warning(
                     "REPORTING: Failed to instantiate the reporting module")
-
-    def migrate_github_org(self, group):
-        result = False
-        members = group.pop("members")
-        group["full_path"] = mig_utils.get_full_path_with_parent_namespace(
-            group["full_path"])
-        if not self.dry_run:
-            host = self.config.destination_host
-            token = self.config.destination_token
-            # Wait for parent group to create
-            if self.config.dstn_parent_group_path:
-                pnamespace = self.ie.wait_for_group_import(group["full_path"])
-                if not pnamespace:
-                    return {
-                        group["full_path"]: False
-                    }
-                group["parent_id"] = pnamespace.get(
-                    "id") if group["parent_id"] else self.config.dstn_parent_id
-            group["description"] = group.get("description") or ""
-            result = misc_utils.safe_json_response(
-                self.groups_api.create_group(host, token, group))
-            is_error, result = misc_utils.is_error_message_present(result)
-            if result and not is_error:
-                if group_id := result.get("id"):
-                    if not self.remove_members:
-                        result["members"] = self.groups.add_members_to_destination_group(
-                            host, token, group_id, members)
-                    self.remove_import_user(group_id, gl_type="group")
-        return {
-            group["full_path"]: result
-        }
 
     def import_github_repo(self, project):
         dstn_pwn, tn = mig_utils.get_stage_wave_paths(project)
@@ -501,13 +479,19 @@ class MigrateClient(BaseClass):
         self.migrate_user_info()
 
         # Migrate BB projects as GL groups
+        self.migrate_bitbucket_server_project_info(dry_log)
+
+        # Migrate BB repos as GL projects
+        self.migrate_bitbucket_server_repo_info(dry_log)
+
+    def migrate_bitbucket_server_project_info(self, dry_log):
         staged_groups = mig_utils.get_staged_groups()
         if staged_groups and not self.skip_group_import and not self.group_structure:
             self.validate_groups_and_projects(staged_groups)
             self.log.info(
                 f"{dry_log}Migrating BitBucket projects as GitLab groups")
             results = list(r for r in self.multi.start_multi_process(
-                self.migrate_bitbucket_project, staged_groups, processes=self.processes, nestable=True))
+                self.migrate_external_group, staged_groups, processes=self.processes, nestable=True))
 
             self.are_results(results, "group", "import")
 
@@ -520,11 +504,14 @@ class MigrateClient(BaseClass):
         elif self.group_structure:
             self.log.info(
                 "Skipping BitBucket projects migration and relying on BitBucket Server importer to create missing GitLab sub-group layers")
+        elif self.config.wave_spreadsheet_path:
+            self.log.warning(
+                "Skipping BitBucket projects migration. Not supported when 'wave_spreadsheet_path' is configured")
         else:
             self.log.warning(
                 "SKIP: No BitBucket projects staged for migration")
 
-        # Migrate BB repos as GL projects
+    def migrate_bitbucket_server_repo_info(self, dry_log):
         staged_projects = mig_utils.get_staged_projects()
         if staged_projects and not self.skip_project_import:
             self.validate_groups_and_projects(
@@ -545,9 +532,10 @@ class MigrateClient(BaseClass):
                 f"### {dry_log}BitBucket repos import result ###\n{json_utils.json_pretty(import_results)}")
             mig_utils.write_results_to_file(import_results, log=self.log)
         else:
-            self.log.warning("SKIP: No BitBucket repos staged for migration")
+            self.log.warning(
+                "SKIP: No BitBucket repos staged for migration")
 
-    def migrate_bitbucket_project(self, group):
+    def migrate_external_group(self, group):
         result = False
         members = group.pop("members")
         group["full_path"] = mig_utils.get_full_path_with_parent_namespace(
