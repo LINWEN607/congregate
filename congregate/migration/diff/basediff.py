@@ -348,7 +348,7 @@ class BaseDiffClient(BaseClass):
             if instance_data:
                 if self.config.source_type == "gitlab":
                     instance_data = self.ignore_keys(instance_data)
-                elif self.config.source_type == "bitbucket server":
+                elif self.config.source_type in ["bitbucket server", "github"]:
                     instance_data = self.add_keys(
                         instance_data, source_data)
             return instance_data
