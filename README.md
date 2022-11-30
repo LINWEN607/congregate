@@ -10,7 +10,7 @@ Requires [GitLab Premium](https://about.gitlab.com/pricing/) or above.
 
 Released under the [GitLab EE license](LICENSE).
 
-Customers are very welcome to trial and evaluate Congregate today. However it's recommended that you do independently review the features and functionality to ensure it meets your requirements while also being aware of any current [key limitations](/customer). For help troubleshooting or using Congregate, Customers need to enter into a paid engagement with GitLab Professional Services. 
+Customers are very welcome to trial and evaluate Congregate today. However it's recommended that you do independently review the features and functionality to ensure it meets your requirements while also being aware of any current [key limitations](/customer). For help troubleshooting or using Congregate, Customers need to enter into a paid engagement with GitLab Professional Services.
 
 If you are planning to use Congregate to migrate to gitlab.com from a self-managed instance of GitLab, BitBucket (Server and Data Center), or GitHub Enterprise, you will need an admin token to conduct the migration due to some of the elevated APIs GitLab Professional Services uses during Service engagements.
 
