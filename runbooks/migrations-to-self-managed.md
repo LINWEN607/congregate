@@ -1,6 +1,6 @@
-<!-- 
+<!--
     Copy the contents of this runbook into an issue when running through a migration wave.
-    Post the link to the issue on the Slack channel dedicated to this migration. 
+    Post the link to the issue on the Slack channel dedicated to this migration.
 -->
 
 # <customer name> Migration Wave <insert-number-here>
@@ -25,7 +25,7 @@ This runbook covers the process of migrating a wave of **groups and projects** f
 ## Points of contact
 
 <!-- PLEASE REMOVE BLOCK AFTER POPULATING TO AVOID TAGGING PEOPLE THAT SHOULD NOT BE INVOLVED
-    Provide the gitlab handles for the various people involved in this migration wave and their specific role in the migration. 
+    Provide the gitlab handles for the various people involved in this migration wave and their specific role in the migration.
 
     You must provide the following roles:
     - PSE conducting the migration
@@ -234,10 +234,13 @@ For each migration attempt check if any project or group imports failed or have 
 
 #### Alternative Export/Import methods
 
-* [Export/Import project via Rails console](https://docs.gitlab.com/ee/administration/troubleshooting/gitlab_rails_cheat_sheet.html#imports--exports)
-  * [Import project via Rails console](https://docs.gitlab.com/ee/development/import_project.html#importing-via-the-rails-console)
-  * [Export project repo via  Rails console](https://docs.gitlab.com/ee/administration/troubleshooting/gitlab_rails_cheat_sheet.html#export-a-repository)
-* [Import project via Rake task](https://docs.gitlab.com/ee/development/import_project.html#importing-via-a-rake-task)
+* Export
+  * [Via Rake task](https://docs.gitlab.com/ee/administration/raketasks/project_import_export.html#export-using-a-rake-task)
+  * [Via Rails console](https://docs.gitlab.com/ee/user/project/settings/import_export_troubleshooting.html#manually-execute-export-steps)
+* [Project import options](https://docs.gitlab.com/ee/development/import_project.html#importing-the-project)
+  * [Via Rake task](https://docs.gitlab.com/ee/development/import_project.html#importing-via-a-rake-task)
+  * [Via Rails console](https://docs.gitlab.com/ee/development/import_project.html#importing-via-the-rails-console)
+* [Import/export Rake tasks](https://docs.gitlab.com/ee/administration/raketasks/project_import_export.html#importexport-rake-tasks)
 
 ##### Trim or remove project CI pipelines
 

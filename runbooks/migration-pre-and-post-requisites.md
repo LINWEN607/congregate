@@ -1,4 +1,4 @@
-<!-- 
+<!--
     Copy the contents of this runbook into an issue when running through migration prerequisites.
     Post the link to the issue on the Slack channel dedicated to this migration.
 -->
@@ -74,7 +74,7 @@ This runbook covers the process of preparing and cleaning up after a migration f
 * [ ] (from GitHub) Make sure that all relevant GitHub users have their `public email` field set and matching `email`
 * [ ] Check whether legacy projects, with 1k+ issues/MRs and/or 10k+ pipelines, could be slimmed down for a more seamless export/import
   * [ ] If done via Rails console, schedule a meeting between lead PSE and source instance Admin to walk through the process
-    * For exact steps see **Trim or remove project CI pipelines** in `migrations-to-*.md` runbook
+    * For exact steps see [**Trim or remove project CI pipelines**](/runbooks/migrations-to-dot-com.md#trim-or-remove-project-ci-pipelines)
 * [ ] Create a user-group-project migration schedule (waves)
   * [ ] All users are migrated first
   * [ ] Entire group structure next
@@ -135,7 +135,7 @@ This runbook covers the process of preparing and cleaning up after a migration f
 * As migrations currently require an admin API token, the VM cannot be hosted inside of a customer space if the migration involves SaaS. The VM has to be hosted:
   * In GitLab GCP infrastructure provisioned using the below process -OR- in another GitLab-controlled web space
     * This may require work on the customer side to setup access (VPN, firewall, WireGuard, etc) if their source system is not internet-facing
-* If the migration does *not* involve SaaS, it can be hosted in any space that has access to the source and destination system. 
+* If the migration does *not* involve SaaS, it can be hosted in any space that has access to the source and destination system.
   * Generally, inside the more "walled" system
 * Special Case: Multi-Hop to/from SaaS
   * If the customer will not/can not open ports or provide a VPN connection, we can do the following:
