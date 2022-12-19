@@ -458,7 +458,7 @@ class ReposClient(BitBucketServer):
     def transform_commits(self, commits):
         return [{
             "id": c["id"],
-            "message": c["message"],
+            "message": c["message"].strip(),
             "author_name": c["author"].get("displayName") or c["author"].get("name"),
             "author_email": c["author"]["emailAddress"],
             "committer_name": c["committer"].get("displayName") or c["committer"].get("name"),

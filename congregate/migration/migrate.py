@@ -486,7 +486,7 @@ class MigrateClient(BaseClass):
 
     def migrate_bitbucket_server_project_info(self, dry_log):
         staged_groups = mig_utils.get_staged_groups()
-        if staged_groups and not self.skip_group_import and not self.group_structure:
+        if staged_groups and not self.skip_group_import and not self.group_structure and not self.config.wave_spreadsheet_path:
             self.validate_groups_and_projects(staged_groups)
             self.log.info(
                 f"{dry_log}Migrating BitBucket projects as GitLab groups")
@@ -551,17 +551,18 @@ class MigrateClient(BaseClass):
             self.log.info(
                 f"{group['full_path']} ({group_id}) found. Skipping import. Adding members")
         if not self.dry_run:
+            result = {}
             if not group_id:
-                result = misc_utils.safe_json_response(
+                resp = misc_utils.safe_json_response(
                     self.groups_api.create_group(host, token, group))
-                is_error, result = misc_utils.is_error_message_present(result)
-                if result and not is_error:
-                    group_id = result.get("id")
+                is_error, resp = misc_utils.is_error_message_present(resp)
+                if resp and not is_error:
+                    group_id = resp.get("id")
+                    result["response"] = resp
                 else:
                     self.log.error(
                         f"Unable to create group {group['full_path']} due to: {result}")
             if group_id:
-                result = {}
                 if not self.remove_members:
                     result["members"] = self.groups.add_members_to_destination_group(
                         host, token, group_id, members)

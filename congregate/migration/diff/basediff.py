@@ -93,7 +93,7 @@ class BaseDiffClient(BaseClass):
         individual endpoint 'Accuracy'.  Anything with an accuracy of 90% or
         above is considered a success, and isn't worth looking at unless
         something comes up in User Acceptance Testing.  Items under 90% accuracy
-        should merit further investigation. 
+        should merit further investigation.
     """
 
     def __init__(self):
@@ -465,7 +465,7 @@ class BaseDiffClient(BaseClass):
         Choose a HEX background color code based on keywords.
 
         :param value: (str) String to evaluate and return a hex color code
-        :return: (str) Hex Color Code to use in HTML 
+        :return: (str) Hex Color Code to use in HTML
         '''
 
         if not value:
