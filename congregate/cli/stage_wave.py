@@ -57,7 +57,7 @@ class WaveStageCLI(BaseStageClass):
             self.open_projects_file(scm_source), "path_with_namespace", lowercase=True)
         unable_to_find = []
 
-        wave_spreadsheet_path = self.config.wave_spreadsheet_path
+        wave_spreadsheet_path = self.config.wave_spreadsheet_path or ""
         if not os.path.isfile(wave_spreadsheet_path):
             self.log.error(
                 f"Config 'wave_spreadsheet_path' file path '{wave_spreadsheet_path}' does not exist. Please create it")
