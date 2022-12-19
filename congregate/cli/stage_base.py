@@ -84,6 +84,7 @@ class BaseStageClass(BaseClass):
         with open(f"{self.app_path}/data/staged_users.json", "w") as f:
             f.write(json.dumps([] if skip_users else remove_dupes(
                 self.staged_users), indent=4))
+        self.log.info("Written metadata to stage files 'data/staged_*'")
 
     def append_member_to_members_list(
             self, members_list, member, dry_run=True):
