@@ -32,7 +32,8 @@ class ProjectStageCLI(BaseStageClass):
                 remove_dupes(self.staged_projects)):
             self.log.warning(
                 f"User projects staged ({len(user_projects)}):\n{json_pretty(user_projects)}")
-        self.list_staged_users_without_public_email()
+        if self.config.source_type == "gitlab":
+            self.list_staged_users_without_public_email()
 
         if not dry_run:
             self.write_staging_files(skip_users=skip_users)
