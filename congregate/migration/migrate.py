@@ -538,10 +538,7 @@ class MigrateClient(BaseClass):
     def migrate_external_group(self, group):
         result = False
         members = group.pop("members")
-        group["full_path"] = mig_utils.get_full_path_with_parent_namespace(
-            group["full_path"]).lower()
-        if group.get("path"):
-            group["path"] = group["path"].lower()
+        group["full_path"] = mig_utils.get_full_path_with_parent_namespace(group["full_path"])
         group["parent_id"] = self.config.dstn_parent_id
         group_id = None
         group["description"] = group.get("description") or ""
@@ -550,6 +547,7 @@ class MigrateClient(BaseClass):
         if group_id := self.groups.find_group_id_by_path(host, token, group["full_path"]):
             self.log.info(
                 f"{group['full_path']} ({group_id}) found. Skipping import. Adding members")
+            result = group_id
         if not self.dry_run:
             result = {}
             if not group_id:
