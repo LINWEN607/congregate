@@ -6,7 +6,7 @@ from gitlab_ps_utils.misc_utils import is_error_message_present, pretty_print_ke
 from gitlab_ps_utils.dict_utils import rewrite_list_into_dict, is_nested_dict, dig, find as nested_find
 from gitlab_ps_utils.jsondiff import Comparator
 
-from congregate.helpers.migrate_utils import get_target_project_path
+from congregate.helpers.migrate_utils import get_target_project_path, get_full_path_with_parent_namespace
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.mdbc import MongoConnector
 
@@ -123,7 +123,7 @@ class BaseDiffClient(BaseClass):
     def diff(self, source_data, destination_data,
              critical_key=None, obfuscate=False, parent_group=None):
         engine = Comparator()
-        diff = None
+        diff = {}
         accuracy = 1
         if destination_data:
             if isinstance(source_data, list):
@@ -189,7 +189,11 @@ class BaseDiffClient(BaseClass):
         }
 
     def generate_external_diff(self, asset, sort_key, source_data, gl_endpoint, critical_key=None, obfuscate=False, parent_group=None, **kwargs):
-        identifier = get_target_project_path(asset)
+        if sort_key == "username":
+            identifier = get_full_path_with_parent_namespace(
+                asset["full_path"])
+        else:
+            identifier = get_target_project_path(asset)
         destination_data = self.validate_destination_data(
             identifier, gl_endpoint, source_data, external=True, **kwargs)
         if sort_key:
@@ -414,13 +418,6 @@ class BaseDiffClient(BaseClass):
                             bytes(obj[key], encoding='UTF-8')))
 
         return obj
-
-    def generate_final_diff_dict(self, diff_report):
-        accuracy_results = self.calculate_overall_accuracy(diff_report)
-        return {
-            "diff": diff_report,
-            "results": accuracy_results
-        }
 
     def empty_diff(self):
         return {
