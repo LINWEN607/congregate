@@ -76,7 +76,9 @@ class RepoDiffClient(BaseDiffClient):
         project_id = dig(self.results.get(
             target_project_path), "response", "id")
 
-        group_namespace = project.get("namespace", "")
+        # Staged or listed project
+        group_namespace = project.get("namespace", "") or dig(
+            project, "namespace", "full_path")
         mongo = MongoConnector()
         if (self.results.get(target_project_path) or isinstance(self.results.get(target_project_path), int)) and self.asset_exists(self.gl_projects_api.get_project, project_id):
             project_diff = self.handle_endpoints(project)
