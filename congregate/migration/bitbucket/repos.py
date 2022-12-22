@@ -44,7 +44,7 @@ class ReposClient(BitBucketServer):
         # e.g. https://www.bitbucketserverexample.com/scm/test_project/repos/test_repo.git"
         repo_split = repo.split("/")
         project_key = repo_split[4]
-        repo_slug = repo_split[-1].rstrip(".git")
+        repo_slug = repo_split[-1].replace(".git", "")
         try:
             self.log.info(
                 f"Listing project '{project_key}' repo '{repo_slug}'")
