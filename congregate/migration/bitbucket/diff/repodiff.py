@@ -50,7 +50,7 @@ class RepoDiffClient(BaseDiffClient):
         self.source_data = [i for i in self.source_data if i]
         self.target_parent_path = None
 
-    def generate_asset_diff_report(self, start_time):
+    def generate_diff_report(self, start_time):
         diff_report = {}
         self.log.info(
             f"{get_rollback_log(self.rollback)}Generating {self.config.source_type} Repo Diff Report")
@@ -110,7 +110,7 @@ class RepoDiffClient(BaseDiffClient):
             }
             mongo.insert_data(
                 f"diff_report_{parent_path}", missing_data)
-            mongo.close_connection()
+        mongo.close_connection()
 
     def generate_single_diff_report(self, project):
         target_project_path = get_target_project_path(project)
@@ -149,7 +149,6 @@ class RepoDiffClient(BaseDiffClient):
                 diff_report[target_path])
             mongo.insert_data(
                 f"diff_report_{group_namespace}", diff_report, bypass_document_validation=True)
-            mongo.close_connection()
             # Convert BSON to JSON
             if target_project_path:
                 return loads(json_util.dumps(diff_report))
