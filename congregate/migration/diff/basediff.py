@@ -622,9 +622,12 @@ class BaseDiffClient(BaseClass):
                     )
                     soup.html.body.table.insert(2, overall_results_header_row)
                     overall_results_data_row = soup.new_tag("tr")
+
+                    # When the parent group is included in the repo report
+                    parent_count = 2 if self.target_parent_paths else 1
                     dest_length = len(
-                        [x for x in diff.items() if 'error' not in x[1]]) - 1
-                    source_length = len(diff.items()) - 1
+                        [x for x in diff.items() if 'error' not in x[1]]) - parent_count
+                    source_length = len(diff.items()) - parent_count
                     data = [
                         f"Staged {asset}'s: '{source_length}' Successful {asset}'s: '{dest_length}'",
                         str(self.as_percentage(v.get("overall_accuracy", 0))),
