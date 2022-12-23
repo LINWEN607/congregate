@@ -113,6 +113,11 @@ class RepoDiffClient(BaseDiffClient):
 
         if not self.rollback:
             # Basic Project Stat Counts
+            # GitHub’s REST API considers every pull request an issue, but not every issue is a pull request.
+            # For this reason, “Issues” endpoints may return both issues and pull requests in the response.
+            # Pull requests are a type of issue with code.
+            # Any actions that are available in both pull requests and issues, like managing assignees, labels, and milestones, are provided by the REST API to manage issues.
+            # Working with GitHub comments - https://docs.github.com/en/rest/guides/working-with-comments?apiVersion=2022-11-28
             repo_diff["Total Number of Merge Requests"] = self.generate_repo_count_diff(
                 project, f"repositories/{project['id']}/pulls?state=all", "projects/:id/merge_requests")
             repo_diff["Total Number of Merge Request Comments"] = self.generate_repo_count_diff(
