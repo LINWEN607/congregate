@@ -118,11 +118,11 @@ class Config(BaseConfig):
         this value should be "ldapmain" as it is of type "ldap" and we want
         to bind to the "main" server
 
-        gitlab_rails['ldap_servers'] = YAML.load <<-'EOS'                   
+        gitlab_rails['ldap_servers'] = YAML.load <<-'EOS'
             main: # 'main' is the GitLab 'provider ID' of this LDAP server
-                label: 'LDAP'                                                                              
-                host: 'openldap'                                         
-                port: 1389                                                                 
+                label: 'LDAP'
+                host: 'openldap'
+                port: 1389
                 uid: 'uid'
         """
         return self.prop("DESTINATION", "ldap_group_link_provider", default="")
@@ -130,7 +130,7 @@ class Config(BaseConfig):
     @property
     def ldap_group_link_group_access(self):
         """
-        The minimum access to give users via the sync. This maps directly to the values at 
+        The minimum access to give users via the sync. This maps directly to the values at
         https://docs.gitlab.com/ee/api/members.html#valid-access-levels
 
         Defaults to no access
@@ -367,7 +367,7 @@ class Config(BaseConfig):
         """
         The absolute path to a spreadsheet containing specific details about migration waves
         """
-        return self.prop("APP", "wave_spreadsheet_path")
+        return self.prop("APP", "wave_spreadsheet_path", default="")
 
     @property
     def wave_spreadsheet_columns(self):
@@ -515,7 +515,7 @@ class Config(BaseConfig):
                 }
         which allows for multiple files with multiple changes.
         """
-        return self.prop("APP", "remapping_file_path")
+        return self.prop("APP", "remapping_file_path", default="")
 
     @property
     def list_subset_input_path(self):
@@ -529,4 +529,4 @@ class Config(BaseConfig):
         Use when listing the entire instance is not possible i.e.
         the project or repo metadata exceeds the mongo collection max character limit.
         """
-        return self.prop("SOURCE", "list_subset_input_path")
+        return self.prop("SOURCE", "list_subset_input_path", default="")
