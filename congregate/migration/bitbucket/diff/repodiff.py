@@ -48,7 +48,6 @@ class RepoDiffClient(BaseDiffClient):
             self.source_data = read_json_file_into_object(
                 f"{self.app_path}/data/projects.json")
         self.source_data = [i for i in self.source_data if i]
-        self.target_parent_path = None
 
     def generate_diff_report(self, start_time):
         diff_report = {}
@@ -83,21 +82,22 @@ class RepoDiffClient(BaseDiffClient):
         self.results_mtime = getmtime(self.results_path)
         self.source_data = [i for i in read_json_file_into_object(
             f"{self.app_path}/data/staged_groups.json") if i]
-        group_namespaces = set()
         mongo = MongoConnector()
         for parent in self.source_data:
             parent_path = parent["full_path"]
-            self.target_parent_path = get_full_path_with_parent_namespace(
+            target_parent_path = get_full_path_with_parent_namespace(
                 parent_path)
-            if parent_path not in group_namespaces:
-                group_namespaces.add(parent_path)
+            if target_parent_path not in self.target_parent_paths:
+                self.target_parent_paths.add(target_parent_path)
             else:
                 continue
             parent_id = dig(self.results.get(
-                self.target_parent_path), "response", "id")
-            if (self.results.get(self.target_parent_path) or isinstance(self.results.get(self.target_parent_path), int)) and self.asset_exists(self.gl_groups_api.get_group, parent_id):
-                parent_diff = self.handle_parent_endpoints(parent_path)
-                self.insert_diff(parent_diff, mongo, parent_path)
+                target_parent_path), "response", "id")
+            if (self.results.get(target_parent_path) or isinstance(self.results.get(target_parent_path), int)) and self.asset_exists(self.gl_groups_api.get_group, parent_id):
+                parent_diff = self.handle_parent_endpoints(
+                    parent_path, target_parent_path)
+                self.insert_diff(parent_diff, mongo,
+                                 parent_path, target_parent_path)
                 continue
             missing_data = {
                 self.target_parent_path: {
@@ -125,7 +125,7 @@ class RepoDiffClient(BaseDiffClient):
         mongo = MongoConnector()
         if (self.results.get(target_project_path) or isinstance(self.results.get(target_project_path), int)) and self.asset_exists(self.gl_projects_api.get_project, project_id):
             project_diff = self.handle_endpoints(project)
-            return self.insert_diff(project_diff, mongo, group_namespace, target_project_path=target_project_path)
+            return self.insert_diff(project_diff, mongo, group_namespace, target_project_path)
         missing_data = {
             target_project_path: {
                 "error": "project missing",
@@ -140,9 +140,8 @@ class RepoDiffClient(BaseDiffClient):
         mongo.close_connection()
         return missing_data
 
-    def insert_diff(self, asset_diff, mongo, group_namespace, target_project_path=None):
+    def insert_diff(self, asset_diff, mongo, group_namespace, target_path):
         diff_report = {}
-        target_path = target_project_path or self.target_parent_path
         diff_report[target_path] = asset_diff
         try:
             diff_report[target_path]["overall_accuracy"] = self.calculate_overall_accuracy(
@@ -150,13 +149,12 @@ class RepoDiffClient(BaseDiffClient):
             mongo.insert_data(
                 f"diff_report_{group_namespace}", diff_report, bypass_document_validation=True)
             # Convert BSON to JSON
-            if target_project_path:
-                return loads(json_util.dumps(diff_report))
+            return loads(json_util.dumps(diff_report))
         except Exception as e:
             self.log.error(
                 f"Failed to generate diff for {target_path} with error:\n{e}")
 
-    def handle_parent_endpoints(self, group_namespace):
+    def handle_parent_endpoints(self, group_namespace, target_parent_path):
         parent_diff = {}
         group = next((g for g in self.source_data if g.get(
             "full_path") == group_namespace), {})
@@ -165,7 +163,7 @@ class RepoDiffClient(BaseDiffClient):
         group_member_data = [{k: v for k, v in sub.items() if k != "id"}
                              for sub in group.get("members", [])]
         parent_diff["/groups/:id/members"] = self.generate_asset_diff(
-            group, "username", group_member_data, self.gl_groups_api.get_all_group_members, obfuscate=True)
+            group, "username", group_member_data, self.gl_groups_api.get_all_group_members, obfuscate=True, target_parent_path=target_parent_path)
         return parent_diff
 
     def handle_endpoints(self, project):
@@ -224,9 +222,8 @@ class RepoDiffClient(BaseDiffClient):
                 project, "name", repo_member_data, self.gl_projects_api.get_members, obfuscate=True)
         return repo_diff
 
-    def generate_asset_diff(self, asset, sort_key, source_data, gl_endpoint, **kwargs):
-        target_namespace = self.target_parent_path or get_target_project_path(
-            asset)
+    def generate_asset_diff(self, asset, sort_key, source_data, gl_endpoint, target_parent_path=None, **kwargs):
+        target_namespace = target_parent_path or get_target_project_path(asset)
         limit = target_namespace.rfind("/")
         return self.generate_external_diff(asset, sort_key, source_data, gl_endpoint, parent_group=target_namespace[:limit if limit > 0 else None], **kwargs)
 

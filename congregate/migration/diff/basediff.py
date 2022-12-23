@@ -100,6 +100,7 @@ class BaseDiffClient(BaseClass):
         super().__init__()
         self.keys_to_ignore = []
         self.results = None
+        self.target_parent_paths = set()
 
     def generate_split_html_report(self):
         """
@@ -486,7 +487,7 @@ class BaseDiffClient(BaseClass):
         soup.html.append(soup.new_tag("head"))
         soup.html.head.append(style)
 
-        for d, v in diff.items():
+        for d, v in sorted(diff.items()):
             if not isinstance(v, dict):
                 # Make sure the JSON only has double quotes
                 p = re.compile('(?<!\\\\)\'')
@@ -512,7 +513,7 @@ class BaseDiffClient(BaseClass):
                     header_row = soup.new_tag("tr")
                     header_data_row = soup.new_tag("tr")
                     header_data = {
-                        asset: d,
+                        "Group" if d in self.target_parent_paths else asset: d,
                         "Accuracy": str(self.as_percentage(dig(v, "overall_accuracy", "accuracy"))),
                         "Result": dig(v, "overall_accuracy", "result")
                     }
