@@ -100,7 +100,7 @@ class RepoDiffClient(BaseDiffClient):
                                  parent_path, target_parent_path)
                 continue
             missing_data = {
-                self.target_parent_path: {
+                target_parent_path: {
                     "error": "group missing",
                     "overall_accuracy": {
                         "accuracy": 0,

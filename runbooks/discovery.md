@@ -60,7 +60,10 @@ The Ultimate Goal of this document is to have its contents converted into a road
 * Are you using the container registry on the source?
 * Do you intend to use container registry on SaaS?
 * We support container registry migration, but registry size can severely impact migration times. Please clean out the container registry as much as possible before migration
-* We do not support package registry migration at this time
+
+##### Package Registry
+
+* We support GitLab to GitLab Maven Package Registry migration at this time. Other package types are pending.
 
 #### SSO/SCIM/SAML
 
