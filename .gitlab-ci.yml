@@ -16,7 +16,7 @@ include:
   - local: ci/vault.yml
 
 variables:
-  DOCKER_VERSION: "19.03.1"
+  DOCKER_VERSION: "20.10.22"
   TEST_IMAGE_NAME: "$CI_REGISTRY_IMAGE/test-3.8:latest"
   BB_SERVER_SEED_IMAGE_NAME: "$CI_REGISTRY_IMAGE/bitbucket-seed:latest"
   JENKINS_SEED_IMAGE_NAME: "$CI_REGISTRY_IMAGE/jenkins-seed:latest"
@@ -71,7 +71,7 @@ workflow:
           "sh",
           "-c",
           "mkdir -p /etc/gitlab & \
-          echo $GITLAB_LICENSE_PATH > /etc/gitlab/Gitlab.gitlab-license & \
+          cat $GITLAB_LICENSE_PATH > /etc/gitlab/Gitlab.gitlab-license & \
           python3 -m http.server 443 --directory /var/log/gitlab/gitlab-rails/ & :; /assets/wrapper",
         ]
     - name: mongo:4.4.16
