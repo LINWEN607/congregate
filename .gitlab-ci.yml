@@ -86,7 +86,8 @@ workflow:
     - curl -O http://gitlab_destination:443/api_json.log
     - curl -O http://gitlab_destination:443/importer.log
     - curl -O http://gitlab_destination:443/exceptions_json.log
-    - poetry run aws ec2 terminate-instances --instance-ids $(cat instance_id)
+    - pip install awscli
+    - aws ec2 terminate-instances --instance-ids $(cat instance_id)
   artifacts:
     when: always
     paths:
