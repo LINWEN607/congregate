@@ -60,19 +60,18 @@ workflow:
 .gitlab-destination:
   extends: .gitlab-license
   variables:
-    GITLAB_LICENSE_PATH: "$GITLAB_LICENSE"
+    # CI_DEBUG_SERVICES: "true"
+    # GITLAB_LICENSE_PATH: "$GITLAB_LICENSE"
     GITLAB_OMNIBUS_CONFIG: |-
       gitlab_rails['initial_root_password'] = '5iveL!fe'
-      gitlab_rails['initial_license_file'] = '/etc/gitlab/Gitlab.gitlab-license'
+      gitlab_rails['initial_license_file'] = '/builds/gitlab-org/professional-services-automation/tools/migration/congregate.tmp/GITLAB_LICENSE'
   services:
-    - name: gitlab/gitlab-ee:nightly
+    - name: gitlab/gitlab-ee:latest
       alias: gitlab_destination
       command: [
           "sh",
           "-c",
-          "mkdir -p /etc/gitlab & \
-          cat $GITLAB_LICENSE_PATH > /etc/gitlab/Gitlab.gitlab-license & \
-          python3 -m http.server 443 --directory /var/log/gitlab/gitlab-rails/ & :; /assets/wrapper",
+          "(python3 -m http.server 443 --directory /var/log/gitlab/gitlab-rails/ &) && /assets/wrapper"
         ]
     - name: mongo:4.4.16
       alias: mongo
