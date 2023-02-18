@@ -551,7 +551,7 @@ class UsersClient(BaseClass):
         host = self.config.destination_host
         user_msg = f"blocked user {user['email']}' (ID: {user['id']}) Admin note"
         data = {
-            "note": f"User blocked as part of {'GitLab PS' if is_dot_com(host) else ''} user migration from {self.config.source_token}"}
+            "note": f"User blocked as part of {'GitLab PS' if is_dot_com(host) else ''} user migration from {self.config.source_host}"}
         self.log.info(f"Add {user_msg}")
         try:
             resp = self.users_api.modify_user(
