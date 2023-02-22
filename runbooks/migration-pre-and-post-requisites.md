@@ -145,8 +145,8 @@ This runbook covers the process of preparing and cleaning up after a migration f
 
 ### Requisitioning a Migration VM (GitLab GCP Hosted)
 
-* [ ] (gitlab.com) Create a [GitLab Infra team issue](https://gitlab.com/groups/gitlab-com/gl-infra/-/issues) with labels `~"AssistingTeam::Infrastructure"` and `~"AssistType::CloudInfra"` and tag `@gitlab-com/gl-infra/managers`. Examine [similar issues](https://gitlab.com/gitlab-com/gl-infra/infrastructure/-/issues) for examples.
-* [ ] (gitlab.com) Create an MR in [Transient Imports project](https://gitlab.com/gitlab-com/gl-infra/transient-imports) by following the `README`
+* [ ] (gitlab.com) Create an MR in [Transient Imports project](https://gitlab.com/gitlab-com/gl-infra/transient-imports) by following the [_README.md_](https://gitlab.com/gitlab-com/gl-infra/transient-imports#transient-imports)
+  * Add customer [PS epic](https://gitlab.com/groups/gitlab-com/customer-success/professional-services-group/-/epics) link in the MR description
   * The lead PSE should add their gitlab.com `.pub` SSH key as `owner_key`
   * Make sure all PSEs running the migration have added their public IP to the `source_ranges_allowed` list (comma separated)
     * Comment on the IPs listing order eg: `# pse1, pse2, pse3`
@@ -155,7 +155,7 @@ This runbook covers the process of preparing and cleaning up after a migration f
     * `gl_customer_name = "name of customer"` Eg: `gl_customer_name = "acme"`
     * `gl_owner_email_handle = "email name of lead PSE"` Eg: `gl_owner_email_handle = "gmiller"`
     * **Note:** these items have the following restrictions: `The value can only contain lowercase letters, numeric characters, underscores and dashes. The value can be at most 63 characters long. International characters are allowed.`
-  * Assign yourself and comment `/assign_reviewer @pprokic @gmiller`
+  * Assign yourself and comment `/assign_reviewer @<see-in-project-readme>`
 * [ ] Once the MR is approved and merged retrieve the IP from the `apply` stage and job
 
   ```text
