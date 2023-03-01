@@ -48,7 +48,7 @@ RUN mkdir /opt/mongo-install && \
     chown -R ps-user: /data && \
     chmod -R 750 /data && \
     cd /opt/mongo-install && \
-    wget https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-amazon-4.4.19.tgz && \
+    wget https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-debian10-4.4.19.tgz && \
     tar -zxvf mongodb-linux-*-4.4.19.tgz && \
     cp mongodb-linux-x86_64-debian10-4.4.19/bin/* /usr/local/bin/
 
