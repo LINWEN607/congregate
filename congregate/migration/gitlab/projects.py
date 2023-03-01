@@ -985,10 +985,10 @@ class ProjectsClient(BaseClass):
             Using DRY-RUN is a good way to check the data on the destination system. It will search, log, etc
             but will not attempt to do the rewrite. A good way to make sure all expected projects are created.
         """
+        return_dict = None
         try:
             import_id = None
             dst_path_with_namespace = None
-            return_dict = None
             dst_path_with_namespace = get_dst_path_with_namespace(project)
             self.log.info(f"{dst_path_with_namespace}")
             dst_pid = self.find_project_by_path(
