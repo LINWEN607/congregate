@@ -1,4 +1,4 @@
-FROM python:3.8.12-slim-buster
+FROM python:3.8.16-slim-bullseye
 
 # Add ps-user and give them sudo privileges
 RUN adduser ps-user && \
@@ -11,7 +11,7 @@ USER root
 # Define the ENV variable
 ENV CONGREGATE_PATH=/opt/congregate \
     APP_PATH=/opt/congregate \
-    APP_NAME=congregate \
+APP_NAME=congregate \
     PIP_DEFAULT_TIMEOUT=100
 
 WORKDIR /opt/congregate
@@ -48,9 +48,9 @@ RUN mkdir /opt/mongo-install && \
     chown -R ps-user: /data && \
     chmod -R 750 /data && \
     cd /opt/mongo-install && \
-    wget https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-debian10-4.4.4.tgz && \
-    tar -zxvf mongodb-linux-*-4.4.4.tgz && \
-    cp mongodb-linux-x86_64-debian10-4.4.4/bin/* /usr/local/bin/
+    wget https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-amazon-4.4.19.tgz && \
+    tar -zxvf mongodb-linux-*-4.4.19.tgz && \
+    cp mongodb-linux-x86_64-debian10-4.4.19/bin/* /usr/local/bin/
 
 RUN cd /opt/congregate && \
     chmod +x congregate && \
