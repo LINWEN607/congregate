@@ -20,7 +20,7 @@ WORKDIR /opt/congregate
 ADD congregate congregate
 ADD frontend frontend
 ADD dev/bin dev/bin
-COPY congregate.sh pyproject.toml poetry.lock README.md package.json package-lock.json vue.config.js babel.config.js .gitignore LICENSE ./
+COPY congregate.sh pyproject.toml poetry.lock README.md .gitignore LICENSE ./
 
 # Set /opt folder permissions for ps-user
 RUN chown -R ps-user:sudo /opt && \
@@ -32,9 +32,10 @@ RUN apt-get update && \
     apt-get upgrade -y
 
 # Install Node
-RUN curl -sSL https://deb.nodesource.com/setup_12.x | bash - && \
+RUN curl -sSL https://deb.nodesource.com/setup_16.x | bash - && \
     apt-get install -y nodejs && \
-    npm install --no-optional && \
+    cd frontend && \
+    npm install && \
     npm run build
 
 # Install mongo

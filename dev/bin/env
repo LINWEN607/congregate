@@ -5,7 +5,7 @@ function get_latest_master_tag() { git ls-remote git@gitlab.com:gitlab-org/profe
 function get_congregate_pids() { ps aux | grep "congregate" | awk '{print $2}' | grep -v grep; }
 
 alias penv='poetry install'
-alias ui='npm install'
+alias ui='cd frontend && npm install'
 alias sh='poetry shell'
 alias upd='poetry run python congregate/update-readme.py'
 alias pt='poetry run pytest \

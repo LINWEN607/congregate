@@ -4,6 +4,7 @@ from gitlab_ps_utils.file_utils import get_hash_of_dirs
 
 
 def build_ui(app_path):
+    os.chdir("frontend")
     build_command = "npm run build"
     subprocess.call(build_command.split(" "))
     if not os.path.exists(f"{app_path}/ui_checksum"):
@@ -12,9 +13,10 @@ def build_ui(app_path):
 
 
 def spin_up_ui(app_path, port):
-    if not os.path.exists(f"{app_path}/node_modules"):
+    if not os.path.exists(f"{app_path}/frontend/node_modules"):
         print("No node_modules found. Running npm install")
         install_deps = "npm install"
+        os.chdir('frontend')
         subprocess.call(install_deps.split(" "))
     if not os.path.exists(f"{app_path}/dist"):
         print("UI not built. Building it before deploying")
@@ -30,8 +32,7 @@ def spin_up_ui(app_path, port):
 def is_ui_out_of_date(app_path):
     try:
         with open(f"{app_path}/ui-checksum", "r") as f:
-            return get_hash_of_dirs(f"{app_path}/dist") != f.read()
+            return get_hash_of_dirs(f"{app_path}/frontend/dist") != f.read()
     except IOError:
         print("UI Checksum not found")
         return True
-    return False

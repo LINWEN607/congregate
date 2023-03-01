@@ -259,7 +259,7 @@ check ldap compose yaml:
         - pyproject.toml
         - poetry.lock
         - ci/spin_up_test_vm.sh
-        - package.json
+        - frontend/package.json
         - ci/pylint*.sh
         - .pylintrc
         - delete_azure_vm.ps1
@@ -474,7 +474,7 @@ debian rolling release:
         - frontend/**/*
         - congregate.sh
         - pyproject.toml
-        - package.json
+        - frontend/package.json
         - docker/release/debian.Dockerfile
 
 debian-release-tag:
@@ -502,7 +502,7 @@ centos rolling release:
         - frontend/**/*
         - congregate.sh
         - pyproject.toml
-        - package.json
+        - frontend/package.json
         - docker/release/centos.Dockerfile
 
 centos-release-tag:
@@ -530,7 +530,7 @@ centos-no-mongo rolling release:
         - frontend/**/*
         - congregate.sh
         - pyproject.toml
-        - package.json
+        - frontend/package.json
         - docker/release/no-mongo.Dockerfile
 
 container-scan-build:centos:
@@ -544,7 +544,7 @@ container-scan-build:centos:
     - if: "$CI_PIPELINE_SOURCE != 'schedule'"
       changes:
         - pyproject.toml
-        - package.json
+        - frontend/package.json
         - docker/release/centos.Dockerfile
 
 container-scan-build:debian:
@@ -558,7 +558,7 @@ container-scan-build:debian:
     - if: "$CI_PIPELINE_SOURCE != 'schedule'"
       changes:
         - pyproject.toml
-        - package.json
+        - frontend/package.json
         - docker/release/debian.Dockerfile
 
 # Scanning the centos image
@@ -573,7 +573,7 @@ container_scanning:
     - if: "$CI_PIPELINE_SOURCE != 'schedule'"
       changes:
         - pyproject.toml
-        - package.json
+        - frontend/package.json
         - docker/release/centos.Dockerfile
         - docker/release/debian.Dockerfile
 
@@ -589,7 +589,7 @@ debian_container_scanning:
     - if: "$CI_PIPELINE_SOURCE != 'schedule'"
       changes:
         - pyproject.toml
-        - package.json
+        - frontend/package.json
         - docker/release/debian.Dockerfile
 
 docs update:

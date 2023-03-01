@@ -18,7 +18,7 @@ WORKDIR /opt/congregate
 ADD congregate congregate
 ADD frontend frontend
 ADD dev/bin dev/bin
-COPY congregate.sh pyproject.toml poetry.lock README.md package.json package-lock.json vue.config.js babel.config.js .gitignore LICENSE ./
+COPY congregate.sh pyproject.toml poetry.lock README.md .gitignore LICENSE ./
 COPY docker/release/centos/mongo_repo /etc/yum.repos.d/mongodb-org-4.4.repo
 
 RUN mkdir -p /data/db
@@ -53,7 +53,7 @@ RUN echo -e '#!/bin/bash\npython3.8 "$@"' > /usr/local/sbin/python && \
     chmod +x /usr/local/sbin/python
 
 # Install Node
-RUN curl -sL https://rpm.nodesource.com/setup_12.x | bash - && \
+RUN curl -sL https://rpm.nodesource.com/setup_16.x | bash - && \
     yum install -y nodejs
 
 # Create python symlinks
@@ -112,7 +112,8 @@ RUN curl -sSL https://install.python-poetry.org | python3.8 - && \
     poetry install
 
 # Install node dependencies
-RUN npm install --no-optional && \
+RUN cd frontend && \
+    npm install && \
     npm run build
 
 # Set dist/ folder permissions for ps-user
