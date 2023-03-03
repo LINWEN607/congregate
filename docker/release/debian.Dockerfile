@@ -11,7 +11,7 @@ USER root
 # Define the ENV variable
 ENV CONGREGATE_PATH=/opt/congregate \
     APP_PATH=/opt/congregate \
-APP_NAME=congregate \
+    APP_NAME=congregate \
     PIP_DEFAULT_TIMEOUT=100
 
 WORKDIR /opt/congregate
