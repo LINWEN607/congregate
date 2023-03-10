@@ -339,6 +339,7 @@ class MigrateClient(BaseClass):
         return gh_host, gh_token
 
     def handle_gh_post_migration(self, result, path_with_namespace, project, pid):
+        self.get_host_and_token()
         members = project.pop("members")
         result[path_with_namespace]["members"] = self.projects.add_members_to_destination_project(
             self.config.destination_host, self.config.destination_token, pid, members)
@@ -370,6 +371,10 @@ class MigrateClient(BaseClass):
         # Determine whether to remove all repo members
         result[path_with_namespace]["members"]["email"] = self.handle_member_retention(
             members, pid)
+
+        # Migrate deploy keys
+        result[path_with_namespace]["deploy_keys"] = self.gh_repos.gh_keys.migrate_project_deploy_keys(
+            pid, project)
 
         # Remove import user; SKIP if removing all other members
         if not self.remove_members:

@@ -123,6 +123,14 @@ class ReposApi():
         """
         return self.api.list_all(self.host, f"repos/{owner}/{repo}/collaborators")
 
+    def get_all_repo_deploy_keys(self, owner, repo):
+        """
+        List repository deploy keys.
+
+        GitHub API v3 Doc: https://docs.github.com/en/rest/deploy-keys?apiVersion=2022-11-28#list-deploy-keys
+        """
+        return self.api.list_all(self.host, f"repos/{owner}/{repo}/keys")
+
     def create_auth_user_repo(self, data=None, message=None):
         """
         Creates a new repository for the authenticated user.

@@ -31,7 +31,7 @@ NOTE: Features not listed in the matrix should be presumed to be not yet support
 |                  | Merge request approvals   |                                                                  | :x:                | :white_check_mark: |
 |                  | Pages                     |                                                                  | :x:                | :heavy_minus_sign: |
 |                  | Default Branch            |                                                                  | :x:                | :x:                |
-|                  | Deploy keys               |                                                                  | :x:                | :x:                |
+|                  | Deploy keys               |                                                                  | :x:                | :white_check_mark:                |
 |                  | Webhooks (w/o token)      |                                                                  | :x:                | :x:                |
 | **User**         |
 |                  | Avatars                   |                                                                  | :x:                | :x:                |
