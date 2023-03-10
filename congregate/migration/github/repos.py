@@ -11,7 +11,6 @@ from congregate.migration.github.users import UsersClient
 from congregate.migration.github.api.users import UsersApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.projects import ProjectsClient
-from congregate.migration.github.keys import KeysClient
 from congregate.helpers.migrate_utils import get_staged_projects, add_post_migration_stats
 from congregate.helpers.utils import is_github_dot_com, rotate_logs
 
@@ -39,7 +38,6 @@ class ReposClient(BaseClass):
         self.users_api = UsersApi(host, token)
         self.gl_projects_api = ProjectsApi()
         self.gl_projects = ProjectsClient()
-        self.gh_keys = KeysClient()
         self.host = strip_netloc(host)
         self.processes = processes
         self.sub_processes = self.split_processes(processes)

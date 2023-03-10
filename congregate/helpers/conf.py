@@ -141,7 +141,7 @@ class Config(BaseConfig):
 # SOURCE
     def list_multiple_source_config(self, source_options):
         """
-            Returns list of multiple SCM source config dictionarty including hostname and token
+            Returns list of multiple SCM source config dictionary including hostname and token
         """
         return self.prop_dict("MULTIPLE_SOURCE", "sources",
                               default={}).get(source_options, [])

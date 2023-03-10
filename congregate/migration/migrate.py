@@ -38,12 +38,13 @@ from congregate.migration.gitlab.hooks import HooksClient
 from congregate.migration.gitlab.clusters import ClustersClient
 from congregate.migration.gitlab.environments import EnvironmentsClient
 from congregate.migration.gitlab.branches import BranchesClient
+from congregate.migration.gitlab.packages import PackagesClient
 from congregate.migration.gitlab.external_import import ImportClient
 from congregate.migration.jenkins.base import JenkinsClient
 from congregate.migration.teamcity.base import TeamcityClient
 from congregate.migration.bitbucket.repos import ReposClient as BBSReposClient
-from congregate.migration.github.repos import ReposClient
-from congregate.migration.gitlab.packages import PackagesClient
+from congregate.migration.github.repos import ReposClient as GHReposClient
+from congregate.migration.github.keys import KeysClient as GHKeysClient
 
 
 class MigrateClient(BaseClass):
@@ -91,6 +92,7 @@ class MigrateClient(BaseClass):
         self.branches = BranchesClient()
         self.ext_import = ImportClient()
         super().__init__()
+        self.gh_keys = GHKeysClient()
         self.bbs_repos_client = BBSReposClient()
         self.job_template = JobTemplateGenerator()
         self.dry_run = dry_run
@@ -278,6 +280,7 @@ class MigrateClient(BaseClass):
         token = self.config.destination_token
         project_id = None
         if self.group_structure or self.groups.find_group_id_by_path(host, token, tn):
+            gh_host, gh_token = self.get_host_and_token()
             # Already imported
             if dst_pid := self.projects.find_project_by_path(host, token, dstn_pwn):
                 result = self.ext_import.get_result_data(
@@ -290,7 +293,6 @@ class MigrateClient(BaseClass):
                         f"Skipping import. Repo {dstn_pwn} has already been imported")
             # New import
             else:
-                gh_host, gh_token = self.get_host_and_token()
                 result = self.ext_import.trigger_import_from_ghe(
                     project, dstn_pwn, tn, gh_host, gh_token, dry_run=self.dry_run)
                 result_response = result[dstn_pwn]["response"]
@@ -323,23 +325,20 @@ class MigrateClient(BaseClass):
         return result
 
     def get_host_and_token(self):
-        if self.scm_source:
-            for single_source in self.config.list_multiple_source_config(
-                    "github_source"):
-                if self.scm_source in single_source.get("src_hostname", None):
-                    gh_host = single_source["src_hostname"]
-                    gh_token = string_utils.deobfuscate(
-                        single_source["src_access_token"])
-                    self.gh_repos = ReposClient(gh_host, gh_token)
-        else:
-            gh_host = self.config.source_host
-            gh_token = self.config.source_token
-            self.gh_repos = ReposClient(gh_host, gh_token)
-
+        for single_source in self.config.list_multiple_source_config(
+                "github_source"):
+            if self.scm_source in single_source.get("src_hostname"):
+                gh_host = single_source["src_hostname"]
+                gh_token = string_utils.deobfuscate(
+                    single_source["src_access_token"])
+                self.gh_repos = GHReposClient(gh_host, gh_token)
+                return gh_host, gh_token
+        gh_host = self.config.source_host
+        gh_token = self.config.source_token
+        self.gh_repos = GHReposClient(gh_host, gh_token)
         return gh_host, gh_token
 
     def handle_gh_post_migration(self, result, path_with_namespace, project, pid):
-        self.get_host_and_token()
         members = project.pop("members")
         result[path_with_namespace]["members"] = self.projects.add_members_to_destination_project(
             self.config.destination_host, self.config.destination_token, pid, members)
@@ -373,7 +372,7 @@ class MigrateClient(BaseClass):
             members, pid)
 
         # Migrate deploy keys
-        result[path_with_namespace]["deploy_keys"] = self.gh_repos.gh_keys.migrate_project_deploy_keys(
+        result[path_with_namespace]["deploy_keys"] = self.gh_keys.migrate_project_deploy_keys(
             pid, project)
 
         # Remove import user; SKIP if removing all other members
@@ -543,7 +542,8 @@ class MigrateClient(BaseClass):
     def migrate_external_group(self, group):
         result = False
         members = group.pop("members")
-        group["full_path"] = mig_utils.get_full_path_with_parent_namespace(group["full_path"])
+        group["full_path"] = mig_utils.get_full_path_with_parent_namespace(
+            group["full_path"])
         group["parent_id"] = self.config.dstn_parent_id
         group_id = None
         group["description"] = group.get("description") or ""

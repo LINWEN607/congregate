@@ -465,17 +465,14 @@ def main():
                 if (config.source_type == "gitlab") or DEST:
                     projects.update_staged_projects_archive_state(
                         dest=DEST, dry_run=DRY_RUN)
-                elif config.source_type == "github" or config.list_multiple_source_config("github_source") is not None:
-                    if SCM_SOURCE is not None:
-                        for single_source in config.list_multiple_source_config(
-                                "github_source"):
-                            if SCM_SOURCE in single_source.get(
-                                    "src_hostname", None):
-                                gh_repos = GHReposClient(single_source["src_hostname"], deobfuscate(
-                                    single_source["src_access_token"]))
-                    else:
-                        gh_repos = GHReposClient(
-                            config.source_host, config.source_token)
+                elif config.source_type == "github" or config.list_multiple_source_config("github_source"):
+                    for single_source in config.list_multiple_source_config(
+                            "github_source"):
+                        if SCM_SOURCE in single_source.get("src_hostname"):
+                            gh_repos = GHReposClient(single_source["src_hostname"], deobfuscate(
+                                single_source["src_access_token"]))
+                    gh_repos = GHReposClient(
+                        config.source_host, config.source_token)
                     gh_repos.update_staged_repos_archive_state(dry_run=DRY_RUN)
                 else:
                     log.warning(
@@ -485,12 +482,12 @@ def main():
                 if (config.source_type == "gitlab") or DEST:
                     projects.update_staged_projects_archive_state(
                         archive=False, dest=DEST, dry_run=DRY_RUN)
-                elif config.source_type == "github" or config.list_multiple_source_config("github_source") is not None:
+                elif config.source_type == "github" or config.list_multiple_source_config("github_source"):
                     if SCM_SOURCE is not None:
                         for single_source in config.list_multiple_source_config(
                                 "github_source"):
                             if SCM_SOURCE in single_source.get(
-                                    "src_hostname", None):
+                                    "src_hostname"):
                                 gh_repos = GHReposClient(single_source["src_hostname"], deobfuscate(
                                     single_source["src_access_token"]))
                     else:
