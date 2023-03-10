@@ -460,8 +460,8 @@ class ReposClient(BitBucketServer):
             "id": c["id"],
             "message": c["message"].strip(),
             "author_name": c["author"].get("displayName") or c["author"].get("name"),
-            "author_email": c["author"]["emailAddress"],
+            "author_email": c["author"].get["emailAddress", "Unspecified"],
             "committer_name": c["committer"].get("displayName") or c["committer"].get("name"),
-            "committer_email": c["committer"]["emailAddress"],
+            "committer_email": c["committer"].get["emailAddress", "Unspecified"],
             "parent_ids": [pid["id"] for pid in c["parents"]]
         } for c in commits]
