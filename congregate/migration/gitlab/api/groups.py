@@ -488,22 +488,6 @@ class GroupsApi(GitLabApiWrapper):
         """
         return self.api.list_all(host, token, f"groups/{gid}/badges")
 
-    def add_group_badge(self, gid, host, token, data, message=None):
-        """
-        Add a badge to a group
-
-        GitLab API doc: https://docs.gitlab.com/ee/api/group_badges.html#add-a-badge-to-a-group
-
-            :param: gid: (int) GitLab group ID
-            :param: host: (str) GitLab host URL
-            :param: token: (str) Access token to GitLab instance
-            :param: data: (dict) Object containing the various data requried for creating a badge. Refer to the link above for specific examples
-            :return: Response object containing the response to POST /groups/:id/badges
-        """
-        if not message:
-            message = "Adding badge to group"
-        return self.api.generate_post_request(host, token, f"groups/{gid}/badges", json.dumps(data), description=message)
-
     def get_all_group_clusters(self, gid, host, token):
         """
         Returns a list of groups clusters.

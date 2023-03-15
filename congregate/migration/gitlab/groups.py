@@ -9,7 +9,6 @@ from congregate.helpers.mdbc import MongoConnector
 from congregate.helpers.migrate_utils import get_full_path_with_parent_namespace, is_top_level_group, get_staged_groups, \
     find_user_by_email_comparison_without_id
 from congregate.migration.gitlab.variables import VariablesClient
-from congregate.migration.gitlab.badges import BadgesClient
 from congregate.migration.gitlab import constants
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
@@ -21,7 +20,6 @@ class GroupsClient(BaseClass):
         self.vars = VariablesClient()
         self.groups_api = GroupsApi()
         self.projects_api = ProjectsApi()
-        self.badges = BadgesClient()
         self.namespaces_api = NamespacesApi()
         self.skip_group_members = False
         self.skip_project_members = False
