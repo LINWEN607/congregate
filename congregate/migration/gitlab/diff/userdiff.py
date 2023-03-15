@@ -80,7 +80,7 @@ class UserDiffClient(BaseDiffClient):
                 user, self.users_api.get_all_user_projects)
             user_diff["/users/:id/emails"] = self.generate_user_diff(
                 user, self.users_api.get_all_user_emails)
-            # Inheritance discrepancies - https://docs.gitlab.com/ee/user/project/settings/import_export.html#important-notes
+            # Inheritance discrepancies - https://docs.gitlab.com/ee/user/project/settings/import_export.html#changes-to-imported-items
             # user_diff["/users/:id/memberships"] = self.generate_user_diff(
             #     user, self.users_api.get_all_user_memberships)
             # user_diff["/users/:id/events"] = self.generate_user_diff(

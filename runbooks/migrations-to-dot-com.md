@@ -286,7 +286,7 @@ If a project or group import continues to fail (2 retries max), you'll need to c
     * [ ] If only sub-groups are staged make sure to add `--subgroups-only`
     * **NOTE:** `--only-post-migration-info` will implicitly skip group and project exports, but not imports and user creation
 
-#### Alternative Export/Import methods
+#### Alternative project export/import methods
 
 * Export
   * [Via Rake task](https://docs.gitlab.com/ee/administration/raketasks/project_import_export.html#export-using-a-rake-task)

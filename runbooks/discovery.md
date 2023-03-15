@@ -8,19 +8,19 @@ The Ultimate Goal of this document is to have its contents converted into a road
 
 ### Gitlab.com / SaaS
 
-#### Migration Host:
+#### Migration Host
 
 * Our migration host lives in GCP. Do we have firewall access to their instances?
 * Specific outbound IPs of the machine can be retrieved from the GCP console, so that they don't have to allow the entire GCP range through the wall
 * If you need to allow the entire GCP range (eg: for streaming imports) the range can be found [here](https://docs.gitlab.com/ee/user/gitlab_com/#ip-range)
-    * Streaming imports (BitBucket, GitHub, soon to be GitLab) currently require `http` *or* `trusted https`. Self-signed certificates will fail. Options:
-        * Disable `https` on the source instance
-        * Add an external signed certificate to the instance
-        * Use a `N (multi)-hop` migration
-        * Use a `reverse proxy` that trusts the internal certificate and forwards requests
-    * Note: The above options may require adjustments to the project scope and timeline
+  * Streaming imports (BitBucket, GitHub, soon to be GitLab) currently require `http` _or_ `trusted https`. Self-signed certificates will fail. Options:
+    * Disable `https` on the source instance
+    * Add an external signed certificate to the instance
+    * Use a `N (multi)-hop` migration
+    * Use a `reverse proxy` that trusts the internal certificate and forwards requests
+  * Note: The above options may require adjustments to the project scope and timeline
 * VPN usage is supported, but can limit migrations speeds
-    * Make sure to remove any IP throttling that may be configured
+  * Make sure to remove any IP throttling that may be configured
 
 #### General Users
 
@@ -33,7 +33,7 @@ The Ultimate Goal of this document is to have its contents converted into a road
 
 #### Projects
 
-* Review Owner, Maintainer and Developer roles and what each is allowed to do. 
+* Review Owner, Maintainer and Developer roles and what each is allowed to do.
 
 [https://docs.gitlab.com/ee/user/permissions.html]( https://docs.gitlab.com/ee/user/permissions.html#project-members-permissions)
 
@@ -45,10 +45,10 @@ The Ultimate Goal of this document is to have its contents converted into a road
 #### Runners
 
 * Will you be using SaaS shared runners?
-    * Port requirements for connection to on-premise systems: [https://docs.gitlab.com/ee/user/gitlab_com/#ip-range](https://docs.gitlab.com/ee/user/gitlab_com/#ip-range)
+  * Port requirements for connection to on-premise systems: [https://docs.gitlab.com/ee/user/gitlab_com/#ip-range](https://docs.gitlab.com/ee/user/gitlab_com/#ip-range)
 * Will you be bringing your own runners?
-    * You will need to re-register them on your own
-    * Runners communicate outbound over HTTPS (443)
+  * You will need to re-register them on your own
+  * Runners communicate outbound over HTTPS (443)
 * Runners need to be re-registered at the Instance, group, sub-group and project level
 * Group level runners can be manually (via UI - _Settings -> CI/CD -> Runners_) enabled/disabled as of 13.5
 * Runners will need to be on the same version level as the gitlab instance.
@@ -69,25 +69,25 @@ The Ultimate Goal of this document is to have its contents converted into a road
 
 * Are emails changing across systems?
 * Is SSO configured on the destination system?
-    * (SaaS) If you want to Enforce SSO-only authentication after the migration we can migrate users, groups, and projects per usual. Contribution mapping will not be deleted, but the users have to login before enforcing it or they will get kicked out automatically and lose their membership mapping. If this happens, these users will have to be manually added back and be remapped. This is not as bad as losing contribution mapping, but should still be avoided. 
+  * (SaaS) If you want to Enforce SSO-only authentication after the migration we can migrate users, groups, and projects per usual. Contribution mapping will not be deleted, but the users have to login before enforcing it or they will get kicked out automatically and lose their membership mapping. If this happens, these users will have to be manually added back and be remapped. This is not as bad as losing contribution mapping, but should still be avoided.
 * Will you be using Group SAML ?
-    * [https://docs.gitlab.com/ee/user/group/saml_sso/](https://docs.gitlab.com/ee/user/group/saml_sso/)
+  * [https://docs.gitlab.com/ee/user/group/saml_sso/](https://docs.gitlab.com/ee/user/group/saml_sso/)
 * Will you be using SCIM? [https://docs.gitlab.com/ee/user/group/saml_sso/scim_setup.html](https://docs.gitlab.com/ee/user/group/saml_sso/scim_setup.html)
 * Will you be using SCIM provisioning, SAML JIT provisioning, or linking SAML to existing users?
-    * With SCIM provisioning, their SCIM provider will sync with GitLab creating/deleting users as needed
-    * With SAML JIT, if SAML SSO is setup, it will attempt to create users on first login attempt using the same process
-    * SAML link is just what it sounds like. They have an existing user on the GitLab, they login to that account, login to their SSO provider, and link the two
+  * With SCIM provisioning, their SCIM provider will sync with GitLab creating/deleting users as needed
+  * With SAML JIT, if SAML SSO is setup, it will attempt to create users on first login attempt using the same process
+  * SAML link is just what it sounds like. They have an existing user on the GitLab, they login to that account, login to their SSO provider, and link the two
 * Will SSO be enforced with web and/or git activity?
-    * Recommend not setting until after all contribution and membership mapping is complete
+  * Recommend not setting until after all contribution and membership mapping is complete
 * Will you be using SAML group sync? - [https://docs.gitlab.com/ee/user/group/saml_sso/#group-sync](https://docs.gitlab.com/ee/user/group/saml_sso/#group-sync)
-    * Can affect synchronization and permissions
-    * Recommend not setting until after all contribution and membership mapping is complete
+  * Can affect synchronization and permissions
+  * Recommend not setting until after all contribution and membership mapping is complete
 * Will users be expected to login one time before migration?
-    * If currently not, can this be enforced?
-    * This ensures that user accounts are confirmed properly
+  * If currently not, can this be enforced?
+  * This ensures that user accounts are confirmed properly
 * What SAML/SSO/SCIM providers are you using?
-    * Each is configured slightly differently. We have better integrations with some than others, particularly on the SCIM side
-    * Consult GitLab documentation and watch YouTube videos for examples
+  * Each is configured slightly differently. We have better integrations with some than others, particularly on the SCIM side
+  * Consult GitLab documentation and watch YouTube videos for examples
 
 #### Security Settings
 
@@ -96,14 +96,14 @@ The Ultimate Goal of this document is to have its contents converted into a road
 * Will you need the IP allow list configured? - [https://docs.gitlab.com/ee/user/group/#restrict-group-access-by-ip-address](https://docs.gitlab.com/ee/user/group/#restrict-group-access-by-ip-address)
 * Will you be restricting access by domain? - [https://docs.gitlab.com/ee/user/group/#restrict-group-access-by-domain](https://docs.gitlab.com/ee/user/group/#restrict-group-access-by-domain)
 * Are you Enabling Two Factor authentication? -
-    * [https://docs.gitlab.com/ee/user/profile/account/two_factor_authentication.html](https://docs.gitlab.com/ee/user/profile/account/two_factor_authentication.html)
+  * [https://docs.gitlab.com/ee/user/profile/account/two_factor_authentication.html](https://docs.gitlab.com/ee/user/profile/account/two_factor_authentication.html)
 * When moving to SaaS users are no longer admins
-* Discuss the permission inheritance 
-    * Project Security settings
-    * Review Owner, Maintainer and Developer roles and what each is allowed to do. 
-    * Review Branch protection rules (disallow push to master by anyone)
-    * Review Merge Request Approval rules (enable project maintainers to approve)
-    * Review CODEOWNERS concept for large repos
+* Discuss the permission inheritance
+  * Project Security settings
+  * Review Owner, Maintainer and Developer roles and what each is allowed to do.
+  * Review Branch protection rules (disallow push to master by anyone)
+  * Review Merge Request Approval rules (enable project maintainers to approve)
+  * Review _CODEOWNERS_ concept for large repos
 
 #### Miscellaneous
 
@@ -118,7 +118,7 @@ The Ultimate Goal of this document is to have its contents converted into a road
 
 Other areas with large amounts of data - MR's, pipelines, etc:
 
-* Number of historic pipelines that have run on the repo. Over 1500 runs can clog up the system. So if a project has over a couple thousand pipelines, that will cause a closed issue. 
+* Number of historic pipelines that have run on the repo. Over 1500 runs can clog up the system. So if a project has over a couple thousand pipelines, that will cause a closed issue.
 
 Use of secrets/deploy tokens/deploy keys:
 
@@ -126,22 +126,22 @@ Use of secrets/deploy tokens/deploy keys:
 
 Cross-project dependencies:
 
-* If you have a group of common libraries that are used, make sure to point them out. If you have a place for common utilities, that would need to be migrated first to avoid problems. 
+* If you have a group of common libraries that are used, make sure to point them out. If you have a place for common utilities, that would need to be migrated first to avoid problems.
 
-## Common Deliverables 
+## Common Deliverables
 
-### GitLab CI/CD Architecture Diagram: 
+### GitLab CI/CD Architecture Diagram:
 
 * Delivered by GitLab Solutions Architect (SA). Broad deliverable. Doesn’t fit into SaaS other than runner information
 
 ### Single Sign-On Configuration Plan
 
-* The single sign-on configuration plan should ideally be ripped out of SOW templates and reworded into a support-based deliverable i.e “Support the customer in configuring their SSO configuration”. 
+* The single sign-on configuration plan should ideally be ripped out of SOW templates and reworded into a support-based deliverable i.e “Support the customer in configuring their SSO configuration”.
 * Helpful Background Information: [SSO and SCIM Primer for PSE’s](https://docs.google.com/document/d/1Wuw2kKD9pbNwsYbIy81AJzMZjOD6M94WkveqkOElpmE/edit#heading=h.8lmjx4887lrh)
 
 ### Security Configuration Plan
 
-* The security configuration plan should ideally be ripped out of SOW templates and reworded into a support-based deliverable i.e “Support the customer in configuring their security configuration”. 
+* The security configuration plan should ideally be ripped out of SOW templates and reworded into a support-based deliverable i.e “Support the customer in configuring their security configuration”.
 
 ## General Migration Constraints
 

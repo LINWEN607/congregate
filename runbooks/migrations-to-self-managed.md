@@ -164,7 +164,7 @@ Copy the following data and add subsequent rows for single group migration
   * This is required in order to have Congregate immediately delete projects that fail to import or import with a failed status
 * [ ] If importing groups (with projects) to root make sure the instance `Default project visibility` (*Admin -> Settings -> General -> Visibility and access controls*) is set to `Private`
   * This is because groups and therefore projects are imported as `private` by default and this conflicts with a higher instance `Default project visibility`
-  * For more details see [Group Import Important Notes](https://docs.gitlab.com/ee/user/group/settings/import_export.html#important-notes)
+  * For more details see [Group Export/Import docs](https://docs.gitlab.com/ee/user/group/import/index.html#migrate-groups-by-uploading-an-export-file-deprecated)
 * [ ] (as of **14.0**) Set `public_email` field for all staged users on source by running `./congregate.sh set-staged-users-public-email`
   * Skip running command if source version is **< 14.0** and destination version is **>= 14.0**
 * [ ] Notify in the internal Slack channel dedicated to this migration you have completed preparation for the wave
@@ -232,7 +232,7 @@ For each migration attempt check if any project or group imports failed or have 
   * `data/logs/import_failed_relations.json`
   * `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log`
 
-#### Alternative Export/Import methods
+#### Alternative project export/import methods
 
 * Export
   * [Via Rake task](https://docs.gitlab.com/ee/administration/raketasks/project_import_export.html#export-using-a-rake-task)
