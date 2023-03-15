@@ -36,25 +36,3 @@ Congregate gathers (meta)data from source system(s), transforms and down-selects
 
 For support questions please [create an issue](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/issues/new?issuable_template=congregate-support)
 from our Congregate support [issue template](./.gitlab/issue_templates/congregate-support.md).
-
-<!--
-## About
-
-* Congregate is a Professional Services utility for migrating one or more data sources into a single GitLab instance.
-* Users are migrated using individual API endpoints.
-* Congregate leverages both the [Project](https://docs.gitlab.com/ee/api/project_import_export.html) and [Group](https://docs.gitlab.com/ee/api/group_import_export.html) Export / Import API to migrate projects and groups.
-  * Export / Import on the source and destination instance are bound by [rate limit settings](https://docs.gitlab.com/ee/api/README.html#rate-limits).
-  * [Other important notes](https://docs.gitlab.com/ee/user/project/settings/import_export.html#important-notes) for Project import/export
-  * [Other important notes](https://docs.gitlab.com/ee/user/group/settings/import_export.html#important-notes) for Group import/export
-  * Depending on the GL version [immediate project and group deletion permissions](https://about.gitlab.com/handbook/support/workflows/hard_delete_project.html) may vary.
-* Missing project and group Export/Import features are migrated using individual API endpoints.
-* You can read more about how Congregate contributes to our overall migration strategy on the [Importers direction page](https://about.gitlab.com/direction/manage/importers/#consuming-import-capabilities).
-* Importer epics:
-  * [Importer Portfolio Epic](https://gitlab.com/groups/gitlab-org/-/epics/2720)
-  * [Importers Strategy](https://gitlab.com/groups/gitlab-org/-/epics/2721)
-  * [GitLab Group Export/Import bugs](https://gitlab.com/groups/gitlab-org/-/epics/4614)
-  * [GitLab Project Export/Import bugs](https://gitlab.com/groups/gitlab-org/-/epics/3054)
-  * [Bitbucket Importer bugs](https://gitlab.com/groups/gitlab-org/-/epics/5514)
-  * [GitHub Importer bugs](https://gitlab.com/groups/gitlab-org/-/epics/3050)
-* Congregate will not be ported into the GitLab application as-is, but certain pieces of existing Congregate functionality will be rebuilt in GitLab, which remains focused on self-service migrations. To track this work, please visit the [GitLab Group Migration](https://gitlab.com/groups/gitlab-org/-/epics/2901) epic.
--->
