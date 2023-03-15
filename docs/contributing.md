@@ -27,12 +27,12 @@ To make your first merge request with a proposed change:
    - Add details about why you want to make the proposed change and a summary of what those changes are.
    - In the description field, include `closes #<issue-number>` to associate the MR to an issue. If you don't have an issue associated with this work, create one!
 
-## Any contributions you make will be under the CCL Software License
+## Any contributions you make will be under the GitLab EE Software License
 
-In short, when you submit code changes, your submissions are understood to be under the same [CCL License](/LICENSE) that covers the project. Feel free to contact the maintainers if that's a concern.
+In short, when you submit code changes, your submissions are understood to be under the same [GitLab EE License](/LICENSE) that covers the project. Feel free to contact the maintainers if that's a concern.
 
 ## Troubleshooting support
 
-Congregate is a [source available](https://about.gitlab.com/handbook/marketing/strategic-marketing/tiers/#open-source-vs-source-available) project released under the CCL License. If you have a paid GitLab subscription, please note that Congregate is not packaged as a part of GitLab, and falls outside of the scope of support. For more information, see GitLab's [Statement of Support](https://about.gitlab.com/support/statement-of-support.html).
+If you have a paid GitLab subscription, please note that Congregate is not packaged as a part of GitLab, and falls outside of the scope of support. For more information, see GitLab's [Statement of Support](https://about.gitlab.com/support/statement-of-support.html).
 
-Please fill out an issue in this project's issue tracker and the GitLab Professional Services Team will respond as soon as we are available to help you.
+Please [fill out an issue](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/issues/new?issuable_template=congregate-support) in this project's issue tracker and the GitLab Professional Services Team will respond as soon as we are available to help you.
