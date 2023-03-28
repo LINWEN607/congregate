@@ -78,7 +78,7 @@ This runbook covers the process of preparing and cleaning up after a migration f
   * [ ] If done via Rails console, schedule a meeting between lead PSE and source instance Admin to walk through the process
     * For exact steps see [**Trim or remove project CI pipelines**](/runbooks/migrations-to-dot-com.md#trim-or-remove-project-ci-pipelines)
 * [ ] Create a user-group-project migration schedule (waves)
-  * [ ] All users are migrated first
+  * [ ] All users (excluding [internal and bot](https://docs.gitlab.com/ee/development/internal_users.html#internal-users)) are migrated first
   * [ ] Entire group structure next
     * (gitlab.com) [Notes](https://docs.gitlab.com/ee/user/group/import/index.html#migrate-groups-by-uploading-an-export-file-deprecated) around GitLab Group Export/Import
     * Consult with your engineer around restrictions for group movement and renaming, as it is dependent on your source system and migration requirements

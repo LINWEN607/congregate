@@ -119,7 +119,7 @@ If you are running congregate from a full desktop experience (not SSH'ed or BASH
 
 `./congregate.sh migrate` is the action of initiating the data imports on gitlab based on the information on `staged_projects.json`, `staged_groups.json`, and `staged_users.json`. You can run to see the log output to see what projects and groups will be migrated to what locations. When you are satisfied with these results, you can add the `--commit` flag to run the migration for real. Note, if you want to adjust the concurrency, you can add the `--processes=n` flag to this command as well.
 
-In General, we like to migrate all users into the destination system before doing any group or project migrations. This is because if the user is not found during a project or group migration, there will be attribution errors on import that manifest as MRs or other objects in gitlab being owned by or attributed to the import user which is usually root or some Admin.
+In General, we like to migrate all users (excluding [internal and bot](https://docs.gitlab.com/ee/development/internal_users.html#internal-users)) into the destination system before doing any group or project migrations. This is because if the user is not found during a project or group migration, there will be attribution errors on import that manifest as MRs or other objects in gitlab being owned by or attributed to the import user which is usually root or some Admin.
 
 #### Migrate Users
 

@@ -24,7 +24,7 @@ Welcome to a GitLab Professional Services Migration Engagement. This document is
 
 ## Migration Planning Team - User migration planning
 
-Best practice is to create user accounts on the destination GitLab system first. The GitLab PS team will use automation to query the source system(s) to get a list of all users that need to be migrated. User details should be accurate on the source systems, especially email. There should be no personal or fake emails entered for a given user. This is a hard requirement for GitHub.[^github-1]  If you have a list of username, full name, and email address in a file, this can be used as an audit check to the list automatically retrieved from the source system.
+Best practice is to create user accounts on the destination GitLab system first. The GitLab PS team will use automation to query the source system(s) to get a list of all users (excluding [internal and bot](https://docs.gitlab.com/ee/development/internal_users.html#internal-users)) that need to be migrated. User details should be accurate on the source systems, especially email. There should be no personal or fake emails entered for a given user. This is a hard requirement for GitHub.[^github-1]  If you have a list of username, full name, and email address in a file, this can be used as an audit check to the list automatically retrieved from the source system.
 
 [^github-1]: If your source system is GitHub **make sure your users have their official email address in the [public email address](https://docs.github.com/en/github/setting-up-and-managing-your-github-user-account/managing-email-preferences/setting-your-commit-email-address#setting-your-commit-email-address-on-github) on their github user account**.
 
@@ -58,7 +58,7 @@ During execution of a migration wave, changes to the source system should be lim
 
 ## Migration Planning Team - Post Migration Considerations
 
-After the migration wave is complete, the source system project(s) will usually be archived or marked as read-only by the GitLab PS team. This is to prevent any accidental writes to the source project, as this would cause a divergence with the destination GitLab system.  
+After the migration wave is complete, the source system project(s) will usually be archived or marked as read-only by the GitLab PS team. This is to prevent any accidental writes to the source project, as this would cause a divergence with the destination GitLab system.
 
 ## Specific Considerations
 

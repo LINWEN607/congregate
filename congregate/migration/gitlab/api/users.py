@@ -48,7 +48,7 @@ class UsersApi(GitLabApiWrapper):
 
     def get_all_users(self, host, token):
         """
-        Get a list of all instance users, excluding internal and group/project bot users.
+        Get a list of all instance users, excluding internal and bot.
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/users.html#for-admins
 
