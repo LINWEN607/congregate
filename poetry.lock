@@ -190,6 +190,17 @@ python-versions = ">=3.7"
 toml = ["tomli"]
 
 [[package]]
+name = "dacite"
+version = "1.8.0"
+description = "Simple creation of data classes from dictionaries."
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
+[package.extras]
+dev = ["pytest (>=5)", "pytest-benchmark", "pytest-cov", "coveralls", "black", "mypy", "pylint", "pre-commit"]
+
+[[package]]
 name = "defusedxml"
 version = "0.7.1"
 description = "XML bomb protection for Python stdlib modules"
@@ -1247,7 +1258,7 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8.12"
-content-hash = "bf954b68a3ba6b6d449fba53a174c0cbffc79f7d169d31517f893f63166d0499"
+content-hash = "d6f4b37b57944ff602979644795f99f56a78de65b3a35f95220d10de836f8730"
 
 [metadata.files]
 astroid = []
@@ -1269,6 +1280,7 @@ colorama = [
     {file = "colorama-0.4.4.tar.gz", hash = "sha256:5941b2b48a20143d2267e95b1c2a7603ce057ee39fd88e7329b0c292aa16869b"},
 ]
 coverage = []
+dacite = []
 defusedxml = []
 dill = []
 docker = []

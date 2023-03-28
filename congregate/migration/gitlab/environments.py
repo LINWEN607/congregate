@@ -1,9 +1,11 @@
 from requests.exceptions import RequestException
+from dacite import from_dict
 
 from congregate.helpers.base_class import BaseClass
 from gitlab_ps_utils.misc_utils import is_error_message_present
 from gitlab_ps_utils.dict_utils import pop_multiple_keys
 from congregate.migration.gitlab.api.projects import ProjectsApi
+from congregate.migration.meta.api_models.project_environment import NewProjectEnvironmentPayload
 
 
 class EnvironmentsClient(BaseClass):
@@ -40,4 +42,4 @@ class EnvironmentsClient(BaseClass):
             return False
 
     def generate_environment_data(self, environment):
-        return pop_multiple_keys(environment, ["state", "slug", "id"])
+        return from_dict(data_class=NewProjectEnvironmentPayload, data=environment).to_dict()

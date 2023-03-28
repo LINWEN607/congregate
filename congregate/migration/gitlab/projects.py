@@ -25,6 +25,7 @@ from congregate.helpers.migrate_utils import get_dst_path_with_namespace,  get_f
     check_for_staged_user_projects, get_stage_wave_paths
 from congregate.helpers.utils import rotate_logs
 from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
+from congregate.migration.meta.api_models.shared_with_group import SharedWithGroupPayload
 
 
 class ProjectsClient(BaseClass):
@@ -92,13 +93,13 @@ class ProjectsClient(BaseClass):
                 new_gid = self.groups.find_group_id_by_path(
                     self.config.destination_host, self.config.destination_token, dst_full_path)
                 if new_gid:
-                    data = {
-                        "group_access": group["group_access_level"],
-                        "group_id": new_gid,
-                        "expires_at": group["expires_at"]
-                    }
+                    data = SharedWithGroupPayload(
+                        group_access=group["group_access_level"],
+                        group_id=new_gid,
+                        expires_at=group["expires_at"]
+                    )
                     r = self.projects_api.add_shared_group(
-                        self.config.destination_host, self.config.destination_token, new_id, data)
+                        self.config.destination_host, self.config.destination_token, new_id, data.to_dict())
                     if r.status_code == 201:
                         self.log.info(
                             f"Shared project {path} with group {dst_full_path}")

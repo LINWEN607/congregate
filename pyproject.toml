@@ -41,6 +41,7 @@ mkdocs-gen-files = "^0.3.4"
 mkdocs-literate-nav = "^0.4.1"
 grpcio = "~1.51"
 grpcio-tools = "~1.51"
+dacite = "^1.8.0"
 
 
 [tool.poetry.dev-dependencies]
