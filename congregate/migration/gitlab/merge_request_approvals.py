@@ -7,6 +7,7 @@ from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.users import UsersApi
+from congregate.migration.meta.api_models.mr_approvers import MergeRequestApproverPayload
 
 
 class MergeRequestApprovalsClient(BaseClass):
@@ -64,15 +65,15 @@ class MergeRequestApprovalsClient(BaseClass):
                     return False
                 user_ids, group_ids, protected_branch_ids = self.get_missing_rule_params(
                     rule, new_id)
-                data = {
-                    "name": rule["name"],
-                    "approvals_required": rule["approvals_required"],
-                    "user_ids": user_ids,
-                    "group_ids": group_ids,
-                    "protected_branch_ids": protected_branch_ids
-                }
+                data = MergeRequestApproverPayload(
+                    name=rule['name'],
+                    approvals_required=rule["approvals_required"],
+                    user_ids=user_ids,
+                    group_ids=group_ids,
+                    protected_branch_ids=protected_branch_ids
+                )
                 self.projects_api.create_project_level_mr_approval_rule(
-                    new_id, self.config.destination_host, self.config.destination_token, data)
+                    new_id, self.config.destination_host, self.config.destination_token, data.to_dict())
             return True
         except TypeError as te:
             self.log.error(
