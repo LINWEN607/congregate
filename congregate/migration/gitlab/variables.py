@@ -3,11 +3,12 @@ import json
 from requests.exceptions import RequestException
 from gitlab_ps_utils.misc_utils import get_dry_log, is_error_message_present, safe_json_response
 from congregate.helpers.base_class import BaseClass
+from congregate.helpers.db_or_http import DbOrHttpMixin
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 
 
-class VariablesClient(BaseClass):
+class VariablesClient(DbOrHttpMixin ,BaseClass):
     def __init__(self):
         self.projects_api = ProjectsApi()
         self.groups_api = GroupsApi()
@@ -49,7 +50,7 @@ class VariablesClient(BaseClass):
                     old_id, self.config.source_host, self.config.source_token, var_type=var_type)
                 if var_list:
                     return self.migrate_variables(
-                        new_id, name, var_list, var_type)
+                        new_id, name, var_list, var_type, old_id)
                 return True
             else:
                 self.log.info(
@@ -76,8 +77,12 @@ class VariablesClient(BaseClass):
                                     name, sps["description"]))
                                 for v in safe_json_response(self.projects_api.get_single_project_pipeline_schedule(
                                         old_id, sps["id"], self.config.source_host, self.config.source_token)).get("variables", None):
-                                    self.projects_api.create_new_project_pipeline_schedule_variable(
-                                        new_id, dps["id"], self.config.destination_host, self.config.destination_token, v)
+                                    
+                                    self.send_data(self.projects_api.create_new_project_pipeline_schedule_variable,
+                                                   (new_id, dps["id"], self.config.destination_host, self.config.destination_token, v),
+                                                   'pipeline_schedule_variables',
+                                                   old_id,
+                                                   v)
                 return True
             self.log.info(
                 f"Pipeline schedule variables are disabled ({enabled}) for project {name}")
@@ -87,10 +92,9 @@ class VariablesClient(BaseClass):
                 f"Failed to migrate project {name} pipeline schedule variables, with error:\n{e}")
             return False
 
-    def migrate_variables(self, new_id, name, var_list, var_type):
+    def migrate_variables(self, new_id, name, var_list, var_type, src_id):
         try:
-            variables = iter(var_list)
-            for var in variables:
+            for var in iter(var_list):
                 error, var = is_error_message_present(var)
                 if error or not var:
                     self.log.error(
@@ -98,8 +102,12 @@ class VariablesClient(BaseClass):
                     return False
                 self.log.info(
                     f"Migrating {var_type} {name} (ID: {new_id}) CI/CD variables")
-                self.set_variables(
-                    new_id, var, self.config.destination_host, self.config.destination_token, var_type=var_type)
+                
+                self.send_data(self.set_variables, 
+                               (new_id, var, self.config.destination_host, self.config.destination_token, var_type),
+                               'ci_variables',
+                               src_id, 
+                               var)
             return True
         except TypeError as te:
             self.log.error("{0} {1} variables {2}".format(

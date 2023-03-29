@@ -2,13 +2,13 @@ from requests.exceptions import RequestException
 from dacite import from_dict
 
 from congregate.helpers.base_class import BaseClass
+from congregate.helpers.db_or_http import DbOrHttpMixin
 from gitlab_ps_utils.misc_utils import is_error_message_present
-from gitlab_ps_utils.dict_utils import pop_multiple_keys
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.meta.api_models.project_environment import NewProjectEnvironmentPayload
 
 
-class EnvironmentsClient(BaseClass):
+class EnvironmentsClient(DbOrHttpMixin ,BaseClass):
     def __init__(self):
         self.projects = ProjectsApi()
         super(EnvironmentsClient, self).__init__()
@@ -22,23 +22,27 @@ class EnvironmentsClient(BaseClass):
             resp = self.projects.get_all_project_environments(
                 src_id, self.config.source_host, self.config.source_token)
             envs = iter(resp)
-            self.log.info("Migrating project {} environments".format(name))
+            self.log.info(f"Migrating project {name} environments")
             for env in envs:
                 error, env = is_error_message_present(env)
                 if error or not env:
                     self.log.error(
-                        "Failed to fetch environments ({0}) for project {1}".format(env, name))
+                        f"Failed to fetch environments ({env}) for project {name}")
                     return False
-                self.projects.create_environment(
-                    self.config.destination_host, self.config.destination_token, dest_id, self.generate_environment_data(env))
+                self.send_data(
+                    self.projects.create_environment,
+                    (self.config.destination_host, self.config.destination_token, dest_id),
+                    'project_environments',
+                    src_id,
+                    self.generate_environment_data(env))
             return True
         except TypeError as te:
             self.log.error(
-                "Project {0} environments {1} {2}".format(name, resp, te))
+                f"Project {name} environments {resp} {te}")
             return False
         except RequestException as re:
             self.log.error(
-                "Failed to migrate project {0} environments, with error:\n{1}".format(name, re))
+                f"Failed to migrate project {name} environments, with error:\n{re}")
             return False
 
     def generate_environment_data(self, environment):

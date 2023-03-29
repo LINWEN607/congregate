@@ -11,7 +11,6 @@ from congregate.migration.meta.api_models.mr_approvers import MergeRequestApprov
 class SingleProjectFeatures():
     id: int
     project_environments: Optional[List[NewProjectEnvironmentPayload]] = field(default_factory=list)
-    shared_with_groups: Optional[List[SharedWithGroupPayload]] = field(default_factory=list)
     ci_variables: Optional[List[VariablePayload]] = field(default_factory=list)
     pipeline_schedule_variables: Optional[List[PipelineScheduleVariablesPayload]] = field(default_factory=list)
     mr_approvers: Optional[List[MergeRequestApproverPayload]] = field(default_factory=list)

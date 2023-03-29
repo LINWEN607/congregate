@@ -33,6 +33,8 @@ from congregate.migration.gitlab.clusters import ClustersClient
 from congregate.migration.gitlab.environments import EnvironmentsClient
 from congregate.migration.gitlab.branches import BranchesClient
 from congregate.migration.gitlab.packages import PackagesClient
+from congregate.helpers.mdbc import MongoConnector
+from congregate.migration.meta.api_models.single_project_features import SingleProjectFeatures
 
 class GitLabMigrateClient(MigrateClient):
     def __init__(self, 
@@ -599,3 +601,51 @@ class GitLabMigrateClient(MigrateClient):
         self.remove_import_user(dst_id)
 
         return results
+
+    def export_single_project_features(self, project, dst_id):
+        """
+            Subsequent function to update project info AFTER import
+        """
+        project.pop("members")
+        path_with_namespace = project["path_with_namespace"]
+        src_id = project["id"]
+        jobs_enabled = project["jobs_enabled"]
+        results = {}
+
+        mongo = MongoConnector()
+        mongo.db['project_features'].insert_one(SingleProjectFeatures(id=src_id).to_dict())
+        mongo.close_connection()
+
+        # Environments
+        results["environments"] = self.environments.migrate_project_environments(
+            src_id, dst_id, path_with_namespace, jobs_enabled)
+
+        # CI/CD Variables
+        results["cicd_variables"] = self.variables.migrate_cicd_variables(
+            src_id, dst_id, path_with_namespace, "projects", jobs_enabled)
+
+        # Pipeline Schedule Variables
+        results["pipeline_schedule_variables"] = self.variables.migrate_pipeline_schedule_variables(
+            src_id, dst_id, path_with_namespace, jobs_enabled)
+
+
+        # Container Registries
+        # if self.config.source_registry and self.config.destination_registry:
+        #     results["container_registry"] = self.registries.migrate_registries(
+        #         src_id, dst_id, path_with_namespace)
+
+        # Package Registries
+        # results["package_registry"] = self.packages.migrate_project_packages(
+        #     src_id, dst_id, path_with_namespace)
+
+        if self.config.source_tier not in ["core", "free"]:
+            # Push Rules - handled by GitLab Importer as of 13.6
+            # results["push_rules"] = self.pushrules.migrate_push_rules(
+            #     src_id, dst_id, path_with_namespace)
+
+            # Merge Request Approvals
+            results["project_level_mr_approvals"] = self.mr_approvals.migrate_project_level_mr_approvals(
+                src_id, dst_id, path_with_namespace)
+
+        return results
+    
