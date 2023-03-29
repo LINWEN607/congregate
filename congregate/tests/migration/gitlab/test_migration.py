@@ -7,7 +7,7 @@ from congregate.migration.diff.basediff import BaseDiffClient
 from congregate.migration.gitlab.diff.userdiff import UserDiffClient
 from congregate.migration.gitlab.diff.groupdiff import GroupDiffClient
 from congregate.migration.gitlab.diff.projectdiff import ProjectDiffClient
-from congregate.migration.migrate import MigrateClient
+from congregate.migration.gitlab.migrate import GitLabMigrateClient
 from congregate.helpers.base_class import BaseClass
 
 
@@ -17,7 +17,7 @@ class MigrationEndToEndTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.migrate = MigrateClient(dry_run=False, hard_delete=True)
+        cls.migrate = GitLabMigrateClient(start=time(), dry_run=False, hard_delete=True)
         # Source instance seed data creation buffer
         sleep(cls.DELAY)
         do_all.list_all()

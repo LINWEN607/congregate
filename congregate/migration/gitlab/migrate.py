@@ -1,0 +1,601 @@
+"""
+    Congregate - GitLab instance migration utility
+
+    Copyright (c) 2023 - GitLab
+"""
+
+from json import loads as json_loads
+from traceback import print_exc
+from requests.exceptions import RequestException
+
+from gitlab_ps_utils import json_utils, misc_utils
+
+import congregate.helpers.migrate_utils as mig_utils
+from congregate.helpers.utils import is_dot_com
+
+from congregate.migration.meta.base_migrate import MigrateClient
+from congregate.migration.gitlab.importexport import ImportExportClient
+from congregate.migration.gitlab.variables import VariablesClient
+from congregate.migration.gitlab.users import UsersClient
+from congregate.migration.gitlab.api.users import UsersApi
+from congregate.migration.gitlab.groups import GroupsClient
+from congregate.migration.gitlab.api.groups import GroupsApi
+from congregate.migration.gitlab.projects import ProjectsClient
+from congregate.migration.gitlab.api.projects import ProjectsApi
+from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
+from congregate.migration.gitlab.api.namespaces import NamespacesApi
+from congregate.migration.gitlab.api.instance import InstanceApi
+from congregate.migration.gitlab.merge_request_approvals import MergeRequestApprovalsClient
+from congregate.migration.gitlab.registries import RegistryClient
+from congregate.migration.gitlab.keys import KeysClient
+from congregate.migration.gitlab.hooks import HooksClient
+from congregate.migration.gitlab.clusters import ClustersClient
+from congregate.migration.gitlab.environments import EnvironmentsClient
+from congregate.migration.gitlab.branches import BranchesClient
+from congregate.migration.gitlab.packages import PackagesClient
+
+class GitLabMigrateClient(MigrateClient):
+    def __init__(self, 
+                 dry_run=True, 
+                 processes=None, 
+                 only_post_migration_info=False, 
+                 start=None, 
+                 skip_users=False, 
+                 remove_members=False, 
+                 hard_delete=False, 
+                 stream_groups=False, 
+                 skip_groups=False, 
+                 skip_projects=False, 
+                 skip_group_export=False, 
+                 skip_group_import=False, 
+                 skip_project_export=False, 
+                 skip_project_import=False, 
+                 subgroups_only=False, 
+                 scm_source=None, 
+                 group_structure=False,
+                 reg_dry_run=False):
+        self.ie = ImportExportClient()
+        self.variables = VariablesClient()
+        self.users = UsersClient()
+        self.users_api = UsersApi()
+        self.groups = GroupsClient()
+        self.groups_api = GroupsApi()
+        self.projects = ProjectsClient()
+        self.projects_api = ProjectsApi()
+        self.project_repository_api = ProjectRepositoryApi()
+        self.namespaces_api = NamespacesApi()
+        self.instance_api = InstanceApi()
+        self.mr_approvals = MergeRequestApprovalsClient()
+        self.registries = RegistryClient(
+            reg_dry_run=reg_dry_run
+        )
+        self.packages = PackagesClient()
+        self.keys = KeysClient()
+        self.hooks = HooksClient()
+        self.clusters = ClustersClient()
+        self.environments = EnvironmentsClient()
+        self.branches = BranchesClient()
+        super().__init__(dry_run, 
+                         processes, 
+                         only_post_migration_info, 
+                         start, 
+                         skip_users, 
+                         remove_members, 
+                         hard_delete, 
+                         stream_groups, 
+                         skip_groups, 
+                         skip_projects, 
+                         skip_group_export, 
+                         skip_group_import, 
+                         skip_project_export, 
+                         skip_project_import, 
+                         subgroups_only, 
+                         scm_source, 
+                         group_structure)
+    
+    def migrate(self):
+        # Users
+        self.migrate_user_info()
+
+        # Groups
+        self.migrate_group_info()
+
+        # Projects
+        self.migrate_project_info()
+
+        # Instance hooks
+        self.hooks.migrate_instance_hooks(dry_run=self.dry_run)
+
+        # Instance clusters
+        self.clusters.migrate_instance_clusters(dry_run=self.dry_run)
+
+        # Remove import user from parent group to avoid inheritance
+        # (self-managed only)
+        if not self.dry_run and self.config.dstn_parent_id and not is_dot_com(
+                self.config.destination_host):
+            self.remove_import_user(
+                self.config.dstn_parent_id, gl_type="group")
+    
+    def migrate_group_info(self):
+        staged_groups = mig_utils.get_staged_groups()
+        staged_top_groups = [
+            g for g in staged_groups if mig_utils.is_top_level_group(g)]
+        staged_subgroups = [
+            g for g in staged_groups if not mig_utils.is_top_level_group(g)]
+        dry_log = misc_utils.get_dry_log(self.dry_run)
+        if staged_top_groups or (staged_subgroups and self.subgroups_only):
+            mig_utils.validate_groups_and_projects(staged_groups)
+            if self.stream_groups:
+                self.stream_import_groups(
+                    staged_top_groups, staged_subgroups, dry_log)
+            else:
+                self.export_import_groups(
+                    staged_top_groups, staged_subgroups, dry_log)
+        else:
+            self.log.warning(
+                "SKIP: No groups staged for migration. Migrating ONLY sub-groups without '--subgroups-only'?")
+
+    def export_import_groups(self, staged_top_groups, staged_subgroups, dry_log):
+        if not self.skip_group_export:
+            self.log.info(f"{dry_log}Exporting groups")
+            export_results = list(er for er in self.multi.start_multi_process(
+                self.handle_exporting_groups,
+                staged_subgroups if self.subgroups_only else staged_top_groups,
+                processes=self.processes
+            ))
+
+            self.are_results(export_results, "group", "export")
+
+            # Create list of groups that failed export
+            if failed := mig_utils.get_failed_export_from_results(
+                    export_results):
+                self.log.warning(
+                    f"SKIP: Groups that failed to export or already exist on destination:\n{json_utils.json_pretty(failed)}")
+
+            # Append total count of groups exported
+            export_results.append(mig_utils.get_results(export_results))
+            self.log.info(
+                f"### {dry_log}Group export results ###\n{json_utils.json_pretty(export_results)}")
+
+            # Filter out the failed ones
+            staged_top_groups = mig_utils.get_staged_groups_without_failed_export(
+                staged_top_groups, failed)
+        else:
+            self.log.info(
+                "SKIP: Assuming staged groups are already exported")
+        if not self.skip_group_import:
+            self.log.info(f"{dry_log}Importing groups")
+            import_results = list(ir for ir in self.multi.start_multi_process(
+                self.handle_importing_groups,
+                staged_subgroups if self.subgroups_only else staged_top_groups,
+                processes=self.processes
+            ))
+
+            # Migrate sub-group info
+            if staged_subgroups:
+                import_results += list(ir for ir in self.multi.start_multi_process(
+                    self.migrate_subgroup_info, staged_subgroups, processes=self.processes))
+
+            self.are_results(import_results, "group", "import")
+
+            # Append Total : Successful count of group migrations
+            import_results.append(mig_utils.get_results(import_results))
+            self.log.info(
+                f"### {dry_log}Group import results ###\n{json_utils.json_pretty(import_results)}")
+            mig_utils.write_results_to_file(
+                import_results, result_type="group", log=self.log)
+        else:
+            self.log.info(
+                "SKIP: Assuming staged groups will be later imported")
+
+    def stream_import_groups(self, staged_top_groups, staged_subgroups, dry_log):
+        self.log.info(f"{dry_log}Importing groups in bulk")
+
+        # Only import relevant groups, the rest will unpack
+        import_results = self.import_groups(
+            staged_subgroups if self.subgroups_only else staged_top_groups, dry_log)
+
+        if not self.dry_run:
+            # Match full_path against ALL staged groups
+            # Migrate single group features if import "finished" or group already exists
+            for ir in import_results:
+                ex_full_path = next(iter(ir))
+                full_path = ir.get("source_full_path") or ex_full_path
+                status = ir.get("status")
+                if status == "finished" or ir.get(ex_full_path):
+                    src_gid = next((g["id"] for g in (
+                        staged_top_groups + staged_subgroups) if g["full_path"] == full_path), None)
+                    dst_gid = ir.get("namespace_id") or ex_full_path
+                    self.migrate_single_group_features(
+                        src_gid, dst_gid, full_path)
+                else:
+                    self.log.error(
+                        f"Cannot migrate {full_path} single group features. Import status: {status}")
+
+        self.are_results(import_results, "group", "import")
+
+        # Append Total : Successful count of group migrations
+        import_results.append(mig_utils.get_results(import_results))
+        self.log.info(
+            f"### {dry_log}Group bulk import results ###\n{json_utils.json_pretty(import_results)}")
+        mig_utils.write_results_to_file(
+            import_results, result_type="group", log=self.log)
+
+    def import_groups(self, groups, dry_log):
+        data = {
+            "configuration": {
+                "url": self.config.source_host,
+                "access_token": self.config.source_token
+            },
+            "entities": []
+        }
+        host = self.config.destination_host
+        token = self.config.destination_token
+        imported = False
+        try:
+            # Prepare group entities and current result for destination
+            data["entities"], result = self.groups.find_and_stage_group_bulk_entities(
+                groups)
+            self.log.info(
+                f"{dry_log}Start bulk group import, with payload:\n{json_utils.json_pretty(data['entities'])} and destination state:\n{json_utils.json_pretty(result)}")
+
+            if data["entities"] and not self.dry_run:
+                bulk_import_resp = self.groups_api.bulk_group_import(
+                    host, token, data=data)
+                if bulk_import_resp.status_code != 201:
+                    self.log.error(
+                        f"Failed to trigger group bulk import, with response:\n{bulk_import_resp} - {bulk_import_resp.text}")
+                else:
+                    bid = misc_utils.safe_json_response(
+                        bulk_import_resp).get("id")
+                    imported = self.ie.wait_for_bulk_group_import(
+                        bulk_import_resp, bid)
+            if imported:
+                result = list(self.groups_api.get_all_bulk_group_import_entities(
+                    host, token, bid))
+        except (RequestException, KeyError, OverflowError) as oe:
+            self.log.error(
+                f"Failed to import bulk group groups with error:\n{oe}")
+        except Exception as e:
+            self.log.error(e)
+            self.log.error(print_exc())
+        return result
+
+    def handle_exporting_groups(self, group):
+        full_path = group["full_path"]
+        gid = group["id"]
+        dry_log = misc_utils.get_dry_log(self.dry_run)
+        filename = mig_utils.get_export_filename_from_namespace_and_name(
+            full_path)
+        result = {
+            filename: False
+        }
+        try:
+            self.log.info("{0}Exporting group {1} (ID: {2}) as {3}"
+                          .format(dry_log, full_path, gid, filename))
+            result[filename] = self.ie.export_group(
+                gid, full_path, filename, dry_run=self.dry_run)
+        except (IOError, RequestException) as oe:
+            self.log.error("Failed to export group {0} (ID: {1}) as {2} with error:\n{3}".format(
+                full_path, gid, filename, oe))
+        except Exception as e:
+            self.log.error(e)
+            self.log.error(print_exc())
+        return result
+
+    def handle_importing_groups(self, group):
+        try:
+            if isinstance(group, str):
+                group = json_loads(group)
+            full_path = group["full_path"]
+            src_gid = group["id"]
+            full_path_with_parent_namespace = mig_utils.get_full_path_with_parent_namespace(
+                full_path)
+            filename = mig_utils.get_export_filename_from_namespace_and_name(
+                full_path)
+            result = {
+                full_path_with_parent_namespace: False
+            }
+            import_id = None
+            dry_log = misc_utils.get_dry_log(self.dry_run)
+            dst_grp = self.groups.find_group_by_path(
+                self.config.destination_host, self.config.destination_token, full_path_with_parent_namespace)
+            dst_gid = dst_grp.get("id") if dst_grp else None
+            if dst_gid:
+                self.log.info(
+                    f"{dry_log}Group {full_path} (ID: {dst_gid}) already exists on destination")
+                result[full_path_with_parent_namespace] = dst_gid
+                if self.only_post_migration_info and not self.dry_run:
+                    import_id = dst_gid
+                else:
+                    result[full_path_with_parent_namespace] = dst_gid
+            else:
+                self.log.info(
+                    f"{dry_log}Group {full_path_with_parent_namespace} NOT found on destination, importing...")
+                imported = self.ie.import_group(
+                    group,
+                    full_path_with_parent_namespace,
+                    filename,
+                    dry_run=self.dry_run,
+                    subgroups_only=self.subgroups_only
+                )
+                # In place of checking the import status
+                if not self.dry_run and imported:
+                    import_id = self.ie.wait_for_group_import(
+                        full_path_with_parent_namespace).get("id")
+            if import_id and not self.dry_run:
+                result[full_path_with_parent_namespace] = self.migrate_single_group_features(
+                    src_gid, import_id, full_path)
+        except (RequestException, KeyError, OverflowError) as oe:
+            self.log.error(
+                f"Failed to import group {full_path} (ID: {src_gid}) as {filename} with error:\n{oe}")
+        except Exception as e:
+            self.log.error(e)
+            self.log.error(print_exc())
+        return result
+
+    def migrate_subgroup_info(self, subgroup):
+        try:
+            if isinstance(subgroup, str):
+                subgroup = json_loads(subgroup)
+            full_path = subgroup["full_path"]
+            src_gid = subgroup["id"]
+            full_path_with_parent_namespace = mig_utils.get_full_path_with_parent_namespace(
+                full_path)
+            result = {
+                full_path_with_parent_namespace: False
+            }
+            self.log.info(
+                f"Searching on destination for sub-group {full_path_with_parent_namespace}")
+            if self.dry_run:
+                dst_gid = self.groups.find_group_id_by_path(
+                    self.config.destination_host, self.config.destination_token, full_path_with_parent_namespace)
+            else:
+                dst_grp = self.ie.wait_for_group_import(
+                    full_path_with_parent_namespace)
+                dst_gid = dst_grp.get("id") if dst_grp else None
+            if dst_gid:
+                self.log.info(
+                    f"{misc_utils.get_dry_log(self.dry_run)}Sub-group {full_path} (ID: {dst_gid}) found on destination")
+                if not self.dry_run:
+                    result[full_path_with_parent_namespace] = self.migrate_single_group_features(
+                        src_gid, dst_gid, full_path)
+            elif not self.dry_run:
+                self.log.warning(
+                    f"Sub-group {full_path_with_parent_namespace} NOT found on destination")
+        except (RequestException, KeyError, OverflowError) as oe:
+            self.log.error(
+                f"Failed to migrate sub-group {full_path} (ID: {src_gid}) info with error:\n{oe}")
+        except Exception as e:
+            self.log.error(e)
+            self.log.error(print_exc())
+        return result
+
+    def migrate_single_group_features(self, src_gid, dst_gid, full_path):
+        results = {}
+        results["id"] = dst_gid
+
+        # CI/CD Variables
+        results["cicd_variables"] = self.variables.migrate_cicd_variables(
+            src_gid, dst_gid, full_path, "group", src_gid)
+
+        # Clusters
+        results["clusters"] = self.clusters.migrate_group_clusters(
+            src_gid, dst_gid, full_path)
+
+        if self.config.source_tier not in ["core", "free"]:
+            # Hooks (Webhooks)
+            results["hooks"] = self.hooks.migrate_group_hooks(
+                src_gid, dst_gid, full_path)
+
+        # Determine whether to remove all group members
+        results["members"] = self.handle_member_retention(
+            [], dst_gid, group=True)
+
+        # Remove import user; SKIP if removing all other members
+        if not self.remove_members:
+            self.remove_import_user(dst_gid, gl_type="group")
+
+        return results
+
+    def migrate_project_info(self):
+        staged_projects = mig_utils.get_staged_projects()
+        dry_log = misc_utils.get_dry_log(self.dry_run)
+        if staged_projects:
+            mig_utils.validate_groups_and_projects(
+                staged_projects, are_projects=True)
+            if user_projects := mig_utils.get_staged_user_projects(
+                    staged_projects):
+                self.log.warning("User projects staged:\n{}".format(
+                    "\n".join(u for u in user_projects)))
+            if not self.skip_project_export:
+                self.log.info("{}Exporting projects".format(dry_log))
+                export_results = list(er for er in self.multi.start_multi_process(
+                    self.handle_exporting_projects, staged_projects, processes=self.processes))
+
+                self.are_results(export_results, "project", "export")
+
+                # Create list of projects that failed export
+                if failed := mig_utils.get_failed_export_from_results(
+                        export_results):
+                    self.log.warning("SKIP: Projects that failed to export or already exist on destination:\n{}".format(
+                        json_utils.json_pretty(failed)))
+
+                # Append total count of projects exported
+                export_results.append(mig_utils.get_results(export_results))
+                self.log.info("### {0}Project export results ###\n{1}"
+                              .format(dry_log, json_utils.json_pretty(export_results)))
+
+                # Filter out the failed ones
+                staged_projects = mig_utils.get_staged_projects_without_failed_export(
+                    staged_projects, failed)
+            else:
+                self.log.info(
+                    "SKIP: Assuming staged projects are already exported")
+
+            if not self.skip_project_import:
+                self.log.info("{}Importing projects".format(dry_log))
+                import_results = list(ir for ir in self.multi.start_multi_process(
+                    self.handle_importing_projects, staged_projects, processes=self.processes))
+
+                self.are_results(import_results, "project", "import")
+
+                # append Total : Successful count of project imports
+                import_results.append(mig_utils.get_results(import_results))
+                self.log.info("### {0}Project import results ###\n{1}"
+                              .format(dry_log, json_utils.json_pretty(import_results)))
+                mig_utils.write_results_to_file(import_results, log=self.log)
+            else:
+                self.log.info(
+                    "SKIP: Assuming staged projects will be later imported")
+        else:
+            self.log.warning("SKIP: No projects staged for migration")
+
+    def handle_exporting_projects(self, project):
+        name = project["name"]
+        namespace = project["namespace"]
+        pid = project["id"]
+        dry_log = misc_utils.get_dry_log(self.dry_run)
+        filename = mig_utils.get_export_filename_from_namespace_and_name(
+            namespace, name)
+        result = {
+            filename: False
+        }
+        try:
+            self.log.info(
+                f"{dry_log}Exporting project {project['path_with_namespace']} (ID: {pid}) as {filename}")
+            result[filename] = self.ie.export_project(
+                project, dry_run=self.dry_run)
+        except (IOError, RequestException) as oe:
+            self.log.error(
+                f"Failed to export/download project {name} (ID: {pid}) as {filename} with error:\n{oe}")
+        except Exception as e:
+            self.log.error(e)
+            self.log.error(print_exc())
+        return result
+
+    def handle_importing_projects(self, project):
+        src_id = project["id"]
+        archived = project["archived"]
+        path = project["path_with_namespace"]
+        dst_path_with_namespace = mig_utils.get_dst_path_with_namespace(
+            project)
+        result = {
+            dst_path_with_namespace: False
+        }
+        import_id = None
+        try:
+            if isinstance(project, str):
+                project = json_loads(project)
+            dst_pid = self.projects.find_project_by_path(
+                self.config.destination_host, self.config.destination_token, dst_path_with_namespace)
+            # Certain project features cannot be migrated when archived
+            if archived and not self.dry_run:
+                self.log.info(
+                    "Unarchiving source project {0} (ID: {1})".format(path, src_id))
+                self.projects_api.unarchive_project(
+                    self.config.source_host, self.config.source_token, src_id)
+            if dst_pid:
+                import_status = misc_utils.safe_json_response(self.projects_api.get_project_import_status(
+                    self.config.destination_host, self.config.destination_token, dst_pid))
+                self.log.info("Project {0} (ID: {1}) found on destination, with import status: {2}".format(
+                    dst_path_with_namespace, dst_pid, import_status))
+                import_id = dst_pid
+                if self.dry_run:
+                    result[dst_path_with_namespace] = dst_pid
+            else:
+                self.log.info(
+                    f"{misc_utils.get_dry_log(self.dry_run)}Project {dst_path_with_namespace} NOT found on destination, importing...")
+                import_id = self.ie.import_project(
+                    project, dry_run=self.dry_run)
+            if import_id and not self.dry_run:
+                # Disable Shared CI
+                self.disable_shared_ci(dst_path_with_namespace, import_id)
+                # Post import features
+                self.log.info(
+                    "Migrating source project {0} (ID: {1}) info".format(path, src_id))
+                result[dst_path_with_namespace] = self.migrate_single_project_features(
+                    project, import_id)
+        except (RequestException, KeyError, OverflowError) as oe:
+            self.log.error("Failed to import project {0} (ID: {1}) with error:\n{2}".format(
+                path, src_id, oe))
+        except Exception as e:
+            self.log.error(e)
+            self.log.error(print_exc())
+        finally:
+            if archived and not self.dry_run:
+                self.log.info(
+                    "Archiving back source project {0} (ID: {1})".format(path, src_id))
+                self.projects_api.archive_project(
+                    self.config.source_host, self.config.source_token, src_id)
+        return result
+
+    def migrate_single_project_features(self, project, dst_id):
+        """
+            Subsequent function to update project info AFTER import
+        """
+        project.pop("members")
+        path_with_namespace = project["path_with_namespace"]
+        shared_with_groups = project["shared_with_groups"]
+        src_id = project["id"]
+        jobs_enabled = project["jobs_enabled"]
+        results = {}
+
+        results["id"] = dst_id
+
+        # Set default branch
+        self.branches.set_branch(
+            path_with_namespace, dst_id, project.get("default_branch"))
+
+        # Shared with groups
+        results["shared_with_groups"] = self.projects.add_shared_groups(
+            dst_id, path_with_namespace, shared_with_groups)
+
+        # Environments
+        results["environments"] = self.environments.migrate_project_environments(
+            src_id, dst_id, path_with_namespace, jobs_enabled)
+
+        # CI/CD Variables
+        results["cicd_variables"] = self.variables.migrate_cicd_variables(
+            src_id, dst_id, path_with_namespace, "projects", jobs_enabled)
+
+        # Pipeline Schedule Variables
+        results["pipeline_schedule_variables"] = self.variables.migrate_pipeline_schedule_variables(
+            src_id, dst_id, path_with_namespace, jobs_enabled)
+
+        # Deploy Keys
+        results["deploy_keys"] = self.keys.migrate_project_deploy_keys(
+            src_id, dst_id, path_with_namespace)
+
+        # Container Registries
+        if self.config.source_registry and self.config.destination_registry:
+            results["container_registry"] = self.registries.migrate_registries(
+                src_id, dst_id, path_with_namespace)
+
+        # Package Registries
+        results["package_registry"] = self.packages.migrate_project_packages(
+            src_id, dst_id, path_with_namespace)
+
+        # Hooks (Webhooks)
+        results["project_hooks"] = self.hooks.migrate_project_hooks(
+            src_id, dst_id, path_with_namespace)
+
+        # Clusters
+        results["clusters"] = self.clusters.migrate_project_clusters(
+            src_id, dst_id, path_with_namespace, jobs_enabled)
+
+        if self.config.source_tier not in ["core", "free"]:
+            # Push Rules - handled by GitLab Importer as of 13.6
+            # results["push_rules"] = self.pushrules.migrate_push_rules(
+            #     src_id, dst_id, path_with_namespace)
+
+            # Merge Request Approvals
+            results["project_level_mr_approvals"] = self.mr_approvals.migrate_project_level_mr_approvals(
+                src_id, dst_id, path_with_namespace)
+
+        if self.config.remapping_file_path:
+            self.projects.migrate_gitlab_variable_replace_ci_yml(dst_id)
+
+        self.remove_import_user(dst_id)
+
+        return results

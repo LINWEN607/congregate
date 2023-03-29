@@ -8,7 +8,7 @@ from requests.exceptions import RequestException
 
 from gitlab_ps_utils.api import GitLabApi
 from congregate.helpers.configuration_validator import ConfigurationValidator
-from congregate.migration.migrate import MigrateClient
+from congregate.migration.meta.base_migrate import MigrateClient
 from congregate.tests.mockapi.gitlab.users import MockUsersApi
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
 from congregate.migration.gitlab.api.users import UsersApi

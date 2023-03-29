@@ -184,7 +184,7 @@ class ListClient(BaseClass):
             collection_name = f"teamcity-{single_teamcity_ci_source.get('tc_ci_src_hostname').split('//')[-1]}"
             data = TeamcityData(single_teamcity_ci_source.get("tc_ci_src_hostname"), single_teamcity_ci_source.get(
                 "tc_ci_src_username"), deobfuscate(single_teamcity_ci_source.get("tc_ci_src_access_token")))
-            data.retrieve_jobs_with_vcs_info(i)
+            data.retrieve_jobs_with_scm_info(i)
             mongo.dump_collection_to_file(
                 collection_name, f"{self.app_path}/data/teamcity-{i}.json")
 
