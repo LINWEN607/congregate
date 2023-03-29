@@ -1217,3 +1217,19 @@ class ProjectsApi(GitLabApiWrapper):
         if not message:
             message = f"Deleting project {pid} remote push mirror {mid}"
         return self.api.generate_delete_request(host, token, f"projects/{pid}/remote_mirrors/{mid}")
+
+    def create_project_access_token(self, pid, host, token, data, message=None):
+        """
+        Create a project access token.
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/project_access_tokens.html#create-a-project-access-token
+
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :param: data: (dict) Object containing the various data required for creating a project access token.
+                Refer to the link above for specific examples.
+            :return: Response object containing the response to POST projects/:id/access_tokens
+        """
+        if not message:
+            message = f"Creating project access token with payload {str(data)}"
+        return self.api.generate_post_request(host, token, f"projects/{pid}/access_tokens", json.dumps(data), description=message)

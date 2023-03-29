@@ -55,7 +55,7 @@ class GroupsApi(GitLabApiWrapper):
 
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :param: data: (dict) Object containing the various data requried for creating a group. Refer to the link above for specific examples
+            :param: data: (dict) Object containing the various data required for creating a group. Refer to the link above for specific examples
             :return: Response object containing the response to POST /groups
         """
         if not message:
@@ -332,7 +332,7 @@ class GroupsApi(GitLabApiWrapper):
         GitLab API doc: https://docs.gitlab.com/ee/api/groups.html#add-group-hook
 
             :param: gid: (int) GitLab group ID
-            :param: data: (dict) Object containing the various data requried for creating a hook. Refer to the link above for specific examples
+            :param: data: (dict) Object containing the various data required for creating a hook. Refer to the link above for specific examples
             :return: Response object containing the response to POST /groups/:id/hooks
         """
         if not message:
@@ -518,3 +518,19 @@ class GroupsApi(GitLabApiWrapper):
         if not message:
             message = f"Adding cluster {data['name']} to group {gid}"
         return self.api.generate_post_request(host, token, f"groups/{gid}/clusters/user", json.dumps(data), description=message)
+
+    def create_group_access_token(self, gid, host, token, data, message=None):
+        """
+        Create a group access token. You must have the Owner role for the group to create group access tokens.
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/group_access_tokens.html#create-a-group-access-token
+
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :param: data: (dict) Object containing the various data required for creating a group access token.
+                Refer to the link above for specific examples.
+            :return: Response object containing the response to POST groups/:id/access_tokens
+        """
+        if not message:
+            message = f"Creating group access token with payload {str(data)}"
+        return self.api.generate_post_request(host, token, f"groups/{gid}/access_tokens", json.dumps(data), description=message)

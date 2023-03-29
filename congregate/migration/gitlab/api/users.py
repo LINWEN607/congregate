@@ -48,7 +48,7 @@ class UsersApi(GitLabApiWrapper):
 
     def get_all_users(self, host, token):
         """
-        Get a list of users.
+        Get a list of all instance users, excluding internal and bot.
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/users.html#for-admins
 
@@ -56,7 +56,7 @@ class UsersApi(GitLabApiWrapper):
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /users
         """
-        return self.api.list_all(host, token, "users")
+        return self.api.list_all(host, token, "users?exclude_internal=true&without_project_bots=true")
 
     def create_user(self, host, token, data, message=None):
         """

@@ -121,7 +121,7 @@ class SeedDataGenerator(BaseClass):
         self.variables = VariablesClient()
         self.users = UsersClient()
         self.users_api = UsersApi()
-        self.groups = GroupsApi()
+        self.groups_api = GroupsApi()
         self.projects = ProjectsClient()
         self.projects_api = ProjectsApi()
         self.instance_api = InstanceApi()
@@ -142,6 +142,7 @@ class SeedDataGenerator(BaseClass):
             self.generate_dummy_group_variables(g["id"], dry_run)
             self.generate_dummy_group_hooks(g["id"], dry_run)
             self.generate_dummy_group_clusters(g["id"], dry_run)
+            self.generate_bot_user(g["id"], "group", dry_run)
         projects = self.generate_group_projects(groups, dry_run)
         for p in projects:
             self.add_project_members(users, p["id"], dry_run)
@@ -153,6 +154,7 @@ class SeedDataGenerator(BaseClass):
             self.generate_dummy_project_variables(p["id"], dry_run)
             self.generate_shared_with_group_data(p["id"], groups, dry_run)
             self.generate_dummy_project_clusters(p["id"], dry_run)
+            self.generate_bot_user(p["id"], "project", dry_run)
         projects += self.generate_user_projects(users, dry_run)
         self.generate_instance_clusters(dry_run)
         self.generate_instance_hooks(dry_run)
@@ -231,6 +233,28 @@ class SeedDataGenerator(BaseClass):
 
         return created_users
 
+    def generate_bot_user(self, oid, token_type, dry_run=True):
+        """
+            Generate a group and project access token i.e. bot user
+        """
+        host = self.config.source_host
+        token = self.config.source_token
+        data = {
+            "name": f"test_{token_type}_access_token",
+            "scopes": ["read_api"],
+            "expires_at": "2049-01-01",
+            "access_level": 10
+        }
+        self.log.info(
+            f"{get_dry_log(dry_run)}Creating {token_type} {oid} access token")
+        if not dry_run:
+            if token_type == "group":
+                self.groups_api.create_group_access_token(
+                    oid, host, token, data)
+            if token_type == "project":
+                self.projects_api.create_project_access_token(
+                    oid, host, token, data)
+
     def generate_groups(self, dry_run=True):
         dummy_groups = [
             {
@@ -244,7 +268,7 @@ class SeedDataGenerator(BaseClass):
         ]
         created_groups = []
         for group in dummy_groups:
-            group_search = list(self.groups.search_for_group(
+            group_search = list(self.groups_api.search_for_group(
                 group["path"], self.config.source_host, self.config.source_token))
             if len(group_search) > 0:
                 if group_search[0]["path"] == group["path"]:
@@ -255,13 +279,13 @@ class SeedDataGenerator(BaseClass):
                     self.log.info("{0}Creating group {1}".format(
                         get_dry_log(dry_run), group["name"]))
                     if not dry_run:
-                        created_groups.append(self.groups.create_group(
+                        created_groups.append(self.groups_api.create_group(
                             self.config.source_host, self.config.source_token, group).json())
             else:
                 self.log.info("{0}Creating group {1}".format(
                     get_dry_log(dry_run), group["name"]))
                 if not dry_run:
-                    created_groups.append(self.groups.create_group(
+                    created_groups.append(self.groups_api.create_group(
                         self.config.source_host, self.config.source_token, group).json())
 
         return created_groups
@@ -275,7 +299,7 @@ class SeedDataGenerator(BaseClass):
             self.log.info("{0}Adding user {1} ({2}) to group {3}".format(
                 get_dry_log(dry_run), user["email"], data, gid))
             if not dry_run:
-                self.groups.add_member_to_group(
+                self.groups_api.add_member_to_group(
                     gid, self.config.source_host, self.config.source_token, data)
 
     def add_project_members(self, created_users, pid, dry_run=True):
@@ -417,7 +441,7 @@ class SeedDataGenerator(BaseClass):
             self.log.info(
                 f"{get_dry_log(dry_run)}Creating group {gid} variable ({d})")
             if not dry_run:
-                self.groups.create_group_variable(
+                self.groups_api.create_group_variable(
                     gid, self.config.source_host, self.config.source_token, d)
 
     def generate_dummy_group_hooks(self, gid, dry_run=True):
@@ -425,7 +449,7 @@ class SeedDataGenerator(BaseClass):
             self.log.info(
                 f"{get_dry_log(dry_run)}Creating group {gid} hook ({d})")
             if not dry_run:
-                self.groups.add_group_hook(
+                self.groups_api.add_group_hook(
                     self.config.source_host, self.config.source_token, gid, d)
 
     def generate_dummy_group_clusters(self, gid, dry_run=True):
@@ -433,7 +457,7 @@ class SeedDataGenerator(BaseClass):
             self.log.info(
                 f"{get_dry_log(dry_run)}Creating group {gid} cluster ({d})")
             if not dry_run:
-                self.groups.add_group_cluster(
+                self.groups_api.add_group_cluster(
                     gid, self.config.source_host, self.config.source_token, d)
 
     def generate_shared_with_group_data(self, pid, groups, dry_run):

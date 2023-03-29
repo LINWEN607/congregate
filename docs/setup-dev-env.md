@@ -108,7 +108,7 @@ nvm install 12.18.4
 nvm use 12.18.4
 
 # Install ui dependencies
-cd <path_to_congregate>
+cd <path_to_congregate>/frontend
 npm install
 ```
 

@@ -35,11 +35,12 @@ This runbook covers the process of preparing and cleaning up after a migration f
     * `NewAccessRequest`
 
     **NOTE:** Labels may change over time
-  * Assign to Manager for review/approval
-  * Assign to SIRT for review/approval i.e. `/assign @gitlab-com/gl-security/security-operations/sirt`
-  * Assign to IT i.e. `/assign @gitlab-com/business-technology/team-member-enablement` (former `@gitlab-com/business-ops/team-member-enablement`) for provisioning
+  * Assign to Manager for review/approval. 
+    * Managers: 
+      * Follow the instructions in the AR template for review and approval
+      * Additionally mention SIRT for review i.e. `@gitlab-com/gl-security/security-operations/sirt`
 
-    **NOTE:** Assignee group may change over time
+    **NOTE:** Mentions may change over time
   * (Optional) Post issue in Slack's [**#it_help**](https://gitlab.slack.com/archives/CK4EQH50E) channel
 * (gitlab.com) To avoid provisioning the (Admin) export/import user in an external identity provider, spoof the SAML identity. `PUT` the following json body to `https://<hostname>/api/v4/users/<id>` to modify the Admin user:
 
@@ -78,7 +79,7 @@ This runbook covers the process of preparing and cleaning up after a migration f
   * [ ] If done via Rails console, schedule a meeting between lead PSE and source instance Admin to walk through the process
     * For exact steps see [**Trim or remove project CI pipelines**](/runbooks/migrations-to-dot-com.md#trim-or-remove-project-ci-pipelines)
 * [ ] Create a user-group-project migration schedule (waves)
-  * [ ] All users are migrated first
+  * [ ] All users (excluding [internal and bot](https://docs.gitlab.com/ee/development/internal_users.html#internal-users)) are migrated first
   * [ ] Entire group structure next
     * (gitlab.com) [Notes](https://docs.gitlab.com/ee/user/group/import/index.html#migrate-groups-by-uploading-an-export-file-deprecated) around GitLab Group Export/Import
     * Consult with your engineer around restrictions for group movement and renaming, as it is dependent on your source system and migration requirements

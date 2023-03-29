@@ -64,6 +64,6 @@ Refer to [this README](./docker/bitbucket/README.md) for details on setting up a
 
 ## Issues with installing node dependencies
 
-You can delete the `node_modules` folder and re-run `npm install` if you are experiencing issues with frontend dependencies.
+You can delete the `node_modules` folder and re-run `npm install` in the `frontend` directory if you are experiencing issues with frontend dependencies.
 If you are still having issues with getting the UI to build correctly after re-installing the dependencies and you don't have any linting issues,
 reach out to a maintainer or create an issue pinging `@leopardm` or `@pprokic`.
