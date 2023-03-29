@@ -393,8 +393,8 @@ def sanitize_project_path(path, full_path):
         "!_-::This.is;;-how_we--do\n&IT#?-šđžčć_?" -> "This.is-how_we-do-IT"
     """
     # Validate path convention in docstring and sanitize path
-    valid = sub("[._-][^A-Za-z0-9]+", "-",
-                sub("[^A-Za-z0-9\_\-\.]+", "-", path)).strip("-_.")
+    valid = sub(r"[._-][^A-Za-z0-9]+", "-",
+                sub(r"[^A-Za-z0-9\_\-\.]+", "-", path)).strip("-_.")
     if path != valid:
         b.log.warning(
             f"Updating invalid project path '{path}' -> '{valid}' ({full_path})")
@@ -449,3 +449,34 @@ def check_list_subset_input_file_path():
             f"Config 'list_subset_input_path' file path '{subset_path}' does not exist. Please create it")
         sys.exit(os.EX_CONFIG)
     return subset_path
+
+
+def validate_groups_and_projects(staged, are_projects=False):
+    if dupes := get_duplicate_paths(
+            staged, are_projects=are_projects):
+        b.log.warning("Duplicate {} paths:\n{}".format(
+            "project" if are_projects else "group", "\n".join(d for d in dupes)))
+    if not are_projects:
+        # Temp bug fix: Group names must be 2+ characters long
+        if invalid_group_names := [
+                g for g in staged if len(g["name"]) < 2]:
+            b.log.warning("Invalid group names:\n{}".format(
+                "\n".join(i for i in invalid_group_names)))
+
+def toggle_maintenance_mode(
+        off=False, msg=None, dest=False, dry_run=True):
+    host = b.config.destination_host if dest else b.config.source_host
+    if is_dot_com(host):
+        b.log.warning(
+            f"Not allowed to toggle maintenance mode on {host}")
+    else:
+        data = {
+            "maintenance_mode": not off}
+        if not off and msg:
+            data["maintenance_mode_message"] = msg.replace("+", " ")
+        token = b.config.destination_token if dest else b.config.source_token
+        b.log.warning(
+            f"{get_dry_log(dry_run)}Turning maintenance mode {'OFF' if off else 'ON'} on {host}")
+        if not dry_run:
+            instance_api.change_application_settings(
+                host, token, data)

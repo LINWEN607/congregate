@@ -1,3 +1,9 @@
+"""
+    Congregate - GitLab instance migration utility
+
+    Copyright (c) 2023 - GitLab
+"""
+
 import requests
 
 from bs4 import BeautifulSoup as bs

@@ -1,11 +1,13 @@
-from congregate.helpers.base_class import BaseClass
+from congregate.migration.meta.base_ext_ci import BaseExternalCiClient
 from congregate.migration.jenkins.api.base import JenkinsApi
 from gitlab_ps_utils.misc_utils import strip_netloc
 from gitlab_ps_utils.string_utils import convert_to_underscores
 from congregate.helpers.mdbc import MongoConnector
 
 
-class JenkinsClient(BaseClass):
+class JenkinsClient(BaseExternalCiClient):
+    ci_source = "jenkins"
+
     def __init__(self, host, user, token):
         super().__init__()
         self.jenkins_api = JenkinsApi(host, user, token)
@@ -30,7 +32,7 @@ class JenkinsClient(BaseClass):
             mongo.insert_data(f"jenkins-{jenkins_host}", job_dict)
         mongo.close_connection()
 
-    def transform_ci_variables(self, parameter, jenkins_ci_src_hostname):
+    def transform_ci_variables(self, parameter, ci_src_hostname):
         """
         Takes a Jenkins Parameter and returns it in GitLab format.
         Will only work for standard parameters.
@@ -50,7 +52,7 @@ class JenkinsClient(BaseClass):
             "environment_scope": "*"
         }
         """
-        temp_url = strip_netloc(jenkins_ci_src_hostname).split(":")[0]
+        temp_url = strip_netloc(ci_src_hostname).split(":")[0]
         result_dict = {
             "protected": False,
             "variable_type": "env_var",
@@ -63,3 +65,54 @@ class JenkinsClient(BaseClass):
         else:
             result_dict["value"] = "No Default Value"
         return result_dict
+
+    def migrate_variables(
+            self, project, new_id, ci_src_hostname):
+        if (ci_sources := project.get("ci_sources", None)):
+            result = True
+            for job in ci_sources.get("Jenkins", []):
+                params = self.jenkins_api.get_job_params(job)
+                for param in params:
+                    if not self.variables.safe_add_variables(
+                        new_id,
+                        self.transform_ci_variables(
+                            param, ci_src_hostname)
+                    ):
+                        result = False
+            return result
+        return None
+
+    def migrate_build_configuration(self, project, project_id):
+        '''
+        In order to maintain configuration from old Jenkins instance,
+        we save a copy of a Jenkins job config.xml file and commit it to the associated repository.
+        '''
+        if (ci_sources := project.get("ci_sources", None)):
+            is_result = False
+            for job in ci_sources.get("Jenkins", []):
+                if config_xml := self.jenkins_api.get_job_config_xml(
+                        job):
+                    # Create branch for config.xml
+                    branch_data = {
+                        "branch": f"{job.lstrip('/')}-jenkins-config",
+                        "ref": "master"
+                    }
+                    self.projects_api.create_branch(
+                        self.config.destination_host,
+                        self.config.destination_token,
+                        project_id,
+                        data=branch_data
+                    )
+                    content = config_xml.text
+                    data = {
+                        "branch": f"{job.lstrip('/')}-jenkins-config",
+                        "commit_message": "Adding config.xml for Jenkins job",
+                        "content": content
+                    }
+
+                    req = self.project_repository_api.create_repo_file(
+                        self.config.destination_host, self.config.destination_token,
+                        project_id, "config.xml", data)
+                    is_result = bool(req.status_code == 200)
+            return is_result
+        return None

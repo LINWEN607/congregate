@@ -210,7 +210,7 @@ class Config(BaseConfig):
 # CI_SOURCE
     def list_ci_source_config(self, ci_source_options):
         """
-            Returns list of ci source config dictionarty including hostname, username and token
+            Returns list of ci source config dictionary including hostname, username and token
             ci_source_options could be jenkins_ci_source or teamcity_ci_source
         """
         return self.ci_sources.get(ci_source_options, [])

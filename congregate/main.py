@@ -275,7 +275,7 @@ def main():
             SCM_SOURCE = strip_netloc(SCM_SOURCE)
 
         from congregate.cli.config import generate_config
-        from congregate.helpers.migrate_utils import clean_data, add_post_migration_stats, write_results_to_file
+        from congregate.helpers.migrate_utils import clean_data, add_post_migration_stats, write_results_to_file, toggle_maintenance_mode
 
         if arguments["configure"]:
             generate_config()
@@ -287,6 +287,7 @@ def main():
             from congregate.migration.gitlab.variables import VariablesClient
             from congregate.migration.gitlab.compare import CompareClient
             from congregate.migration.migrate import MigrateClient
+            from congregate.migration.meta.base_migrate import MigrateClient as BaseMigrateClient
             from congregate.migration.gitlab.branches import BranchesClient
             from congregate.cli import do_all
             from congregate.cli.list_source import ListClient
@@ -390,7 +391,7 @@ def main():
                 migrate.migrate()
 
             if arguments["rollback"]:
-                migrate = MigrateClient(
+                migrate = BaseMigrateClient(
                     dry_run=DRY_RUN,
                     skip_users=SKIP_USERS,
                     hard_delete=arguments["--hard-delete"],
@@ -428,13 +429,11 @@ def main():
                 users.remove_inactive_users(
                     membership=MEMBERSHIP, dry_run=DRY_RUN)
             if arguments["get-total-count"]:
-                migrate = MigrateClient()
-                migrate.get_total_migrated_count()
+                BaseMigrateClient().get_total_migrated_count()
             if arguments["find-unimported-projects"]:
                 projects.find_unimported_projects(dry_run=DRY_RUN)
             if arguments["stage-unimported-projects"]:
-                migrate = MigrateClient(dry_run=DRY_RUN)
-                migrate.stage_unimported_projects()
+                BaseMigrateClient(dry_run=DRY_RUN).stage_unimported_projects()
             if arguments["remove-users-from-parent-group"]:
                 users.remove_users_from_parent_group(dry_run=DRY_RUN)
             if arguments["migrate-variables-in-stage"]:
@@ -666,8 +665,7 @@ def main():
                 else:
                     print("\nThis command will drop all collections in the congregate database and then recreate the structure. Please append `--commit` to clean the database")
             if arguments["toggle-maintenance-mode"]:
-                migrate = MigrateClient()
-                migrate.toggle_maintenance_mode(
+                toggle_maintenance_mode(
                     off=arguments["--off"],
                     msg=arguments["--msg"],
                     dest=DEST,
