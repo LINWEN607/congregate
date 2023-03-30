@@ -80,7 +80,7 @@ class VariablesClient(DbOrHttpMixin ,BaseClass):
                                     
                                     self.send_data(self.projects_api.create_new_project_pipeline_schedule_variable,
                                                    (new_id, dps["id"], self.config.destination_host, self.config.destination_token, v),
-                                                   'pipeline_schedule_variables',
+                                                   f"pipeline_schedule_variables.{dps['id']}.variables",
                                                    old_id,
                                                    v)
                 return True

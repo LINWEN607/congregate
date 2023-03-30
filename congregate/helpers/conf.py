@@ -443,6 +443,19 @@ class Config(BaseConfig):
         """
         return self.prop_int("APP", "processes", default=4)
 
+    @property
+    def airgap(self):
+        """
+        Sets congregate to airgapped mode
+
+        Post migration data will be saved to mongo and a large single archive will
+        be generated on export
+
+        Congregate will query mongo for post-migration data instead of reaching out
+        to the soruce instance
+        """
+        return self.prop_bool("APP", "airgap", default=False)
+
 # HIDDEN PROPERTIES
 
     # Used only by "map-users" and "map-and-stage-users-by-email-match" command
