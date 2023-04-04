@@ -114,7 +114,7 @@ class GitLabMigrateClient(MigrateClient):
         # Remove import user from parent group to avoid inheritance
         # (self-managed only)
         if not self.dry_run and self.config.dstn_parent_id and not is_dot_com(
-                self.config.destination_host):
+                self.config.destination_host) and not self.skip_project_import:
             self.remove_import_user(
                 self.config.dstn_parent_id, gl_type="group")
     
@@ -468,6 +468,8 @@ class GitLabMigrateClient(MigrateClient):
                 f"{dry_log}Exporting project {project['path_with_namespace']} (ID: {pid}) as {filename}")
             result[filename] = self.ie.export_project(
                 project, dry_run=self.dry_run)
+            if self.config.airgap:
+                self.export_single_project_features(project)
         except (IOError, RequestException) as oe:
             self.log.error(
                 f"Failed to export/download project {name} (ID: {pid}) as {filename} with error:\n{oe}")
@@ -602,50 +604,42 @@ class GitLabMigrateClient(MigrateClient):
 
         return results
 
-    def export_single_project_features(self, project, dst_id):
+    def export_single_project_features(self, project):
         """
             Subsequent function to update project info AFTER import
         """
-        project.pop("members")
-        path_with_namespace = project["path_with_namespace"]
-        src_id = project["id"]
-        jobs_enabled = project["jobs_enabled"]
-        results = {}
+        if not self.dry_run:
+            self.log.info("exporting single project features")
+            project.pop("members")
+            path_with_namespace = project["path_with_namespace"]
+            src_id = project["id"]
+            jobs_enabled = project["jobs_enabled"]
+            results = {}
 
-        mongo = MongoConnector()
-        mongo.db['project_features'].insert_one(SingleProjectFeatures(id=src_id).to_dict())
-        mongo.close_connection()
+            mongo = MongoConnector()
+            mongo.db['project_features'].insert_one(SingleProjectFeatures(id=src_id).to_dict())
+            mongo.close_connection()
 
-        # Environments
-        results["environments"] = self.environments.migrate_project_environments(
-            src_id, dst_id, path_with_namespace, jobs_enabled)
+            # Environments
+            results["environments"] = self.environments.migrate_project_environments(
+                src_id, None, path_with_namespace, jobs_enabled)
 
-        # CI/CD Variables
-        results["cicd_variables"] = self.variables.migrate_cicd_variables(
-            src_id, dst_id, path_with_namespace, "projects", jobs_enabled)
+            # CI/CD Variables
+            results["cicd_variables"] = self.variables.migrate_cicd_variables(
+                src_id, None, path_with_namespace, "projects", jobs_enabled)
 
-        # Pipeline Schedule Variables
-        results["pipeline_schedule_variables"] = self.variables.migrate_pipeline_schedule_variables(
-            src_id, dst_id, path_with_namespace, jobs_enabled)
+            # Pipeline Schedule Variables
+            results["pipeline_schedule_variables"] = self.variables.migrate_pipeline_schedule_variables(
+                src_id, None, path_with_namespace, jobs_enabled)
 
+            if self.config.source_tier not in ["core", "free"]:
+                # Push Rules - handled by GitLab Importer as of 13.6
+                # results["push_rules"] = self.pushrules.migrate_push_rules(
+                #     src_id, dst_id, path_with_namespace)
 
-        # Container Registries
-        # if self.config.source_registry and self.config.destination_registry:
-        #     results["container_registry"] = self.registries.migrate_registries(
-        #         src_id, dst_id, path_with_namespace)
+                # Merge Request Approvals
+                results["project_level_mr_approvals"] = self.mr_approvals.migrate_project_level_mr_approvals(
+                    src_id, None, path_with_namespace)
 
-        # Package Registries
-        # results["package_registry"] = self.packages.migrate_project_packages(
-        #     src_id, dst_id, path_with_namespace)
-
-        if self.config.source_tier not in ["core", "free"]:
-            # Push Rules - handled by GitLab Importer as of 13.6
-            # results["push_rules"] = self.pushrules.migrate_push_rules(
-            #     src_id, dst_id, path_with_namespace)
-
-            # Merge Request Approvals
-            results["project_level_mr_approvals"] = self.mr_approvals.migrate_project_level_mr_approvals(
-                src_id, dst_id, path_with_namespace)
-
-        return results
+            return results
     

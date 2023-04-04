@@ -22,7 +22,7 @@ class VariablesClient(DbOrHttpMixin ,BaseClass):
             return list(
                 self.projects_api.get_all_project_variables(id, host, token))
 
-    def set_variables(self, id, data, host, token, var_type="projects"):
+    def set_variables(self, id, host, token, var_type="projects", data={}):
         if var_type == "group":
             return self.groups_api.create_group_variable(id, host, token, data)
         else:
@@ -33,7 +33,7 @@ class VariablesClient(DbOrHttpMixin ,BaseClass):
         result = False
         if param.get("value", None):
             new_var = self.set_variables(
-                pid, param, self.config.destination_host, self.config.destination_token)
+                pid, self.config.destination_host, self.config.destination_token, data=param)
             if new_var.status_code != 201:
                 self.log.error(f"Unable to add variable {param['key']}")
             else:
@@ -82,7 +82,7 @@ class VariablesClient(DbOrHttpMixin ,BaseClass):
                                                    (new_id, dps["id"], self.config.destination_host, self.config.destination_token, v),
                                                    f"pipeline_schedule_variables.{dps['id']}.variables",
                                                    old_id,
-                                                   v)
+                                                   v, airgap=self.config.airgap)
                 return True
             self.log.info(
                 f"Pipeline schedule variables are disabled ({enabled}) for project {name}")
@@ -104,10 +104,10 @@ class VariablesClient(DbOrHttpMixin ,BaseClass):
                     f"Migrating {var_type} {name} (ID: {new_id}) CI/CD variables")
                 
                 self.send_data(self.set_variables, 
-                               (new_id, var, self.config.destination_host, self.config.destination_token, var_type),
+                               (new_id, self.config.destination_host, self.config.destination_token, var_type),
                                'ci_variables',
                                src_id, 
-                               var)
+                               var, airgap=self.config.airgap)
             return True
         except TypeError as te:
             self.log.error("{0} {1} variables {2}".format(

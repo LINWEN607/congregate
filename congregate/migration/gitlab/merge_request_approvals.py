@@ -1,16 +1,19 @@
 from requests.exceptions import RequestException
+from dacite import from_dict
 
 from congregate.helpers.base_class import BaseClass
+from congregate.helpers.db_or_http import DbOrHttpMixin
 from gitlab_ps_utils.misc_utils import is_error_message_present, safe_json_response
 from gitlab_ps_utils.dict_utils import pop_multiple_keys
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.users import UsersApi
-from congregate.migration.meta.api_models.mr_approvers import MergeRequestApproverPayload
+from congregate.migration.meta.api_models.mr_level_approvers import MergeRequestLevelApproverPayload
+from congregate.migration.meta.api_models.project_level_approvers import ProjectLevelApproverPayload
 
 
-class MergeRequestApprovalsClient(BaseClass):
+class MergeRequestApprovalsClient(DbOrHttpMixin, BaseClass):
     def __init__(self):
         self.users_api = UsersApi()
         self.groups_api = GroupsApi()
@@ -47,7 +50,7 @@ class MergeRequestApprovalsClient(BaseClass):
                 return False
             self.log.info(
                 "Migrating project-level MR approval configuration for {0} (ID: {1})".format(name, old_id))
-            conf = pop_multiple_keys(conf, ["approvers", "approver_groups"])
+            conf = from_dict(data_class=ProjectLevelApproverPayload(), data=conf)
             self.projects_api.change_project_level_mr_approval_configuration(
                 new_id, self.config.destination_host, self.config.destination_token, conf)
 
@@ -65,15 +68,20 @@ class MergeRequestApprovalsClient(BaseClass):
                     return False
                 user_ids, group_ids, protected_branch_ids = self.get_missing_rule_params(
                     rule, new_id)
-                data = MergeRequestApproverPayload(
+                data = MergeRequestLevelApproverPayload(
                     name=rule['name'],
                     approvals_required=rule["approvals_required"],
                     user_ids=user_ids,
                     group_ids=group_ids,
                     protected_branch_ids=protected_branch_ids
                 )
-                self.projects_api.create_project_level_mr_approval_rule(
-                    new_id, self.config.destination_host, self.config.destination_token, data.to_dict())
+                self.send_data(
+                    self.projects_api.create_project_level_mr_approval_rule,
+                    (new_id, self.config.destination_host, self.config.destination_token),
+                    'mr_approvers', 
+                    new_id, 
+                    data.to_dict()
+                )
             return True
         except TypeError as te:
             self.log.error(

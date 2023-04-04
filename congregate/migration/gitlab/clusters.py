@@ -20,7 +20,7 @@ class ClustersClient(BaseClass):
         super(ClustersClient, self).__init__()
 
     def migrate_instance_clusters(self, dry_run=True):
-        if not is_dot_com(self.config.source_host):
+        if not is_dot_com(self.config.source_host) and not self.config.airgap:
             try:
                 resp = self.instance_api.get_all_instance_clusters(
                     self.config.source_host, self.config.source_token)

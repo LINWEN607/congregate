@@ -573,12 +573,15 @@ class ImportExportClient(BaseClass):
         name = project["name"]
         namespace = project["namespace"]
         pid = project["id"]
-        dst_path_with_namespace = get_dst_path_with_namespace(project)
-        dst_pid = self.projects.find_project_by_path(
-            self.config.destination_host, self.config.destination_token, dst_path_with_namespace)
-        if dst_pid:
-            self.log.info(
-                f"SKIP: Project {dst_path_with_namespace} (ID: {dst_pid}) found on destination")
+        dst_path_with_namespace = None
+        if not self.config.airgap:
+            dst_path_with_namespace = get_dst_path_with_namespace(project)
+            dst_pid = self.projects.find_project_by_path(
+                self.config.destination_host, self.config.destination_token, dst_path_with_namespace)
+            if dst_pid:
+                self.log.info(
+                    f"SKIP: Project {dst_path_with_namespace} (ID: {dst_pid}) found on destination")
+                return True
         elif not dry_run:
             filename = get_export_filename_from_namespace_and_name(
                 namespace, name)

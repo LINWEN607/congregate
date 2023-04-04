@@ -34,7 +34,7 @@ class EnvironmentsClient(DbOrHttpMixin ,BaseClass):
                     (self.config.destination_host, self.config.destination_token, dest_id),
                     'project_environments',
                     src_id,
-                    self.generate_environment_data(env))
+                    self.generate_environment_data(env), airgap=self.config.airgap)
             return True
         except TypeError as te:
             self.log.error(

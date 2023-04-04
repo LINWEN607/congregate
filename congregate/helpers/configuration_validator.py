@@ -31,11 +31,11 @@ class ConfigurationValidator(Config):
         if self.dstn_parent_id_validated_in_session:
             return dstn_parent_id
         self.dstn_parent_id_validated_in_session = self.validate_dstn_parent_group_id(
-            dstn_parent_id)
+            dstn_parent_id) if not self.airgap else True
         if self.dstn_parent_group_path_validated_in_session:
             return dstn_parent_id
         self.dstn_parent_group_path_validated_in_session = self.validate_dstn_parent_group_path(
-            self.prop("DESTINATION", "dstn_parent_group_path"))
+            self.prop("DESTINATION", "dstn_parent_group_path")) if not self.airgap else True
         return dstn_parent_id
 
     @property
@@ -54,7 +54,7 @@ class ConfigurationValidator(Config):
         if self.dstn_parent_group_path_validated_in_session:
             return dstn_parent_group_path
         self.dstn_parent_group_path_validated_in_session = self.validate_dstn_parent_group_path(
-            dstn_parent_group_path)
+            dstn_parent_group_path) if not self.airgap else True
         return dstn_parent_group_path
 
     @property
@@ -64,7 +64,7 @@ class ConfigurationValidator(Config):
         if self.dstn_token_validated_in_session:
             return dstn_token
         self.dstn_token_validated_in_session = self.validate_dstn_token(
-            dstn_token)
+            dstn_token) if not self.airgap else True
         return dstn_token
 
     @property
@@ -74,7 +74,7 @@ class ConfigurationValidator(Config):
         if self.src_token_validated_in_session:
             return src_token
         self.src_token_validated_in_session = self.validate_src_token(
-            src_token)
+            src_token) if not self.airgap else True
         return src_token
 
     def validate_dstn_parent_group_id(self, pgid):

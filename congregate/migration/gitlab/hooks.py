@@ -17,7 +17,7 @@ class HooksClient(BaseClass):
         super(HooksClient, self).__init__()
 
     def migrate_instance_hooks(self, dry_run=True):
-        if not is_dot_com(self.config.source_host):
+        if not is_dot_com(self.config.source_host) and not self.config.airgap:
             try:
                 resp = self.instance_api.get_all_instance_hooks(
                     self.config.source_host, self.config.source_token)

@@ -2,7 +2,7 @@ from dataclasses import dataclass, asdict, field
 from typing import Optional, List
 
 @dataclass
-class MergeRequestApproverPayload():
+class MergeRequestLevelApproverPayload():
     name: str
     approvals_required: int
     user_ids: Optional[List[int]] = field(default_factory=list)
