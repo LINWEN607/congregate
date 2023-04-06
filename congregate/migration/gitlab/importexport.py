@@ -582,7 +582,7 @@ class ImportExportClient(BaseClass):
                 self.log.info(
                     f"SKIP: Project {dst_path_with_namespace} (ID: {dst_pid}) found on destination")
                 return True
-        elif not dry_run:
+        if not dry_run:
             filename = get_export_filename_from_namespace_and_name(
                 namespace, name)
             self.log.info(
