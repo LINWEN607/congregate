@@ -12,7 +12,7 @@ from gitlab_ps_utils import json_utils, misc_utils
 
 import congregate.helpers.migrate_utils as mig_utils
 from congregate.helpers.utils import is_dot_com
-from congregate.helpers.airgap_utils import create_archive
+from congregate.helpers.airgap_utils import create_archive, delete_project_features
 
 from congregate.migration.meta.base_migrate import MigrateClient
 from congregate.migration.gitlab.importexport import ImportExportClient
@@ -477,6 +477,7 @@ class GitLabMigrateClient(MigrateClient):
                 }
                 final_path = create_archive(pid, f"{self.config.filesystem_path}/downloads/{filename}")
                 self.log.info(f"Saved project [{name}:{pid}] archive to {final_path}")
+                delete_project_features(pid)
         except (IOError, RequestException) as oe:
             self.log.error(
                 f"Failed to export/download project {name} (ID: {pid}) as {filename} with error:\n{oe}")
