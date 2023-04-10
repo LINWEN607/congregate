@@ -12,6 +12,7 @@ from gitlab_ps_utils import json_utils, misc_utils
 
 import congregate.helpers.migrate_utils as mig_utils
 from congregate.helpers.utils import is_dot_com
+from congregate.helpers.airgap_utils import create_archive
 
 from congregate.migration.meta.base_migrate import MigrateClient
 from congregate.migration.gitlab.importexport import ImportExportClient
@@ -469,7 +470,13 @@ class GitLabMigrateClient(MigrateClient):
             result[filename] = self.ie.export_project(
                 project, dry_run=self.dry_run)
             if self.config.airgap:
-                self.export_single_project_features(project)
+                exported_features = self.export_single_project_features(project)
+                result[filename] = {
+                    'exported': True,
+                    'exported_features': exported_features
+                }
+                final_path = create_archive(pid, f"{self.config.filesystem_path}/downloads/{filename}")
+                self.log.info(f"Saved project [{name}:{pid}] archive to {final_path}")
         except (IOError, RequestException) as oe:
             self.log.error(
                 f"Failed to export/download project {name} (ID: {pid}) as {filename} with error:\n{oe}")
@@ -617,6 +624,7 @@ class GitLabMigrateClient(MigrateClient):
             results = {}
 
             mongo = MongoConnector()
+            mongo.create_collection_with_unique_index('project_features', 'id')
             mongo.db['project_features'].insert_one(SingleProjectFeatures(id=src_id).to_dict())
             mongo.close_connection()
 

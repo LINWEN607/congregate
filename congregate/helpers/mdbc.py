@@ -81,6 +81,12 @@ class MongoConnector(BaseClass):
 
     def __create_unique_index(self, collection, key):
         return self.db[collection].create_index(key, unique=True)
+    
+    def create_collection_with_unique_index(self, collection, key):
+        try:
+            self.db.validate_collection(collection)
+        except errors.OperationFailure:
+            return self.__create_unique_index(collection, key)
 
     def close_connection(self):
         self.db = None
