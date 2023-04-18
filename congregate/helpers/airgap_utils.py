@@ -6,7 +6,7 @@ from io import BytesIO
 from gzip import GzipFile
 from pathlib import Path
 from dacite import from_dict
-from congregate.helpers.mdbc import MongoConnector
+from congregate.helpers.mdbc import mongo_connection
 from congregate.migration.meta.api_models.single_project_features import SingleProjectFeatures
     
 def create_archive(pid, export_file):
@@ -16,15 +16,13 @@ def create_archive(pid, export_file):
         __add_file(tar, "project_features.json", __get_project_features(pid))
     return final_path
 
-def delete_project_features(pid):
-    mongo = MongoConnector()
+@mongo_connection
+def delete_project_features(pid, mongo=None):
     mongo.db['project_features'].delete_one({'id': pid})
-    mongo.close_connection()
 
-def __get_project_features(pid):
-    mongo = MongoConnector()
+@mongo_connection
+def __get_project_features(pid, mongo=None):
     features = mongo.safe_find_one('project_features', query={"id": pid})
-    mongo.close_connection()
     return BytesIO(
         bytes(dumps(
             from_dict(data_class=SingleProjectFeatures, data=features).to_dict()

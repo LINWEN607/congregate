@@ -238,3 +238,18 @@ class MongoConnector(BaseClass):
         for old, new in translate.items():
             d[new] = d.pop(old)
         return d
+
+def mongo_connection(func):
+    '''
+        Decorator function to open and close a MongoDB connection
+    '''
+    def wrapper(*args, **kwargs):
+        if 'mongo' in kwargs:
+            return func(*args, **kwargs)
+        else:
+            mongo = MongoConnector()
+            retval = func(*args, mongo=mongo, **kwargs)
+            mongo.close_connection()
+            return retval
+    return wrapper
+    
