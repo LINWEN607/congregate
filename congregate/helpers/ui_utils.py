@@ -4,19 +4,19 @@ from gitlab_ps_utils.file_utils import get_hash_of_dirs
 
 
 def build_ui(app_path):
-    os.chdir("frontend")
+    os.chdir(f"{app_path}/frontend")
     build_command = "npm run build"
     subprocess.call(build_command.split(" "))
     if not os.path.exists(f"{app_path}/ui_checksum"):
         with open(f"{app_path}/ui-checksum", "w") as f:
-            f.write(get_hash_of_dirs("dist"))
+            f.write(get_hash_of_dirs(f"{app_path}/dist"))
 
 
 def spin_up_ui(app_path, port):
     if not os.path.exists(f"{app_path}/frontend/node_modules"):
         print("No node_modules found. Running npm install")
         install_deps = "npm install"
-        os.chdir('frontend')
+        os.chdir(f"{app_path}/frontend")
         subprocess.call(install_deps.split(" "))
     if not os.path.exists(f"{app_path}/dist"):
         print("UI not built. Building it before deploying")
