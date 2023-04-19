@@ -390,13 +390,13 @@ class UsersClient(BaseClass):
                     "email": email, "src_state": state}
         blocked = [u.get("email")
                    for u in users_found if u.get("dest_state") == "blocked"]
-        state_mismatch = [(u.get("email"), f"{u.get('src_state')} -> {u.get('dest_state')}")
+        state_mismatch = [f"{u.get('email')}: {u.get('src_state')} -> {u.get('dest_state')}"
                           for u in users_found if u.get("src_state") != u.get("dest_state")]
-        no_login = [(u.get("email"), u.get("dest_state"))
+        no_login = [f"{u.get('email')} - {u.get('dest_state')}"
                     for u in users_found if not u.get("last_sign_in_at")]
-        no_identities = [(u.get("email"), u.get("dest_state"))
+        no_identities = [f"{u.get('email')} - {u.get('dest_state')}"
                          for u in users_found if not u.get("identities")]
-        no_public_email = [(u.get("email"), u.get("public_email"))
+        no_public_email = [f"{u.get('email')} - {u.get('public_email')}"
                            for u in staged_users if u.get("email") != u.get("public_email")]
 
         found = f"Found ({len(users_found)})"
@@ -419,15 +419,15 @@ class UsersClient(BaseClass):
         """)
         if table:
             d = {
-                found: Series([(u.get("email"), u.get("dest_state")) for u in users_found], dtype=str),
+                found: Series([f"{u.get('email')} - {u.get('dest_state')}" for u in users_found], dtype=str),
                 blkd: Series(blocked, dtype=str),
                 mismatch: Series(state_mismatch, dtype=str),
                 no_log: Series(no_login, dtype=str),
                 wo_ids: Series(no_identities, dtype=str),
-                not_found: Series([(u.get("email"), u.get("src_state")) for u in users_not_found.values()], dtype=str),
+                not_found: Series([f"{u.get('email')} - {u.get('src_state')}" for u in users_not_found.values()], dtype=str),
                 pub_email: Series(no_public_email, dtype=str),
-                dupe: Series([(u.get("email"), u.get("state"))
-                             for u in duplicate_users], dtype=str)
+                dupe: Series(
+                    [f"{u.get('email')} - {u.get('state')}" for u in duplicate_users], dtype=str)
             }
             set_option('display.max_rows', None)
             set_option('display.max_columns', None)
