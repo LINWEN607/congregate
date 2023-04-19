@@ -615,7 +615,7 @@ class UsersClient(BaseClass):
                     "id": response["id"]
                 }
 
-    def append_users(self, users):
+    def stage_data(self, users, dry_run=False):
         user_file = read_json_file_into_object(
             "%s/data/users.json" % self.app_path)
         staged_users = []

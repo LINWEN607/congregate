@@ -4,11 +4,7 @@
 import os
 import sys
 import logging
-from flask import Flask
 
-app = Flask(__name__,
-            static_folder = "../../dist/assets",
-            template_folder = "../../dist")
 
 sys.path.append(
     os.path.dirname(
@@ -16,9 +12,9 @@ sys.path.append(
             os.path.dirname(
                 os.path.abspath(__file__)))))
 
-from . import controllers
-from . import models
-from . import views
+# from . import controllers
+# from . import models
+# from . import views
 
 from gitlab_ps_utils.logger import myLogger
 
