@@ -55,7 +55,7 @@ workflow:
 
 .docker-login:
   before_script:
-    - docker login ${CI_REGISTRY} -u gitlab-ci-token -p $CI_BUILD_TOKEN
+    - docker login ${CI_REGISTRY} -u gitlab-ci-token -p $CI_JOB_TOKEN
 
 .gitlab-destination:
   extends: .gitlab-license
