@@ -1,18 +1,8 @@
 import json
-from flask import jsonify
-
-# from congregate.helpers.configuration_validator import ConfigurationValidator
-from . import app
-
-# try:
+from flask import jsonify, Blueprint
 from congregate.helpers.utils import get_congregate_path
-# except ImportError:
-#     from cli import stage_projects
-#     from cli.config import update_config
-#     from congregate.migration.groups import append_groups
-#     from congregate.migration.users import append_users
-#     from congregate.migration.projects import migrate
 
+data_retrieval = Blueprint('data', __name__)
 
 def get_data(file_name, sort_by=None):
     data = None
@@ -29,7 +19,7 @@ def get_data(file_name, sort_by=None):
 #     config = ConfigurationValidator()
 #     return config.as_obj()
 
-@app.route("/data/summary")
+@data_retrieval.route("/summary")
 def get_counts():
     total_projects = len(get_data("projects"))
     staged_projects = get_data("staged_projects")
@@ -47,7 +37,7 @@ def get_counts():
     })
 
 
-@app.route("/data/<name>")
+@data_retrieval.route("/<name>")
 def load_stage_data(name):
     data = get_data(name)
     return jsonify(data)

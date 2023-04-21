@@ -6,6 +6,7 @@ from congregate.cli.stage_groups import GroupStageCLI
 from congregate.migration.gitlab.users import UsersClient
 from congregate.ui.stage import StageAPI
 from congregate.ui.test import TestAPI
+from congregate.ui.models import data_retrieval
 
 app = Flask(__name__,
             static_folder = "../../dist/assets",
@@ -46,3 +47,4 @@ register_api(app, StageAPI, ProjectStageCLI, 'projects')
 register_api(app, StageAPI, GroupStageCLI, 'groups')
 register_api(app, StageAPI, UsersClient, 'users')
 register_api(app, TestAPI, None, '')
+app.register_blueprint(data_retrieval, url_prefix='/data')
