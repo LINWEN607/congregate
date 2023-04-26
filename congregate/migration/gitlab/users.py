@@ -204,12 +204,11 @@ class UsersClient(BaseClass):
 
     def build_suffix_username(self, username):
         # Concat the suffix
-        suffix = str(self.config.username_suffix)
-        if suffix == "migrated":
-            self.log.warning(
-                f"Default username suffix '{suffix}' set")
-            return f"{username}_{suffix}"
-        return f"{username}_{suffix.lstrip('_')}"
+        suffix = str(self.config.username_suffix).strip("_")
+        new_username = f"{username}_{suffix}"
+        self.log.warning(
+            f"Adding {'(default) ' if suffix == 'migrated' else ''}suffix to username to avoid duplication: '{username}' -> '{new_username}'")
+        return new_username
 
     def update_parent_group_members(self, access_level, add_members=False, dry_run=True):
         ROLES = {
