@@ -614,7 +614,7 @@ class GitLabMigrateClient(MigrateClient):
 
     def export_single_project_features(self, project):
         """
-            Subsequent function to update project info AFTER import
+            Function to export project features to mongo to then package up into a tar
         """
         if not self.dry_run:
             self.log.info("exporting single project features")

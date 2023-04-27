@@ -3,6 +3,7 @@ import glob
 import errno
 from shutil import copy
 from datetime import datetime
+from urllib.parse import urlparse
 from gitlab_ps_utils.json_utils import read_json_file_into_object
 
 
@@ -68,3 +69,7 @@ def stitch_json_results(result_type="project", steps=0, order="tail"):
         data = read_json_file_into_object(result)
         results += ([r for r in data if r[next(iter(r))]])
     return results
+
+def is_valid_url(url):
+    parsed = urlparse(url)
+    return all([parsed.scheme, parsed.netloc])
