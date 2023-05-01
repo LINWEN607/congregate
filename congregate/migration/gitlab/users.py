@@ -441,10 +441,11 @@ class UsersClient(BaseClass):
                 for u in self.users_api.search_for_user_by_username(
                     self.config.destination_host,
                     self.config.destination_token,
-                    user.get(field)):
+                    key):
                     if u.get(field, "").lower() == user.get(field, "").lower():
-                        user_mapping[user.get(field)] = {user.get("email"): u.get("email")}
+                        user_mapping[key] = {user.get("email"): u.get("email")}
                         new_user = u
+                        break
             else:
                 self.log.error(f"Invalid user mapping field configured: '{field}'")
                 sys.exit(os.EX_CONFIG)
