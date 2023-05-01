@@ -420,41 +420,50 @@ class UsersClient(BaseClass):
             self.log.info(
                 f"Writing {self.config.destination_host} user stats to {csv}:\n{DataFrame(d)}")
             DataFrame(d).to_csv(csv, sep="\t")
-        if field == "username":
-            user_mapping_file = f"{self.app_path}/data/user_mapping_by_{field}.json"
-            self.log.info(f"Writing FOUND users src:dest primary email mapping to {user_mapping_file}")
-            write_json_to_file(user_mapping_file, user_mapping)
+
+        user_mapping_file = f"{self.app_path}/data/user_mapping_by_{field}.json"
+        self.log.info(f"Writing FOUND users by '{field}' src:dest primary email mapping to {user_mapping_file}")
+        write_json_to_file(user_mapping_file, user_mapping)
         return users_not_found, users_found
 
     def lookup_staged_users(self, staged_users, users_found, users_not_found, field, user_mapping):
         for user in staged_users:
             key = user.get(field)
             state = user.get("state")
+            dest_user = None
             if field == "email":
-                new_user = find_user_by_email_comparison_without_id(key)
+                dest_user = find_user_by_email_comparison_without_id(key)
             elif field == "username":
-                new_user = None
                 for u in self.users_api.search_for_user_by_username(
                     self.config.destination_host,
                     self.config.destination_token,
                     key):
                     if u.get(field, "").lower() == user.get(field, "").lower():
-                        user_mapping[key] = {user.get("email"): u.get("email")}
-                        new_user = u
+                        dest_user = u
                         break
             else:
                 self.log.error(f"Invalid user mapping field configured: '{field}'")
                 sys.exit(os.EX_CONFIG)
-            if new_user:
+            if dest_user:
                 users_found.append({
-                    "id": new_user.get("id"),
-                    "email": new_user.get("email"),
-                    "username": new_user.get("username"),
+                    "id": dest_user.get("id"),
+                    "email": dest_user.get("email"),
+                    "username": dest_user.get("username"),
                     "src_state": state,
-                    "dest_state": new_user.get("state"),
-                    "last_sign_in_at": new_user.get("last_sign_in_at"),
-                    "identities": new_user.get("identities")
+                    "dest_state": dest_user.get("state"),
+                    "last_sign_in_at": dest_user.get("last_sign_in_at"),
+                    "identities": dest_user.get("identities")
                 })
+                user_mapping[key] = {
+                    "src": {
+                        "primary": user.get("email"),
+                        "public": user.get("public_email"),
+                    },
+                    "dest": {
+                        "primary": dest_user.get("email"),
+                        "public": dest_user.get("public_email")
+                    }
+                }
             else:
                 users_not_found[user.get("id")] = {
                     field: key, "src_state": state}
