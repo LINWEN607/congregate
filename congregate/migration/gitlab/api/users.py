@@ -91,27 +91,27 @@ class UsersApi(GitLabApiWrapper):
         """
         Searches for a user by email
 
-        GitLab API Doc: https://docs.gitlab.com/ee/api/users.html#for-admins
+        GitLab API Doc: https://docs.gitlab.com/ee/api/users.html#for-administrators
 
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :param: email: (str) Email of the specific user being searched
             :yield: Generator containing JSON results from GET /users?search=:email
         """
-        return self.api.list_all(host, token, f"users?search={quote_plus(email)}")
+        return self.api.list_all(host, token, f"users?search={quote_plus(email)}", per_page=10)
 
     def search_for_user_by_username(self, host, token, username):
         """
         Searches for a user by username
 
-        GitLab API Doc: https://docs.gitlab.com/ee/api/users.html#for-admins
+        GitLab API Doc: https://docs.gitlab.com/ee/api/users.html#for-non-administrator-users
 
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
-            :param: email: (str) Email of the specific user being searched
-            :yield: Generator containing JSON results from GET /users?search=:email
+            :param: username: (str) Username of the specific user being searched
+            :yield: Generator containing JSON results from GET /users?username=:username
         """
-        return self.api.list_all(host, token, f"users?username={username}")
+        return self.api.list_all(host, token, f"users?username={username}", per_page=10)
 
     def create_user_impersonation_token(self, host, token, uid, data, message=None):
         """

@@ -93,16 +93,12 @@ class UsersClient(BaseClass):
             return None
 
     def user_email_exists(self, old_user):
-        index = 0
         if old_user.get("email"):
             email = old_user["email"]
             for user in self.users_api.search_for_user_by_email(
                     self.config.destination_host, self.config.destination_token, email):
                 if user.get("email") == email:
                     return True
-                if index > 100:
-                    return False
-                index += 1
         return False
 
     def find_user_primarily_by_email(self, user):
