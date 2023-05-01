@@ -98,7 +98,7 @@ class UsersApi(GitLabApiWrapper):
             :param: email: (str) Email of the specific user being searched
             :yield: Generator containing JSON results from GET /users?search=:email
         """
-        return self.api.list_all(host, token, f"users?search={quote_plus(email)}", per_page=50)
+        return self.api.list_all(host, token, f"users?search={quote_plus(email)}")
 
     def search_for_user_by_username(self, host, token, username):
         """
@@ -111,7 +111,7 @@ class UsersApi(GitLabApiWrapper):
             :param: email: (str) Email of the specific user being searched
             :yield: Generator containing JSON results from GET /users?search=:email
         """
-        return self.api.list_all(host, token, f"users?username={username}", per_page=50)
+        return self.api.list_all(host, token, f"users?username={username}")
 
     def create_user_impersonation_token(self, host, token, uid, data, message=None):
         """
