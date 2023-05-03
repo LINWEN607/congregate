@@ -1,0 +1,3 @@
+from docker import from_env
+client = from_env()
+client.login(username="source_user_name",password="unobfuscated otken",registry="https://registry.gitlab.com")
