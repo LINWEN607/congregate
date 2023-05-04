@@ -43,11 +43,14 @@ class VariablesClient(DbOrHttpMixin ,BaseClass):
                 f"Skipping variable {param.get('key')} due to no value found")
         return result
 
-    def migrate_cicd_variables(self, old_id, new_id, name, var_type, enabled):
+    def migrate_cicd_variables(self, old_id, new_id, name, var_type, enabled, src_host=None, src_token=None):
+        if not src_host and src_token:
+            src_host = self.config.source_host
+            src_token = self.config.source_token
         try:
             if enabled:
                 var_list = self.get_ci_variables(
-                    old_id, self.config.source_host, self.config.source_token, var_type=var_type)
+                    old_id, src_host, src_token, var_type=var_type)
                 if var_list:
                     return self.migrate_variables(
                         new_id, name, var_list, var_type, old_id)
@@ -62,11 +65,14 @@ class VariablesClient(DbOrHttpMixin ,BaseClass):
             return False
 
     def migrate_pipeline_schedule_variables(
-            self, old_id, new_id, name, enabled):
+            self, old_id, new_id, name, enabled, src_host=None, src_token=None):
+        if not src_host and src_token:
+            src_host = self.config.source_host
+            src_token = self.config.source_token
         try:
             if enabled:
                 src_schedules = list(self.projects_api.get_all_project_pipeline_schedules(
-                    old_id, self.config.source_host, self.config.source_token))
+                    old_id, src_host, src_token))
                 if src_schedules:
                     dst_schedules = list(self.projects_api.get_all_project_pipeline_schedules(
                         new_id, self.config.destination_host, self.config.destination_token))
@@ -76,7 +82,7 @@ class VariablesClient(DbOrHttpMixin ,BaseClass):
                                 self.log.info("Migrating project {} pipeline schedule ({}) variables".format(
                                     name, sps["description"]))
                                 for v in safe_json_response(self.projects_api.get_single_project_pipeline_schedule(
-                                        old_id, sps["id"], self.config.source_host, self.config.source_token)).get("variables", None):
+                                        old_id, sps["id"], src_host, src_token)).get("variables", None):
                                     
                                     self.send_data(self.projects_api.create_new_project_pipeline_schedule_variable,
                                                    (new_id, dps["id"], self.config.destination_host, self.config.destination_token, v),

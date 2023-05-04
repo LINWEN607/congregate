@@ -2,7 +2,7 @@ import subprocess
 from flask import Response, Blueprint, stream_with_context
 from congregate.helpers.utils import get_congregate_path
 
-logger = Blueprint('data', __name__)
+logger = Blueprint('logger', __name__)
 
 
 @logger.route('/log')

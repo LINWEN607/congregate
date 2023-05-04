@@ -42,6 +42,8 @@ mkdocs-literate-nav = "^0.4.1"
 grpcio = "~1.51"
 grpcio-tools = "~1.51"
 dacite = "^1.8.0"
+celery = {extras = ["redis"], version = "^5.2.7"}
+flower = "^1.2.0"
 
 
 [tool.poetry.dev-dependencies]

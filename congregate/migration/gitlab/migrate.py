@@ -9,6 +9,7 @@ from traceback import print_exc
 from requests.exceptions import RequestException
 
 from gitlab_ps_utils import json_utils, misc_utils
+from celery import shared_task
 
 import congregate.helpers.migrate_utils as mig_utils
 from congregate.helpers.utils import is_dot_com
@@ -454,7 +455,7 @@ class GitLabMigrateClient(MigrateClient):
         else:
             self.log.warning("SKIP: No projects staged for migration")
 
-    def handle_exporting_projects(self, project):
+    def handle_exporting_projects(self, project, src_host=None, src_token=None):
         name = project["name"]
         namespace = project["namespace"]
         pid = project["id"]
@@ -468,9 +469,9 @@ class GitLabMigrateClient(MigrateClient):
             self.log.info(
                 f"{dry_log}Exporting project {project['path_with_namespace']} (ID: {pid}) as {filename}")
             result[filename] = self.ie.export_project(
-                project, dry_run=self.dry_run)
+                project, dry_run=self.dry_run, src_host=src_host, src_token=src_token)
             if self.config.airgap:
-                exported_features = self.export_single_project_features(project)
+                exported_features = self.export_single_project_features(project, src_host, src_token)
                 result[filename] = {
                     'exported': True,
                     'exported_features': exported_features
@@ -612,16 +613,16 @@ class GitLabMigrateClient(MigrateClient):
 
         return results
 
-    def export_single_project_features(self, project):
+    def export_single_project_features(self, project, src_host, src_token):
         """
             Function to export project features to mongo to then package up into a tar
         """
         if not self.dry_run:
             self.log.info("exporting single project features")
-            project.pop("members")
+            project.pop("members", None)
             path_with_namespace = project["path_with_namespace"]
             src_id = project["id"]
-            jobs_enabled = project["jobs_enabled"]
+            jobs_enabled = project.get("jobs_enabled", False)
             results = {}
 
             mongo = MongoConnector()
@@ -631,15 +632,15 @@ class GitLabMigrateClient(MigrateClient):
 
             # Environments
             results["environments"] = self.environments.migrate_project_environments(
-                src_id, None, path_with_namespace, jobs_enabled)
+                src_id, None, path_with_namespace, jobs_enabled, src_host, src_token)
 
             # CI/CD Variables
             results["cicd_variables"] = self.variables.migrate_cicd_variables(
-                src_id, None, path_with_namespace, "projects", jobs_enabled)
+                src_id, None, path_with_namespace, "projects", jobs_enabled, src_host, src_token)
 
             # Pipeline Schedule Variables
             results["pipeline_schedule_variables"] = self.variables.migrate_pipeline_schedule_variables(
-                src_id, None, path_with_namespace, jobs_enabled)
+                src_id, None, path_with_namespace, jobs_enabled, src_host, src_token)
 
             if self.config.source_tier not in ["core", "free"]:
                 # Push Rules - handled by GitLab Importer as of 13.6
@@ -648,7 +649,12 @@ class GitLabMigrateClient(MigrateClient):
 
                 # Merge Request Approvals
                 results["project_level_mr_approvals"] = self.mr_approvals.migrate_project_level_mr_approvals(
-                    src_id, None, path_with_namespace)
+                    src_id, None, path_with_namespace, src_host, src_token)
 
             return results
-    
+
+@shared_task
+def export_task(project: dict, host: str, token: str):
+    client = GitLabMigrateClient(dry_run=False, skip_users=True, 
+                           skip_groups=True, skip_project_import=True)
+    return client.handle_exporting_projects(project, src_host=host, src_token=token)

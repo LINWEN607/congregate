@@ -22,5 +22,7 @@ def validate_project_token(func):
                 return func(*args, **kwargs)
             return jsonify({'error': "Unauthorized"}), 403
         except ValueError as e:
-            return jsonify({'error': e}), 400
+            return jsonify({'error': str(e)}), 400
+        except TypeError as e:
+            return jsonify({'error': str(e)}), 400
     return add_route

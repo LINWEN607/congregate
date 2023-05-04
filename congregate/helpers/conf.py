@@ -419,6 +419,20 @@ class Config(BaseConfig):
         return self.prop_int("APP", "mongo_port", default=27017)
 
     @property
+    def redis_host(self):
+        """
+        The explicit host for the redis connection. Defaults to localhost
+        """
+        return self.prop("APP", "redis_host", default="localhost")
+    
+    @property
+    def redis_port(self):
+        """
+        The explicit port for the redis connection. Defaults to 6379
+        """
+        return self.prop("APP", "redis_port", default=6379)
+
+    @property
     def grpc_host(self):
         """
         The explicit host for connecting to a gRPC service. Defaults to localhost

@@ -13,14 +13,17 @@ class EnvironmentsClient(DbOrHttpMixin ,BaseClass):
         self.projects = ProjectsApi()
         super(EnvironmentsClient, self).__init__()
 
-    def migrate_project_environments(self, src_id, dest_id, name, enabled):
+    def migrate_project_environments(self, src_id, dest_id, name, enabled, src_host=None, src_token=None):
+        if not src_host and src_token:
+            src_host = self.config.source_host
+            src_token = self.config.source_token
         try:
             if not enabled:
                 self.log.info(
                     f"Environments are disabled ({enabled}) for project {name}")
                 return None
             resp = self.projects.get_all_project_environments(
-                src_id, self.config.source_host, self.config.source_token)
+                src_id, src_host, src_token)
             envs = iter(resp)
             self.log.info(f"Migrating project {name} environments")
             for env in envs:

@@ -50,10 +50,13 @@ class ImportExportClient(BaseClass):
             return self.aws.get_s3_keys(self.config.bucket_name)
         return {}
 
-    def get_export_status(self, src_id, is_project=True):
+    def get_export_status(self, src_id, is_project=True, src_host=None, src_token=None):
+        if not src_host and src_token:
+            src_host = self.config.source_host
+            src_token = self.config.source_token
         if is_project:
             return self.projects_api.get_project_export_status(
-                src_id, self.config.source_host, self.config.source_token)
+                src_id, src_host, src_token)
         return self.get_group_export_status(src_id)
 
     def get_group_export_status(self, src_id):
@@ -61,13 +64,13 @@ class ImportExportClient(BaseClass):
             self.config.source_host, self.config.source_token, "groups/%d/export" % src_id)
 
     def wait_for_export_to_finish(
-            self, src_id, name, is_project=True, retry=True):
+            self, src_id, name, is_project=True, retry=True, src_host=None, src_token=None):
         exported = False
         total_time = 0
         wait_time = self.config.export_import_status_check_time
         timeout = self.config.export_import_timeout
         export_type = check_is_project_or_group_for_logging(is_project)
-        response = self.trigger_export_and_get_response(src_id, is_project)
+        response = self.trigger_export_and_get_response(src_id, is_project, host=src_host, token=src_token)
         while True:
             # Wait until rate limit is resolved
             while response.status_code == 429:
@@ -75,9 +78,9 @@ class ImportExportClient(BaseClass):
                     f"Re-exporting {export_type.lower()} {name} (ID: {src_id}), waiting {self.COOL_OFF_MINUTES} minutes due to:\n{response.text}")
                 sleep(self.COOL_OFF_MINUTES * 60)
                 response = self.trigger_export_and_get_response(
-                    src_id, is_project)
+                    src_id, is_project, host=src_host, token=src_token)
             if response.status_code == 202:
-                status = self.get_export_status(src_id, is_project)
+                status = self.get_export_status(src_id, is_project, src_host=src_host, src_token=src_token)
                 if status.status_code == 200:
                     status_json = safe_json_response(status)
                     state = status_json.get("export_status", None)
@@ -104,7 +107,7 @@ class ImportExportClient(BaseClass):
                 self.log.error(
                     f"{export_type} {name} export trigger failed{' (re-exporting)' if retry else ''}, with response:\n{response.text}")
                 response = self.trigger_export_and_get_response(
-                    src_id, is_project)
+                    src_id, is_project, host=src_host, token=src_token)
                 retry = False
                 total_time = 0
             else:
@@ -183,13 +186,15 @@ class ImportExportClient(BaseClass):
                 break
         return group
 
-    def trigger_export_and_get_response(self, source_id, is_project, data=None, headers=None):
+    def trigger_export_and_get_response(self, source_id, is_project, data=None, headers=None, host=None, token=None):
         """
         Gets the export response for both project and group exports
         """
         response = None
-        host = self.config.source_host
-        token = self.config.source_token
+        
+        if not host and token:
+            host = self.config.source_host
+            token = self.config.source_token
         if is_project:
             response = self.projects_api.export_project(
                 host, token, source_id, data=data, headers=headers)
@@ -566,7 +571,7 @@ class ImportExportClient(BaseClass):
                 return None
         return import_id
 
-    def export_project(self, project, dry_run=True):
+    def export_project(self, project, dry_run=True, src_host=None, src_token=None):
         loc = self.config.location.lower()
         is_loc_supported(loc)
         exported = False
@@ -588,9 +593,9 @@ class ImportExportClient(BaseClass):
             self.log.info(
                 f"Project {dst_path_with_namespace} NOT found on destination. Exporting from source...")
             if loc == "filesystem":
-                exported = self.wait_for_export_to_finish(pid, name)
+                exported = self.wait_for_export_to_finish(pid, name, src_host=src_host, src_token=src_token)
                 if exported:
-                    self.handle_gzip_download(name, pid, filename)
+                    self.handle_gzip_download(name, pid, filename, src_host=src_host, src_token=src_token)
             # TODO: Refactor and sync with other scenarios (#119)
             elif loc == "filesystem-aws":
                 self.log.warning(
@@ -602,7 +607,7 @@ class ImportExportClient(BaseClass):
                     self.log.error(
                         f"Failed to trigger project {name} (ID: {pid}) export, with response {response}")
                 else:
-                    export_status = self.wait_for_export_to_finish(pid, name)
+                    export_status = self.wait_for_export_to_finish(pid, name, src_host=src_host, src_token=src_token)
                     # If export status is unknown lookup the file on AWS
                     # Could be misleading, since it assumes the file is
                     # complete
@@ -612,11 +617,14 @@ class ImportExportClient(BaseClass):
             return True
         return exported
 
-    def handle_gzip_download(self, name, pid, filename):
+    def handle_gzip_download(self, name, pid, filename, src_host=None, src_token=None):
         '''
             Attempt to download the export, if it's not a valid export, try again.
         '''
-        url = f"{self.config.source_host}/api/v4/projects/{pid}/export/download"
+        if not src_host and src_token:
+            src_host = self.config.source_host
+            src_token = self.config.source_token
+        url = f"{src_host}/api/v4/projects/{pid}/export/download"
         self.log.info(
             f"Downloading project '{name}' (ID: {pid}) as {filename}")
         total_time = 0
@@ -627,7 +635,7 @@ class ImportExportClient(BaseClass):
                 url,
                 self.config.filesystem_path,
                 filename,
-                headers={"PRIVATE-TOKEN": self.config.source_token},
+                headers={"PRIVATE-TOKEN": src_token},
                 verify=self.config.ssl_verify)
             # If None i.e. exception, retry
             if not new_file:

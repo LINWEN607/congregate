@@ -26,10 +26,10 @@ class MergeRequestApprovalsClient(DbOrHttpMixin, BaseClass):
             pid, self.config.source_host, self.config.source_token).json()
         return project.get("merge_requests_enabled", False)
 
-    def migrate_project_level_mr_approvals(self, old_id, new_id, name):
+    def migrate_project_level_mr_approvals(self, old_id, new_id, name, src_host=None, src_token=None):
         try:
             if self.are_enabled(old_id):
-                return self.migrate_project_approvals(new_id, old_id, name)
+                return self.migrate_project_approvals(new_id, old_id, name, src_host, src_token)
             else:
                 self.log.warning(
                     "Merge requests are disabled for project {}".format(name))
@@ -38,11 +38,14 @@ class MergeRequestApprovalsClient(DbOrHttpMixin, BaseClass):
                 "Failed to migrate project-level MR approvals for {0}, with error:\n{1}".format(name, e))
             return False
 
-    def migrate_project_approvals(self, new_id, old_id, name):
+    def migrate_project_approvals(self, new_id, old_id, name, src_host=None, src_token=None):
         try:
             # migrate configuration
+            if not src_host and src_token:
+                src_host = self.config.source_host
+                src_token = self.config.source_token
             conf = safe_json_response(self.projects_api.get_project_level_mr_approval_configuration(
-                old_id, self.config.source_host, self.config.source_token))
+                old_id, src_host, src_token))
             error, conf = is_error_message_present(conf)
             if error or not conf:
                 self.log.error(
@@ -56,7 +59,7 @@ class MergeRequestApprovalsClient(DbOrHttpMixin, BaseClass):
 
             # migrate approval rules
             resp = self.projects_api.get_all_project_level_mr_approval_rules(
-                old_id, self.config.source_host, self.config.source_token)
+                old_id, src_host, src_token)
             approval_rules = iter(resp)
             self.log.info(
                 "Migrating project-level MR approval rules for {0} (ID: {1})".format(name, old_id))
