@@ -1,3 +1,4 @@
+from requests import Response
 from requests.exceptions import RequestException
 
 from congregate.helpers.base_class import BaseClass
@@ -53,7 +54,7 @@ class HooksClient(BaseClass):
                         else:
                             add_resp = self.instance_api.add_instance_hook(
                                 self.config.destination_host, self.config.destination_token, shc)
-                        if add_resp and add_resp.status_code != 201:
+                        if not isinstance(add_resp, Response) or add_resp.status_code != 201:
                             self.log.error(
                                 f"Failed to create instance hook {shc}, with error:\n{add_resp} - {add_resp.text}")
             except TypeError as te:
