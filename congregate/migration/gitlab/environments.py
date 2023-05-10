@@ -1,29 +1,26 @@
 from requests.exceptions import RequestException
 from dacite import from_dict
 
-from congregate.helpers.base_class import BaseClass
 from congregate.helpers.db_or_http import DbOrHttpMixin
+from congregate.migration.gitlab.base_gitlab_client import BaseGitLabClient
 from gitlab_ps_utils.misc_utils import is_error_message_present
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.meta.api_models.project_environment import NewProjectEnvironmentPayload
 
 
-class EnvironmentsClient(DbOrHttpMixin ,BaseClass):
-    def __init__(self):
+class EnvironmentsClient(DbOrHttpMixin, BaseGitLabClient):
+    def __init__(self, src_host=None, src_token=None):
         self.projects = ProjectsApi()
-        super(EnvironmentsClient, self).__init__()
+        super(EnvironmentsClient, self).__init__(src_host=src_host, src_token=src_token)
 
-    def migrate_project_environments(self, src_id, dest_id, name, enabled, src_host=None, src_token=None):
-        if not src_host and src_token:
-            src_host = self.config.source_host
-            src_token = self.config.source_token
+    def migrate_project_environments(self, src_id, dest_id, name, enabled):
         try:
             if not enabled:
                 self.log.info(
                     f"Environments are disabled ({enabled}) for project {name}")
                 return None
             resp = self.projects.get_all_project_environments(
-                src_id, src_host, src_token)
+                src_id, self.src_host, self.src_token)
             envs = iter(resp)
             self.log.info(f"Migrating project {name} environments")
             for env in envs:

@@ -1,8 +1,8 @@
 from requests.exceptions import RequestException
 from dacite import from_dict
 
-from congregate.helpers.base_class import BaseClass
 from congregate.helpers.db_or_http import DbOrHttpMixin
+from congregate.migration.gitlab.base_gitlab_client import BaseGitLabClient
 from gitlab_ps_utils.misc_utils import is_error_message_present, safe_json_response
 from gitlab_ps_utils.dict_utils import pop_multiple_keys
 from congregate.migration.gitlab.api.groups import GroupsApi
@@ -13,23 +13,23 @@ from congregate.migration.meta.api_models.mr_level_approvers import MergeRequest
 from congregate.migration.meta.api_models.project_level_approvers import ProjectLevelApproverPayload
 
 
-class MergeRequestApprovalsClient(DbOrHttpMixin, BaseClass):
-    def __init__(self):
+class MergeRequestApprovalsClient(DbOrHttpMixin, BaseGitLabClient):
+    def __init__(self, src_host=None, src_token=None):
         self.users_api = UsersApi()
         self.groups_api = GroupsApi()
         self.groups = GroupsClient()
         self.projects_api = ProjectsApi()
-        super(MergeRequestApprovalsClient, self).__init__()
+        super(MergeRequestApprovalsClient, self).__init__(src_host=src_host, src_token=src_token)
 
     def are_enabled(self, pid):
         project = self.projects_api.get_project(
             pid, self.config.source_host, self.config.source_token).json()
         return project.get("merge_requests_enabled", False)
 
-    def migrate_project_level_mr_approvals(self, old_id, new_id, name, src_host=None, src_token=None):
+    def migrate_project_level_mr_approvals(self, old_id, new_id, name):
         try:
             if self.are_enabled(old_id):
-                return self.migrate_project_approvals(new_id, old_id, name, src_host, src_token)
+                return self.migrate_project_approvals(new_id, old_id, name)
             else:
                 self.log.warning(
                     "Merge requests are disabled for project {}".format(name))
@@ -38,14 +38,11 @@ class MergeRequestApprovalsClient(DbOrHttpMixin, BaseClass):
                 "Failed to migrate project-level MR approvals for {0}, with error:\n{1}".format(name, e))
             return False
 
-    def migrate_project_approvals(self, new_id, old_id, name, src_host=None, src_token=None):
+    def migrate_project_approvals(self, new_id, old_id, name):
         try:
             # migrate configuration
-            if not src_host and src_token:
-                src_host = self.config.source_host
-                src_token = self.config.source_token
             conf = safe_json_response(self.projects_api.get_project_level_mr_approval_configuration(
-                old_id, src_host, src_token))
+                old_id, self.src_host, self.src_token))
             error, conf = is_error_message_present(conf)
             if error or not conf:
                 self.log.error(
@@ -59,7 +56,7 @@ class MergeRequestApprovalsClient(DbOrHttpMixin, BaseClass):
 
             # migrate approval rules
             resp = self.projects_api.get_all_project_level_mr_approval_rules(
-                old_id, src_host, src_token)
+                old_id, self.src_host, self.src_token)
             approval_rules = iter(resp)
             self.log.info(
                 "Migrating project-level MR approval rules for {0} (ID: {1})".format(name, old_id))

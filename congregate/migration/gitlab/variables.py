@@ -2,17 +2,17 @@ import json
 
 from requests.exceptions import RequestException
 from gitlab_ps_utils.misc_utils import get_dry_log, is_error_message_present, safe_json_response
-from congregate.helpers.base_class import BaseClass
+from congregate.migration.gitlab.base_gitlab_client import BaseGitLabClient
 from congregate.helpers.db_or_http import DbOrHttpMixin
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 
 
-class VariablesClient(DbOrHttpMixin ,BaseClass):
-    def __init__(self):
+class VariablesClient(DbOrHttpMixin, BaseGitLabClient):
+    def __init__(self, src_host=None, src_token=None):
         self.projects_api = ProjectsApi()
         self.groups_api = GroupsApi()
-        super(VariablesClient, self).__init__()
+        super(VariablesClient, self).__init__(src_host=src_host, src_token=src_token)
 
     def get_ci_variables(self, id, host, token, var_type="projects"):
         if var_type == "group":
@@ -43,14 +43,11 @@ class VariablesClient(DbOrHttpMixin ,BaseClass):
                 f"Skipping variable {param.get('key')} due to no value found")
         return result
 
-    def migrate_cicd_variables(self, old_id, new_id, name, var_type, enabled, src_host=None, src_token=None):
-        if not src_host and src_token:
-            src_host = self.config.source_host
-            src_token = self.config.source_token
+    def migrate_cicd_variables(self, old_id, new_id, name, var_type, enabled):
         try:
             if enabled:
                 var_list = self.get_ci_variables(
-                    old_id, src_host, src_token, var_type=var_type)
+                    old_id, self.src_host, self.src_token, var_type=var_type)
                 if var_list:
                     return self.migrate_variables(
                         new_id, name, var_list, var_type, old_id)
@@ -65,14 +62,11 @@ class VariablesClient(DbOrHttpMixin ,BaseClass):
             return False
 
     def migrate_pipeline_schedule_variables(
-            self, old_id, new_id, name, enabled, src_host=None, src_token=None):
-        if not src_host and src_token:
-            src_host = self.config.source_host
-            src_token = self.config.source_token
+            self, old_id, new_id, name, enabled):
         try:
             if enabled:
                 src_schedules = list(self.projects_api.get_all_project_pipeline_schedules(
-                    old_id, src_host, src_token))
+                    old_id, self.src_host, self.src_token))
                 if src_schedules:
                     dst_schedules = list(self.projects_api.get_all_project_pipeline_schedules(
                         new_id, self.config.destination_host, self.config.destination_token))
@@ -82,7 +76,7 @@ class VariablesClient(DbOrHttpMixin ,BaseClass):
                                 self.log.info("Migrating project {} pipeline schedule ({}) variables".format(
                                     name, sps["description"]))
                                 for v in safe_json_response(self.projects_api.get_single_project_pipeline_schedule(
-                                        old_id, sps["id"], src_host, src_token)).get("variables", None):
+                                        old_id, sps["id"], self.src_host, self.src_token)).get("variables", None):
                                     
                                     self.send_data(self.projects_api.create_new_project_pipeline_schedule_variable,
                                                    (new_id, dps["id"], self.config.destination_host, self.config.destination_token, v),

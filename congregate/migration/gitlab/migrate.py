@@ -468,8 +468,8 @@ class GitLabMigrateClient(MigrateClient):
         try:
             self.log.info(
                 f"{dry_log}Exporting project {project['path_with_namespace']} (ID: {pid}) as {filename}")
-            result[filename] = self.ie.export_project(
-                project, dry_run=self.dry_run, src_host=src_host, src_token=src_token)
+            result[filename] = ImportExportClient(src_host=src_host, src_token=src_token).export_project(
+                project, dry_run=self.dry_run)
             if self.config.airgap:
                 exported_features = self.export_single_project_features(project, src_host, src_token)
                 result[filename] = {
@@ -631,25 +631,23 @@ class GitLabMigrateClient(MigrateClient):
             mongo.close_connection()
 
             # Environments
-            results["environments"] = self.environments.migrate_project_environments(
-                src_id, None, path_with_namespace, jobs_enabled, src_host, src_token)
+            results["environments"] = EnvironmentsClient(src_host=src_host, src_token=src_token).migrate_project_environments(
+                src_id, None, path_with_namespace, jobs_enabled)
 
+            vars_client = VariablesClient(src_host=src_host, src_token=src_token)
             # CI/CD Variables
-            results["cicd_variables"] = self.variables.migrate_cicd_variables(
-                src_id, None, path_with_namespace, "projects", jobs_enabled, src_host, src_token)
+            results["cicd_variables"] = vars_client.migrate_cicd_variables(
+                src_id, None, path_with_namespace, "projects", jobs_enabled)
 
             # Pipeline Schedule Variables
-            results["pipeline_schedule_variables"] = self.variables.migrate_pipeline_schedule_variables(
-                src_id, None, path_with_namespace, jobs_enabled, src_host, src_token)
+            results["pipeline_schedule_variables"] = vars_client.migrate_pipeline_schedule_variables(
+                src_id, None, path_with_namespace, jobs_enabled)
 
             if self.config.source_tier not in ["core", "free"]:
-                # Push Rules - handled by GitLab Importer as of 13.6
-                # results["push_rules"] = self.pushrules.migrate_push_rules(
-                #     src_id, dst_id, path_with_namespace)
-
                 # Merge Request Approvals
-                results["project_level_mr_approvals"] = self.mr_approvals.migrate_project_level_mr_approvals(
-                    src_id, None, path_with_namespace, src_host, src_token)
+                results["project_level_mr_approvals"] = MergeRequestApprovalsClient(
+                    src_host=src_host, src_token=src_token).migrate_project_level_mr_approvals(
+                    src_id, None, path_with_namespace)
 
             return results
 
