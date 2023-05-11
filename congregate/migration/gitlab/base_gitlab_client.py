@@ -9,31 +9,11 @@ class BaseGitLabClient(BaseClass):
     """
     def __init__(self, src_host=None, src_token=None):
         super().__init__()
-        self.__set_property('__src_host', src_host, self.config.source_host)
-        self.__set_property('__src_token', src_token, self.config.source_token)
+        self.src_host = self.__get_property(src_host, self.config.source_host)
+        self.src_token = self.__get_property(src_token, self.config.source_token)
 
-    def __set_property(self, prop, val, default):
+    def __get_property(self, val, default):
         if val:
-            setattr(self, prop, val)
-        else:
-            setattr(self, prop, default)
+            return val
+        return default
     
-    @property
-    def src_host(self):
-        """
-            Source GitLab host URL
-
-            Defaults to source host defined in config,
-            but can be overridden on client initialization
-        """
-        return self.__src_host
-    
-    @property
-    def src_token(self):
-        """
-            Source GitLab access token
-
-            Defaults to source token defined in config,
-            but can be overridden on client initialization
-        """
-        return self.__src_token
