@@ -57,16 +57,15 @@ class UsersClient(BaseClass):
                     username):
                 if user["username"].lower() == username.lower():
                     return True
-                elif index > 100:
+                if index > 100:
                     # Now that `search_for_user_by_username` uses username=
                     # explicitly, is this even necessary?
                     return False
                 index += 1
             return False
-        else:
-            self.log.warning(
-                f"Username {username} for user {old_user} exists as a group name")
-            return True
+        self.log.warning(
+            f"Username {username} for user {old_user} exists as a group name")
+        return True
 
     def is_username_group_name(self, old_user):
         """
@@ -94,16 +93,12 @@ class UsersClient(BaseClass):
             return None
 
     def user_email_exists(self, old_user):
-        index = 0
         if old_user.get("email"):
             email = old_user["email"]
             for user in self.users_api.search_for_user_by_email(
                     self.config.destination_host, self.config.destination_token, email):
                 if user.get("email") == email:
                     return True
-                if index > 100:
-                    return False
-                index += 1
         return False
 
     def find_user_primarily_by_email(self, user):
@@ -204,12 +199,11 @@ class UsersClient(BaseClass):
 
     def build_suffix_username(self, username):
         # Concat the suffix
-        suffix = str(self.config.username_suffix)
-        if suffix == "migrated":
-            self.log.warning(
-                f"Default username suffix '{suffix}' set")
-            return f"{username}_{suffix}"
-        return f"{username}_{suffix.lstrip('_')}"
+        suffix = str(self.config.username_suffix).strip("_")
+        new_username = f"{username}_{suffix}"
+        self.log.warning(
+            f"Adding {'(default) ' if suffix == 'migrated' else ''}suffix to username to avoid duplication: '{username}' -> '{new_username}'")
+        return new_username
 
     def update_parent_group_members(self, access_level, add_members=False, dry_run=True):
         ROLES = {
@@ -356,61 +350,50 @@ class UsersClient(BaseClass):
     def search_for_staged_users(self, table=False):
         """
         Read the information in staged_users.json and output users that are:
-            - Found on destination
-                - State mismatch
+            - FOUND on destination
+                - State mismatch (e.g. 'active' -> 'blocked')
                 - NOT logged in
                 - W/O identities
-                - Blocked
+                - Inactive (any non-active state)
             - NOT found on destination
-            - Public email NOT set or incorrect on source
+            - Source 'public_email' NOT set or NOT matching primary
             - Duplicate (emails)
-        Does the search based on the primary email address and *NOT* username
+        Does the search based on the configured user_mapping_field
         :return:
         """
         staged_users = get_staged_users()
         users_found = []
         users_not_found = {}
-        duplicate_users = [u for u in staged_users if [s["email"]
-                                                       for s in staged_users].count(u["email"]) > 1]
-        for user in staged_users:
-            email = user.get("email")
-            state = user.get("state")
-            new_user = find_user_by_email_comparison_without_id(email)
-            if new_user:
-                users_found.append({
-                    "id": new_user.get("id"),
-                    "email": new_user.get("email"),
-                    "src_state": state,
-                    "dest_state": new_user.get("state"),
-                    "last_sign_in_at": new_user.get("last_sign_in_at"),
-                    "identities": new_user.get("identities")
-                })
-            else:
-                users_not_found[user.get("id")] = {
-                    "email": email, "src_state": state}
-        blocked = [u.get("email")
-                   for u in users_found if u.get("dest_state") == "blocked"]
-        state_mismatch = [(u.get("email"), f"{u.get('src_state')} -> {u.get('dest_state')}")
-                          for u in users_found if u.get("src_state") != u.get("dest_state")]
-        no_login = [(u.get("email"), u.get("dest_state"))
-                    for u in users_found if not u.get("last_sign_in_at")]
-        no_identities = [(u.get("email"), u.get("dest_state"))
-                         for u in users_found if not u.get("identities")]
-        no_public_email = [(u.get("email"), u.get("public_email"))
-                           for u in staged_users if u.get("email") != u.get("public_email")]
+        field = self.config.user_mapping_field
+        user_mapping = {}
+
+        self.lookup_staged_users(staged_users, users_found, users_not_found, field, user_mapping)
+
+        inactive = [f"{u.get(field)} - {u.get('dest_state')}"
+            for u in users_found if u.get("dest_state") in self.INACTIVE]
+        state_mismatch = [f"{u.get(field)}: {u.get('src_state')} -> {u.get('dest_state')}"
+            for u in users_found if u.get("src_state") != u.get("dest_state")]
+        no_login = [f"{u.get(field)} - {u.get('dest_state')}"
+            for u in users_found if not u.get("last_sign_in_at")]
+        no_identities = [f"{u.get(field)} - {u.get('dest_state')}"
+            for u in users_found if not u.get("identities")]
+        no_public_email = [f"{u.get(field)}: {u.get('email')} -> {u.get('public_email')}"
+            for u in staged_users if u.get("email") != u.get("public_email")]
+
+        duplicate_users = [u for u in staged_users if [s[field] for s in staged_users].count(u[field]) > 1]
 
         found = f"Found ({len(users_found)})"
-        blkd = f"Blocked ({len(blocked)})"
+        inact = f"Inactive ({len(inactive)})"
         mismatch = f"State mismatch ({len(state_mismatch)})"
         no_log = f"NOT logged in ({len(no_login)})"
         wo_ids = f"W/O identities ({len(no_identities)})"
         not_found = f"NOT found ({len(users_not_found)})"
-        pub_email = f"Public email NOT set or incorrect ({len(no_public_email)})"
+        pub_email = f"Source 'public_email' NOT set or NOT matching primary ({len(no_public_email)})"
         dupe = f"Duplicate ({len(duplicate_users)})"
-        self.log.info(f"""
+        self.log.info(f"""Destination users status:
             {found}:\n{json_pretty(users_found)}
-            {blkd}:\n{json_pretty(blocked)}
-            {state_mismatch}:\n{json_pretty(state_mismatch)}
+            {inact}:\n{json_pretty(inactive)}
+            {mismatch}:\n{json_pretty(state_mismatch)}
             {no_log}:\n{json_pretty(no_login)}
             {wo_ids}:\n{json_pretty(no_identities)}
             {not_found}:\n{json_pretty(users_not_found)}
@@ -419,15 +402,15 @@ class UsersClient(BaseClass):
         """)
         if table:
             d = {
-                found: Series([(u.get("email"), u.get("dest_state")) for u in users_found], dtype=str),
-                blkd: Series(blocked, dtype=str),
+                found: Series([f"{u.get(field)} - {u.get('dest_state')}" for u in users_found], dtype=str),
+                inact: Series(inactive, dtype=str),
                 mismatch: Series(state_mismatch, dtype=str),
                 no_log: Series(no_login, dtype=str),
                 wo_ids: Series(no_identities, dtype=str),
-                not_found: Series([(u.get("email"), u.get("src_state")) for u in users_not_found.values()], dtype=str),
+                not_found: Series([f"{u.get(field)} - {u.get('src_state')}" for u in users_not_found.values()], dtype=str),
                 pub_email: Series(no_public_email, dtype=str),
-                dupe: Series([(u.get("email"), u.get("state"))
-                             for u in duplicate_users], dtype=str)
+                dupe: Series(
+                    [f"{u.get(field)} - {u.get('state')}" for u in duplicate_users], dtype=str)
             }
             set_option('display.max_rows', None)
             set_option('display.max_columns', None)
@@ -437,7 +420,44 @@ class UsersClient(BaseClass):
             self.log.info(
                 f"Writing {self.config.destination_host} user stats to {csv}:\n{DataFrame(d)}")
             DataFrame(d).to_csv(csv, sep="\t")
+        if field == "username":
+            user_mapping_file = f"{self.app_path}/data/user_mapping_by_{field}.json"
+            self.log.info(f"Writing FOUND users src:dest primary email mapping to {user_mapping_file}")
+            write_json_to_file(user_mapping_file, user_mapping)
         return users_not_found, users_found
+
+    def lookup_staged_users(self, staged_users, users_found, users_not_found, field, user_mapping):
+        for user in staged_users:
+            key = user.get(field)
+            state = user.get("state")
+            if field == "email":
+                new_user = find_user_by_email_comparison_without_id(key)
+            elif field == "username":
+                new_user = None
+                for u in self.users_api.search_for_user_by_username(
+                    self.config.destination_host,
+                    self.config.destination_token,
+                    key):
+                    if u.get(field, "").lower() == user.get(field, "").lower():
+                        user_mapping[key] = {user.get("email"): u.get("email")}
+                        new_user = u
+                        break
+            else:
+                self.log.error(f"Invalid user mapping field configured: '{field}'")
+                sys.exit(os.EX_CONFIG)
+            if new_user:
+                users_found.append({
+                    "id": new_user.get("id"),
+                    "email": new_user.get("email"),
+                    "username": new_user.get("username"),
+                    "src_state": state,
+                    "dest_state": new_user.get("state"),
+                    "last_sign_in_at": new_user.get("last_sign_in_at"),
+                    "identities": new_user.get("identities")
+                })
+            else:
+                users_not_found[user.get("id")] = {
+                    field: key, "src_state": state}
 
     def handle_users_not_found(self, data, users, keep=True):
         """
@@ -446,12 +466,10 @@ class UsersClient(BaseClass):
             Users NOT found input comes from search_for_staged_users.
             :return: Staged users
         """
-        staged = read_json_file_into_object(
-            "{0}/data/{1}.json".format(self.app_path, data))
+        staged = read_json_file_into_object(f"{self.app_path}/data/{data}.json")
 
         if data == "staged_users":
-            self.log.info("{0} only NOT found users ({1}/{2}) in staged users".format(
-                "Keeping" if keep else "Removing", len(users), len(staged)))
+            self.log.info(f"{'Keeping' if keep else 'Removing'} only NOT found users ({len(users)}/{len(staged)}) in staged users")
             if keep:
                 staged = [i for j, i in enumerate(
                     staged) if i["id"] in users.keys()]
@@ -459,9 +477,7 @@ class UsersClient(BaseClass):
                 staged = [i for j, i in enumerate(
                     staged) if i["id"] not in users.keys()]
         else:
-            self.log.info("Removing NOT found users ({0}) from staged {1}".format(
-                len(users),
-                "projects" if data == "staged_projects" else "groups"))
+            self.log.info(f"Removing NOT found users ({len(users)}) from staged {'projects' if data == 'staged_projects' else 'groups'}")
             for s in staged:
                 s["members"] = [i for j, i in enumerate(
                     s["members"]) if i["id"] not in users.keys()]

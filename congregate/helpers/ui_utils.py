@@ -32,7 +32,7 @@ def spin_up_ui(app_path, port):
 def is_ui_out_of_date(app_path):
     try:
         with open(f"{app_path}/ui-checksum", "r") as f:
-            return get_hash_of_dirs(f"{app_path}/frontend/dist") != f.read()
+            return get_hash_of_dirs(f"{app_path}/dist") != f.read()
     except IOError:
         print("UI Checksum not found")
         return True

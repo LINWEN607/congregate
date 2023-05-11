@@ -124,8 +124,8 @@ class MigrateClient(BaseClass):
         staged_users = mig_utils.get_staged_users()
         if staged_users:
             if not self.skip_users:
-                self.log.info("{}Migrating user info".format(
-                    misc_utils.get_dry_log(self.dry_run)))
+                dry_log = misc_utils.get_dry_log(self.dry_run)
+                self.log.info(f"{dry_log}Migrating user info")
                 staged = self.users.handle_users_not_found(
                     "staged_users",
                     self.users.search_for_staged_users()[0],
@@ -138,13 +138,11 @@ class MigrateClient(BaseClass):
                 for nu in new_users:
                     formatted_users[nu["email"]] = nu
                 new_users.append(mig_utils.get_results(new_users))
-                self.log.info("### {0}User creation results ###\n{1}"
-                              .format(misc_utils.get_dry_log(self.dry_run), json_utils.json_pretty(new_users)))
+                self.log.info(f"### {dry_log}User creation results ###\n{json_utils.json_pretty(new_users)}")
                 mig_utils.write_results_to_file(
                     formatted_users, result_type="user", log=self.log)
                 if self.dry_run and not self.only_post_migration_info:
-                    self.log.info(
-                        "DRY-RUN: Outputing various USER migration data to dry_run_user_migration.json")
+                    self.log.info(f"{dry_log}Outputting various USER migration data to 'dry_run_user_migration.json'")
                     mig_utils.migration_dry_run("user", list(self.multi.start_multi_process(
                         self.users.generate_user_data, staged_users, self.processes)))
             else:
@@ -378,7 +376,7 @@ class MigrateClient(BaseClass):
         return {
             group["full_path"]: result
         }
-    
+
     def get_ci_client(self, ci_source, host, user, token) -> BaseExternalCiClient:
         """
             Dynamically get and initialize external CI source client class

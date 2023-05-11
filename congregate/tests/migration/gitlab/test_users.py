@@ -253,7 +253,7 @@ class UsersTests(unittest.TestCase):
         responses.add(responses.POST, url_value,
                       json=self.mock_users.get_test_new_destination_users()[1], status=200)
         # pylint: enable=no-member
-        url_value = "https://gitlabdestination.com/api/v4/users?search=%s&per_page=50&page=%d" % (
+        url_value = "https://gitlabdestination.com/api/v4/users?search=%s&per_page=10&page=%d" % (
             new_user["email"], count.return_value)
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
@@ -293,7 +293,7 @@ class UsersTests(unittest.TestCase):
         responses.add(responses.POST, url_value,
                       json=self.mock_users.get_test_new_destination_users()[1], status=409)
         # pylint: enable=no-member
-        url_value = "https://gitlabdestination.com/api/v4/users?search=%s&per_page=50&page=%d" % (
+        url_value = "https://gitlabdestination.com/api/v4/users?search=%s&per_page=10&page=%d" % (
             new_user["email"], count.return_value)
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
@@ -333,7 +333,7 @@ class UsersTests(unittest.TestCase):
         responses.add(responses.POST, url_value,
                       json=self.mock_users.get_test_new_destination_users()[1], status=409)
         # pylint: enable=no-member
-        url_value = "https://gitlabdestination.com/api/v4/users?search=%s&per_page=50&page=%d" % (
+        url_value = "https://gitlabdestination.com/api/v4/users?search=%s&per_page=10&page=%d" % (
             new_user["email"], count.return_value)
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
@@ -871,7 +871,7 @@ class UsersTests(unittest.TestCase):
         # pylint: enable=no-member
 
         # find_user_by_email_comparison_without_id
-        url_value = "https://gitlabdestination.com/api/v4/users?search=%s&per_page=50&page=%d" % (
+        url_value = "https://gitlabdestination.com/api/v4/users?search=%s&per_page=10&page=%d" % (
             new_user["email"], count.return_value)
         # pylint: disable=no-member
         responses.add(responses.GET, url_value, json=[], status=404)

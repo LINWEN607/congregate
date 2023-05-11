@@ -557,3 +557,7 @@ class Config(BaseConfig):
         the project or repo metadata exceeds the mongo collection max character limit.
         """
         return self.prop("SOURCE", "list_subset_input_path", default="")
+
+    @property
+    def user_mapping_field(self):
+        return self.prop("DESTINATION", "user_mapping_field", default="email")
