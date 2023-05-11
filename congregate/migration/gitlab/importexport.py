@@ -587,9 +587,9 @@ class ImportExportClient(BaseGitLabClient):
             self.log.info(
                 f"Project {dst_path_with_namespace} NOT found on destination. Exporting from source...")
             if loc == "filesystem":
-                exported = self.wait_for_export_to_finish(pid, name, src_host=self.src_host, src_token=self.src_token)
+                exported = self.wait_for_export_to_finish(pid, name)
                 if exported:
-                    self.handle_gzip_download(name, pid, filename, src_host=self.src_host, src_token=self.src_token)
+                    self.handle_gzip_download(name, pid, filename)
             # TODO: Refactor and sync with other scenarios (#119)
             elif loc == "filesystem-aws":
                 self.log.warning(
@@ -601,7 +601,7 @@ class ImportExportClient(BaseGitLabClient):
                     self.log.error(
                         f"Failed to trigger project {name} (ID: {pid}) export, with response {response}")
                 else:
-                    export_status = self.wait_for_export_to_finish(pid, name, src_host=self.src_host, src_token=self.src_token)
+                    export_status = self.wait_for_export_to_finish(pid, name)
                     # If export status is unknown lookup the file on AWS
                     # Could be misleading, since it assumes the file is
                     # complete
@@ -615,7 +615,7 @@ class ImportExportClient(BaseGitLabClient):
         '''
             Attempt to download the export, if it's not a valid export, try again.
         '''
-        url = f"{src_host}/api/v4/projects/{pid}/export/download"
+        url = f"{self.src_host}/api/v4/projects/{pid}/export/download"
         self.log.info(
             f"Downloading project '{name}' (ID: {pid}) as {filename}")
         total_time = 0
@@ -626,7 +626,7 @@ class ImportExportClient(BaseGitLabClient):
                 url,
                 self.config.filesystem_path,
                 filename,
-                headers={"PRIVATE-TOKEN": src_token},
+                headers={"PRIVATE-TOKEN": self.src_token},
                 verify=self.config.ssl_verify)
             # If None i.e. exception, retry
             if not new_file:
