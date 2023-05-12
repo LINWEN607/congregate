@@ -199,7 +199,7 @@ class GroupsClient(BaseClass):
             self.log.info(
                 f"Group {full_name_with_parent_namespace} exists (group search)")
             return group
-        return None
+        return {}
 
     def find_group_id_by_path(self, host, token,
                               full_name_with_parent_namespace):

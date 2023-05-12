@@ -44,7 +44,7 @@ class MigrationEndToEndTest(unittest.TestCase):
         group_diff.generate_html_report(
             "Group", diff_report, "/data/results/group_migration_results.html")
         self.assertGreaterEqual(
-            diff_report["group_migration_results"]["overall_accuracy"], 0.95)
+            diff_report["group_migration_results"]["overall_accuracy"], 0.97)
 
     def test_project_migration_diff(self):
         project_diff = ProjectDiffClient(staged=True)
