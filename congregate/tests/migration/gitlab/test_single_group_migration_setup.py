@@ -44,7 +44,7 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
             # src_access_token
             # src_tier
             "yes",  # source parent group
-            "3",   # source parent group ID
+            "2",   # source parent group ID
             # "source_group_full_path",   # source parent group path
             "300",  # export_import_timeout
             "yes",  # migrating registries
