@@ -108,10 +108,10 @@ class token_generator():
         self.log.info("Reset password token was None. Not changing password")
         return csrf, cookies
 
-    def obtain_personal_access_token(self, name, expires_at, csrf, cookies):
-        self.log.info("Obtaining 'root' user personal access token ({name})")
+    def obtain_personal_access_token(self, name, csrf, cookies):
+        self.log.info(f"Obtaining 'root' user personal access token ({name})")
         data = {
-            "personal_access_token[expires_at]": expires_at,
+            "personal_access_token[expires_at]": "",
             "personal_access_token[name]": name,
             "utf8": "✓"
         }
@@ -122,7 +122,7 @@ class token_generator():
             f"Status code for {self.__get_pat_route()}: {r.status_code}")
         if r.status_code != 200:
             r = requests.post(urljoin(
-                self.endpoint, "/profile/personal_access_tokens"), data=data, cookies=cookies)
+                self.endpoint, "/-/profile/personal_access_tokens"), data=data, cookies=cookies)
             self.log.debug(
                 f"Status code for {self.__get_pat_route()}: {r.status_code}")
         r_json = safe_json_response(r)
@@ -130,13 +130,13 @@ class token_generator():
         if r_json:
             token = r_json.get("new_token")
             self.log.info(
-                "Obtained 'root' user personal access token ({name})")
+                f"Obtained 'root' user personal access token ({name})")
         else:
             self.log.error(
                 f"Failed to obtain 'root' user personal access token ({name}):\n{r} - {r.text}")
         return token
 
-    def generate_token(self, name, expires_at, url=None,
+    def generate_token(self, name, url=None,
                        username=None, pword=None):
         if url is not None:
             self.__set_endpoint(url)
@@ -157,7 +157,7 @@ class token_generator():
             csrf3, cookies3 = self.sign_in(csrf1, cookies1)
 
         token = self.obtain_personal_access_token(
-            name, expires_at, csrf3, cookies3)
+            name, csrf3, cookies3)
         return token
 
     def __set_endpoint(self, endpoint):
@@ -185,6 +185,5 @@ class token_generator():
 if __name__ == "__main__":
     t = token_generator()
     name_arg = sys.argv[1]
-    expires_at_arg = sys.argv[2]
     log = myLogger(__name__)
-    log.info(t.generate_token(name_arg, expires_at_arg))
+    log.info(t.generate_token(name_arg))

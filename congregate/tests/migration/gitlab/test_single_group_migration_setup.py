@@ -21,10 +21,10 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
 
     def generate_single_group_config_with_tokens(self):
         print("Generating Destination Token")
-        destination_token = self.t.generate_token("destination_token", "2239-08-31", url=os.getenv(
+        destination_token = self.t.generate_token("destination_token", url=os.getenv(
             "GITLAB_DEST"), username="root", pword="5iveL!fe")  # Destination access token
         print("Generating Source Token")
-        source_token = self.t.generate_token("source_token", "2239-08-31", url=os.getenv(
+        source_token = self.t.generate_token("source_token", url=os.getenv(
             "GITLAB_SRC"), username="root", pword="5iveL!fe")  # source token
         print("Prepping config data")
         values = [
