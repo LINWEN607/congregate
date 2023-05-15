@@ -14,5 +14,3 @@ class ProjectLevelApproverPayload():
     
     def to_dict(self):
         return { k:v for k, v in asdict(self).items() if v }
-
-

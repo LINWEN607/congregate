@@ -8,6 +8,9 @@ class AirgapExportPayload():
     pid: int
 
     def __post_init__(self):
+        '''
+            Validation checks
+        '''
         if not isinstance(self.host, str):
             raise TypeError('Host should be of type str')
 

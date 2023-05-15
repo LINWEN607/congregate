@@ -12,10 +12,6 @@ sys.path.append(
             os.path.dirname(
                 os.path.abspath(__file__)))))
 
-# from . import controllers
-# from . import models
-# from . import views
-
 from gitlab_ps_utils.logger import myLogger
 
 
