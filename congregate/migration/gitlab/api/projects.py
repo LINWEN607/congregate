@@ -395,7 +395,7 @@ class ProjectsApi(GitLabApiWrapper):
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:pid/labels
         """
-        return self.api.list_all(host, token, f"projects/{pid}/labels")
+        return self.api.list_all(host, token, f"projects/{pid}/labels?include_ancestor_groups=false")
 
     def get_all_project_milestones(self, pid, host, token):
         """
