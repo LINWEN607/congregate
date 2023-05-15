@@ -297,7 +297,7 @@ class GroupsApi(GitLabApiWrapper):
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /groups/:id/labels
         """
-        return self.api.list_all(host, token, f"groups/{gid}/labels")
+        return self.api.list_all(host, token, f"groups/{gid}/labels?include_ancestor_groups=false")
 
     def get_all_group_milestones(self, gid, host, token):
         """
