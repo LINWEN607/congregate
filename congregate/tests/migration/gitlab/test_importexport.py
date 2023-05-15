@@ -410,5 +410,5 @@ class ImportExportClientTests(unittest.TestCase):
         mock_token.return_value = "token"
         max_wait.return_value = 0.1
         wait.return_value = 0.01
-        mock_find_group_by_path.return_value = None
+        mock_find_group_by_path.return_value = {}
         self.assertFalse(self.ie.wait_for_group_import("mock"))

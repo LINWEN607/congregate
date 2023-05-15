@@ -51,7 +51,8 @@ PROJECT_DIFF_KEYS_TO_IGNORE = [
     "auto_devops_enabled",   # Because we deliberately disable it on destination
     "import_status",
     "import_type",
-    "import_url"
+    "import_url",
+    "description_html"
 ]
 
 GROUP_DIFF_KEYS_TO_IGNORE = [
@@ -64,7 +65,8 @@ GROUP_DIFF_KEYS_TO_IGNORE = [
     "prevent_forking_outside_group",
     "shared_with_groups",   # Temporarily, until we add shared_with_groups feature
     "file_template_project_id",
-    "visibility"   # Private on import, unless imported into a parent group
+    "visibility",   # Private on import, unless imported into a parent group
+    "description_html"
 ]
 
 USER_DIFF_KEYS_TO_IGNORE = [

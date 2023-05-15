@@ -305,3 +305,19 @@ class UsersApi(GitLabApiWrapper):
             :yield:  Response object containing the response to GET /user_counts
         """
         return self.api.generate_get_request(host, token, "user_counts")
+
+    def add_user_email(self, host, token, uid, data, message=None):
+        """
+        Create new email owned by specified user. Available only for administrator
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/users.html#add-email-for-user
+
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :param: uid: (str) ID of specified user
+            :param: data: (dict) Object containing the necessary data for adding a user email. Refer to the link above for specific examples
+            :return: Response object containing the response to POST /users/:id/emails
+        """
+        if not message:
+            message = f"Adding new email '{data['email']}' to user {uid}"
+        return self.api.generate_post_request(host, token, f"users/{uid}/emails", json.dumps(data), description=message)
