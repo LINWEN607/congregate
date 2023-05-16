@@ -6,8 +6,8 @@ from pandas import DataFrame, Series, set_option
 
 from gitlab_ps_utils.misc_utils import get_dry_log, get_timedelta, is_error_message_present, \
     safe_json_response, strip_netloc
-from gitlab_ps_utils.json_utils import json_pretty, read_json_file_into_object, write_json_to_file
-from gitlab_ps_utils.dict_utils import rewrite_list_into_dict
+from gitlab_ps_utils.json_utils import json_pretty, read_json_file_into_object, write_json_to_file, read_json_file_into_object
+from gitlab_ps_utils.dict_utils import rewrite_list_into_dict, rewrite_json_list_into_dict
 from gitlab_ps_utils.list_utils import remove_dupes
 
 from congregate.helpers.base_class import BaseClass
@@ -21,6 +21,15 @@ from congregate.migration.gitlab.api.users import UsersApi
 
 
 class UsersClient(BaseClass):
+    ROLES = {
+        "none": 0,
+        "minimal": 5,
+        "guest": 10,
+        "reporter": 20,
+        "developer": 30,
+        "maintainer": 40,
+        "owner": 50}
+
     def __init__(self):
         self.groups_api = GroupsApi()
         self.users_api = UsersApi()
@@ -207,18 +216,10 @@ class UsersClient(BaseClass):
         return new_username
 
     def update_parent_group_members(self, access_level, add_members=False, dry_run=True):
-        ROLES = {
-            "none": 0,
-            "minimal": 5,
-            "guest": 10,
-            "reporter": 20,
-            "developer": 30,
-            "maintainer": 40,
-            "owner": 50}
-        target_level = ROLES.get(access_level.lower())
+        target_level = self.ROLES.get(access_level.lower())
         if target_level is None:
             self.log.error(
-                f"Invalid access level entry '{access_level}' ({[k for k, _ in ROLES.items()]})")
+                f"Invalid access level entry '{access_level}' ({[k for k, _ in self.ROLES.items()]})")
             sys.exit(os.EX_DATAERR)
         parent_id = self.config.dstn_parent_id
         if not parent_id:
@@ -270,6 +271,59 @@ class UsersClient(BaseClass):
             if uid not in mids:
                 self.log.warning(
                     f"SKIP: Member {username} (ID: {uid}) not found. Missing '--add-members'?")
+
+    def update_members_access_level(self, current_level, target_level, skip_groups=False, skip_projects=False, dry_run=True):
+        current_role = self.ROLES.get(current_level.lower())
+        target_role = self.ROLES.get(target_level.lower())
+        if not current_role or not target_level:
+            self.log.error(
+                f"Invalid access level entries for current '{current_level}' and/or target '{target_level}' access level ({[k for k, _ in self.ROLES.items()]})")
+            sys.exit(os.EX_DATAERR)
+        try:
+            if not skip_groups:
+                self.log.info(f"Updating group member roles '{current_level}' -> '{target_level}'")
+                self._update_members_access_level("group", current_role, target_role, dry_run=dry_run)
+            if not skip_projects:
+                self.log.info(f"Updating project member roles '{current_level}' -> '{target_level}'")
+                self._update_members_access_level("project", current_role, target_role, dry_run=dry_run)
+        except RequestException as re:
+            self.log.error(f"Failed to update group/project members access levels:\n{re}")
+        except Exception as e:
+            self.log.error(f"Failure in update group/project members access levels:\n{e}")
+
+    def _update_members_access_level(self, object_type, current_role, target_role, dry_run=True):
+        migration_results = rewrite_json_list_into_dict(
+            read_json_file_into_object(
+                f"{self.app_path}/data/results/{object_type}_migration_results.json"))
+
+        for k, v in migration_results.items():
+            if oid := v.get("id"):
+                if object_type == "group":
+                    self._update_group_members_access_level(k, oid, current_role, target_role, dry_run=dry_run)
+                else:
+                    self._update_project_members_access_level(k, oid, current_role, target_role, dry_run=dry_run)
+            else:
+                self.log.warning(f"Skipping failed {object_type} '{k}' migration:\n{json_pretty(v)}")
+
+    def _update_group_members_access_level(self, g, gid, current_role, target_role, dry_run=True):
+        host = self.config.destination_host
+        token = self.config.destination_token
+        for m in self.groups_api.get_all_group_members(gid, host, token):
+            mid = m.get("id")
+            username = m.get("username")
+            self.log.info(f"{get_dry_log(dry_run=dry_run)}Updating group '{g}' member '{username}' access level: {current_role} -> {target_role}")
+            if mid and m.get("access_level") == current_role and not dry_run:
+                self.groups_api.update_member_access_level(host, token, gid, mid, target_role)
+
+    def _update_project_members_access_level(self, p, pid, current_role, target_role, dry_run=True):
+        host = self.config.destination_host
+        token = self.config.destination_token
+        for m in self.projects_api.get_members(pid, host, token):
+            mid = m.get("id")
+            username = m.get("username")
+            self.log.info(f"{get_dry_log(dry_run=dry_run)}Updating project '{p}' member '{username}' access level: {current_role} -> {target_role}")
+            if mid and m.get("access_level") == current_role and not dry_run:
+                self.projects_api.edit_member(host, token, pid, mid, target_role)
 
     def remove_users_from_parent_group(self, dry_run=True):
         count = 0
