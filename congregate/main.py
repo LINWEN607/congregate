@@ -20,6 +20,7 @@ Usage:
     congregate search-for-staged-users [--table]
     congregate update-aws-creds
     congregate update-parent-group-members [--access-level=<level>] [--add-members] [--commit]
+    congregate update-members-access-level [--current-level=<level>] [--target-level=<level>] [--skip-groups] [--skip-projects] [--commit]
     congregate remove-inactive-users [--commit] [--membership]
     congregate get-total-count
     # TODO: Refactor, project name matching does not seem correct
@@ -99,6 +100,8 @@ Arguments:
     reg-dry-run                             If registry migration is configured, instead of doing the actual migration, write the tags to the logs for use in the brute force migration. Can also be useful when renaming targets
     group-structure                         Let the GitHub and BitBucket Server importers create the missing sub-group layers.
     access-level                            Update parent group level user permissions (None/Minimal/Guest/Reporter/Developer/Maintainer/Owner).
+    current-level                           Current destination group/project members access level.
+    target-level                            Target destination group/project members access level.
     staged                                  Compare using staged data
     no-of-files                             Number of files used to go back when stitching JSON results
     result-type                             For stitching result files. Options are project, group, or user
@@ -148,7 +151,8 @@ Commands:
     do-all*                                 Configure system, retrieve all projects, users, and groups, stage all information, and commence migration.
     search-for-staged-users                 Search for staged users on destination by primary email
     update-aws-creds                        Run awscli commands based on the keys stored in the config. Useful for docker updates.
-    update-parent-group-members             Add (optional) and/or update permissions (to Guest by default) of all staged users for a configured parent group on destination.
+    update-parent-group-members             Add (optional) and/or update access levels (to Guest by default) of all staged users for a configured GitLab destination parent group.
+    update-members-access-level             Update access level (to Guest by default) of all staged group and project members on destination GitLab instance.
     remove-inactive-users                   Remove all inactive users from staged projects and groups.
     get-total-count                         Get total count of migrated projects. Used to compare exported projects to imported projects.
     find-unimported-projects                Return a list of projects that failed import.
@@ -416,6 +420,10 @@ def main():
                 access_level = arguments["--access-level"] or "Guest"
                 users.update_parent_group_members(
                     access_level, add_members=arguments["--add-members"], dry_run=DRY_RUN)
+            if arguments["update-members-access-level"]:
+                current_level = arguments["--current-level"] or "Owner"
+                target_level = arguments["--target-level"] or "Guest"
+                users.update_members_access_level(current_level, target_level, skip_groups=SKIP_GROUPS, skip_projects=SKIP_PROJECTS, dry_run=DRY_RUN)
             if arguments["update-aws-creds"]:
                 if config.s3_access_key and config.s3_secret_key:
                     command = f"aws configure set aws_access_key_id {config.s3_access_key}"

@@ -107,7 +107,7 @@ class GroupsApi(GitLabApiWrapper):
                 member["id"], host, token)
             yield member
 
-    def update_member_access_level(self, host, token, gid, uid, level, message=None):
+    def update_member_access_level(self, host, token, gid, mid, level, message=None):
         """
         Updates the access_level of a group member.
 
@@ -116,11 +116,11 @@ class GroupsApi(GitLabApiWrapper):
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
             :param: gid: (int) GitLab group ID
-            :param: uid: (int) GitLab user ID
-            :param: level: (int) GitLab user access level
-            :yield: Response object containing the response to PUT /groups/:id/members/:user_id
+            :param: mid: (int) GitLab group member ID
+            :param: level: (int) GitLab group member access level
+            :yield: Response object containing the response to PUT /groups/:gid/members/:mid
         """
-        return self.api.generate_put_request(host, token, f"groups/{gid}/members/{uid}?access_level={level}", data=None, description=message)
+        return self.api.generate_put_request(host, token, f"groups/{gid}/members/{mid}?access_level={level}", data=None, description=message)
 
     def get_all_subgroups(self, gid, host, token):
         """

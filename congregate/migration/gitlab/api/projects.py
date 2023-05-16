@@ -94,6 +94,21 @@ class ProjectsApi(GitLabApiWrapper):
                 member["id"], host, token)
             yield member
 
+    def edit_member(self, host, token, pid, mid, level, message=None):
+        """
+        Updates the access_level of a project member.
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/members.html#edit-a-member-of-a-group-or-project
+
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :param: pid: (int) GitLab project ID
+            :param: mid: (int) GitLab project member ID
+            :param: level: (int) GitLab project member access level
+            :yield: Response object containing the response to PUT /projects/:pid/members/:mid
+        """
+        return self.api.generate_put_request(host, token, f"projects/{pid}/members/{mid}?access_level={level}", data=None, description=message)
+
     def add_member(self, pid, host, token, member, message=None):
         """
         Adds a member to a group or project
@@ -111,6 +126,22 @@ class ProjectsApi(GitLabApiWrapper):
             message = f"Adding user {member['user_id']} to project {pid}"
         return self.api.generate_post_request(host, token, f"projects/{pid}/members", json.dumps(member), description=message)
 
+    def remove_member(self, pid, uid, host, token, message=None):
+        """
+        Removes member from project
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/members.html
+
+            :param: pid: (int) GitLab project ID
+            :param: uid: (int) GitLab user ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :return: Response object containing a 202 (accepted) or 404 (Member not found) from DELETE /projects/:pid/members/:uid
+        """
+        if not message:
+            message = "Deleting member from project"
+        return self.api.generate_delete_request(host, token, f"projects/{pid}/members/{uid}", description=message)
+
     def create_new_project_deploy_key(self, pid, host, token, key, message=None):
         """
         Creates a new deploy key for a project
@@ -127,22 +158,6 @@ class ProjectsApi(GitLabApiWrapper):
         if not message:
             message = "Creating new deploy key"
         return self.api.generate_post_request(host, token, f"projects/{pid}/deploy_keys", json.dumps(key), description=message)
-
-    def remove_member(self, pid, uid, host, token, message=None):
-        """
-        Removes member from project
-
-        GitLab API Doc: https://docs.gitlab.com/ee/api/members.html
-
-            :param: pid: (int) GitLab project ID
-            :param: uid: (int) GitLab user ID
-            :param: host: (str) GitLab host URL
-            :param: token: (str) Access token to GitLab instance
-            :return: Response object containing a 202 (accepted) or 404 (Member not found) from DELETE /projects/:pid/members/:uid
-        """
-        if not message:
-            message = "Deleting member from project"
-        return self.api.generate_delete_request(host, token, f"projects/{pid}/members/{uid}", description=message)
 
     def archive_project(self, host, token, pid, message=None):
         """
