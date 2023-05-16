@@ -252,4 +252,3 @@ def mongo_connection(func):
             mongo.close_connection()
             return retval
     return wrapper
-    

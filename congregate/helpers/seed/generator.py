@@ -134,6 +134,10 @@ class SeedDataGenerator(BaseClass):
 
     def generate_seed_data(self, dry_run=True):
         users = self.generate_users(dry_run)
+        users.append({
+            'id': 1,
+            'email': 'admin@example.com'
+        })
         groups = self.generate_groups(dry_run)
         for u in users:
             self.generate_dummy_user_keys(u["id"], dry_run)
@@ -145,6 +149,7 @@ class SeedDataGenerator(BaseClass):
             self.generate_bot_user(g["id"], "group", dry_run)
         projects = self.generate_group_projects(groups, dry_run)
         for p in projects:
+            print(p)
             self.add_project_members(users, p["id"], dry_run)
             self.generate_dummy_branches(p["id"], dry_run)
             self.generate_dummy_environment(p["id"], dry_run)
@@ -293,9 +298,12 @@ class SeedDataGenerator(BaseClass):
     def add_group_members(self, created_users, gid, dry_run=True):
         for user in created_users:
             data = {
-                "user_id": user["id"],
-                "access_level": 30
+                "user_id": user["id"]
             }
+            if user['id'] == 1:
+                data["access_level"] = 50
+            else:
+                data["access_level"] = 30
             self.log.info("{0}Adding user {1} ({2}) to group {3}".format(
                 get_dry_log(dry_run), user["email"], data, gid))
             if not dry_run:

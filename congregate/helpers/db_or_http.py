@@ -17,4 +17,3 @@ class DbOrHttpMixin():
             mongo.close_connection()
         else:
             req_func(*params, data)
-        
