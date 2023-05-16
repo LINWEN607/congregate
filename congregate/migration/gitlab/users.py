@@ -21,15 +21,6 @@ from congregate.migration.gitlab.api.users import UsersApi
 
 
 class UsersClient(BaseClass):
-    ROLES = {
-        "none": 0,
-        "minimal": 5,
-        "guest": 10,
-        "reporter": 20,
-        "developer": 30,
-        "maintainer": 40,
-        "owner": 50}
-
     def __init__(self):
         self.groups_api = GroupsApi()
         self.users_api = UsersApi()
@@ -216,10 +207,11 @@ class UsersClient(BaseClass):
         return new_username
 
     def update_parent_group_members(self, access_level, add_members=False, dry_run=True):
-        target_level = self.ROLES.get(access_level.lower())
+        target_level = constants.MEMBER_ROLES.get(access_level.lower())
         if target_level is None:
             self.log.error(
-                f"Invalid access level entry '{access_level}' ({[k for k, _ in self.ROLES.items()]})")
+                f"Invalid access level entry '{access_level}'"
+                f"\nValid entries: {[k for k in constants.MEMBER_ROLES.keys()]})")
             sys.exit(os.EX_DATAERR)
         parent_id = self.config.dstn_parent_id
         if not parent_id:
@@ -273,57 +265,63 @@ class UsersClient(BaseClass):
                     f"SKIP: Member {username} (ID: {uid}) not found. Missing '--add-members'?")
 
     def update_members_access_level(self, current_level, target_level, skip_groups=False, skip_projects=False, dry_run=True):
-        current_role = self.ROLES.get(current_level.lower())
-        target_role = self.ROLES.get(target_level.lower())
-        if not current_role or not target_level:
+        current_role = constants.MEMBER_ROLES.get(current_level.lower())
+        target_role = constants.MEMBER_ROLES.get(target_level.lower())
+        if current_role is None or target_role is None:
             self.log.error(
-                f"Invalid access level entries for current '{current_level}' and/or target '{target_level}' access level ({[k for k, _ in self.ROLES.items()]})")
+                f"Invalid access level entry for current '{current_level}' and/or target '{target_level}' access level"
+                f"\nValid entries: {[k for k in constants.MEMBER_ROLES.keys()]})")
             sys.exit(os.EX_DATAERR)
         try:
             if not skip_groups:
                 self.log.info(f"Updating group member roles '{current_level}' -> '{target_level}'")
-                self._update_members_access_level("group", current_role, target_role, dry_run=dry_run)
+                self.__update_members_access_level("group", current_role, target_role, dry_run=dry_run)
             if not skip_projects:
                 self.log.info(f"Updating project member roles '{current_level}' -> '{target_level}'")
-                self._update_members_access_level("project", current_role, target_role, dry_run=dry_run)
+                self.__update_members_access_level("project", current_role, target_role, dry_run=dry_run)
         except RequestException as re:
             self.log.error(f"Failed to update group/project members access levels:\n{re}")
         except Exception as e:
             self.log.error(f"Failure in update group/project members access levels:\n{e}")
 
-    def _update_members_access_level(self, object_type, current_role, target_role, dry_run=True):
+    def __update_members_access_level(self, object_type, current_role, target_role, dry_run=True):
         migration_results = rewrite_json_list_into_dict(
             read_json_file_into_object(
                 f"{self.app_path}/data/results/{object_type}_migration_results.json"))
 
         for k, v in migration_results.items():
-            if oid := v.get("id"):
-                if object_type == "group":
-                    self._update_group_members_access_level(k, oid, current_role, target_role, dry_run=dry_run)
+            # Otherwise it's the Total/Successful count
+            if isinstance(v, dict):
+                if oid := v.get("id"):
+                    if object_type == "group":
+                        self.__update_group_members_access_level(k, oid, current_role, target_role, dry_run=dry_run)
+                    else:
+                        self.__update_project_members_access_level(k, oid, current_role, target_role, dry_run=dry_run)
                 else:
-                    self._update_project_members_access_level(k, oid, current_role, target_role, dry_run=dry_run)
-            else:
-                self.log.warning(f"Skipping failed {object_type} '{k}' migration:\n{json_pretty(v)}")
+                    self.log.warning(f"Skipping failed {object_type} '{k}' migration:\n{json_pretty(v)}")
 
-    def _update_group_members_access_level(self, g, gid, current_role, target_role, dry_run=True):
+    def __update_group_members_access_level(self, g, gid, current_role, target_role, dry_run=True):
         host = self.config.destination_host
         token = self.config.destination_token
         for m in self.groups_api.get_all_group_members(gid, host, token):
             mid = m.get("id")
             username = m.get("username")
-            self.log.info(f"{get_dry_log(dry_run=dry_run)}Updating group '{g}' member '{username}' access level: {current_role} -> {target_role}")
-            if mid and m.get("access_level") == current_role and not dry_run:
-                self.groups_api.update_member_access_level(host, token, gid, mid, target_role)
+            if mid and m.get("access_level") == current_role:
+                self.log.info(f"{get_dry_log(dry_run=dry_run)}Updating group '{g}' member '{username}' access level: {current_role} -> {target_role}")
+                if not dry_run:
+                    self.groups_api.update_member_access_level(host, token, gid, mid, target_role)
 
-    def _update_project_members_access_level(self, p, pid, current_role, target_role, dry_run=True):
+    def __update_project_members_access_level(self, p, pid, current_role, target_role, dry_run=True):
         host = self.config.destination_host
         token = self.config.destination_token
-        for m in self.projects_api.get_members(pid, host, token):
+        # Including inherited to have the correct access level range
+        for m in self.projects_api.get_members_incl_inherited(pid, host, token):
             mid = m.get("id")
             username = m.get("username")
-            self.log.info(f"{get_dry_log(dry_run=dry_run)}Updating project '{p}' member '{username}' access level: {current_role} -> {target_role}")
-            if mid and m.get("access_level") == current_role and not dry_run:
-                self.projects_api.edit_member(host, token, pid, mid, target_role)
+            if mid and m.get("access_level") == current_role:
+                self.log.info(f"{get_dry_log(dry_run=dry_run)}Updating project '{p}' member '{username}' access level: {current_role} -> {target_role}")
+                if not dry_run:
+                    self.projects_api.edit_member(host, token, pid, mid, target_role)
 
     def remove_users_from_parent_group(self, dry_run=True):
         count = 0
@@ -773,7 +771,7 @@ class UsersClient(BaseClass):
                     username = user.get("username")
                 else:
                     self.log.warning(
-                        f"Skip user '{email}' NOT found on {host}")
+                        f"SKIP: Source user '{email}' NOT found on {host}")
                     continue
                 # When to avoid action
                 if (hide and not pub_email) or (
@@ -782,22 +780,22 @@ class UsersClient(BaseClass):
                 # When to warn of overwrite
                 if not hide and pub_email and pub_email != email:
                     self.log.warning(
-                        f"Overwrite user '{username}' public email '{pub_email}' -> '{email}'")
+                        f"Overwrite source user '{username}' public email '{pub_email}' -> '{email}'")
                 self.set_public_email(user.get("id"), set_email, username, host, token, dry_run=dry_run)
             except RequestException as re:
                 self.log.error(
-                    f"Failed to set user '{su.get('username')}' public email '{set_email}':\n{re}")
+                    f"Failed to set source user '{su.get('username')}' public email '{set_email}':\n{re}")
                 continue
 
     def set_public_email(self, uid, email, username, host, token, dry_run=True):
         data = {"public_email": email}
         self.log.info(
-            f"{get_dry_log(dry_run)}Set user '{username}' public email to '{email}'")
+            f"{get_dry_log(dry_run)}Set source user '{username}' public email to '{email}'")
         if not dry_run:
             resp = self.users_api.modify_user(uid, host, token, data)
             if not isinstance(resp, Response) or resp.status_code != 200:
                 self.log.error(
-                    f"Failed to set user '{username}' public email to '{email}':\n{resp} - {resp.text}")
+                    f"Failed to set source user '{username}' public email to '{email}':\n{resp} - {resp.text}")
 
     def align_user_mapping_emails(self, dry_run=True):
         mapped_users = read_json_file_into_object(f"{self.app_path}/data/user_mapping_by_{self.config.user_mapping_field}.json")

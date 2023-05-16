@@ -90,3 +90,13 @@ USER_DIFF_KEYS_TO_IGNORE = [
     "sign_in_count",
     "namespace_id"
 ]
+
+MEMBER_ROLES = {
+    "none": 0,
+    "minimal": 5,
+    "guest": 10,
+    "reporter": 20,
+    "developer": 30,
+    "maintainer": 40,
+    "owner": 50
+}
