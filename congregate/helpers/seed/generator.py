@@ -149,7 +149,6 @@ class SeedDataGenerator(BaseClass):
             self.generate_bot_user(g["id"], "group", dry_run)
         projects = self.generate_group_projects(groups, dry_run)
         for p in projects:
-            print(p)
             self.add_project_members(users, p["id"], dry_run)
             self.generate_dummy_branches(p["id"], dry_run)
             self.generate_dummy_environment(p["id"], dry_run)
