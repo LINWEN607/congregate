@@ -368,14 +368,14 @@ class SeedDataGenerator(BaseClass):
             if not dry_run:
                 token = self.users.find_or_create_impersonation_token(
                     user, users_map, expiration_date)
-                for p in dummy_project_data:
+                for project_data in dummy_project_data:
                     if token and token.get("token") is not None:
                         created_projects.append(self.projects.projects_api.create_project(
-                            self.config.source_host, token, dummy_project_data[p]["name"], data=dummy_project_data[p]).json())
+                            self.config.source_host, token, project_data["name"], data=project_data).json())
                     else:
-                        dummy_project_data[p]["namespace"] = user["username"]
+                        project_data["namespace"] = user["username"]
                         self.projects.projects_api.create_project(
-                            self.config.source_host, self.config.source_token, dummy_project_data[p]["name"], data=dummy_project_data[p]).json()
+                            self.config.source_host, self.config.source_token, project_data["name"], data=project_data).json()
 
         return created_projects
 
