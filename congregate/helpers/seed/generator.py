@@ -371,7 +371,7 @@ class SeedDataGenerator(BaseClass):
                 for project_data in dummy_project_data:
                     if token and token.get("token") is not None:
                         created_projects.append(self.projects.projects_api.create_project(
-                            self.config.source_host, token, project_data["name"], data=project_data).json())
+                            self.config.source_host, token['token'], project_data["name"], data=project_data).json())
                     else:
                         project_data["namespace"] = user["username"]
                         self.projects.projects_api.create_project(
