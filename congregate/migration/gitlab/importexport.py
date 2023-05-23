@@ -247,7 +247,7 @@ class ImportExportClient(BaseGitLabClient):
             import_response = self.attempt_import(
                 filename, name, path, dest_namespace, override_params, members)
             # Use until group import status endpoint is available
-            if import_response.status_code == 404:
+            if import_response.status_code in [404, 403]:
                 total_time = 0
                 wait_time = self.config.export_import_status_check_time
                 timeout = self.COOL_OFF_MINUTES * 60
