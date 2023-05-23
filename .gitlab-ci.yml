@@ -241,7 +241,7 @@ check ldap compose yaml:
   before_script:
     - export PATH="/root/.local/bin:$PATH" && \
     # Disable parallel installer to avoid "Key Error" issues
-    - poetry config experimental.new-installer false
+    # - poetry config experimental.new-installer false
     - poetry install
     - ./congregate.sh init
   retry: 2
@@ -641,7 +641,7 @@ pages:
     # This is usually set in the .test-job extend or reference, but we don't want the congregate init that comes with it
     - export PATH="/root/.local/bin:$PATH"
     # Disable parallel installer to avoid "Key Error" issues
-    - poetry config experimental.new-installer false
+    # - poetry config experimental.new-installer false
     - poetry install
     # TODO
     # - cp gl-code-quality-report.json congregate/docs/source/_static/
