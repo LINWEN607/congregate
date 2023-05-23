@@ -11,6 +11,7 @@ from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.instance import InstanceApi
+from congregate.migration.gitlab.api.settings import SettingsAPI
 from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.pushrules import PushRulesClient
 from congregate.migration.gitlab.branches import BranchesClient
@@ -125,6 +126,7 @@ class SeedDataGenerator(BaseClass):
         self.projects = ProjectsClient()
         self.projects_api = ProjectsApi()
         self.instance_api = InstanceApi()
+        self.settings_api = SettingsAPI()
         self.pushrules = PushRulesClient()
         self.branches = BranchesClient()
         self.mra = MergeRequestApprovalsClient()
@@ -162,6 +164,7 @@ class SeedDataGenerator(BaseClass):
         projects += self.generate_user_projects(users, dry_run)
         self.generate_instance_clusters(dry_run)
         self.generate_instance_hooks(dry_run)
+        self.enable_importers()
 
         print("---Generated Users---")
         print(json.dumps(users, indent=4))
@@ -530,3 +533,14 @@ class SeedDataGenerator(BaseClass):
             if not dry_run:
                 self.projects_api.create_new_project_deploy_key(
                     pid, self.config.source_host, self.config.source_token, k)
+
+    def enable_importers(self):
+        settings = {
+            'import_sources': [
+                'github',
+                'bitbucket_server',
+                'git',
+                'gitlab_project'
+            ]
+        }
+        self.settings_api.set_application_settings(self.config.destination_host, self.config.destination_token, settings)

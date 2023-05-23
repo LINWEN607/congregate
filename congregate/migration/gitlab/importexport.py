@@ -333,7 +333,7 @@ class ImportExportClient(BaseGitLabClient):
                     m = MultipartEncoder(fields={
                         "file": (filename, f),
                         "path": path,
-                        "namespace": namespace,
+                        "namespace": str(namespace),
                         "name": name
                     })
                     headers = {
