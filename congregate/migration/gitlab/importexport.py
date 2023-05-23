@@ -261,7 +261,7 @@ class ImportExportClient(BaseGitLabClient):
                         self.log.error(
                             f"Time limit exceeded waiting for project {name} to import to {dest_namespace}, with response:\n{import_response}")
                         return None
-                ns_id = ns.get('id')
+                ns_id = ns.json().get('id')
                 import_response = self.attempt_import(
                     filename, name, path, ns_id, override_params, members)
             elif import_response.status_code == 422:
