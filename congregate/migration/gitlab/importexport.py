@@ -251,8 +251,8 @@ class ImportExportClient(BaseGitLabClient):
                 total_time = 0
                 wait_time = self.config.export_import_status_check_time
                 timeout = self.COOL_OFF_MINUTES * 60
-                while self.namespaces_api.get_namespace_by_full_path(
-                        dest_namespace, self.config.destination_host, self.config.destination_token).status_code != 200:
+                while (ns := self.namespaces_api.get_namespace_by_full_path(
+                        dest_namespace, self.config.destination_host, self.config.destination_token)).status_code != 200:
                     self.log.info(
                         f"Waited {total_time}/{timeout} seconds to create {dest_namespace} for project {name}")
                     total_time += wait_time
@@ -261,8 +261,9 @@ class ImportExportClient(BaseGitLabClient):
                         self.log.error(
                             f"Time limit exceeded waiting for project {name} to import to {dest_namespace}, with response:\n{import_response}")
                         return None
+                ns_id = ns.get('id')
                 import_response = self.attempt_import(
-                    filename, name, path, dest_namespace, override_params, members)
+                    filename, name, path, ns_id, override_params, members)
             elif import_response.status_code == 422:
                 self.log.error(
                     f"Project {name} failed to import to {dest_namespace}, due to:\n{import_response.text}")
@@ -499,11 +500,17 @@ class ImportExportClient(BaseGitLabClient):
                     total_time += wait_time
                     sleep(wait_time)
                 elif import_response.status_code == 500:
-                    self.log.info(
-                        f"Attempting to delete project {name} from {dst_namespace}, before re-importing, due to:\n{text}")
-                    self.projects_api.delete_project(
-                        host, token, quote_plus(dst_namespace + "/" + path))
-                    sleep(wait_time)
+                    if retry:
+                        self.log.info(
+                            f"Attempting to delete project {name} from {dst_namespace}, before re-importing, due to:\n{text}")
+                        self.projects_api.delete_project(
+                            host, token, quote_plus(dst_namespace + "/" + path))
+                        sleep(wait_time)
+                        retry = False
+                    else:
+                        self.log.error(
+                            f"Skipping project {name} due to multiple 500 errors")
+                        break
                 import_response = self.attempt_import(
                     filename, name, path, dst_namespace, override_params, members)
             safe_resp = safe_json_response(import_response)
