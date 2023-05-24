@@ -27,4 +27,4 @@ class SettingsAPI(GitLabApiWrapper):
             :param: data: (dict) Application settings to update
             :return: Response object containing the response to PUT /application/settings
         """
-        return self.api.generate_put_request(host, token, f"application/settings?{urlencode(data)}")
+        return self.api.generate_put_request(host, token, f"application/settings?{urlencode(data)}", data=None)
