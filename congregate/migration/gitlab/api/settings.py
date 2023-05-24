@@ -1,4 +1,4 @@
-from urllib.parse import urlencode
+from json import dumps as json_dumps
 from congregate.migration.gitlab.api.base_api import GitLabApiWrapper
 
 
@@ -27,4 +27,4 @@ class SettingsAPI(GitLabApiWrapper):
             :param: data: (dict) Application settings to update
             :return: Response object containing the response to PUT /application/settings
         """
-        return self.api.generate_put_request(host, token, f"application/settings?{urlencode(data)}", data=None)
+        return self.api.generate_put_request(host, token, f"application/settings", data=json_dumps(data))
