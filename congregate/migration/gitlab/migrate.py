@@ -576,26 +576,27 @@ class GitLabMigrateClient(MigrateClient):
         results["pipeline_schedule_variables"] = self.variables.migrate_pipeline_schedule_variables(
             src_id, dst_id, path_with_namespace, jobs_enabled)
 
-        # Deploy Keys
-        results["deploy_keys"] = self.keys.migrate_project_deploy_keys(
-            src_id, dst_id, path_with_namespace)
-
-        # Container Registries
-        if self.config.source_registry and self.config.destination_registry:
-            results["container_registry"] = self.registries.migrate_registries(
+        if not self.config.airgap:
+            # Deploy Keys
+            results["deploy_keys"] = self.keys.migrate_project_deploy_keys(
                 src_id, dst_id, path_with_namespace)
 
-        # Package Registries
-        results["package_registry"] = self.packages.migrate_project_packages(
-            src_id, dst_id, path_with_namespace)
+            # Container Registries
+            if self.config.source_registry and self.config.destination_registry:
+                results["container_registry"] = self.registries.migrate_registries(
+                    src_id, dst_id, path_with_namespace)
 
-        # Hooks (Webhooks)
-        results["project_hooks"] = self.hooks.migrate_project_hooks(
-            src_id, dst_id, path_with_namespace)
+            # Package Registries
+            results["package_registry"] = self.packages.migrate_project_packages(
+                src_id, dst_id, path_with_namespace)
 
-        # Clusters
-        results["clusters"] = self.clusters.migrate_project_clusters(
-            src_id, dst_id, path_with_namespace, jobs_enabled)
+            # Hooks (Webhooks)
+            results["project_hooks"] = self.hooks.migrate_project_hooks(
+                src_id, dst_id, path_with_namespace)
+
+            # Clusters
+            results["clusters"] = self.clusters.migrate_project_clusters(
+                src_id, dst_id, path_with_namespace, jobs_enabled)
 
         if self.config.source_tier not in ["core", "free"]:
             # Push Rules - handled by GitLab Importer as of 13.6
@@ -657,3 +658,8 @@ def export_task(project: dict, host: str, token: str):
                            skip_groups=True, skip_project_import=True)
     return client.handle_exporting_projects(project, src_host=host, src_token=token)
 
+@shared_task
+def import_task(project: dict, host: str, token: str):
+    client = GitLabMigrateClient(dry_run=False, skip_users=True, 
+                           skip_groups=True, skip_project_import=True)
+    return client.handle_importing_projects(project, dst_host=host, dst_token=token)
