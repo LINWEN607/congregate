@@ -81,15 +81,14 @@ class ConfigurationValidator(Config):
     
     @property
     def airgap(self):
-        airgap = self.prop_bool("APP", "airgap", default=False)
-        if not airgap:
+        if airgap := self.prop_bool("APP", "airgap", default=False):
             if self.airgap_validated_in_session:
                 return airgap
             try:
                 self.validate_airgap_configuration()
             except ConfigurationException as ce:
                 exit(ce)
-        return airgap
+        return False
             
     def validate_dstn_parent_group_id(self, pgid):
         if pgid is not None:
