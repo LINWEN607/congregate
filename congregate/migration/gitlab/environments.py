@@ -19,8 +19,12 @@ class EnvironmentsClient(DbOrHttpMixin, BaseGitLabClient):
                 self.log.info(
                     f"Environments are disabled ({enabled}) for project {name}")
                 return None
-            resp = self.projects.get_all_project_environments(
-                src_id, self.src_host, self.src_token)
+            resp = self.get_data(
+                self.projects.get_all_project_environments,
+                (src_id, self.src_host, self.src_token),
+                'project_environments', 
+                src_id,
+                airgap=self.config.airgap)
             envs = iter(resp)
             self.log.info(f"Migrating project {name} environments")
             for env in envs:

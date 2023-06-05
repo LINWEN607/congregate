@@ -487,7 +487,7 @@ class GitLabMigrateClient(MigrateClient):
             self.log.error(print_exc())
         return result
 
-    def handle_importing_projects(self, project):
+    def handle_importing_projects(self, project, dst_host=None, dst_token=None):
         src_id = project["id"]
         archived = project["archived"]
         path = project["path_with_namespace"]
@@ -519,7 +519,8 @@ class GitLabMigrateClient(MigrateClient):
             else:
                 self.log.info(
                     f"{misc_utils.get_dry_log(self.dry_run)}Project {dst_path_with_namespace} NOT found on destination, importing...")
-                import_id = self.ie.import_project(
+                ie_client = ImportExportClient(src_host=dst_host, src_token=dst_token)
+                import_id = ie_client.import_project(
                     project, dry_run=self.dry_run)
             if import_id and not self.dry_run:
                 # Disable Shared CI

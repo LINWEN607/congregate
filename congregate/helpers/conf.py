@@ -469,6 +469,26 @@ class Config(BaseConfig):
         to the soruce instance
         """
         return self.prop_bool("APP", "airgap", default=False)
+    
+    @property
+    def airgap_export(self):
+        """
+        Sets airgap direction to export. Set this to True if this is the source instance
+
+        Congregate will query mongo for post-migration data instead of reaching out
+        to the soruce instance
+        """
+        return self.prop_bool("APP", "airgap_export", default=False)
+    
+    @property
+    def airgap_import(self):
+        """
+        Sets airgap direction to import. Set this to True if this is the destination instance
+
+        Congregate will query mongo for post-migration data instead of reaching out
+        to the soruce instance
+        """
+        return self.prop_bool("APP", "airgap_import", default=False)
 
 # HIDDEN PROPERTIES
 

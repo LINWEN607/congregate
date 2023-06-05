@@ -14,13 +14,18 @@ class VariablesClient(DbOrHttpMixin, BaseGitLabClient):
         self.groups_api = GroupsApi()
         super(VariablesClient, self).__init__(src_host=src_host, src_token=src_token)
 
-    def get_ci_variables(self, id, host, token, var_type="projects"):
+    def get_ci_variables(self, id, host, token, var_type="projects", airgap=False):
         if var_type == "group":
             return list(
                 self.groups_api.get_all_group_variables(id, host, token))
         else:
-            return list(
-                self.projects_api.get_all_project_variables(id, host, token))
+            return list(self.get_data(
+                    self.projects_api.get_all_project_variables, 
+                    (id, host, token), 
+                    'ci_variables', 
+                    id, 
+                    airgap=airgap)
+                )
 
     def set_variables(self, id, host, token, var_type="projects", data={}):
         if var_type == "group":
@@ -65,8 +70,15 @@ class VariablesClient(DbOrHttpMixin, BaseGitLabClient):
             self, old_id, new_id, name, enabled):
         try:
             if enabled:
-                src_schedules = list(self.projects_api.get_all_project_pipeline_schedules(
-                    old_id, self.src_host, self.src_token))
+                src_schedules = list(
+                    self.get_data(
+                        self.projects_api.get_all_project_pipeline_schedules,
+                        (old_id, self.src_host, self.src_token),
+                        'pipeline_schedule_variables',
+                        old_id,
+                        airgap=self.config.airgap
+                        )
+                    )
                 if src_schedules:
                     dst_schedules = list(self.projects_api.get_all_project_pipeline_schedules(
                         new_id, self.config.destination_host, self.config.destination_token))

@@ -18,7 +18,7 @@ class DbOrHttpMixin():
         else:
             req_func(*params, data)
     
-    def get_data(self, req_func, params, key, src_id, data, airgap=False, mongo_coll=default_collection):
+    def get_data(self, req_func, params, key, src_id, airgap=False, mongo_coll=default_collection):
         if airgap:
             mongo = MongoConnector()
             record = mongo.safe_find_one(mongo_coll, {
@@ -27,4 +27,4 @@ class DbOrHttpMixin():
             mongo.close_connection()
             return record.get(key)
         else:
-            return req_func(*params, data)
+            return req_func(*params)

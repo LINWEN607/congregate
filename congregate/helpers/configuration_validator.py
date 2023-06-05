@@ -1,3 +1,4 @@
+from sys import exit
 from base64 import b64encode
 import requests
 
@@ -76,7 +77,18 @@ class ConfigurationValidator(Config):
         self.src_token_validated_in_session = self.validate_src_token(
             src_token) if not self.airgap else True
         return src_token
-
+    
+    @property
+    def airgap(self):
+        airgap = self.prop_bool("APP", "airgap", default=False)
+        if self.airgap_validated_in_session:
+            return airgap
+        try:
+            self.validate_airgap_configuration()
+        except ConfigurationException as ce:
+            exit(ce)
+        return airgap
+            
     def validate_dstn_parent_group_id(self, pgid):
         if pgid is not None:
             group_resp = safe_json_response(self.groups.get_group(
@@ -206,6 +218,18 @@ class ConfigurationValidator(Config):
         if not user or is_error or not is_admin:
             raise ConfigurationException(
                 "source_token", msg=f"{msg}{json_pretty(user)}")
+    
+    def validate_airgap_configuration(self):
+        airgap_export = self.prop_bool("APP", "airgap_export", default=False)
+        airgap_import = self.prop_bool("APP", "airgap_import", default=False)
+        if airgap_export and airgap_import:
+            raise ConfigurationException(
+                'airgap', msg="Invalid configuration. Airgap export and import both set to True. Only one can be enabled at a time")
+        if not (airgap_export and airgap_import):
+            raise ConfigurationException(
+                'airgap', msg="Invalid configuration. Airgap is enabled but neither airgap_export nor airgap_import is enabled. Set one of them to True"
+            )
+        return True
 
     @property
     def dstn_parent_id_validated_in_session(self):
@@ -226,6 +250,10 @@ class ConfigurationValidator(Config):
     @property
     def src_token_validated_in_session(self):
         return self._src_token_validated_in_session
+    
+    @property
+    def airgap_validated_in_session(self):
+        return self._airgap_validated_in_session
 
     @dstn_parent_id_validated_in_session.setter
     def dstn_parent_id_validated_in_session(self, value):
@@ -246,3 +274,7 @@ class ConfigurationValidator(Config):
     @src_token_validated_in_session.setter
     def src_token_validated_in_session(self, value):
         self._src_token_validated_in_session = value
+
+    @airgap_validated_in_session.setter
+    def airgap_validated_in_session(self, value):
+        self._airgap_validated_in_session = value

@@ -55,8 +55,12 @@ class MergeRequestApprovalsClient(DbOrHttpMixin, BaseGitLabClient):
                 new_id, self.config.destination_host, self.config.destination_token, conf)
 
             # migrate approval rules
-            resp = self.projects_api.get_all_project_level_mr_approval_rules(
-                old_id, self.src_host, self.src_token)
+            resp = self.get_data(
+                    self.projects_api.get_all_project_level_mr_approval_rules,
+                    (old_id, self.src_host, self.src_token),
+                    'mr_approvers',
+                    old_id,
+                    airgap=self.config.airgap)
             approval_rules = iter(resp)
             self.log.info(
                 "Migrating project-level MR approval rules for {0} (ID: {1})".format(name, old_id))
