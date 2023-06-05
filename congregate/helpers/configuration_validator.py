@@ -24,6 +24,7 @@ class ConfigurationValidator(Config):
         self._dstn_parent_group_path_validated_in_session = False
         self._dstn_token_validated_in_session = False
         self._src_token_validated_in_session = False
+        self._airgap_validated_in_session = False
         super().__init__(path=path)
 
     @property
