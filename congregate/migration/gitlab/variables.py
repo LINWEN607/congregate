@@ -121,13 +121,12 @@ class VariablesClient(DbOrHttpMixin, BaseGitLabClient):
             return False
 
     def migrate_variables_in_stage(self, dry_run=True):
-        files = read_json_file_into_object(
+        sps = read_json_file_into_object(
             f"{self.app_path}/data/staged_projects.json")
         ids = []
-        for project in files:
+        for sp in sps:
             try:
-                old_id = project["id"]
-                project_path = project["path_with_namespace"]
+                project_path = sp["path_with_namespace"]
                 self.log.info(
                     f"Searching on destination for project '{project_path}'")
                 resp = self.projects_api.get_project_by_path_with_namespace(
@@ -143,7 +142,7 @@ class VariablesClient(DbOrHttpMixin, BaseGitLabClient):
                 ids.append(pid)
                 if pid and not dry_run:
                     self.migrate_cicd_variables(
-                        old_id, pid, project_path, "project", project.get("jobs_enabled"))
+                        sp.get("id"), pid, project_path, "project", sp.get("jobs_enabled"))
                 text_file = "data/project_ids_variables.txt"
                 self.log.info(
                     f"{get_dry_log(dry_run)}Writing {len(ids)} project IDs to '{text_file}'")
