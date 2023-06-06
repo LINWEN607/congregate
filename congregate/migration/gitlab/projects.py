@@ -135,29 +135,26 @@ class ProjectsClient(BaseClass):
         for sp in tqdm(staged_projects, total=len(staged_projects), colour=self.TANUKI, desc=self.DESC, unit=self.UNIT):
             # SaaS destination instances have a parent group
             path_with_namespace, _ = get_stage_wave_paths(sp)
-            self.log.info(f"Removing project {path_with_namespace}")
-            resp = self.projects_api.get_project_by_path_with_namespace(
-                path_with_namespace, host, token)
-            if resp is not None:
+            self.log.info(
+                f"{get_dry_log(dry_run)}Removing project '{path_with_namespace}' on destination")
+            try:
+                resp = self.projects_api.get_project_by_path_with_namespace(
+                    path_with_namespace, host, token)
                 if resp.status_code != 200:
-                    self.log.info(
-                        f"Project {path_with_namespace} does not exist (status: {resp.status_code})")
+                    self.log.warning(
+                        f"Project '{path_with_namespace}' does not exist: {resp} - {resp.text})")
                 elif not dry_run:
-                    try:
-                        project = resp.json()
-                        if get_timedelta(
-                                project["created_at"]) < self.config.max_asset_expiration_time:
-                            self.projects_api.delete_project(
-                                host, token, project["id"])
-                        else:
-                            self.log.info(
-                                f"Ignoring {project['name_with_namespace']}. Project existed before {self.config.max_asset_expiration_time} hours")
-                    except RequestException as re:
-                        self.log.error(
-                            f"Failed to remove project\n{json_pretty(sp)}\nwith error:\n{re}")
-            else:
+                    project = safe_json_response(resp)
+                    if get_timedelta(
+                            project["created_at"]) < self.config.max_asset_expiration_time:
+                        self.projects_api.delete_project(
+                            host, token, project["id"])
+                    else:
+                        self.log.warning(
+                            f"SKIP: project '{project['name_with_namespace']}' was created {self.config.max_asset_expiration_time} hours ago")
+            except RequestException as re:
                 self.log.error(
-                    f"Failed to GET project {path_with_namespace} by path_with_namespace")
+                    f"Failed to remove project '{path_with_namespace}' on destination:\n{re}")
 
     def count_unarchived_projects(self, local=False):
         unarchived_user_projects = []

@@ -41,6 +41,8 @@ class ProjectsApi(GitLabApiWrapper):
         """
         Get all details of a project matching the path_with_namespace
 
+        GitLab API Doc: https://docs.gitlab.com/ee/api/projects.html#get-single-project
+
             :param: path: (string) URL encoded path to a project
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance

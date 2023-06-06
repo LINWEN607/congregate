@@ -1,7 +1,7 @@
-import json
-
 from requests.exceptions import RequestException
 from gitlab_ps_utils.misc_utils import get_dry_log, is_error_message_present, safe_json_response
+from gitlab_ps_utils.json_utils import read_json_file_into_object
+
 from congregate.migration.gitlab.base_gitlab_client import BaseGitLabClient
 from congregate.helpers.db_or_http import DbOrHttpMixin
 from congregate.migration.gitlab.api.projects import ProjectsApi
@@ -12,7 +12,8 @@ class VariablesClient(DbOrHttpMixin, BaseGitLabClient):
     def __init__(self, src_host=None, src_token=None):
         self.projects_api = ProjectsApi()
         self.groups_api = GroupsApi()
-        super(VariablesClient, self).__init__(src_host=src_host, src_token=src_token)
+        super(VariablesClient, self).__init__(
+            src_host=src_host, src_token=src_token)
 
     def get_ci_variables(self, id, host, token, var_type="projects"):
         if var_type == "group":
@@ -52,10 +53,9 @@ class VariablesClient(DbOrHttpMixin, BaseGitLabClient):
                     return self.migrate_variables(
                         new_id, name, var_list, var_type, old_id)
                 return True
-            else:
-                self.log.info(
-                    f"CI/CD variables are disabled ({enabled}) for {var_type} {name}")
-                return None
+            self.log.info(
+                f"Jobs i.e. CI/CD variables are disabled for {var_type} '{name}'")
+            return None
         except Exception as e:
             self.log.error(
                 f"Failed to migrate {var_type} {name} CI/CD variables, with error:\n{e}")
@@ -77,9 +77,10 @@ class VariablesClient(DbOrHttpMixin, BaseGitLabClient):
                                     name, sps["description"]))
                                 for v in safe_json_response(self.projects_api.get_single_project_pipeline_schedule(
                                         old_id, sps["id"], self.src_host, self.src_token)).get("variables", None):
-                                    
+
                                     self.send_data(self.projects_api.create_new_project_pipeline_schedule_variable,
-                                                   (new_id, dps["id"], self.config.destination_host, self.config.destination_token, v),
+                                                   (new_id, dps["id"], self.config.destination_host,
+                                                    self.config.destination_token, v),
                                                    f"pipeline_schedule_variables.{dps['id']}.variables",
                                                    old_id,
                                                    v, airgap=self.config.airgap)
@@ -102,11 +103,12 @@ class VariablesClient(DbOrHttpMixin, BaseGitLabClient):
                     return False
                 self.log.info(
                     f"Migrating {var_type} {name} (ID: {new_id}) CI/CD variables")
-                
-                self.send_data(self.set_variables, 
-                               (new_id, self.config.destination_host, self.config.destination_token, var_type),
+
+                self.send_data(self.set_variables,
+                               (new_id, self.config.destination_host,
+                                self.config.destination_token, var_type),
                                'ci_variables',
-                               src_id, 
+                               src_id,
                                var, airgap=self.config.airgap)
             return True
         except TypeError as te:
@@ -119,41 +121,39 @@ class VariablesClient(DbOrHttpMixin, BaseGitLabClient):
             return False
 
     def migrate_variables_in_stage(self, dry_run=True):
-        with open("%s/data/staged_projects.json" % self.app_path, "r") as f:
-            files = json.load(f)
+        files = read_json_file_into_object(
+            f"{self.app_path}/data/staged_projects.json")
         ids = []
-        project_id = None
-        if len(files) > 0:
-            for project in files:
-                try:
-                    old_id = project["id"]
-                    project_name = proj["path_with_namespace"]
-                    self.log.info("Searching for existing project {}".format(
-                        project["name"]))
-                    for proj in self.projects_api.search_for_project(
-                            self.config.destination_host,
-                            self.config.destination_token,
-                            project["name"]):
-                        if proj["name"] == project["name"]:
-                            if "%s" % project["namespace"].lower(
-                            ) in project_name.lower():
-                                self.log.info("{0}Migrating variables for {1}"
-                                              .format(get_dry_log(dry_run), proj["name"]))
-                                project_id = proj["id"]
-                                ids.append(project_id)
-                                break
-                            else:
-                                project_id = None
-                    if project_id is not None and not dry_run:
-                        self.migrate_cicd_variables(
-                            old_id, project_id, project_name, "project", project["jobs_enabled"])
-                except IOError as e:
-                    self.log.error(
-                        "Failed to migrate variables in stage, with error:\n{}".format(e))
-            self.log.info("{0}Writing {1} IDs to data/ids_variable.txt:\n{2}"
-                          .format(get_dry_log(dry_run), len(ids), ids))
-            if not dry_run:
-                with open("%s/data/ids_variable.txt" % self.app_path, "w") as f:
-                    for i in ids:
-                        f.write("%s\n" % i)
+        for project in files:
+            try:
+                old_id = project["id"]
+                project_path = project["path_with_namespace"]
+                self.log.info(
+                    f"Searching on destination for project '{project_path}'")
+                resp = self.projects_api.get_project_by_path_with_namespace(
+                    project_path, self.config.destination_host, self.config.destination_token)
+                if resp.status_code != 200:
+                    self.log.warning(
+                        f"SKIP: Project '{project_path}' does not exist: {resp} - {resp.text})")
+                    continue
+                self.log.info(
+                    f"{get_dry_log(dry_run)}Migrating project '{project_path}' variables")
+                project = safe_json_response(resp)
+                pid = project.get("id") if project else None
+                ids.append(pid)
+                if pid and not dry_run:
+                    self.migrate_cicd_variables(
+                        old_id, pid, project_path, "project", project.get("jobs_enabled"))
+                text_file = "data/project_ids_variables.txt"
+                self.log.info(
+                    f"{get_dry_log(dry_run)}Writing {len(ids)} project IDs to '{text_file}'")
+                if not dry_run:
+                    with open(f"{self.app_path}/{text_file}", "w") as f:
+                        f.write('\n'.join(id for id in ids))
+            except RequestException as re:
+                self.log.error(
+                    f"Failed to create project '{project_path}' variables:\n{re}")
+            except IOError as ioe:
+                self.log.error(
+                    f"Failed to write project '{project_path}' ID to file:\n{ioe}")
             return len(ids)
