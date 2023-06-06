@@ -13,8 +13,11 @@ sys.path.append(
                 os.path.abspath(__file__)))))
 
 from gitlab_ps_utils.logger import myLogger
+from congregate.helpers.configuration_validator import Config
 
 
 log = myLogger('werkzeug', app_path=os.getenv('CONGREGATE_PATH'), log_name='congregate')
 
 log.setLevel(logging.ERROR)
+
+config = Config()
