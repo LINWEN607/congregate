@@ -274,15 +274,21 @@ class UsersClient(BaseClass):
             sys.exit(os.EX_DATAERR)
         try:
             if not skip_groups:
-                self.log.info(f"Updating group member roles '{current_level}' -> '{target_level}'")
-                self.__update_members_access_level("group", current_role, target_role, dry_run=dry_run)
+                self.log.info(
+                    f"Updating group member roles '{current_level}' -> '{target_level}'")
+                self.__update_members_access_level(
+                    "group", current_role, target_role, dry_run=dry_run)
             if not skip_projects:
-                self.log.info(f"Updating project member roles '{current_level}' -> '{target_level}'")
-                self.__update_members_access_level("project", current_role, target_role, dry_run=dry_run)
+                self.log.info(
+                    f"Updating project member roles '{current_level}' -> '{target_level}'")
+                self.__update_members_access_level(
+                    "project", current_role, target_role, dry_run=dry_run)
         except RequestException as re:
-            self.log.error(f"Failed to update group/project members access levels:\n{re}")
+            self.log.error(
+                f"Failed to update group/project members access levels:\n{re}")
         except Exception as e:
-            self.log.error(f"Failure in update group/project members access levels:\n{e}")
+            self.log.error(
+                f"Failure in update group/project members access levels:\n{e}")
 
     def __update_members_access_level(self, object_type, current_role, target_role, dry_run=True):
         migration_results = rewrite_json_list_into_dict(
@@ -294,11 +300,14 @@ class UsersClient(BaseClass):
             if isinstance(v, dict):
                 if oid := v.get("id"):
                     if object_type == "group":
-                        self.__update_group_members_access_level(k, oid, current_role, target_role, dry_run=dry_run)
+                        self.__update_group_members_access_level(
+                            k, oid, current_role, target_role, dry_run=dry_run)
                     else:
-                        self.__update_project_members_access_level(k, oid, current_role, target_role, dry_run=dry_run)
+                        self.__update_project_members_access_level(
+                            k, oid, current_role, target_role, dry_run=dry_run)
                 else:
-                    self.log.warning(f"Skipping failed {object_type} '{k}' migration:\n{json_pretty(v)}")
+                    self.log.warning(
+                        f"Skipping failed {object_type} '{k}' migration:\n{json_pretty(v)}")
 
     def __update_group_members_access_level(self, g, gid, current_role, target_role, dry_run=True):
         host = self.config.destination_host
@@ -307,9 +316,11 @@ class UsersClient(BaseClass):
             mid = m.get("id")
             username = m.get("username")
             if mid and m.get("access_level") == current_role:
-                self.log.info(f"{get_dry_log(dry_run=dry_run)}Updating group '{g}' member '{username}' access level: {current_role} -> {target_role}")
+                self.log.info(
+                    f"{get_dry_log(dry_run=dry_run)}Updating group '{g}' member '{username}' access level: {current_role} -> {target_role}")
                 if not dry_run:
-                    self.groups_api.update_member_access_level(host, token, gid, mid, target_role)
+                    self.groups_api.update_member_access_level(
+                        host, token, gid, mid, target_role)
 
     def __update_project_members_access_level(self, p, pid, current_role, target_role, dry_run=True):
         host = self.config.destination_host
@@ -319,9 +330,11 @@ class UsersClient(BaseClass):
             mid = m.get("id")
             username = m.get("username")
             if mid and m.get("access_level") == current_role:
-                self.log.info(f"{get_dry_log(dry_run=dry_run)}Updating project '{p}' member '{username}' access level: {current_role} -> {target_role}")
+                self.log.info(
+                    f"{get_dry_log(dry_run=dry_run)}Updating project '{p}' member '{username}' access level: {current_role} -> {target_role}")
                 if not dry_run:
-                    self.projects_api.edit_member(host, token, pid, mid, target_role)
+                    self.projects_api.edit_member(
+                        host, token, pid, mid, target_role)
 
     def remove_users_from_parent_group(self, dry_run=True):
         count = 0
@@ -420,20 +433,22 @@ class UsersClient(BaseClass):
         field = self.config.user_mapping_field
         user_mapping = {}
 
-        self.lookup_staged_users(staged_users, users_found, users_not_found, field, user_mapping)
+        self.lookup_staged_users(
+            staged_users, users_found, users_not_found, field, user_mapping)
 
         inactive = [f"{u.get(field)} - {u.get('dest_state')}"
-            for u in users_found if u.get("dest_state") in self.INACTIVE]
+                    for u in users_found if u.get("dest_state") in self.INACTIVE]
         state_mismatch = [f"{u.get(field)}: {u.get('src_state')} -> {u.get('dest_state')}"
-            for u in users_found if u.get("src_state") != u.get("dest_state")]
+                          for u in users_found if u.get("src_state") != u.get("dest_state")]
         no_login = [f"{u.get(field)} - {u.get('dest_state')}"
-            for u in users_found if not u.get("last_sign_in_at")]
+                    for u in users_found if not u.get("last_sign_in_at")]
         no_identities = [f"{u.get(field)} - {u.get('dest_state')}"
-            for u in users_found if not u.get("identities")]
+                         for u in users_found if not u.get("identities")]
         no_public_email = [f"{u.get(field)}: {u.get('email')} -> {u.get('public_email')}"
-            for u in staged_users if u.get("email") != u.get("public_email")]
+                           for u in staged_users if u.get("email") != u.get("public_email")]
 
-        duplicate_users = [u for u in staged_users if [s[field] for s in staged_users].count(u[field]) > 1]
+        duplicate_users = [u for u in staged_users if [s[field]
+                                                       for s in staged_users].count(u[field]) > 1]
 
         found = f"Found ({len(users_found)})"
         inact = f"Inactive ({len(inactive)})"
@@ -475,7 +490,8 @@ class UsersClient(BaseClass):
             DataFrame(d).to_csv(csv, sep="\t")
 
         user_mapping_file = f"{self.app_path}/data/user_mapping_by_{field}.json"
-        self.log.info(f"Writing FOUND users by '{field}' src:dest primary email mapping to {user_mapping_file}")
+        self.log.info(
+            f"Writing FOUND users by '{field}' src:dest primary email mapping to {user_mapping_file}")
         write_json_to_file(user_mapping_file, user_mapping)
         return users_not_found, users_found
 
@@ -490,12 +506,13 @@ class UsersClient(BaseClass):
                 for u in self.users_api.search_for_user_by_username(
                     self.config.destination_host,
                     self.config.destination_token,
-                    key):
+                        key):
                     if u.get(field, "").lower() == user.get(field, "").lower():
                         dest_user = u
                         break
             else:
-                self.log.error(f"Invalid user mapping field configured: '{field}'")
+                self.log.error(
+                    f"Invalid user mapping field configured: '{field}'")
                 sys.exit(os.EX_CONFIG)
             if dest_user:
                 users_found.append({
@@ -530,10 +547,12 @@ class UsersClient(BaseClass):
             Users NOT found input comes from search_for_staged_users.
             :return: Staged users
         """
-        staged = read_json_file_into_object(f"{self.app_path}/data/{data}.json")
+        staged = read_json_file_into_object(
+            f"{self.app_path}/data/{data}.json")
 
         if data == "staged_users":
-            self.log.info(f"{'Keeping' if keep else 'Removing'} only NOT found users ({len(users)}/{len(staged)}) in staged users")
+            self.log.info(
+                f"{'Keeping' if keep else 'Removing'} only NOT found users ({len(users)}/{len(staged)}) in staged users")
             if keep:
                 staged = [i for j, i in enumerate(
                     staged) if i["id"] in users.keys()]
@@ -541,7 +560,8 @@ class UsersClient(BaseClass):
                 staged = [i for j, i in enumerate(
                     staged) if i["id"] not in users.keys()]
         else:
-            self.log.info(f"Removing NOT found users ({len(users)}) from staged {'projects' if data == 'staged_projects' else 'groups'}")
+            self.log.info(
+                f"Removing NOT found users ({len(users)}) from staged {'projects' if data == 'staged_projects' else 'groups'}")
             for s in staged:
                 s["members"] = [i for j, i in enumerate(
                     s["members"]) if i["id"] not in users.keys()]
@@ -781,7 +801,8 @@ class UsersClient(BaseClass):
                 if not hide and pub_email and pub_email != email:
                     self.log.warning(
                         f"Overwrite source user '{username}' public email '{pub_email}' -> '{email}'")
-                self.set_public_email(user.get("id"), set_email, username, host, token, dry_run=dry_run)
+                self.set_public_email(
+                    user.get("id"), set_email, username, host, token, dry_run=dry_run)
             except RequestException as re:
                 self.log.error(
                     f"Failed to set source user '{su.get('username')}' public email '{set_email}':\n{re}")
@@ -798,27 +819,33 @@ class UsersClient(BaseClass):
                     f"Failed to set source user '{username}' public email to '{email}':\n{resp} - {resp.text}")
 
     def align_user_mapping_emails(self, dry_run=True):
-        mapped_users = read_json_file_into_object(f"{self.app_path}/data/user_mapping_by_{self.config.user_mapping_field}.json")
+        mapped_users = read_json_file_into_object(
+            f"{self.app_path}/data/user_mapping_by_{self.config.user_mapping_field}.json")
         dry_run_log = get_dry_log(dry_run=dry_run)
         host = self.config.source_host
         token = self.config.source_token
         for m, u in mapped_users.items():
+            dest_primary = u["dest"]["primary"]
+            src_public = u["src"]["public"]
+            src_id = u["src"]["id"]
+            # Catch duplicate email RequestException and continue
             try:
-                dest_primary = u["dest"]["primary"]
-                src_public = u["src"]["public"]
-                src_id = u["src"]["id"]
                 if dest_primary not in u["src"].values() and not dry_run:
                     self.add_user_email(dest_primary, src_id, m, host, token)
-                if dest_primary != src_public and not dry_run:
-                    self.set_public_email(src_id, dest_primary, m, host, token, dry_run=dry_run)
-                else:
-                    self.log.info(f"{dry_run_log}User '{m}' mapping emails aligned")
             except RequestException as re:
                 self.log.error(
-                    f"Failed to align user '{m}' destination '{dest_primary}' primary with source '{src_public}' public email:\n{re}")
-            except Exception as e:
+                    f"Failed to add user '{m}' destination '{dest_primary}' primary as source secondary email:\n{re}")
+            # Catch any other RequestException
+            try:
+                if dest_primary != src_public and not dry_run:
+                    self.set_public_email(
+                        src_id, dest_primary, m, host, token, dry_run=dry_run)
+            except RequestException as re:
                 self.log.error(
-                    f"Failed to align destination user primary with source user public email:\n{e}")
+                    f"Failed to set user '{m}' destination '{dest_primary}' primary as source public email:\n{re}")
+            else:
+                self.log.info(
+                    f"{dry_run_log}User '{m}' mapping emails aligned")
 
     def add_user_email(self, email, uid, username, host, token):
         data = {"email": email, "skip_confirmation": True}
