@@ -6,6 +6,7 @@
 
 import os
 import sys
+from time import time
 from traceback import print_exc
 from requests import Response
 from requests.exceptions import RequestException
@@ -33,7 +34,7 @@ class MigrateClient(BaseClass):
         dry_run=True,
         processes=None,
         only_post_migration_info=False,
-        start=None,
+        start=time(),
         skip_users=False,
         remove_members=False,
         hard_delete=False,
