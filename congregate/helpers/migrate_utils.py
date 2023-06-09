@@ -178,11 +178,12 @@ def get_user_project_namespace(p):
             b.config.import_user_id, b.config.destination_host, b.config.destination_token))
         if user:
             return user.get("username")
-    # Retrieve user username based on email to determine correct
+    # Retrieve user username based on user_mapping_field to determine correct
     # destination user namespace
-    if p.get("members") and p["members"][0].get("email"):
+    field = b.config.user_mapping_field
+    if field == "email" and p.get("members") and p["members"][0]:
         user = find_user_by_email_comparison_without_id(
-            p["members"][0]["email"])
+            p["members"][0][field])
         if user:
             return user.get("username")
     return p_namespace
@@ -462,6 +463,7 @@ def validate_groups_and_projects(staged, are_projects=False):
                 g for g in staged if len(g["name"]) < 2]:
             b.log.warning("Invalid group names:\n{}".format(
                 "\n".join(i for i in invalid_group_names)))
+
 
 def toggle_maintenance_mode(
         off=False, msg=None, dest=False, dry_run=True):
