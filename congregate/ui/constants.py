@@ -1,1 +1,1 @@
-ALLOWED_EXTENSIONS = {'tar.gz'}
+ALLOWED_EXTENSIONS = {'.tar.gz'}

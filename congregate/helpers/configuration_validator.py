@@ -226,7 +226,7 @@ class ConfigurationValidator(Config):
         if airgap_export and airgap_import:
             raise ConfigurationException(
                 'airgap', msg="Invalid configuration. Airgap export and import both set to True. Only one can be enabled at a time")
-        if not (airgap_export and airgap_import):
+        if not (airgap_export or airgap_import):
             raise ConfigurationException(
                 'airgap', msg="Invalid configuration. Airgap is enabled but neither airgap_export nor airgap_import is enabled. Set one of them to True"
             )

@@ -35,7 +35,8 @@ def validate_group_token(func):
     @wraps(func)
     def add_route(*args, **kwargs):
         try:
-            payload = AirgapImportPayload(**request.json)
+            formdata = request.form
+            payload = AirgapImportPayload(host=formdata.get('host'), token=formdata.get('token'), gid=formdata.get('gid'))
             if safe_json_response(GroupsApi().get_group(payload.gid, payload.host, payload.token)):
                 return func(*args, **kwargs)
             return jsonify({'error': "Unauthorized"}), 403

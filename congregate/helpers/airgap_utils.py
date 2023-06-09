@@ -16,6 +16,23 @@ def create_archive(pid, export_file):
         __add_file(tar, "project_features.json", __get_project_features(pid))
     return final_path
 
+def extract_archive(import_file):
+    # open tar for extraction
+    with tarfile.TarFile.open(import_file, 'r:gz') as tar:
+        for fn in tar.getmembers():
+            print(fn)
+    
+    return None, None
+
+    # load project features into mongo
+
+    # download project export
+    pass
+
+@mongo_connection
+def load_project_features(data, mongo=None):
+    mongo.insert_data('project_features', data)
+
 @mongo_connection
 def delete_project_features(pid, mongo=None):
     mongo.db['project_features'].delete_one({'id': pid})

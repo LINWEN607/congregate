@@ -10,10 +10,11 @@ from requests.exceptions import RequestException
 
 from gitlab_ps_utils import json_utils, misc_utils
 from celery import shared_task
+from dacite import from_dict
 
 import congregate.helpers.migrate_utils as mig_utils
 from congregate.helpers.utils import is_dot_com
-from congregate.helpers.airgap_utils import create_archive, delete_project_features
+from congregate.helpers.airgap_utils import create_archive, delete_project_features, extract_archive
 
 from congregate.migration.meta.base_migrate import MigrateClient
 from congregate.migration.gitlab.importexport import ImportExportClient
@@ -37,6 +38,7 @@ from congregate.migration.gitlab.branches import BranchesClient
 from congregate.migration.gitlab.packages import PackagesClient
 from congregate.helpers.mdbc import MongoConnector
 from congregate.migration.meta.api_models.single_project_features import SingleProjectFeatures
+from congregate.migration.meta.api_models.project_details import ProjectDetails
 
 class GitLabMigrateClient(MigrateClient):
     def __init__(self, 
@@ -629,7 +631,10 @@ class GitLabMigrateClient(MigrateClient):
 
             mongo = MongoConnector()
             mongo.create_collection_with_unique_index('project_features', 'id')
-            mongo.db['project_features'].insert_one(SingleProjectFeatures(id=src_id).to_dict())
+            mongo.db['project_features'].insert_one(SingleProjectFeatures(
+                id=src_id,
+                project_details=from_dict(ProjectDetails, project)
+            ).to_dict())
             mongo.close_connection()
 
             # Environments
@@ -660,7 +665,9 @@ def export_task(project: dict, host: str, token: str):
     return client.handle_exporting_projects(project, src_host=host, src_token=token)
 
 @shared_task
-def import_task(project: dict, host: str, token: str):
+def import_task(file_path: str, gid: int, host: str, token: str):
     client = GitLabMigrateClient(dry_run=False, skip_users=True, 
                            skip_groups=True, skip_project_import=True)
-    return client.handle_importing_projects(project, dst_host=host, dst_token=token)
+    project_features, export_tar = extract_archive(file_path)
+    # return client.handle_importing_projects(project, dst_host=host, dst_token=token)
+    return True
