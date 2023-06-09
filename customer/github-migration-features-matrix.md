@@ -12,6 +12,7 @@ NOTE: Features not listed in the matrix should be presumed to be not yet support
 | ---------------- | ------------------------- | ---------------------------------------------------------------- | ------------------ | ------------------ |
 | **Organization** |
 |                  | Members (org, repo)       |                                                                  | :x:                | :white_check_mark: |
+|                  | Webhooks (w/o token)      |                                                                  | :x:                | :heavy_minus_sign: |
 | **Repository**   |
 |                  | Description               |                                                                  | :white_check_mark: | :white_check_mark: |
 |                  | Git repository data       |                                                                  | :white_check_mark: | :white_check_mark: |
@@ -25,16 +26,17 @@ NOTE: Features not listed in the matrix should be presumed to be not yet support
 |                  | LFS Objects               |                                                                  | :white_check_mark: | :white_check_mark: |
 |                  | Members                   |                                                                  | :white_check_mark: | :white_check_mark: |
 |                  | Branches                  |                                                                  | :white_check_mark: | :white_check_mark: |
+|                  | Deploy keys               |                                                                  | :x:                | :white_check_mark: |
 |                  | Protected Branches        | Merge Access Levels, Push Access Levels, Unprotect Access Levels | :x:                | :white_check_mark: |
 |                  | Protected Tags            | Create Access Levels                                             | :x:                | :white_check_mark: |
 |                  | Push rules                |                                                                  | :x:                | :white_check_mark: |
 |                  | Merge request approvals   |                                                                  | :x:                | :white_check_mark: |
+|                  | Webhooks (w/o token)      |                                                                  | :x:                | :heavy_minus_sign: |
 |                  | Pages                     |                                                                  | :x:                | :heavy_minus_sign: |
-|                  | Default Branch            |                                                                  | :x:                | :x:                |
-|                  | Deploy keys               |                                                                  | :x:                | :white_check_mark:                |
-|                  | Webhooks (w/o token)      |                                                                  | :x:                | :x:                |
+|                  | Default Branch            |                                                                  | :x:                | :heavy_minus_sign: |
 | **User**         |
-|                  | Avatars                   |                                                                  | :x:                | :x:                |
+|                  | Account                   |                                                                  | :x:                | :white_check_mark: |
+|                  | Avatars                   |                                                                  | :x:                | :white_check_mark: |
 |                  | Profile (API)             |                                                                  | :x:                | :x:                |
 |                  | Preferences (API)         |                                                                  | :x:                | :x:                |
 |                  | SSH keys                  |                                                                  | :x:                | :x:                |
