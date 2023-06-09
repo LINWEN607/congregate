@@ -1,6 +1,6 @@
+from dataclasses import dataclass, asdict
+from typing import Optional
 
-from dataclasses import dataclass, asdict, field
-from typing import Optional, List
 
 @dataclass
 class ProjectLevelApproverPayload():
@@ -11,6 +11,6 @@ class ProjectLevelApproverPayload():
     merge_requests_author_approval: Optional[bool] = False
     merge_requests_disable_committers_approval: Optional[bool] = False
     require_password_to_approve: Optional[bool] = False
-    
+
     def to_dict(self):
-        return { k:v for k, v in asdict(self).items() if v }
+        return {k: v for k, v in asdict(self).items() if v}
