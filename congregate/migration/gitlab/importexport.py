@@ -406,7 +406,7 @@ class ImportExportClient(BaseGitLabClient):
                         f"Re-importing group {full_path}, waiting {self.COOL_OFF_MINUTES} minutes due to:\n{import_response.text}")
                     sleep(self.COOL_OFF_MINUTES * 60)
                 elif import_response.status_code == 500:
-                    self.log.info(
+                    self.log.warning(
                         f"Re-importing group {full_path} in {wait_time} seconds due to:\n{import_response.text}")
                     sleep(wait_time)
                 import_response = self.attempt_group_import(
@@ -415,9 +415,8 @@ class ImportExportClient(BaseGitLabClient):
                 self.log.info(
                     f"Group {full_path} (file: {filename}) successfully imported")
                 return True
-            else:
-                self.log.error(
-                    f"Group {full_path} (file: {filename}) import failed, with status:\n{text}")
+            self.log.error(
+                f"Group {full_path} (file: {filename}) import failed, with status:\n{text}")
         else:
             self.log.info(
                 f"DRY-RUN: Outputing group {full_path} (file: {filename}) migration data to dry_run_group_migration.json")
@@ -568,7 +567,7 @@ class ImportExportClient(BaseGitLabClient):
                     return None
             else:
                 self.log.error(
-                    f"Project {name} ({dst_namespace}) failed to import, with response:\n{import_response}")
+                    f"Project '{name}' ({dst_namespace}) failed to import:\n{import_response} - {import_response.text}")
                 return None
         return import_id
 
