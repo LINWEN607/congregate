@@ -193,7 +193,9 @@ Additionally:
 
 ## Does Congregate Migrate data from package/container management tools like Artifactory or Nexus?
 
-No, congregate does not migrate from package management tools today. We typically suggest customers establish pipeline jobs in GitLab after source code migration to publish these containers/packages to the GitLab registry as desired. For customers who are interested in maintaining audit history, we suggest keeping the legacy package/container registry tool around with a reduced license spend until the audit window expires.
+No, Congregate does not migrate from package management tools today. We typically suggest customers establish pipeline jobs in GitLab after source code migration to publish these containers/packages to the GitLab registry as desired. For customers who are interested in maintaining audit history, we suggest keeping the legacy package/container registry tool around with a reduced license spend until the audit window expires.
+
+[To import certain types of packages](https://docs.gitlab.com/ee/user/packages/package_registry/#to-import-packages) one may also use the GitLab built open-source CLI tool, [Packages Importer](https://gitlab.com/gitlab-org/ci-cd/package-stage/pkgs_importer), to copy Packages between two or more Package registries.
 
 ## Does the source instance need to be updated to latest in order to migrate?
 
