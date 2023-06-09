@@ -38,24 +38,25 @@ from congregate.migration.gitlab.packages import PackagesClient
 from congregate.helpers.mdbc import MongoConnector
 from congregate.migration.meta.api_models.single_project_features import SingleProjectFeatures
 
+
 class GitLabMigrateClient(MigrateClient):
-    def __init__(self, 
-                 dry_run=True, 
-                 processes=None, 
-                 only_post_migration_info=False, 
-                 start=None, 
-                 skip_users=False, 
-                 remove_members=False, 
-                 hard_delete=False, 
-                 stream_groups=False, 
-                 skip_groups=False, 
-                 skip_projects=False, 
-                 skip_group_export=False, 
-                 skip_group_import=False, 
-                 skip_project_export=False, 
-                 skip_project_import=False, 
-                 subgroups_only=False, 
-                 scm_source=None, 
+    def __init__(self,
+                 dry_run=True,
+                 processes=None,
+                 only_post_migration_info=False,
+                 start=None,
+                 skip_users=False,
+                 remove_members=False,
+                 hard_delete=False,
+                 stream_groups=False,
+                 skip_groups=False,
+                 skip_projects=False,
+                 skip_group_export=False,
+                 skip_group_import=False,
+                 skip_project_export=False,
+                 skip_project_import=False,
+                 subgroups_only=False,
+                 scm_source=None,
                  group_structure=False,
                  reg_dry_run=False):
         self.ie = ImportExportClient()
@@ -79,24 +80,24 @@ class GitLabMigrateClient(MigrateClient):
         self.clusters = ClustersClient()
         self.environments = EnvironmentsClient()
         self.branches = BranchesClient()
-        super().__init__(dry_run, 
-                         processes, 
-                         only_post_migration_info, 
-                         start, 
-                         skip_users, 
-                         remove_members, 
-                         hard_delete, 
-                         stream_groups, 
-                         skip_groups, 
-                         skip_projects, 
-                         skip_group_export, 
-                         skip_group_import, 
-                         skip_project_export, 
-                         skip_project_import, 
-                         subgroups_only, 
-                         scm_source, 
+        super().__init__(dry_run,
+                         processes,
+                         only_post_migration_info,
+                         start,
+                         skip_users,
+                         remove_members,
+                         hard_delete,
+                         stream_groups,
+                         skip_groups,
+                         skip_projects,
+                         skip_group_export,
+                         skip_group_import,
+                         skip_project_export,
+                         skip_project_import,
+                         subgroups_only,
+                         scm_source,
                          group_structure)
-    
+
     def migrate(self):
         # Users
         self.migrate_user_info()
@@ -119,7 +120,7 @@ class GitLabMigrateClient(MigrateClient):
                 self.config.destination_host) and not self.skip_project_import:
             self.remove_import_user(
                 self.config.dstn_parent_id, gl_type="group")
-    
+
     def migrate_group_info(self):
         staged_groups = mig_utils.get_staged_groups()
         staged_top_groups = [
@@ -354,6 +355,7 @@ class GitLabMigrateClient(MigrateClient):
             if self.dry_run:
                 dst_gid = self.groups.find_group_id_by_path(
                     self.config.destination_host, self.config.destination_token, full_path_with_parent_namespace)
+                dst_grp = {}
             else:
                 dst_grp = self.ie.wait_for_group_import(
                     full_path_with_parent_namespace)
@@ -362,6 +364,13 @@ class GitLabMigrateClient(MigrateClient):
                 self.log.info(
                     f"{misc_utils.get_dry_log(self.dry_run)}Sub-group {full_path} (ID: {dst_gid}) found on destination")
                 if not self.dry_run:
+                    # Temporarily fixing group import subgroup visibility bug - https://gitlab.com/gitlab-org/gitlab/-/issues/405168
+                    if dst_grp.get("visibility") != subgroup["visibility"]:
+                        self.groups_api.update_group(
+                            dst_gid,
+                            self.config.destination_host,
+                            self.config.destination_token,
+                            data={"visibility": subgroup["visibility"]})
                     result[full_path_with_parent_namespace] = self.migrate_single_group_features(
                         src_gid, dst_gid, full_path)
             elif not self.dry_run:

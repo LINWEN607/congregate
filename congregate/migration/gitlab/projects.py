@@ -74,7 +74,7 @@ class ProjectsClient(BaseClass):
 
         error, project = is_error_message_present(project)
         if error or not project:
-            self.log.error(f"Failed to list project with response:\n{project}")
+            self.log.error(f"Failed to list project:\n{project}")
         else:
             for k in constants.PROJECT_KEYS_TO_IGNORE:
                 project.pop(k, None)

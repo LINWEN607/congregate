@@ -534,3 +534,18 @@ class GroupsApi(GitLabApiWrapper):
         if not message:
             message = f"Creating group access token with payload {str(data)}"
         return self.api.generate_post_request(host, token, f"groups/{gid}/access_tokens", json.dumps(data), description=message)
+
+    def update_group(self, gid, host, token, data=None, message=None):
+        """
+        Updates the project group. Only available to group owners and administrators.
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/groups.html#update-group
+
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :param: gid: (int) GitLab group ID
+            :yield: Response object containing the response to PUT /groups/:gid
+        """
+        if not message:
+            message = f"Editing group {gid} with payload {str(data)}"
+        return self.api.generate_put_request(host, token, f"groups/{gid}", json.dumps(data), description=message)
