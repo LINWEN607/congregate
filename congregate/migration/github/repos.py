@@ -229,12 +229,11 @@ class ReposClient(BaseClass):
                 "Failed to fetch GitHub Pull request approval configuration ({0}) for project {1}".format(
                     conf, repo["name"]))
             return False
-        else:
-            self.log.info(
-                "Migrating project-level MR approval configuration for {0} (New ID: {1}) to GitLab".format(
-                    repo["name"], new_id))
-            self.gl_projects_api.change_project_level_mr_approval_configuration(
-                new_id, self.config.destination_host, self.config.destination_token, conf)
+        self.log.info(
+            "Migrating project-level MR approval configuration for {0} (New ID: {1}) to GitLab".format(
+                repo["name"], new_id))
+        self.gl_projects_api.change_project_level_mr_approval_configuration(
+            new_id, self.config.destination_host, self.config.destination_token, conf)
 
         # TODO: Refactor this method (and format_project_level_mr_rule) or remove completely
         # # migrate approval rules
