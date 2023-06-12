@@ -81,11 +81,11 @@ class ConfigurationValidator(Config):
     
     @property
     def airgap(self):
-        if airgap := self.prop_bool("APP", "airgap", default=False):
+        if ag := self.prop_bool("APP", "airgap", default=False):
             if self.airgap_validated_in_session:
-                return airgap
+                return ag
             try:
-                self.validate_airgap_configuration()
+                return self.validate_airgap_configuration()
             except ConfigurationException as ce:
                 exit(ce)
         return False

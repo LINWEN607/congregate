@@ -44,18 +44,7 @@ def trigger_import():
         filename = secure_filename(file.filename)
         upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
         file.save(upload_path)
-        # project = {
-        #     'id': 0,
-        #     'path_with_namespace': f"{group['full_path']}/{file.filename.split('_')[1]}",
-        #     'archived': False,
-        #     'name': file.filename.split('_')[1],
-        #     'path': file.filename.split('_')[1],
-        #     'namespace': group['full_path']
-        # }
-        # return jsonify({
-        #     'status': 'made it to the end'
-        # }), 200
-        result = import_task.delay(upload_path, payload.gid, payload.host, payload.token)
+        result = import_task.delay(upload_path, group, payload.host, payload.token)
         return jsonify({
             'status': 'triggered import',
             'task_id': result.id

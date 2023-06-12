@@ -9,10 +9,10 @@ from congregate.migration.gitlab.api.groups import GroupsApi
 
 
 class VariablesClient(DbOrHttpMixin, BaseGitLabClient):
-    def __init__(self, src_host=None, src_token=None):
+    def __init__(self, src_host=None, src_token=None, dest_host=None, dest_token=None):
         self.projects_api = ProjectsApi()
         self.groups_api = GroupsApi()
-        super(VariablesClient, self).__init__(src_host=src_host, src_token=src_token)
+        super(VariablesClient, self).__init__(src_host=src_host, src_token=src_token, dest_host=dest_host, dest_token=dest_token)
 
     def get_ci_variables(self, id, host, token, var_type="projects", airgap=False):
         if var_type == "group":
@@ -24,7 +24,8 @@ class VariablesClient(DbOrHttpMixin, BaseGitLabClient):
                     (id, host, token), 
                     'ci_variables', 
                     id, 
-                    airgap=airgap)
+                    airgap=self.config.airgap,
+                    airgap_import=self.config.airgap_import)
                 )
 
     def set_variables(self, id, host, token, var_type="projects", data={}):
@@ -76,7 +77,8 @@ class VariablesClient(DbOrHttpMixin, BaseGitLabClient):
                         (old_id, self.src_host, self.src_token),
                         'pipeline_schedule_variables',
                         old_id,
-                        airgap=self.config.airgap
+                        airgap=self.config.airgap,
+                        airgap_import=self.config.airgap_import
                         )
                     )
                 if src_schedules:
@@ -94,7 +96,7 @@ class VariablesClient(DbOrHttpMixin, BaseGitLabClient):
                                                    (new_id, dps["id"], self.config.destination_host, self.config.destination_token, v),
                                                    f"pipeline_schedule_variables.{dps['id']}.variables",
                                                    old_id,
-                                                   v, airgap=self.config.airgap)
+                                                   v, airgap=self.config.airgap, airgap_export=self.config.airgap_export)
                 return True
             self.log.info(
                 f"Pipeline schedule variables are disabled ({enabled}) for project {name}")
@@ -114,12 +116,13 @@ class VariablesClient(DbOrHttpMixin, BaseGitLabClient):
                     return False
                 self.log.info(
                     f"Migrating {var_type} {name} (ID: {new_id}) CI/CD variables")
-                
                 self.send_data(self.set_variables, 
-                               (new_id, self.config.destination_host, self.config.destination_token, var_type),
+                               (new_id, self.dest_host, self.dest_token, var_type),
                                'ci_variables',
                                src_id, 
-                               var, airgap=self.config.airgap)
+                               var, 
+                               airgap=self.config.airgap,
+                               airgap_export=self.config.airgap_export)
             return True
         except TypeError as te:
             self.log.error("{0} {1} variables {2}".format(

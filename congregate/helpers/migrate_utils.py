@@ -95,7 +95,7 @@ def get_export_filename_from_namespace_and_name(namespace, name=""):
     return f"{namespace}{'/' + name if name else ''}.tar.gz".replace("/", "_").lower()
 
 
-def get_project_dest_namespace(p, mirror=False):
+def get_project_dest_namespace(p, mirror=False, group_path=None):
     """
     If this is a user project, the namespace == username
 
@@ -108,6 +108,8 @@ def get_project_dest_namespace(p, mirror=False):
 
     if not is_user_project(p) and b.config.dstn_parent_id and not mirror:
         return f"{b.config.dstn_parent_group_path}/{p_namespace}"
+    elif not is_user_project(p) and group_path and not mirror:
+        return group_path
     return p_namespace
 
 
@@ -221,7 +223,7 @@ def find_user_by_email_comparison_without_id(email, src=False):
     return None
 
 
-def get_dst_path_with_namespace(p, mirror=False):
+def get_dst_path_with_namespace(p, mirror=False, group_path=None):
     """
     Determine project path with namespace on destination
 
@@ -229,7 +231,7 @@ def get_dst_path_with_namespace(p, mirror=False):
         :param mirror (bool): Whether we are mirroring a repo on destination
         :return: Destination project path with namespace
     """
-    return f"{get_user_project_namespace(p) if is_user_project(p) else get_project_dest_namespace(p, mirror)}/{p.get('path')}"
+    return f"{get_user_project_namespace(p) if is_user_project(p) else get_project_dest_namespace(p, mirror, group_path)}/{p.get('path')}"
 
 
 def get_target_namespace(project):

@@ -489,12 +489,12 @@ class GitLabMigrateClient(MigrateClient):
             self.log.error(print_exc())
         return result
 
-    def handle_importing_projects(self, project, dst_host=None, dst_token=None):
+    def handle_importing_projects(self, project, dst_host=None, dst_token=None, group_path=None):
         src_id = project["id"]
         archived = project["archived"]
         path = project["path_with_namespace"]
         dst_path_with_namespace = mig_utils.get_dst_path_with_namespace(
-            project)
+            project, group_path=group_path)
         result = {
             dst_path_with_namespace: False
         }
@@ -523,7 +523,7 @@ class GitLabMigrateClient(MigrateClient):
                     f"{misc_utils.get_dry_log(self.dry_run)}Project {dst_path_with_namespace} NOT found on destination, importing...")
                 ie_client = ImportExportClient(src_host=dst_host, src_token=dst_token)
                 import_id = ie_client.import_project(
-                    project, dry_run=self.dry_run)
+                    project, dry_run=self.dry_run, group_path=group_path)
             if import_id and not self.dry_run:
                 # Disable Shared CI
                 self.disable_shared_ci(dst_path_with_namespace, import_id)
@@ -531,7 +531,7 @@ class GitLabMigrateClient(MigrateClient):
                 self.log.info(
                     "Migrating source project {0} (ID: {1}) info".format(path, src_id))
                 result[dst_path_with_namespace] = self.migrate_single_project_features(
-                    project, import_id)
+                    project, import_id, dest_host=dst_host, dest_token=dst_token)
         except (RequestException, KeyError, OverflowError) as oe:
             self.log.error("Failed to import project {0} (ID: {1}) with error:\n{2}".format(
                 path, src_id, oe))
@@ -546,11 +546,11 @@ class GitLabMigrateClient(MigrateClient):
                     self.config.source_host, self.config.source_token, src_id)
         return result
 
-    def migrate_single_project_features(self, project, dst_id):
+    def migrate_single_project_features(self, project, dst_id, dest_host=None, dest_token=None):
         """
             Subsequent function to update project info AFTER import
         """
-        project.pop("members")
+        project.pop("members", None)
         path_with_namespace = project["path_with_namespace"]
         shared_with_groups = project["shared_with_groups"]
         src_id = project["id"]
@@ -568,15 +568,16 @@ class GitLabMigrateClient(MigrateClient):
             dst_id, path_with_namespace, shared_with_groups)
 
         # Environments
-        results["environments"] = self.environments.migrate_project_environments(
+        results["environments"] = EnvironmentsClient(dest_host=dest_host, dest_token=dest_token).migrate_project_environments(
             src_id, dst_id, path_with_namespace, jobs_enabled)
 
+        vars_client = VariablesClient(dest_host=dest_host, dest_token=dest_token)
         # CI/CD Variables
-        results["cicd_variables"] = self.variables.migrate_cicd_variables(
+        results["cicd_variables"] = vars_client.migrate_cicd_variables(
             src_id, dst_id, path_with_namespace, "projects", jobs_enabled)
 
         # Pipeline Schedule Variables
-        results["pipeline_schedule_variables"] = self.variables.migrate_pipeline_schedule_variables(
+        results["pipeline_schedule_variables"] = vars_client.migrate_pipeline_schedule_variables(
             src_id, dst_id, path_with_namespace, jobs_enabled)
 
         if not self.config.airgap:
@@ -607,14 +608,15 @@ class GitLabMigrateClient(MigrateClient):
             #     src_id, dst_id, path_with_namespace)
 
             # Merge Request Approvals
-            results["project_level_mr_approvals"] = self.mr_approvals.migrate_project_level_mr_approvals(
+            results["project_level_mr_approvals"] = MergeRequestApprovalsClient(dest_host=dest_host, dest_token=dest_token).migrate_project_level_mr_approvals(
                 src_id, dst_id, path_with_namespace)
 
         if self.config.remapping_file_path:
             self.projects.migrate_gitlab_variable_replace_ci_yml(dst_id)
 
-        self.remove_import_user(dst_id)
-
+        self.remove_import_user(dst_id, host=dest_host, token=dest_token)
+        if self.config.airgap:
+            delete_project_features(src_id)
         return results
 
     def export_single_project_features(self, project, src_host, src_token):
@@ -623,7 +625,7 @@ class GitLabMigrateClient(MigrateClient):
         """
         if not self.dry_run:
             self.log.info("exporting single project features")
-            project.pop("members", None)
+            
             path_with_namespace = project["path_with_namespace"]
             src_id = project["id"]
             jobs_enabled = project.get("jobs_enabled", False)
@@ -636,6 +638,7 @@ class GitLabMigrateClient(MigrateClient):
                 project_details=from_dict(ProjectDetails, project)
             ).to_dict())
             mongo.close_connection()
+            project.pop("members", None)
 
             # Environments
             results["environments"] = EnvironmentsClient(src_host=src_host, src_token=src_token).migrate_project_environments(
@@ -665,9 +668,9 @@ def export_task(project: dict, host: str, token: str):
     return client.handle_exporting_projects(project, src_host=host, src_token=token)
 
 @shared_task
-def import_task(file_path: str, gid: int, host: str, token: str):
+def import_task(file_path: str, group: dict, host: str, token: str):
     client = GitLabMigrateClient(dry_run=False, skip_users=True, 
                            skip_groups=True, skip_project_import=True)
-    project_features, export_tar = extract_archive(file_path)
-    # return client.handle_importing_projects(project, dst_host=host, dst_token=token)
-    return True
+    project_features, _ = extract_archive(file_path)
+
+    return client.handle_importing_projects(project_features, dst_host=host, dst_token=token, group_path=group['full_path'])
