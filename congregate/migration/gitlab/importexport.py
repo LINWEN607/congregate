@@ -29,8 +29,8 @@ class ImportExportClient(BaseGitLabClient):
     # Import rate limit cool-off
     COOL_OFF_MINUTES = 1.1
 
-    def __init__(self, src_host=None, src_token=None):
-        super().__init__(src_host=src_host, src_token=src_token)
+    def __init__(self, src_host=None, src_token=None, dest_host=None, dest_token=None):
+        super().__init__(src_host=src_host, src_token=src_token, dest_host=dest_host, dest_token=dest_token)
         self.aws = self.get_AwsClient()
         self.projects = ProjectsClient()
         self.groups = GroupsClient()

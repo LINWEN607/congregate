@@ -14,7 +14,7 @@ from dacite import from_dict
 
 import congregate.helpers.migrate_utils as mig_utils
 from congregate.helpers.utils import is_dot_com
-from congregate.helpers.airgap_utils import create_archive, delete_project_features, extract_archive
+from congregate.helpers.airgap_utils import create_archive, delete_project_features, extract_archive, delete_project_export
 
 from congregate.migration.meta.base_migrate import MigrateClient
 from congregate.migration.gitlab.importexport import ImportExportClient
@@ -489,7 +489,7 @@ class GitLabMigrateClient(MigrateClient):
             self.log.error(print_exc())
         return result
 
-    def handle_importing_projects(self, project, dst_host=None, dst_token=None, group_path=None):
+    def handle_importing_projects(self, project, dst_host=None, dst_token=None, group_path=None, filename=None):
         src_id = project["id"]
         archived = project["archived"]
         path = project["path_with_namespace"]
@@ -521,7 +521,7 @@ class GitLabMigrateClient(MigrateClient):
             else:
                 self.log.info(
                     f"{misc_utils.get_dry_log(self.dry_run)}Project {dst_path_with_namespace} NOT found on destination, importing...")
-                ie_client = ImportExportClient(src_host=dst_host, src_token=dst_token)
+                ie_client = ImportExportClient(dest_host=dst_host, dest_token=dst_token)
                 import_id = ie_client.import_project(
                     project, dry_run=self.dry_run, group_path=group_path)
             if import_id and not self.dry_run:
@@ -544,6 +544,9 @@ class GitLabMigrateClient(MigrateClient):
                     "Archiving back source project {0} (ID: {1})".format(path, src_id))
                 self.projects_api.archive_project(
                     self.config.source_host, self.config.source_token, src_id)
+            if self.config.airgap:
+                self.log.info(f"Deleting project export file {filename}")
+                delete_project_export(filename)
         return result
 
     def migrate_single_project_features(self, project, dst_id, dest_host=None, dest_token=None):
@@ -671,6 +674,7 @@ def export_task(project: dict, host: str, token: str):
 def import_task(file_path: str, group: dict, host: str, token: str):
     client = GitLabMigrateClient(dry_run=False, skip_users=True, 
                            skip_groups=True, skip_project_import=True)
-    project_features, _ = extract_archive(file_path)
+    project_features, export_filename = extract_archive(file_path)
 
-    return client.handle_importing_projects(project_features, dst_host=host, dst_token=token, group_path=group['full_path'])
+    return client.handle_importing_projects(project_features, dst_host=host, dst_token=token, 
+                                    group_path=group['full_path'], filename=export_filename)

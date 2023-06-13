@@ -36,6 +36,13 @@ def extract_archive(import_file):
     
     return project_details, project_export_filename
 
+def delete_project_export(filename):
+    full_path = os.path.join(Config().filesystem_path, 'downloads', filename)
+    if ''.join(Path(full_path).suffixes) == '.tar.gz' and os.path.exists(full_path):
+        os.remove(full_path)
+        return True
+    return False
+
 @mongo_connection
 def load_project_features(data, mongo=None):
     mongo.insert_data('project_features', data)
