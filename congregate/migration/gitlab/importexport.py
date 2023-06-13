@@ -29,8 +29,8 @@ class ImportExportClient(BaseGitLabClient):
     # Import rate limit cool-off
     COOL_OFF_MINUTES = 1.1
 
-    def __init__(self, src_host=None, src_token=None):
-        super().__init__(src_host=src_host, src_token=src_token)
+    def __init__(self, src_host=None, src_token=None, dest_host=None, dest_token=None):
+        super().__init__(src_host=src_host, src_token=src_token, dest_host=dest_host, dest_token=dest_token)
         self.aws = self.get_AwsClient()
         self.projects = ProjectsClient()
         self.groups = GroupsClient()
@@ -217,7 +217,7 @@ class ImportExportClient(BaseGitLabClient):
                 check_is_project_or_group_for_logging(is_project).lower(), source_id, filename, response))
             return None
 
-    def import_project(self, project, dry_run=True):
+    def import_project(self, project, dry_run=True, group_path=None):
         """
             Imports project to destination GitLab instance.
             Formats users, groups, migration info (aws, filesystem) during import process.
@@ -228,7 +228,7 @@ class ImportExportClient(BaseGitLabClient):
         name = project["name"]
         path = project["path"]
         namespace = project["namespace"]
-        members = project["members"]
+        members = project.get("members", [])
         override_params = self.get_override_params(project)
         filename = get_export_filename_from_namespace_and_name(namespace, name)
         dry = get_dry_log(dry_run)
@@ -241,7 +241,7 @@ class ImportExportClient(BaseGitLabClient):
         else:
             self.log.info(
                 f"{dry}{name} is NOT a USER project. Attempting to import into a group namespace")
-            dest_namespace = get_project_dest_namespace(project)
+            dest_namespace = get_project_dest_namespace(project, group_path=group_path)
 
         if not dry_run:
             import_response = self.attempt_import(
@@ -252,7 +252,7 @@ class ImportExportClient(BaseGitLabClient):
                 wait_time = self.config.export_import_status_check_time
                 timeout = self.COOL_OFF_MINUTES * 60
                 while (ns := self.namespaces_api.get_namespace_by_full_path(
-                        dest_namespace, self.config.destination_host, self.config.destination_token)).status_code != 200:
+                        dest_namespace, self.dest_host, self.dest_token)).status_code != 200:
                     self.log.info(
                         f"Waited {total_time}/{timeout} seconds to create {dest_namespace} for project {name}")
                     total_time += wait_time
@@ -337,12 +337,12 @@ class ImportExportClient(BaseGitLabClient):
                         "name": name
                     })
                     headers = {
-                        "Private-Token": self.config.destination_token,
+                        "Private-Token": self.dest_token,
                         "Content-Type": m.content_type
                     }
                     message = f"Importing project {name} with the following payload {m} and following members {members}"
                     resp = self.projects_api.import_project(
-                        self.config.destination_host, self.config.destination_token, data=m, headers=headers, message=message)
+                        self.dest_host, self.dest_token, data=m, headers=headers, message=message)
             except AttributeError as ae:
                 self.log.error(
                     "Large file upload failed for {0}. Using standard file upload, due to:\n{1}".format(
@@ -478,8 +478,8 @@ class ImportExportClient(BaseGitLabClient):
         import_id = None
         wait_time = self.config.export_import_status_check_time
         timeout = self.config.export_import_timeout
-        host = self.config.destination_host
-        token = self.config.destination_token
+        host = self.dest_host
+        token = self.dest_token
         while True:
             # Wait until rate limit is resolved or project deleted
             while import_response.status_code in [500, 429, 409, 400]:
@@ -518,7 +518,7 @@ class ImportExportClient(BaseGitLabClient):
             if import_id:
                 status = self.projects_api.get_project_import_status(
                     host, token, import_id)
-                if status.status_code == 200:
+                if status.status_code in [200, 201]:
                     status_json = safe_json_response(status)
                     state = status_json.get(
                         "import_status") if status_json else None

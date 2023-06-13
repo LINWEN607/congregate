@@ -7,13 +7,15 @@ from congregate.ui.stage import StageAPI
 from congregate.ui.models import data_retrieval
 from congregate.ui.logs import logger
 from congregate.ui.airgap import airgap_routes
+from congregate.ui import config
 
 app = Flask(__name__,
             static_folder = "../../dist/assets",
             template_folder = "../../dist")
 
 app.config.from_mapping(
-    CELERY=celery_utils.generate_celery_config()
+    CELERY=celery_utils.generate_celery_config(),
+    UPLOAD_FOLDER=config.filesystem_path
 )
 
 celery_app = celery_utils.celery_init_app(app)

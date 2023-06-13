@@ -298,10 +298,10 @@ class MigrateClient(BaseClass):
             pcli = ProjectStageCLI()
             pcli.stage_data(ids, self.dry_run)
 
-    def remove_import_user(self, dst_id, gl_type="project"):
-        import_uid = self.config.import_user_id
-        host = self.config.destination_host
-        token = self.config.destination_token
+    def remove_import_user(self, dst_id, gl_type="project", host=None, token=None):
+        import_uid = self.config.import_user_id if not (host and token) else self.get_import_user(host, token)
+        host = self.config.destination_host if not host else host
+        token = self.config.destination_token if not token else token
         self.log.info(
             f"Removing import user (ID: {import_uid}) from {gl_type} (ID: {dst_id})")
         try:
@@ -317,6 +317,9 @@ class MigrateClient(BaseClass):
         except RequestException as re:
             self.log.error(
                 f"Failed to remove import user (ID: {import_uid}) from {gl_type} (ID: {dst_id}), with error:\n{re}")
+
+    def get_import_user(self, host, token):
+        return misc_utils.safe_json_response(self.users_api.get_current_user(host, token)).get('id')
 
     def handle_member_retention(self, members, dst_id, group=False):
         status = "retained"
