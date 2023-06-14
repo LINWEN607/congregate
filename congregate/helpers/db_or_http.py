@@ -7,8 +7,8 @@ class DbOrHttpMixin():
     """
     default_collection = "project_features"
 
-    def send_data(self, req_func, params, key, src_id, data, airgap=False, mongo_coll=default_collection):
-        if airgap:
+    def send_data(self, req_func, params, key, src_id, data, airgap=False, airgap_export=False, mongo_coll=default_collection):
+        if airgap and airgap_export:
             mongo = MongoConnector()
             mongo.db[mongo_coll].update_one(
                 {'id': src_id}, 
@@ -17,3 +17,14 @@ class DbOrHttpMixin():
             mongo.close_connection()
         else:
             req_func(*params, data)
+    
+    def get_data(self, req_func, params, key, src_id, airgap=False, airgap_import=False, mongo_coll=default_collection):
+        if airgap and airgap_import:
+            mongo = MongoConnector()
+            record = mongo.safe_find_one(mongo_coll, {
+                'id': src_id
+            })
+            mongo.close_connection()
+            return record.get(key)
+        else:
+            return req_func(*params)

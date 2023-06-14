@@ -9,9 +9,9 @@ from congregate.migration.meta.api_models.project_environment import NewProjectE
 
 
 class EnvironmentsClient(DbOrHttpMixin, BaseGitLabClient):
-    def __init__(self, src_host=None, src_token=None):
+    def __init__(self, src_host=None, src_token=None, dest_host=None, dest_token=None):
         self.projects = ProjectsApi()
-        super(EnvironmentsClient, self).__init__(src_host=src_host, src_token=src_token)
+        super(EnvironmentsClient, self).__init__(src_host=src_host, src_token=src_token, dest_host=dest_host, dest_token=dest_token)
 
     def migrate_project_environments(self, src_id, dest_id, name, enabled):
         try:
@@ -19,8 +19,13 @@ class EnvironmentsClient(DbOrHttpMixin, BaseGitLabClient):
                 self.log.info(
                     f"Environments are disabled ({enabled}) for project {name}")
                 return None
-            resp = self.projects.get_all_project_environments(
-                src_id, self.src_host, self.src_token)
+            resp = self.get_data(
+                self.projects.get_all_project_environments,
+                (src_id, self.src_host, self.src_token),
+                'project_environments', 
+                src_id,
+                airgap=self.config.airgap,
+                airgap_import=self.config.airgap_import)
             envs = iter(resp)
             self.log.info(f"Migrating project {name} environments")
             for env in envs:
@@ -31,11 +36,12 @@ class EnvironmentsClient(DbOrHttpMixin, BaseGitLabClient):
                     return False
                 self.send_data(
                     self.projects.create_environment,
-                    (self.config.destination_host, self.config.destination_token, dest_id),
+                    (self.dest_host, self.dest_token, dest_id),
                     'project_environments',
                     src_id,
                     self.generate_environment_data(env), 
-                    airgap=self.config.airgap)
+                    airgap=self.config.airgap,
+                    airgap_export=self.config.airgap_export)
             return True
         except TypeError as te:
             self.log.error(
