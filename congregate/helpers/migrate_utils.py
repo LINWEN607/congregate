@@ -271,8 +271,8 @@ def is_top_level_group(g):
         :param g: The JSON object representing a GitLab group
         :return: True if top-level-group, else False
     """
-    return not g.get("parent_id", None) or g.get(
-        "id", None) == b.config.src_parent_id
+    return not g.get("parent_id") or g.get(
+        "id") == b.config.src_parent_id
 
 
 def is_loc_supported(loc):
