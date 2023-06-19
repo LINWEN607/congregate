@@ -65,13 +65,18 @@ workflow:
     GITLAB_OMNIBUS_CONFIG: |-
       gitlab_rails['initial_root_password'] = '5iveL!fe'
       gitlab_rails['initial_license_file'] = '/builds/gitlab-org/professional-services-automation/tools/migration/congregate.tmp/GITLAB_LICENSE'
+      gitlab_rails['env'] = {
+        "GITLAB_LICENSE_MODE" => "test",
+        "CUSTOMER_PORTAL_URL" => "https://customers.staging.gitlab.com"
+      }
   services:
     - name: gitlab/gitlab-ee:latest
       alias: gitlab_destination
-      command: [
+      command:
+        [
           "sh",
           "-c",
-          "(python3 -m http.server 443 --directory /var/log/gitlab/gitlab-rails/ &) && /assets/wrapper"
+          "(python3 -m http.server 443 --directory /var/log/gitlab/gitlab-rails/ &) && /assets/wrapper",
         ]
     - name: mongo:4.4.16
       alias: mongo
@@ -435,7 +440,7 @@ test:Jenkins Integration Tests:
       DOCKER_BUILDKIT=1 docker build --tag "$RELEASE_IMAGE_NAME" .
       docker push "$RELEASE_IMAGE_NAME"
       if [ -n "$LATEST" ]
-      then 
+      then
         docker image tag $RELEASE_IMAGE_NAME $LATEST
         docker push "$LATEST"
       fi
