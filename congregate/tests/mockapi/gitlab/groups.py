@@ -168,7 +168,7 @@ class MockGroupsApi():
             "name": "Twitter",
             "path": "twitter",
             "description": "Aliquid qui quis dignissimos distinctio ut commodi voluptas est.",
-            "visibility": "public",
+            "visibility": "internal",
             "avatar_url": None,
             "web_url": "https://gitlab.example.com/groups/twitter",
             "request_access_enabled": False,

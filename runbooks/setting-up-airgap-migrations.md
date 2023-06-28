@@ -39,8 +39,8 @@ filesystem_path = /path/to/docker/data/mount
 
 [APP]
 export_import_wait_time = 30
-airgap = true
-airgap_export = true
+airgap = True
+airgap_export = True
 mongo_host = localhost
 ```
 
@@ -56,7 +56,7 @@ filesystem_path = /path/to/docker/data/mount
 
 [APP]
 export_import_wait_time = 30
-airgap = true
-airgap_import = true
+airgap = True
+airgap_import = True
 mongo_host = localhost
 ```

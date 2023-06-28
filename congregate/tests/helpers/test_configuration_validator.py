@@ -59,7 +59,7 @@ class ConfigurationValidationTests(unittest.TestCase):
         self.config.as_obj().set("DESTINATION", "dstn_parent_group_path", "twitter")
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
-                      json=self.groups.get_group(), status=200, content_type='text/json', match_querystring=True)
+                      json=self.groups.get_subgroup(), status=200, content_type='text/json', match_querystring=True)
         # pylint: enable=no-member
         self.assertTrue(self.config.dstn_parent_id, 1234)
 
@@ -172,11 +172,33 @@ class ConfigurationValidationTests(unittest.TestCase):
         valid_token.return_value = True
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
+                      json=self.groups.get_subgroup(), status=200, content_type='text/json', match_querystring=True)
+        responses.add(responses.GET, url_value,
+                      json=self.groups.get_subgroup(), status=200, content_type='text/json', match_querystring=True)
+        # pylint: enable=no-member
+        self.assertTrue(self.config.dstn_parent_group_path, "twitter")
+
+    @responses.activate
+    # pylint: enable=no-member
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.validate_dstn_token')
+    @mock.patch.object(ConfigurationValidator,
+                       'dstn_parent_id', new_callable=mock.PropertyMock)
+    @mock.patch.object(GitLabApi, "generate_v4_request_url")
+    def test_fail_parent_group_path_validation_public(
+            self, url, parent_id, valid_token):
+        parent_id.return_value = 4
+        self.config.as_obj().set("DESTINATION", "dstn_parent_group_path", "twitter")
+        url_value = "https://gitlab.com/api/v4/groups/4"
+        url.return_value = url_value
+        valid_token.return_value = True
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
                       json=self.groups.get_group(), status=200, content_type='text/json', match_querystring=True)
         responses.add(responses.GET, url_value,
                       json=self.groups.get_group(), status=200, content_type='text/json', match_querystring=True)
         # pylint: enable=no-member
-        self.assertTrue(self.config.dstn_parent_group_path, "twitter")
+        self.assertRaises(ConfigurationException,
+                          self.config.validate_dstn_parent_group_path, "twitter")
 
     @responses.activate
     # pylint: enable=no-member

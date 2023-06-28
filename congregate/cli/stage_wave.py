@@ -259,6 +259,5 @@ class WaveStageCLI(BaseStageClass):
         if group := self.group_paths.get(group_path):
             if len(clean_split(repo_url, group_path, 1)) == 1:
                 return group
-            else:
-                self.log.warning(
-                    f"Possible invalid group {repo_url} found. Review spreadsheet.")
+            self.log.warning(
+                f"Possible invalid group {repo_url} found. Review spreadsheet.")

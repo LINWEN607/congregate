@@ -1,5 +1,5 @@
-from sys import exit
 from base64 import b64encode
+import sys
 import requests
 
 from gitlab_ps_utils.exceptions import ConfigurationException
@@ -15,6 +15,8 @@ class ConfigurationValidator(Config):
     '''
     Extended config class used to validate the configuration on run
     '''
+
+    GET_TIMEOUT = 10
 
     def __init__(self, path=None):
         self.groups = GroupsApi()
@@ -78,7 +80,7 @@ class ConfigurationValidator(Config):
         self.src_token_validated_in_session = self.validate_src_token(
             src_token) if not self.airgap else True
         return src_token
-    
+
     @property
     def airgap(self):
         if ag := self.prop_bool("APP", "airgap", default=False):
@@ -87,9 +89,9 @@ class ConfigurationValidator(Config):
             try:
                 return self.validate_airgap_configuration()
             except ConfigurationException as ce:
-                exit(ce)
+                sys.exit(ce)
         return False
-            
+
     def validate_dstn_parent_group_id(self, pgid):
         if pgid is not None:
             group_resp = safe_json_response(self.groups.get_group(
@@ -126,7 +128,11 @@ class ConfigurationValidator(Config):
             if error or not group_resp:
                 raise ConfigurationException(
                     "dstn_parent_group_path", msg=f"Invalid dest parent group param:\n{json_pretty(group_resp)}")
-            elif group_resp["full_path"] == dstn_parent_group_path:
+            group_full_path = group_resp["full_path"]
+            if group_full_path == dstn_parent_group_path:
+                if group_resp["visibility"] == "public":
+                    raise ConfigurationException(
+                        "dstn_parent_group_path", msg=f"Public destination parent group: {group_full_path}. Please set visibility to 'internal' or 'private'")
                 return True
         return True
 
@@ -171,7 +177,8 @@ class ConfigurationValidator(Config):
                 "Accept": "application/vnd.github.v3+json",
                 "Authorization": f"token {token}"
             },
-            verify=self.ssl_verify))
+            verify=self.ssl_verify,
+            timeout=self.GET_TIMEOUT))
         is_error, user = is_error_message_present(user)
         if not user or is_error or (not user.get(
                 "site_admin") and not is_github_dot_com(self.source_host)):
@@ -192,7 +199,8 @@ class ConfigurationValidator(Config):
             f"{host}/rest/api/1.0/admin/permissions/users?filter={username}",
             params={},
             headers=headers,
-            verify=ssl)
+            verify=ssl,
+            timeout=self.GET_TIMEOUT)
         )
         is_admin = user["values"][0]["permission"] in [
             "SYS_ADMIN", "ADMIN"] if (user and user.get("values")) else False
@@ -202,7 +210,8 @@ class ConfigurationValidator(Config):
                 f"{host}/rest/api/1.0/admin/users/more-members?context={username}",
                 params={},
                 headers=headers,
-                verify=ssl)
+                verify=ssl,
+                timeout=self.GET_TIMEOUT)
             )
             group_name = user["values"][0]["name"] if (
                 user and user.get("values", [])) else None
@@ -211,7 +220,8 @@ class ConfigurationValidator(Config):
                     f"{host}/rest/api/1.0/admin/permissions/groups?filter={group_name}",
                     params={},
                     headers=headers,
-                    verify=ssl)
+                    verify=ssl,
+                    timeout=self.GET_TIMEOUT)
                 )
                 is_admin = group["values"][0]["permission"] in ["SYS_ADMIN", "ADMIN"] if (
                     group and group.get("values", [])) else False
@@ -219,16 +229,16 @@ class ConfigurationValidator(Config):
         if not user or is_error or not is_admin:
             raise ConfigurationException(
                 "source_token", msg=f"{msg}{json_pretty(user)}")
-    
+
     def validate_airgap_configuration(self):
         airgap_export = self.prop_bool("APP", "airgap_export", default=False)
         airgap_import = self.prop_bool("APP", "airgap_import", default=False)
         if airgap_export and airgap_import:
             raise ConfigurationException(
-                'airgap', msg="Invalid configuration. Airgap export and import both set to True. Only one can be enabled at a time")
+                'airgap', msg="Invalid configuration. Air-gap export and import both set to True. Only one can be enabled at a time")
         if not (airgap_export or airgap_import):
             raise ConfigurationException(
-                'airgap', msg="Invalid configuration. Airgap is enabled but neither airgap_export nor airgap_import is enabled. Set one of them to True"
+                'airgap', msg="Invalid configuration. Air-gap is enabled but neither airgap_export nor airgap_import is enabled. Set one of them to True"
             )
         return True
 
@@ -251,7 +261,7 @@ class ConfigurationValidator(Config):
     @property
     def src_token_validated_in_session(self):
         return self._src_token_validated_in_session
-    
+
     @property
     def airgap_validated_in_session(self):
         return self._airgap_validated_in_session

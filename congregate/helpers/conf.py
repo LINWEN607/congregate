@@ -424,7 +424,7 @@ class Config(BaseConfig):
         The explicit host for the redis connection. Defaults to localhost
         """
         return self.prop("APP", "redis_host", default="localhost")
-    
+
     @property
     def redis_port(self):
         """
@@ -460,33 +460,33 @@ class Config(BaseConfig):
     @property
     def airgap(self):
         """
-        Sets congregate to airgapped mode
+        Sets congregate to full air-gapped mode
 
         Post migration data will be saved to mongo and a large single archive will
         be generated on export
 
         Congregate will query mongo for post-migration data instead of reaching out
-        to the soruce instance
+        to the source instance
         """
         return self.prop_bool("APP", "airgap", default=False)
-    
+
     @property
     def airgap_export(self):
         """
-        Sets airgap direction to export. Set this to True if this is the source instance
+        Sets air-gap direction to export. Set this to True if this is the source instance
 
         Congregate will query mongo for post-migration data instead of reaching out
-        to the soruce instance
+        to the source instance
         """
         return self.prop_bool("APP", "airgap_export", default=False)
-    
+
     @property
     def airgap_import(self):
         """
-        Sets airgap direction to import. Set this to True if this is the destination instance
+        Sets air-gap direction to import. Set this to True if this is the destination instance
 
         Congregate will query mongo for post-migration data instead of reaching out
-        to the soruce instance
+        to the source instance
         """
         return self.prop_bool("APP", "airgap_import", default=False)
 
