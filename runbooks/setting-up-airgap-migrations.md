@@ -20,12 +20,12 @@ In an air-gapped environment, specifically where the source and destination inst
 - Create a `cache` directory in the same location where the docker-compose file will be run. This will be used for the redis cache
 - Start up the docker-compose file
 - In `$CONGREGATE_DATA`, edit or create the `congregate.conf` file to match the configurations below. Update any paths or URLs accordingly
+- In `$CONGREGATE_DATA`, create a directory called `logs`
 - Run the following commands in the container
 
 ```bash
-congregate ui &
-cd /opt/congregate && poetry run celery -A congregate.ui.wsgi.celery_app worker &
-cd /opt/congregate && poetry run celery -A congregate.ui.wsgi.celery_app flower --port=5566 &
+congregate init
+supervisorctl start all
 ```
 
 - Finally on the destination GitLab instance, create a user dedicated to migrating the data. This user needs to exist because we cannot use a [group access token to import a project](https://docs.gitlab.com/ee/user/project/settings/import_export_troubleshooting.html#import-using-the-rest-api-fails-when-using-a-group-access-token), so we will need to use a personal access token to handle those requests
@@ -80,4 +80,50 @@ This timeout is configurable. To extend the timeout, add the following setting t
 export_import_timeout = <number-of-seconds>
 # for example, setting the timeout to 6 hours
 export_import_timeout = 21600
+```
+
+## Troubleshooting
+
+### Checking logs
+
+There are multiple log files you can check for any errors or statuses. They should all be located in `/opt/congregate/data/logs`
+
+- congregate.log: the overall application log of congregate. This will show statuses of exports and imports running
+- audit.log: any POST/PUT/DELETE requests will be logged here
+- gunicorn.log: stdout of the gunicorn service go here
+- gunicorn_err.log: stderr of the gunicorn service go here
+- celery.log: stdout of the celery service will go here, which may include similar content to congregate.log
+- celery_err.log: stderr of the celery service is logged here. This can show if celery fails to connect to mongo or redis
+- flower_err.log: the output of the flower service. Everything appears to be logged to stderr with the flower service
+
+### Managing congregate services
+
+There are three services managed by supervisorctl:
+
+- Gunicorn: The web server for Congregate
+- Celery: The job queue manager for Congregate
+- Flower: The job queue monitor web app for Celery
+
+You can check the **status** of them by running
+
+```bash
+supervisorctl status
+```
+
+and **restart** them by running
+
+```bash
+# restart all of them
+supervisorctl restart all
+# restart only gunicorn for example
+supervisorctl restart congregate-gunicorn
+```
+
+or **stop** them all together by running
+
+```bash
+# stop all of them
+supervisorctl stop all
+# stop only gunicorn for example
+supervisorctl stop congregate-gunicorn
 ```

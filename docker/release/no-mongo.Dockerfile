@@ -1,10 +1,11 @@
-FROM rockylinux/rockylinux:8.5
+FROM rockylinux/rockylinux:8.8
 
 # Add ps-user and give them sudo privileges
 RUN adduser ps-user && \
     gpasswd -a ps-user wheel && \
     yum update -y && yum install -y sudo && \
-    sed -i 's/wheel.*ALL\=(ALL).*ALL/wheel ALL=(ALL) NOPASSWD:ALL/' /etc/sudoers
+    sed -i 's/wheel.*ALL\=(ALL).*ALL/wheel ALL=(ALL) NOPASSWD:ALL/' /etc/sudoers && \
+    sed -i 's/secure_path = \/sbin:\/bin:\/usr\/sbin:\/usr\/bin/secure_path = \/sbin:\/bin:\/usr\/sbin:\/usr\/bin:\/usr\/local\/sbin:\/usr\/local\/bin/' /etc/sudoers
 
 # Define the ENV variable
 ENV CONGREGATE_PATH=/opt/congregate \
@@ -14,52 +15,28 @@ ENV CONGREGATE_PATH=/opt/congregate \
 
 WORKDIR /opt/congregate
 
-# Copy supervisor configuration
 ADD congregate congregate
 ADD frontend frontend
 ADD dev/bin dev/bin
 COPY congregate.sh pyproject.toml poetry.lock README.md .gitignore LICENSE ./
 
-RUN mkdir -p /data/db
-
 # Set /data and /opt folder permissions for ps-user
-RUN chown -R ps-user:wheel /data && \
-    chmod -R 750 /data && \
-    chown -R ps-user:wheel /opt && \
+RUN chown -R ps-user:wheel /opt && \
     chmod -R 750 /opt
 
 # Installing yum-installable libraries
 RUN yum update -y && \
     yum install -y less vim jq curl git  \
-    gcc openssl-devel bzip2-devel libffi-devel zlib-devel make epel-release xz-devel util-linux-user sqlite-devel && \
-    yum install -y screen
-
-# Install Python
-RUN cd /opt && \
-    curl https://www.python.org/ftp/python/3.8.12/Python-3.8.12.tgz -o Python-3.8.12.tgz && \
-    tar xzf Python-3.8.12.tgz && \
-    cd Python-3.8.12 && \
-    ./configure --enable-optimizations && \
-    sudo make altinstall && \
-    cd /opt && \
-    rm Python-3.8.12.tgz && \
-    rm -r Python-3.8.12
+    gcc openssl-devel bzip2-devel libffi-devel zlib-devel make \
+    epel-release xz-devel util-linux-user sqlite-devel python38 procps && \
+    yum install -y screen && \
+    dnf module install nodejs:16 -y
 
 # The alias takes precendence once you are in an interactive shell (-it)
 # in Docker, so this "fixes" the build steps afterwards, but doesn't seem to
 # break anything else
 RUN echo -e '#!/bin/bash\npython3.8 "$@"' > /usr/local/sbin/python && \
     chmod +x /usr/local/sbin/python
-
-# Install Node
-RUN curl -sL https://rpm.nodesource.com/setup_16.x | bash - && \
-    yum install -y nodejs
-
-# Create python symlinks
-RUN rm -f /usr/bin/python3 && \
-    cd /usr/bin && \
-    ln -s python3.8 python3 && \
-    rm /usr/local/sbin/python
 
 # Set permissions to execute the congregate command
 RUN cd /opt/congregate && \
@@ -91,7 +68,6 @@ RUN echo "alias ll='ls -al'" >> ~/.bashrc && \
 RUN echo "alias license='cat /opt/congregate/LICENSE'" >> ~/.bashrc && \
     echo "alias license='cat /opt/congregate/LICENSE'" >> ~/.zshrc
 
-
 RUN echo "CHECKING PYTHON VERSION" && \
     python3.8 -V
 
@@ -121,10 +97,23 @@ RUN cd /opt/congregate && \
     chown -R ps-user:wheel dist && \
     chmod -R 750 dist
 
+# Supervisor setup
+RUN pip3 install supervisor && \
+    mkdir -p /etc/supervisor/conf.d/ && \
+    mkdir -p /var/log/supervisord/
+
+COPY docker/release/centos/*.conf /etc/supervisor/conf.d/
+
+# Set root path
+RUN export PATH=$PATH:/usr/local/sbin:/usr/local/bin && \
+    echo "export PATH=$PATH" >> ~/.bashrc && \
+    echo "export PATH=$PATH" >> ~/.zshrc
+
 USER ps-user
 
 # Initialize congregate directories
 WORKDIR /opt/congregate
-RUN export PATH=$PATH:/home/ps-user/.local/bin/ && ./congregate.sh init
+RUN export PATH=$PATH:/home/ps-user/.local/bin/ && congregate init
 
 EXPOSE 8000
+EXPOSE 5555
