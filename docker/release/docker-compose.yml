@@ -10,6 +10,7 @@ services:
             - $CONGREGATE_DATA:/opt/congregate/data
         ports:
             - 8000:8000
+            - 5566:5566
         entrypoint: "/bin/bash -c 'sleep infinity'"
         networks:
           default:
