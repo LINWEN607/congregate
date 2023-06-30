@@ -64,7 +64,7 @@ mongo_host = localhost
 
 ### Certification issues
 
-If you are using a self-signed certificate, you will either need to add the certificate to the VM or Docker image running congregate or add the following setting to the `[APP]` section of `congregate.conf`:
+If you are using a self-signed certificate, you will either need to add the certificate to the VM or Docker image running congregate or add the following setting to the `[APP]` section of _/opt/congregate/data/congregate.conf_:
 
 ```bash
 ssl_verify = False
@@ -74,12 +74,11 @@ ssl_verify = False
 
 By default, Congregate will poll the source and destination to check the status of an ongoing export/import.
 Larger GitLab projects may take longer than an hour to finish exporting or importing.
-This timeout is configurable. To extend the timeout, add the following setting to the `[APP]` section of `congregate.conf`:
+This timeout is configurable. To extend the timeout, add the following setting to the `[APP]` section of _/opt/congregate/data/congregate.conf_:
 
 ```bash
 export_import_timeout = <number-of-seconds>
-# for example, setting the timeout to 6 hours
-export_import_timeout = 21600
+# for example, setting the timeout to 6 hours would be: 'export_import_timeout = 21600'
 ```
 
 ## Troubleshooting
@@ -88,21 +87,21 @@ export_import_timeout = 21600
 
 There are multiple log files you can check for any errors or statuses. They should all be located in `/opt/congregate/data/logs`
 
-- congregate.log: the overall application log of congregate. This will show statuses of exports and imports running
-- audit.log: any POST/PUT/DELETE requests will be logged here
-- gunicorn.log: stdout of the gunicorn service go here
-- gunicorn_err.log: stderr of the gunicorn service go here
-- celery.log: stdout of the celery service will go here, which may include similar content to congregate.log
-- celery_err.log: stderr of the celery service is logged here. This can show if celery fails to connect to mongo or redis
-- flower_err.log: the output of the flower service. Everything appears to be logged to stderr with the flower service
+- _congregate.log_: the overall application log of Congregate. This will show statuses of exports and imports running
+- _audit.log_: any POST/PUT/DELETE requests will be logged here
+- _gunicorn.log_: `stdout` of the `gunicorn` service go here
+- _gunicorn_err.log_: `stderr` of the `gunicorn` service go here
+- _celery.log_: `stdout` of the `celery` service will go here, which may include similar content to _congregate.log_
+- _celery_err.log_: `stderr` of the `celery` service is logged here. This can show if celery fails to connect to `mongo` or `redis`
+- _flower_err.log_: the output of the `flower` service. Everything appears to be logged to `stderr` with the `flower` service
 
 ### Managing congregate services
 
-There are three services managed by supervisorctl:
+There are three services managed by `supervisorctl`:
 
-- Gunicorn: The web server for Congregate
-- Celery: The job queue manager for Congregate
-- Flower: The job queue monitor web app for Celery
+- **Gunicorn**: The web server for Congregate
+- **Celery**: The job queue manager for Congregate
+- **Flower**: The job queue monitor web app for Celery
 
 You can check the **status** of them by running
 
