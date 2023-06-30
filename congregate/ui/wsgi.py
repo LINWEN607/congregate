@@ -1,4 +1,5 @@
 from flask import Flask, render_template
+# from flask_cors import CORS
 from congregate.helpers import celery_utils
 from congregate.cli.stage_projects import ProjectStageCLI
 from congregate.cli.stage_groups import GroupStageCLI
@@ -17,6 +18,9 @@ app.config.from_mapping(
     CELERY=celery_utils.generate_celery_config(),
     UPLOAD_FOLDER=config.filesystem_path
 )
+
+# TODO: add check for development mode to enable cors
+# CORS(app)
 
 celery_app = celery_utils.celery_init_app(app)
 

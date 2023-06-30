@@ -397,6 +397,17 @@ async = ["asgiref (>=3.2)"]
 dotenv = ["python-dotenv"]
 
 [[package]]
+name = "flask-cors"
+version = "4.0.0"
+description = "A Flask extension adding a decorator for CORS support"
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+Flask = ">=0.9"
+
+[[package]]
 name = "flower"
 version = "1.2.0"
 description = "Celery Flower"
@@ -1482,7 +1493,7 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8.12"
-content-hash = "9bd6f9c157752dddd086bd9140465bb381b329927f0c3b7c24a5828a756124fe"
+content-hash = "249c01e8d340f14afd356c0b27cbb43fcc5cebad85743d4ac1864901a3df3618"
 
 [metadata.files]
 amqp = []
@@ -1519,6 +1530,7 @@ docopt = []
 docutils = []
 editorconfig = []
 flask = []
+flask-cors = []
 flower = []
 gevent = []
 ghp-import = []

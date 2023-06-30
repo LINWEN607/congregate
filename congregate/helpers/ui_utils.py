@@ -7,9 +7,8 @@ def build_ui(app_path):
     os.chdir(f"{app_path}/frontend")
     build_command = "npm run build"
     subprocess.call(build_command.split(" "))
-    if not os.path.exists(f"{app_path}/ui_checksum"):
-        with open(f"{app_path}/ui-checksum", "w") as f:
-            f.write(get_hash_of_dirs(f"{app_path}/dist"))
+    with open(f"{app_path}/ui-checksum", "w") as f:
+        f.write(get_hash_of_dirs(f"{app_path}/frontend"))
 
 
 def spin_up_ui(app_path, port):
@@ -32,7 +31,7 @@ def spin_up_ui(app_path, port):
 def is_ui_out_of_date(app_path):
     try:
         with open(f"{app_path}/ui-checksum", "r") as f:
-            return get_hash_of_dirs(f"{app_path}/dist") != f.read()
+            return get_hash_of_dirs(f"{app_path}/frontend") != f.read()
     except IOError:
         print("UI Checksum not found")
         return True

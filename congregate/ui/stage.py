@@ -7,7 +7,7 @@ class StageAPI(MethodView):
     route_prefix = "/stage"
 
     def __init__(self, client, asset_name) -> None:
-        self.client = client
+        self.client = client()
         self.asset_name = asset_name
     
     def post(self):

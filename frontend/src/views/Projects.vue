@@ -4,6 +4,7 @@
     <div class="table">
       <vue-good-table
             ref="projects-table"
+            id="projects-table"
             :columns="columns"
             :rows="rows"
             :search-options="{ enabled: true }"
@@ -21,7 +22,6 @@ import 'vue-good-table/dist/vue-good-table.css'
 import { VueGoodTable } from 'vue-good-table'
 import axios from 'axios'
 import Footer from '@/components/Footer.vue'
-import { EventBus } from '@/event-bus.js'
 
 export default {
   name: 'Projects',
@@ -68,9 +68,12 @@ export default {
   },
   mounted: function () {
     this.getData()
-    EventBus.$on('stage-projects', event => {
+    this.$emitter.on('stage-projects', event => {
       this.stageData()
     })
+  },
+  beforeDestroy: function() {
+    this.$emitter.off('stage-projects')
   },
   methods: {
     getData: function () {
@@ -83,13 +86,16 @@ export default {
     },
     getStagedData: function () {
       axios.get('/data/staged_projects').then(response => {
-        var ids = []
+        let ids = []
         response.data.forEach(element => {
           ids.push(element.id)
         })
-        const table = this.$refs['projects-table']
+        let table = this.$refs['projects-table']
+        
         this.$refs['projects-table'].rows.forEach((element, ind) => {
+          
           if (ids.includes(element.id)) {
+            console.log("updating projects table")
             table.$set(table.rows[ind], 'vgtSelected', true)
           }
         })
@@ -99,11 +105,11 @@ export default {
     },
     stageData: function () {
       if (this.$refs['projects-table'].selectedRows) {
-        const ids = []
+        let ids = []
         this.$refs['projects-table'].selectedRows.forEach(element => {
           ids.push(element.id)
         })
-        axios.post('/stage', String(ids)).then(response => {
+        axios.post('/api/stage/projects', String(ids)).then(response => {
           console.log(response)
         })
       }

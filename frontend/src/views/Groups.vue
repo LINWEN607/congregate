@@ -4,6 +4,7 @@
     <div class="table">
         <vue-good-table
             ref="groups-table"
+            id="groups-table"
             :columns="columns"
             :rows="rows"
             :search-options="{ enabled: true }"
@@ -19,7 +20,6 @@
 <script>
 import 'vue-good-table/dist/vue-good-table.css'
 import { VueGoodTable } from 'vue-good-table'
-import { EventBus } from '@/event-bus.js'
 import Footer from '@/components/Footer.vue'
 import axios from 'axios'
 
@@ -55,9 +55,12 @@ export default {
   },
   mounted: function () {
     this.getData()
-    EventBus.$on('stage-groups', event => {
+    this.$emitter.on('stage-groups', event => {
       this.stageData()
     })
+  },
+  beforeDestroy: function() {
+    this.$emitter.off('stage-groups')
   },
   methods: {
     getData: function () {
@@ -74,9 +77,10 @@ export default {
         response.data.forEach(element => {
           ids.push(element.id)
         })
-        const table = this.$refs['groups-table']
+        let table = this.$refs['groups-table']
         this.$refs['groups-table'].rows.forEach((element, ind) => {
           if (ids.includes(element.id)) {
+            console.log("updating group table")
             table.$set(table.rows[ind], 'vgtSelected', true)
           }
         })
@@ -86,11 +90,11 @@ export default {
     },
     stageData: function () {
       if (this.$refs['groups-table'].selectedRows) {
-        const ids = []
+        let ids = []
         this.$refs['groups-table'].selectedRows.forEach(element => {
           ids.push(element.id)
         })
-        axios.post('/append_groups', String(ids)).then(response => {
+        axios.post('/api/stage/groups', String(ids)).then(response => {
           console.log(response)
         })
       }

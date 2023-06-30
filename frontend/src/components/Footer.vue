@@ -11,7 +11,6 @@
 </template>
 
 <script>
-import { EventBus } from '@/event-bus.js'
 export default {
   name: 'Footer',
   props: {
@@ -20,7 +19,7 @@ export default {
   },
   methods: {
     stage: function () {
-      EventBus.$emit(this.asset)
+      this.$emitter.emit(this.asset)
     }
   }
 }
