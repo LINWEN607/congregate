@@ -2,7 +2,7 @@ from datetime import timedelta, date
 import json
 from uuid import uuid4
 
-from gitlab_ps_utils.misc_utils import get_dry_log
+from gitlab_ps_utils.misc_utils import get_dry_log, safe_json_response
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.importexport import ImportExportClient
 from congregate.migration.gitlab.variables import VariablesClient
@@ -70,6 +70,23 @@ class SeedDataGenerator(BaseClass):
             "protected": True,
             "masked": False,
             "environment_scope": "production"
+        }
+    ]
+    PIPELINE_SCHEDULE_DATA = {
+        'description': 'Test Monthly Schedule',
+        'ref': 'main',
+        'cron': '0 6 5 * *'
+    }
+    PIPELINE_SCHEDULE_VARIABLES = [
+        {
+            "key": "NEW_VARIABLE",
+            "value": "updated value",
+            "variable_type": "env_var",
+        },
+        {
+            "key": "NEWER_VARIABLE",
+            "value": "this is another variable",
+            "variable_type": "env_var",
         }
     ]
     CLUSTERS_DATA = [
@@ -158,6 +175,7 @@ class SeedDataGenerator(BaseClass):
             self.generate_dummy_project_deploy_keys(p["id"], dry_run)
             self.generate_dummy_project_push_rules(p["id"], dry_run)
             self.generate_dummy_project_variables(p["id"], dry_run)
+            self.generate_dummy_project_pipeline_variables(p["id"], dry_run)
             self.generate_shared_with_group_data(p["id"], groups, dry_run)
             self.generate_dummy_project_clusters(p["id"], dry_run)
             self.generate_bot_user(p["id"], "project", dry_run)
@@ -424,6 +442,17 @@ class SeedDataGenerator(BaseClass):
             if not dry_run:
                 self.projects_api.create_project_variable(
                     pid, self.config.source_host, self.config.source_token, d)
+                
+    def generate_dummy_project_pipeline_variables(self, pid, dry_run=True):
+        schedule = self.projects_api.create_new_project_pipeline_schedule(
+            self.config.source_host, self.config.source_token, pid, self.PIPELINE_SCHEDULE_DATA)
+        if schedule.status_code in [200, 201]:
+            schedule_id = schedule.json()['id']
+            for d in self.PIPELINE_SCHEDULE_VARIABLES:
+                self.log.info(
+                    f"{get_dry_log(dry_run)}Creating project {pid} pipeline schedule variable ({d})")
+                self.projects_api.create_new_project_pipeline_schedule_variable(
+                    pid, schedule_id, self.config.source_host, self.config.source_token, d)
 
     def generate_dummy_project_push_rules(self, pid, dry_run=True):
         data = [
