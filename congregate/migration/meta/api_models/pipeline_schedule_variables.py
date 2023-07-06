@@ -1,12 +1,11 @@
-from dataclasses import dataclass, asdict, field
-from typing import Optional, List
-
-from congregate.migration.meta.api_models.variables import VariablePayload
+from dataclasses import dataclass, asdict
 
 @dataclass
-class PipelineScheduleVariablesPayload():
-    id: int
-    variables: Optional[List[VariablePayload]] = field(default_factory=list)
-
+class PipelineScheduleVariablePayload():
+    schedule_id: int
+    key: str
+    value: str
+    variable_type: str
+    
     def to_dict(self):
         return asdict(self)

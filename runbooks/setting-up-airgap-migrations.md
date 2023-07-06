@@ -21,7 +21,7 @@ In an air-gapped environment, specifically where the source and destination inst
 - Start up the docker-compose file
 - In `$CONGREGATE_DATA`, edit or create the `congregate.conf` file to match the configurations below. Update any paths or URLs accordingly
 - In `$CONGREGATE_DATA`, create a directory called `logs`
-- Run the following commands in the container
+- Run the following commands in the `congregate` container
 
 ```bash
 congregate init
@@ -57,7 +57,8 @@ filesystem_path = /path/to/docker/data/mount
 [APP]
 airgap = True
 airgap_import = True
-mongo_host = localhost
+mongo_host = mongo
+redis_host = redis
 ```
 
 ## Optional configurations

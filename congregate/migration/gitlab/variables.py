@@ -1,4 +1,5 @@
 from requests.exceptions import RequestException
+from requests import Response
 from gitlab_ps_utils.misc_utils import get_dry_log, is_error_message_present, safe_json_response
 from gitlab_ps_utils.json_utils import read_json_file_into_object
 
@@ -70,34 +71,33 @@ class VariablesClient(DbOrHttpMixin, BaseGitLabClient):
     def migrate_pipeline_schedule_variables(
             self, old_id, new_id, name, enabled):
         try:
-            if enabled:
-                src_schedules = list(
+            if enabled and (src_schedules := list(
                     self.get_data(
                         self.projects_api.get_all_project_pipeline_schedules,
                         (old_id, self.src_host, self.src_token),
-                        'pipeline_schedule_variables',
+                        'pipeline_schedules',
                         old_id,
                         airgap=self.config.airgap,
                         airgap_import=self.config.airgap_import
                     )
-                )
-                if src_schedules:
-                    dst_schedules = list(self.projects_api.get_all_project_pipeline_schedules(
-                        new_id, self.config.destination_host, self.config.destination_token))
-                    for sps in src_schedules:
-                        for dps in dst_schedules:
+                )):
+                for sps in src_schedules:
+                    if not self.config.airgap_export:
+                        for dps in list(self.projects_api.get_all_project_pipeline_schedules(
+                            new_id, self.dest_host, self.dest_token)):
                             if sps["description"] == dps["description"] and sps["ref"] == dps["ref"] and sps["cron"] == dps["cron"]:
-                                self.log.info("Migrating project {} pipeline schedule ({}) variables".format(
-                                    name, sps["description"]))
-                                for v in safe_json_response(self.projects_api.get_single_project_pipeline_schedule(
-                                        old_id, sps["id"], self.src_host, self.src_token)).get("variables", None):
-
-                                    self.send_data(self.projects_api.create_new_project_pipeline_schedule_variable,
-                                                   (new_id, dps["id"], self.config.destination_host,
-                                                    self.config.destination_token, v),
-                                                   f"pipeline_schedule_variables.{dps['id']}.variables",
-                                                   old_id,
-                                                   v, airgap=self.config.airgap, airgap_export=self.config.airgap_export)
+                                self.handle_project_pipeline_variables(name, sps, dps['id'], new_id, old_id)
+                    else:
+                        self.send_data(
+                            None, 
+                            None, 
+                            'pipeline_schedules', 
+                            old_id, 
+                            sps, 
+                            airgap=self.config.airgap, 
+                            airgap_export=self.config.airgap_export
+                        )
+                        self.handle_project_pipeline_variables(name, sps, None, new_id, old_id)
                 return True
             self.log.info(
                 f"Pipeline schedule variables are disabled ({enabled}) for project {name}")
@@ -106,7 +106,35 @@ class VariablesClient(DbOrHttpMixin, BaseGitLabClient):
             self.log.error(
                 f"Failed to migrate project {name} pipeline schedule variables, with error:\n{e}")
             return False
+    
+    def handle_project_pipeline_variables(self, p_name, sps, dps_id, new_id, old_id):
+        self.log.info(f"Migrating project {p_name} pipeline schedule ({sps['description']}) variables")
+        
+        pipeline_schedule_vars = self.get_data(
+            self.projects_api.get_single_project_pipeline_schedule,
+            (old_id, sps["id"], self.src_host, self.src_token),
+            'pipeline_schedule_variables',
+            old_id,
+            airgap=self.config.airgap,
+            airgap_import=self.config.airgap_import
+        )
 
+        if isinstance(pipeline_schedule_vars, Response):
+            pipeline_schedule_vars = pipeline_schedule_vars.json()['variables']
+
+        for v in pipeline_schedule_vars:
+            self.send_data(self.create_project_pipeline_schedule_variable,
+                            (new_id, sps['id'], dps_id, self.dest_host,
+                            self.dest_token, v),
+                            f"pipeline_schedule_variables",
+                            old_id,
+                            {'schedule_id': sps['id'], **v},
+                            airgap=self.config.airgap, airgap_export=self.config.airgap_export)
+    
+    def create_project_pipeline_schedule_variable(self, pid, spsid, dpsid, host, token, variable, data):
+        if variable.get('schedule_id', -1) == spsid or not variable.get('schedule_id'):
+            self.projects_api.create_new_project_pipeline_schedule_variable(pid, dpsid, host, token, data)
+        
     def migrate_variables(self, new_id, name, var_list, var_type, src_id):
         try:
             for var in iter(var_list):
