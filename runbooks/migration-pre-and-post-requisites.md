@@ -35,8 +35,8 @@ This runbook covers the process of preparing and cleaning up after a migration f
     * `NewAccessRequest`
 
     **NOTE:** Labels may change over time
-  * Assign to Manager for review/approval. 
-    * Managers: 
+  * Assign to Manager for review/approval.
+    * Managers:
       * Follow the instructions in the AR template for review and approval
       * Additionally mention SIRT for review i.e. `@gitlab-com/gl-security/security-operations/sirt`
 
@@ -169,7 +169,7 @@ This runbook covers the process of preparing and cleaning up after a migration f
 
   * Test the access: `ssh -i ~/.ssh/<ssh_private_key> root@<public_ip>`
   * Update package manager: `apt update && apt upgrade -y && apt autoremove -y`
-  * Install docker: `apt install docker.io`
+  * Install docker: `apt install docker.io -y`
   * Follow `./congregate/docs/full_setup.md#Installing and configuring Congregate (end-user)` for further steps
 
 ### Network; VM interaction

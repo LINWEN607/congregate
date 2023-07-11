@@ -3,10 +3,11 @@ import sys
 from requests import Response
 from requests.exceptions import RequestException
 from pandas import DataFrame, Series, set_option
+from dacite import from_dict
 
 from gitlab_ps_utils.misc_utils import get_dry_log, get_timedelta, is_error_message_present, \
     safe_json_response, strip_netloc
-from gitlab_ps_utils.json_utils import json_pretty, read_json_file_into_object, write_json_to_file, read_json_file_into_object
+from gitlab_ps_utils.json_utils import json_pretty, read_json_file_into_object, write_json_to_file
 from gitlab_ps_utils.dict_utils import rewrite_list_into_dict, rewrite_json_list_into_dict
 from gitlab_ps_utils.list_utils import remove_dupes
 
@@ -18,6 +19,7 @@ from congregate.migration.gitlab import constants
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.users import UsersApi
+from congregate.migration.meta.api_models.users import UserPayload
 
 
 class UsersClient(BaseClass):
@@ -40,10 +42,9 @@ class UsersClient(BaseClass):
             f"Could NOT find by OLD user ID {old_user_id} email of user:\n{json_pretty(old_user)}")
         return None
 
-    def username_exists(self, old_user):
+    def username_exists(self, username, old_user):
         index = 0
-        username = old_user["username"]
-        is_group = self.is_username_group_name(old_user)
+        is_group = self.is_username_group_name(username, old_user)
         if is_group is None:
             # None will only come back in error conditions.
             # As such, assume it does exist and try the upstream uniqueness
@@ -56,7 +57,7 @@ class UsersClient(BaseClass):
                     self.config.destination_host,
                     self.config.destination_token,
                     username):
-                if user["username"].lower() == username.lower():
+                if user.get("username", "").lower() == username.lower():
                     return True
                 if index > 100:
                     # Now that `search_for_user_by_username` uses username=
@@ -65,10 +66,10 @@ class UsersClient(BaseClass):
                 index += 1
             return False
         self.log.warning(
-            f"Username {username} for user {old_user} exists as a group name")
+            f"Username '{username}' exists as a group name, for user:\n{old_user}")
         return True
 
-    def is_username_group_name(self, old_user):
+    def is_username_group_name(self, username, old_user):
         """
         Check if a username exists as a group namespace
         :param old_user: The source user we are trying to create a new user for
@@ -77,7 +78,6 @@ class UsersClient(BaseClass):
                 else False
         """
         try:
-            username = str(old_user["username"])
             for g in self.groups_api.search_for_group(
                     username, host=self.config.destination_host, token=self.config.destination_token):
                 is_error, resp = is_error_message_present(g)
@@ -90,12 +90,11 @@ class UsersClient(BaseClass):
             return False
         except RequestException as re:
             self.log.error(
-                f"Error checking `{username}` is not group namespace for user {old_user} with error:\n{re}")
+                f"Failed checking username '{username}' is not group namespace for user:\n{old_user}\n{re}")
             return None
 
-    def user_email_exists(self, old_user):
-        if old_user.get("email"):
-            email = old_user["email"]
+    def user_email_exists(self, email):
+        if email:
             for user in self.users_api.search_for_user_by_email(
                     self.config.destination_host, self.config.destination_token, email):
                 if user.get("email") == email:
@@ -135,39 +134,30 @@ class UsersClient(BaseClass):
         return users_map[email]
 
     def generate_user_group_saml_post_data(self, user):
-        if identities := user.pop("identities", None):
+        if identities := user.identities:
             extern_uid = self.generate_extern_uid(
                 user, identities)
             if extern_uid:
-                user["extern_uid"] = extern_uid
+                user.extern_uid = extern_uid
                 if self.config.group_sso_provider:
                     provider = str(self.config.group_sso_provider).lower()
-                    user["provider"] = provider
+                    user.provider = provider
                     if provider == "group_saml":
-                        user["group_id_for_saml"] = self.config.dstn_parent_id
-        user["reset_password"] = self.config.reset_password
-        # make sure the inactive user cannot do anything
-        user["force_random_password"] = "true" if user["state"] in self.INACTIVE else self.config.force_random_password
-        if not self.config.reset_password and not self.config.force_random_password:
-            # TODO: add config for 'password' field
-            self.log.warning(
-                "If both 'reset_password' and 'force_random_password' are False, the 'password' field has to be set")
-        user["skip_confirmation"] = True
-        user["username"] = self.create_valid_username(user)
-
+                        user.group_id_for_saml = self.config.dstn_parent_id
         return user
 
     def generate_extern_uid(self, user, identities):
         if self.config.group_sso_provider_pattern == "email":
-            return user.get("email")
+            return user.email
         if self.config.group_sso_provider_pattern == "hash":
-            email = user.get("email")
+            email = user.email
             map_user = self.sso_hash_map.get(email)
             if email and map_user:
                 return map_user["externalid"]
         else:
             return self.find_extern_uid_by_provider(
                 identities, self.config.group_sso_provider)
+        return None
 
     def find_extern_uid_by_provider(self, identities, provider):
         if identities:
@@ -177,11 +167,12 @@ class UsersClient(BaseClass):
         return None
 
     def create_valid_username(self, user):
-        username = user["username"]
+        username = user.username
+        email = user.email
         # If the user email does not exist in the destination system
-        if not self.user_email_exists(user):
+        if not self.user_email_exists(email):
             # But the username does exist
-            if self.username_exists(user):
+            if self.username_exists(username, user):
                 # Concat the suffix
                 return self.build_suffix_username(username)
         # If you don't find the email, you've attempted to create a suffix-unique username
@@ -193,9 +184,9 @@ class UsersClient(BaseClass):
             # However, this also messes up some of our remapping efforts, as those match on source username
             # and not email
             found_by_email_user = find_user_by_email_comparison_without_id(
-                user["email"])
+                email)
             if found_by_email_user and found_by_email_user.get("username"):
-                return found_by_email_user["username"]
+                return found_by_email_user.get("username")
         return username
 
     def build_suffix_username(self, username):
@@ -599,31 +590,30 @@ class UsersClient(BaseClass):
             user.pop(key, None)
         # SSO causes issues with the avatar URL due to the authentication
         if self.config.group_sso_provider:
-            user.pop("avatar_url")
+            user.pop("avatar_url", None)
         # Avoid propagating field when creating users on gitlab.com with no config value set
         if is_dot_com(self.config.destination_host) and not projects_limit:
-            user.pop("projects_limit")
+            user.pop("projects_limit", None)
         mongo.insert_data(
             f"users-{strip_netloc(self.config.source_host)}", user)
         mongo.close_connection()
 
     def generate_user_data(self, user):
-        if user.get("id") is not None:
-            user.pop("id")
-        if self.config.group_sso_provider is not None:
-            return self.generate_user_group_saml_post_data(user)
-        user["username"] = self.create_valid_username(user)
-        user["skip_confirmation"] = True
-        user["reset_password"] = self.config.reset_password
-        # make sure the inactive user cannot do anything
-        user["force_random_password"] = "true" if user["state"] in self.INACTIVE else self.config.force_random_password
+        user_model = from_dict(data_class=UserPayload, data=user)
+        if self.config.group_sso_provider:
+            user_model = self.generate_user_group_saml_post_data(user_model)
+        # By default, unless the auto-generated private commit email is set
+        user_model.commit_email = user_model.email
+        user_model.username = self.create_valid_username(user_model)
+        user_model.skip_confirmation = True
+        user_model.reset_password = self.config.reset_password
+        # Make sure the inactive user cannot do anything
+        user_model.force_random_password = True if user_model.state in self.INACTIVE else self.config.force_random_password
         if not self.config.reset_password and not self.config.force_random_password:
             # TODO: add config for 'password' field
             self.log.warning(
                 "If both 'reset_password' and 'force_random_password' are False, the 'password' field has to be set")
-        if self.config.dstn_parent_id is not None:
-            user["is_admin"] = False
-        return user
+        return user_model.to_dict()
 
     def block_user(self, user_data):
         try:
@@ -643,9 +633,11 @@ class UsersClient(BaseClass):
                     self.log.error(
                         f"Failed to block user {user_data}, with response:\n{block_response} - {block_response.text}")
                 return block_response
+            return None
         except RequestException as e:
             self.log.error(
                 f"Failed request to block user {user_data}, with error:\n{e}")
+            return None
 
     def add_blocked_user_admin_note(self, user):
         host = self.config.destination_host
@@ -681,8 +673,7 @@ class UsersClient(BaseClass):
                 response = find_user_by_email_comparison_without_id(email)
                 return self.get_user_creation_id_and_email(response)
             except RequestException as e:
-                self.log.error(
-                    f"Failed to retrieve user {user} creation status, due to:\n{e}")
+                return self.log_and_return_failed_user_creation(f"{log_resp}\n{e}", email)
         elif response.status_code == 400:
             return self.log_and_return_failed_user_creation(f"{log_resp} improperly formatted request:\n{error_resp}", email)
         elif response.status_code == 500:

@@ -1,9 +1,10 @@
 from requests.exceptions import RequestException
 from dacite import from_dict
 
+from gitlab_ps_utils.misc_utils import is_error_message_present
+
 from congregate.helpers.db_or_http import DbOrHttpMixin
 from congregate.migration.gitlab.base_gitlab_client import BaseGitLabClient
-from gitlab_ps_utils.misc_utils import is_error_message_present
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.meta.api_models.project_environment import NewProjectEnvironmentPayload
 
@@ -11,7 +12,8 @@ from congregate.migration.meta.api_models.project_environment import NewProjectE
 class EnvironmentsClient(DbOrHttpMixin, BaseGitLabClient):
     def __init__(self, src_host=None, src_token=None, dest_host=None, dest_token=None):
         self.projects = ProjectsApi()
-        super(EnvironmentsClient, self).__init__(src_host=src_host, src_token=src_token, dest_host=dest_host, dest_token=dest_token)
+        super(EnvironmentsClient, self).__init__(src_host=src_host,
+                                                 src_token=src_token, dest_host=dest_host, dest_token=dest_token)
 
     def migrate_project_environments(self, src_id, dest_id, name, enabled):
         try:
@@ -22,7 +24,7 @@ class EnvironmentsClient(DbOrHttpMixin, BaseGitLabClient):
             resp = self.get_data(
                 self.projects.get_all_project_environments,
                 (src_id, self.src_host, self.src_token),
-                'project_environments', 
+                'project_environments',
                 src_id,
                 airgap=self.config.airgap,
                 airgap_import=self.config.airgap_import)
@@ -39,7 +41,7 @@ class EnvironmentsClient(DbOrHttpMixin, BaseGitLabClient):
                     (self.dest_host, self.dest_token, dest_id),
                     'project_environments',
                     src_id,
-                    self.generate_environment_data(env), 
+                    self.generate_environment_data(env),
                     airgap=self.config.airgap,
                     airgap_export=self.config.airgap_export)
             return True

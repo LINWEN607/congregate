@@ -5,8 +5,10 @@ from unittest.mock import patch, mock_open, PropertyMock, MagicMock
 import responses
 from pytest import mark
 from requests.exceptions import RequestException
+from dacite import from_dict
 
 from gitlab_ps_utils.api import GitLabApi
+
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.migration.meta.base_migrate import MigrateClient
 from congregate.tests.mockapi.gitlab.users import MockUsersApi
@@ -16,6 +18,7 @@ from congregate.migration.gitlab.users import UsersClient
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.keys import KeysClient
 from congregate.helpers.mdbc import MongoConnector
+from congregate.migration.meta.api_models.users import UserPayload
 # mongomock is using deprecated logic as of Python 3.3
 # This warning suppression is used so tests can pass
 with warnings.catch_warnings():
@@ -103,7 +106,7 @@ class UsersTests(unittest.TestCase):
         old_user = {
             "username": "jdoe"
         }
-        actual = self.users.username_exists(old_user)
+        actual = self.users.username_exists(old_user.get("username"), old_user)
         self.assertTrue(actual)
 
     @patch.object(UsersClient, "is_username_group_name")
@@ -121,7 +124,7 @@ class UsersTests(unittest.TestCase):
         old_user = {
             "username": "notjdoe"
         }
-        actual = self.users.username_exists(old_user)
+        actual = self.users.username_exists(old_user.get("username"), old_user)
         self.assertFalse(actual)
 
     @patch.object(UsersClient, "is_username_group_name")
@@ -142,7 +145,7 @@ class UsersTests(unittest.TestCase):
         old_user = {
             "username": "notjdoe"
         }
-        actual = self.users.username_exists(old_user)
+        actual = self.users.username_exists(old_user.get("username"), old_user)
         self.assertFalse(actual)
 
     @patch.object(UsersClient, "is_username_group_name")
@@ -160,7 +163,7 @@ class UsersTests(unittest.TestCase):
             "username": "notjdoe"
         }
         search.return_value = []
-        actual = self.users.username_exists(old_user)
+        actual = self.users.username_exists(old_user.get("username"), old_user)
         self.assertFalse(actual)
 
     @patch.object(UsersApi, "search_for_user_by_email")
@@ -172,11 +175,7 @@ class UsersTests(unittest.TestCase):
         search.return_value = [self.mock_users.get_dummy_user()]
         dest_host.return_value = "https//gitlab.example.com"
         dest_token.return_value = "token"
-        old_user = {
-            "email": "jdoe@email.com"
-        }
-        actual = self.users.user_email_exists(old_user)
-        self.assertTrue(actual)
+        self.assertTrue(self.users.user_email_exists("jdoe@email.com"))
 
     @patch.object(UsersApi, "search_for_user_by_email")
     @patch('congregate.helpers.conf.Config.destination_host',
@@ -187,11 +186,7 @@ class UsersTests(unittest.TestCase):
         search.return_value = [self.mock_users.get_dummy_user()]
         dest_host.return_value = "https//gitlab.example.com"
         dest_token.return_value = "token"
-        old_user = {
-            "email": "notjdoe@email.com"
-        }
-        actual = self.users.user_email_exists(old_user)
-        self.assertFalse(actual)
+        self.assertFalse(self.users.user_email_exists("notjdoe@email.com"))
 
     @patch.object(UsersApi, "search_for_user_by_email")
     @patch('congregate.helpers.conf.Config.destination_host',
@@ -205,11 +200,7 @@ class UsersTests(unittest.TestCase):
         for _ in range(0, 105):
             dummy_large_list.append(self.mock_users.get_dummy_user())
         search.return_value = dummy_large_list
-        old_user = {
-            "email": "notjdoe@email.com"
-        }
-        actual = self.users.user_email_exists(old_user)
-        self.assertFalse(actual)
+        self.assertFalse(self.users.user_email_exists("notjdoe@email.com"))
 
     @patch.object(UsersApi, "search_for_user_by_email")
     @patch('congregate.helpers.conf.Config.destination_host',
@@ -219,12 +210,8 @@ class UsersTests(unittest.TestCase):
     def test_user_email_exists_no_results(self, dest_token, dest_host, search):
         dest_host.return_value = "https//gitlab.example.com"
         dest_token.return_value = "token"
-        old_user = {
-            "email": "notjdoe@email.com"
-        }
         search.return_value = []
-        actual = self.users.user_email_exists(old_user)
-        self.assertFalse(actual)
+        self.assertFalse(self.users.user_email_exists("notjdoe@email.com"))
 
     # pylint: disable=no-member
     @responses.activate
@@ -580,7 +567,8 @@ class UsersTests(unittest.TestCase):
         dummy_user = self.mock_users.get_dummy_user()
         mock_email_check.return_value = True
         mock_user_search.return_value = [dummy_user]
-        created_user_name = self.users.create_valid_username(dummy_user)
+        created_user_name = self.users.create_valid_username(
+            from_dict(data_class=UserPayload, data=dummy_user))
         self.assertEqual(created_user_name, dummy_user["username"])
 
     @patch('congregate.helpers.conf.Config.destination_host',
@@ -604,7 +592,8 @@ class UsersTests(unittest.TestCase):
         mock_user_search.return_value = [dummy_user]
         mock_username_exists.return_value = False
         dummy_user["username"] = "JUST NOW CREATED"
-        created_user_name = self.users.create_valid_username(dummy_user)
+        created_user_name = self.users.create_valid_username(
+            from_dict(data_class=UserPayload, data=dummy_user))
         self.assertEqual(created_user_name, dummy_user["username"])
 
     @patch('congregate.helpers.conf.Config.destination_host',
@@ -632,7 +621,8 @@ class UsersTests(unittest.TestCase):
         mock_username_exists.return_value = True
         mock_username_suffix.return_value = "___BLEPBLEP"
         dummy_user["username"] = "JUST NOW CREATED"
-        created_user_name = self.users.create_valid_username(dummy_user)
+        created_user_name = self.users.create_valid_username(
+            from_dict(data_class=UserPayload, data=dummy_user))
         self.assertEqual(created_user_name,
                          f"{dummy_user['username']}_BLEPBLEP")
 
@@ -662,7 +652,8 @@ class UsersTests(unittest.TestCase):
         mock_username_suffix.return_value = "migrated"
         dummy_user["username"] = "JUST NOW CREATED"
         with self.assertLogs(self.users.log, level="WARNING"):
-            created_user_name = self.users.create_valid_username(dummy_user)
+            created_user_name = self.users.create_valid_username(
+                from_dict(data_class=UserPayload, data=dummy_user))
         self.assertEqual(created_user_name,
                          f"{dummy_user['username']}_migrated")
 
@@ -776,7 +767,8 @@ class UsersTests(unittest.TestCase):
         group_api.return_value = [{"path": "xyz"}]
         dest_host.return_value = "https://gitlabdestination.com"
         dest_token.return_value = "token"
-        response = self.users.is_username_group_name({"username": "abc"})
+        response = self.users.is_username_group_name(
+            "abc", {"username": "abc"})
         self.assertFalse(response)
 
     @patch('congregate.helpers.conf.Config.destination_host',
@@ -789,7 +781,8 @@ class UsersTests(unittest.TestCase):
         group_api.return_value = [{"path": "abc"}]
         dest_host.return_value = "https://gitlabdestination.com"
         dest_token.return_value = "token"
-        response = self.users.is_username_group_name({"username": "abc"})
+        response = self.users.is_username_group_name(
+            "abc", {"username": "abc"})
         self.assertTrue(response)
 
     @patch('congregate.helpers.conf.Config.destination_host',
@@ -802,7 +795,8 @@ class UsersTests(unittest.TestCase):
         group_api.return_value = [{"path": "ABC"}]
         dest_host.return_value = "https://gitlabdestination.com"
         dest_token.return_value = "token"
-        response = self.users.is_username_group_name({"username": "abc"})
+        response = self.users.is_username_group_name(
+            "abc", {"username": "abc"})
         self.assertTrue(response)
 
     @patch('congregate.helpers.conf.Config.destination_host',
@@ -815,7 +809,8 @@ class UsersTests(unittest.TestCase):
         group_api.side_effect = RequestException("API call failed")
         dest_host.return_value = "https://gitlabdestination.com"
         dest_token.return_value = "token"
-        response = self.users.is_username_group_name({"username": "abc"})
+        response = self.users.is_username_group_name(
+            "abc", {"username": "abc"})
         self.assertIsNone(response)
 
     def test_get_user_creation_id_from_list(self):
@@ -906,15 +901,15 @@ class UsersTests(unittest.TestCase):
                 "name": "Raymond Smith",
                 "state": "active",
                 "avatar_url": "",
-                "location": None,
+                "location": "",
                 "public_email": "",
                 "skype": "",
                 "linkedin": "",
                 "twitter": "",
                 "website_url": "",
-                "organization": None,
+                "organization": "",
                 "email": "rsmith@email.com",
-                "theme_id": None,
+                "theme_id": 1,
                 "color_scheme_id": 5,
                 "identities": [],
                 "can_create_group": True,
@@ -933,15 +928,15 @@ class UsersTests(unittest.TestCase):
                 "username": "jdoe",
                 "state": "blocked",
                 "avatar_url": "",
-                "location": None,
+                "location": "",
                 "public_email": "",
                 "skype": "",
                 "linkedin": "",
                 "twitter": "",
                 "website_url": "",
-                "organization": None,
+                "organization": "",
                 "email": "jdoe@email.com",
-                "theme_id": None,
+                "theme_id": 1,
                 "color_scheme_id": 5,
                 "identities": [],
                 "can_create_group": True,
@@ -963,8 +958,8 @@ class UsersTests(unittest.TestCase):
 
         self.assertGreater(len(actual_users), 0)
 
-        for i, _ in enumerate(expected_users):
-            self.assertDictEqual(expected_users[i], actual_users[i])
+        for i, j in enumerate(expected_users):
+            self.assertDictEqual(j, actual_users[i])
 
     @patch('congregate.helpers.conf.Config.destination_host',
            new_callable=PropertyMock)
@@ -993,15 +988,15 @@ class UsersTests(unittest.TestCase):
                 "username": "raymond_smith",
                 "name": "Raymond Smith",
                 "state": "active",
-                "location": None,
+                "location": "",
                 "public_email": "",
                 "skype": "",
                 "linkedin": "",
                 "twitter": "",
                 "website_url": "",
-                "organization": None,
+                "organization": "",
                 "email": "rsmith@email.com",
-                "theme_id": None,
+                "theme_id": 1,
                 "color_scheme_id": 5,
                 "projects_limit": 100,
                 "identities": [],
@@ -1020,15 +1015,15 @@ class UsersTests(unittest.TestCase):
                 "name": "John Doe",
                 "username": "jdoe",
                 "state": "active",
-                "location": None,
+                "location": "",
                 "public_email": "",
                 "skype": "",
                 "linkedin": "",
                 "twitter": "",
                 "website_url": "",
-                "organization": None,
+                "organization": "",
                 "email": "jdoe@email.com",
-                "theme_id": None,
+                "theme_id": 1,
                 "color_scheme_id": 5,
                 "projects_limit": 100,
                 "identities": [],
@@ -1051,8 +1046,8 @@ class UsersTests(unittest.TestCase):
 
         self.assertGreater(len(actual_users), 0)
 
-        for i, _ in enumerate(expected_users):
-            self.assertDictEqual(expected_users[i], actual_users[i])
+        for i, j in enumerate(expected_users):
+            self.assertDictEqual(j, actual_users[i])
 
     @patch('congregate.helpers.conf.Config.group_sso_provider_pattern',
            new_callable=PropertyMock)
@@ -1060,8 +1055,8 @@ class UsersTests(unittest.TestCase):
         pattern.return_value = "email"
         mock_user = self.mock_users.get_dummy_user()
         expected = "jdoe@email.com"
-        actual = self.users.generate_extern_uid(mock_user, None)
-
+        actual = self.users.generate_extern_uid(
+            from_dict(data_class=UserPayload, data=mock_user), None)
         self.assertEqual(expected, actual)
 
     @patch('congregate.helpers.conf.Config.group_sso_provider',
@@ -1069,10 +1064,11 @@ class UsersTests(unittest.TestCase):
     def test_generate_extern_uid_no_pattern(self, provider):
         provider.return_value = "okta"
         mock_user = self.mock_users.get_dummy_user()
+        mock_user_payload = from_dict(data_class=UserPayload, data=mock_user)
         mock_identity = mock_user.pop("identities")
         expected = "jdoe|someCompany|okta"
-        actual = self.users.generate_extern_uid(mock_user, mock_identity)
-
+        actual = self.users.generate_extern_uid(
+            mock_user_payload, mock_identity)
         self.assertEqual(expected, actual)
 
     @patch('congregate.helpers.conf.Config.group_sso_provider',
@@ -1081,7 +1077,8 @@ class UsersTests(unittest.TestCase):
         provider.return_value = "okta"
         mock_user = self.mock_users.get_dummy_user()
         expected = None
-        actual = self.users.generate_extern_uid(mock_user, None)
+        actual = self.users.generate_extern_uid(
+            from_dict(data_class=UserPayload, data=mock_user), None)
 
         self.assertEqual(expected, actual)
 
@@ -1105,7 +1102,8 @@ class UsersTests(unittest.TestCase):
         }
 
         expected = "abc123"
-        actual = self.users.generate_extern_uid(mock_user, None)
+        actual = self.users.generate_extern_uid(
+            from_dict(data_class=UserPayload, data=mock_user), None)
 
         self.assertEqual(expected, actual)
 
@@ -1136,6 +1134,43 @@ class UsersTests(unittest.TestCase):
 
         self.assertEqual(expected, actual)
 
+    @patch('congregate.helpers.conf.Config.reset_password',
+           new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.force_random_password',
+           new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.group_sso_provider',
+           new_callable=PropertyMock)
+    @patch('congregate.migration.gitlab.users.UsersClient.create_valid_username')
+    def test_generate_user_data(self, valid_username, provider, rand_pass, reset_pass):
+        mock_user = self.mock_users.get_dummy_staged_user()
+        valid_username.return_value = mock_user.get("username")
+        rand_pass.return_value = False
+        reset_pass.return_value = True
+        provider.return_value = None
+        expected = {
+            "two_factor_enabled": False,
+            "can_create_project": True,
+            "color_scheme_id": 1,
+            "projects_limit": 100000,
+            "bot": False,
+            "private_profile": False,
+            "state": "active",
+            "email": "iwdewfsfdyyazqnpkwga@examplegitlab.com",
+            "username": "RzKciDiyEzvtSqEicsvW",
+            "external": False,
+            "name": "FrhUbyTGMoXQUTeaMgFW",
+            "can_create_group": True,
+            "theme_id": 1,
+            "commit_email": "iwdewfsfdyyazqnpkwga@examplegitlab.com",
+            "skip_confirmation": True,
+            "reset_password": True,
+            "force_random_password": False,
+            "using_license_seat": False
+        }
+        actual = self.users.generate_user_data(mock_user)
+        print(actual)
+        self.assertDictEqual(expected, actual)
+
     @patch.object(ConfigurationValidator, 'dstn_parent_id',
                   new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.reset_password',
@@ -1161,43 +1196,28 @@ class UsersTests(unittest.TestCase):
         parent_id.return_value = 1234
         provider.return_value = "group_saml"
         expected = {
+            "bot": False,
             "two_factor_enabled": False,
             "can_create_project": True,
-            "twitter": "",
-            "shared_runners_minutes_limit": None,
             "extern_uid": 'iwdewfsfdyyazqnpkwga@examplegitlab.com',
-            "force_random_password": False,
             "group_id_for_saml": 1234,
-            "linkedin": "",
             "color_scheme_id": 1,
-            "skype": "",
-            "is_admin": False,
-            "id": 2,
             "projects_limit": 100000,
             "provider": "group_saml",
-            "note": None,
+            "identities": [{"junk": "so it works"}],
             "state": "active",
-            "reset_password": True,
-            "location": None,
             "email": "iwdewfsfdyyazqnpkwga@examplegitlab.com",
-            "website_url": "",
-            "job_title": "",
             "username": "RzKciDiyEzvtSqEicsvW",
-            "bio": None,
-            "work_information": None,
             "private_profile": False,
             "external": False,
-            "skip_confirmation": True,
-            "organization": None,
-            "public_email": "",
-            "extra_shared_runners_minutes_limit": None,
             "name": "FrhUbyTGMoXQUTeaMgFW",
             "can_create_group": True,
-            "avatar_url": "https://www.gravatar.com/avatar/a0290f87758efba7e7be1ed96b2e5ac1?s=80&d=identicon",
+            "using_license_seat": False,
             "theme_id": 1
         }
-        actual = self.users.generate_user_group_saml_post_data(mock_user)
-
+        actual = self.users.generate_user_group_saml_post_data(
+            from_dict(data_class=UserPayload, data=mock_user)).to_dict()
+        print(actual)
         self.assertDictEqual(expected, actual)
 
     @patch.object(ConfigurationValidator, 'dstn_parent_id',
@@ -1225,42 +1245,27 @@ class UsersTests(unittest.TestCase):
         parent_id.return_value = 1234
         provider.return_value = "google_oauth2"
         expected = {
+            "bot": False,
             "two_factor_enabled": False,
             "can_create_project": True,
-            "twitter": "",
-            "shared_runners_minutes_limit": None,
-            "extern_uid": '1234567890abcd',
-            "force_random_password": False,
-            "linkedin": "",
             "color_scheme_id": 1,
-            "skype": "",
-            "is_admin": False,
-            "id": 2,
             "projects_limit": 100000,
             "provider": "google_oauth2",
-            "note": None,
+            "identities": [{"junk": "so it works"}],
             "state": "active",
-            "reset_password": True,
-            "location": None,
             "email": "iwdewfsfdyyazqnpkwga@examplegitlab.com",
-            "website_url": "",
-            "job_title": "",
             "username": "RzKciDiyEzvtSqEicsvW",
-            "bio": None,
-            "work_information": None,
             "private_profile": False,
             "external": False,
-            "skip_confirmation": True,
-            "organization": None,
-            "public_email": "",
-            "extra_shared_runners_minutes_limit": None,
             "name": "FrhUbyTGMoXQUTeaMgFW",
             "can_create_group": True,
-            "avatar_url": "https://www.gravatar.com/avatar/a0290f87758efba7e7be1ed96b2e5ac1?s=80&d=identicon",
-            "theme_id": 1
+            "using_license_seat": False,
+            "theme_id": 1,
+            "extern_uid": '1234567890abcd'
         }
-        actual = self.users.generate_user_group_saml_post_data(mock_user)
-
+        actual = self.users.generate_user_group_saml_post_data(
+            from_dict(data_class=UserPayload, data=mock_user)).to_dict()
+        print(actual)
         self.assertDictEqual(expected, actual)
 
     @patch.object(ConfigurationValidator, 'dstn_parent_id',
@@ -1284,40 +1289,24 @@ class UsersTests(unittest.TestCase):
         parent_id.return_value = None
         provider.return_value = None
         expected = {
+            "bot": False,
             "two_factor_enabled": False,
             "can_create_project": True,
-            "twitter": "",
-            "shared_runners_minutes_limit": None,
-            "force_random_password": False,
-            "linkedin": "",
             "color_scheme_id": 1,
-            "skype": "",
-            "is_admin": False,
-            "id": 2,
             "projects_limit": 100000,
-            "note": None,
             "state": "active",
-            "reset_password": True,
-            "location": None,
             "email": "iwdewfsfdyyazqnpkwga@examplegitlab.com",
-            "website_url": "",
-            "job_title": "",
             "username": "RzKciDiyEzvtSqEicsvW",
-            "bio": None,
-            "work_information": None,
             "private_profile": False,
             "external": False,
-            "skip_confirmation": True,
-            "organization": None,
-            "public_email": "",
-            "extra_shared_runners_minutes_limit": None,
             "name": "FrhUbyTGMoXQUTeaMgFW",
             "can_create_group": True,
-            "avatar_url": "https://www.gravatar.com/avatar/a0290f87758efba7e7be1ed96b2e5ac1?s=80&d=identicon",
+            "using_license_seat": False,
             "theme_id": 1
         }
-        actual = self.users.generate_user_group_saml_post_data(mock_user)
-
+        actual = self.users.generate_user_group_saml_post_data(
+            from_dict(data_class=UserPayload, data=mock_user)).to_dict()
+        print(actual)
         self.assertDictEqual(expected, actual)
 
     @patch('congregate.helpers.conf.Config.group_sso_provider_pattern',
