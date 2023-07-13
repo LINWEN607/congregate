@@ -18,9 +18,9 @@ In an air-gapped environment, specifically where the source and destination inst
   - Congregate relies on MongoDB to store data during the export and import as well as track any export and import job statuses. Redis is used to act as the message broker for the export and import job requests
 - Set an environment variable called `$CONGREGATE_DATA` to point to a location where you want to store any data from the container
 - Create a `cache` directory in the same location where the docker-compose file will be run. This will be used for the redis cache
-- Start up the docker-compose file
 - In `$CONGREGATE_DATA`, edit or create the `congregate.conf` file to match the configurations below. Update any paths or URLs accordingly
 - In `$CONGREGATE_DATA`, create a directory called `logs`
+- Start up the docker-compose file
 - Run the following commands in the `congregate` container
 
 ```bash
@@ -75,7 +75,7 @@ ssl_verify = False
 
 By default, Congregate will poll the source and destination to check the status of an ongoing export/import.
 Larger GitLab projects may take longer than an hour to finish exporting or importing.
-This timeout is configurable. To extend the timeout, add the following setting to the `[APP]` section of _/opt/congregate/data/congregate.conf_:
+This timeout is configurable. To extend the timeout, add the following setting to the `[SOURCE]` section of _/opt/congregate/data/congregate.conf_ (for both low side and high side nodes):
 
 ```bash
 export_import_timeout = <number-of-seconds>

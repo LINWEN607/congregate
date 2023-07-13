@@ -15,6 +15,8 @@ curl --request POST \
 }'
 ```
 
+The project access token will need **owner** privileges and **API** scope enabled.
+
 This will create a job on the congregate node to trigger an export. For the end user, this is all they have to do. Admins will need to wire up where the data is exported in Congregate to whatever mechanism is being used to move data up to the destination network.
 
 ## Destination data import
