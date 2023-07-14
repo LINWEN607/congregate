@@ -20,8 +20,14 @@ In an air-gapped environment, specifically where the source and destination inst
 - Create a `cache` directory in the same location where the docker-compose file will be run. This will be used for the redis cache
 - In `$CONGREGATE_DATA`, edit or create the `congregate.conf` file to match the configurations below. Update any paths or URLs accordingly
 - In `$CONGREGATE_DATA`, create a directory called `logs`
-- Start up the docker-compose file
-- Run the following commands in the `congregate` container
+- Start up the docker-compose file in the background and open a shell in the congregate container:
+
+```bash
+docker-compose up -d
+docker exec -it congregate /bin/bash
+```
+
+- Run the following commands in the `congregate` container:
 
 ```bash
 congregate init
