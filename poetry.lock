@@ -459,7 +459,7 @@ dev = ["twine", "markdown", "flake8", "wheel"]
 
 [[package]]
 name = "gitlab-ps-utils"
-version = "0.8.0"
+version = "0.9.0"
 description = "Shared python utilities used by GitLab Professional Services tooling"
 category = "main"
 optional = false
@@ -1493,7 +1493,7 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8.12"
-content-hash = "249c01e8d340f14afd356c0b27cbb43fcc5cebad85743d4ac1864901a3df3618"
+content-hash = "9915e4f297ee516acf30022ee9b1a10fdb22b75f09ecf265885b759484740fd3"
 
 [metadata.files]
 amqp = []
