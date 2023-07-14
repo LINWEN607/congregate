@@ -298,6 +298,8 @@ check ldap compose yaml:
         - congregate/migration/migrate.py
         - congregate/tests/migration/gitlab/test_*_setup.py
         - congregate/cli/stage_*.py
+        - pyproject.toml
+        - poetry.lock
     - if: "$CI_PIPELINE_SOURCE == 'schedule' && $E2E_NIGHTLY"
   timeout: 5 minutes
 
