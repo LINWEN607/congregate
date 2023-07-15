@@ -87,9 +87,9 @@ class UsersClient(BaseClass):
     def get_email_address(self, single_user, github_browser, mongo):
         if email := single_user.get("email", None):
             return email
-        elif email := mongo.find_user_email(single_user["login"]):
+        if email := mongo.find_user_email(single_user["login"]):
             return email
-        elif github_browser:
+        if github_browser:
             self.log.warning(
                 f"User email not found. Attempting to scrape for username {single_user['login']}")
             return github_browser.scrape_user_email(single_user["login"])

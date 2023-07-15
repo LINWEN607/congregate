@@ -30,7 +30,8 @@ class ImportExportClient(BaseGitLabClient):
     COOL_OFF_MINUTES = 1.1
 
     def __init__(self, src_host=None, src_token=None, dest_host=None, dest_token=None):
-        super().__init__(src_host=src_host, src_token=src_token, dest_host=dest_host, dest_token=dest_token)
+        super().__init__(src_host=src_host, src_token=src_token,
+                         dest_host=dest_host, dest_token=dest_token)
         self.aws = self.get_AwsClient()
         self.projects = ProjectsClient()
         self.groups = GroupsClient()
@@ -80,7 +81,7 @@ class ImportExportClient(BaseGitLabClient):
                 status = self.get_export_status(src_id, is_project)
                 if status.status_code == 200:
                     status_json = safe_json_response(status)
-                    state = status_json.get("export_status", None)
+                    state = status_json.get("export_status")
                     if state in ["finished", "regeneration_in_progress"]:
                         self.log.info(
                             f"{export_type} {name} has finished exporting, with response:\n{json_pretty(status_json)}")
@@ -188,7 +189,7 @@ class ImportExportClient(BaseGitLabClient):
         Gets the export response for both project and group exports
         """
         response = None
-        
+
         if is_project:
             response = self.projects_api.export_project(
                 self.src_host, self.src_token, source_id, data=data, headers=headers)
@@ -241,7 +242,8 @@ class ImportExportClient(BaseGitLabClient):
         else:
             self.log.info(
                 f"{dry}{name} is NOT a USER project. Attempting to import into a group namespace")
-            dest_namespace = get_project_dest_namespace(project, group_path=group_path)
+            dest_namespace = get_project_dest_namespace(
+                project, group_path=group_path)
 
         if not dry_run:
             import_response = self.attempt_import(

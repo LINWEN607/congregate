@@ -161,10 +161,6 @@ def generate_config():
                 config.set("SOURCE", "src_parent_group_path", "")
                 print(
                     f"WARNING: Source group not found. Please enter 'src_parent_group_id' and 'src_parent_group_path' manually (in {config_path})")
-        export_import_timeout = input(
-            "Timeout (in seconds) for group or project export or import (Default: '3600'): ")
-        config.set("SOURCE", "export_import_timeout",
-                   export_import_timeout or "3600")
 
         # GitLab source/destination instance registry configuration
         migrating_registries = input(
@@ -278,6 +274,10 @@ def generate_config():
         "Check time (in seconds) for group or project export or import status (Default: '10'): ")
     config.set("APP", "export_import_status_check_time",
                export_import_status_check_time or "10")
+    export_import_timeout = input(
+        "Timeout (in seconds) for group or project export or import (Default: '3600'): ")
+    config.set("SOURCE", "export_import_timeout",
+               export_import_timeout or "3600")
     wave_spreadsheet = input(
         "(Optional) Spreadsheet containing wave information (yes or no): ")
     if wave_spreadsheet.lower() in ["yes", "y"]:
@@ -443,4 +443,4 @@ def update_config(data):
     if write_new_config:
         write_to_file(config_obj)
     else:
-        return("No pending config changes")
+        return ("No pending config changes")

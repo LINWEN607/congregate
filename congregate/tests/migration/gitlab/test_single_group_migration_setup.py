@@ -46,7 +46,6 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
             "yes",  # source parent group
             "2",   # source parent group ID
             # "source_group_full_path",   # source parent group path
-            "300",  # export_import_timeout
             "yes",  # migrating registries
             # source_token
             os.getenv("GITLAB_SRC_REG_URL"),  # source registry url
@@ -62,6 +61,7 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
             "yes",  # reset_pwd
             "no",  # force_rand_pwd
             "5",  # export_import_status_check_time
+            "300",  # export_import_timeout
             "no",  # wave spreadsheet
             "no",  # slack_url
             "yes",  # external mongo host

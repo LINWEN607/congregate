@@ -81,7 +81,7 @@ ssl_verify = False
 
 By default, Congregate will poll the source and destination to check the status of an ongoing export/import.
 Larger GitLab projects may take longer than an hour to finish exporting or importing.
-This timeout is configurable. To extend the timeout, add the following setting to the `[SOURCE]` section of _/opt/congregate/data/congregate.conf_ (for both low side and high side nodes):
+This timeout is configurable. To extend the timeout, add the following setting to the `[APP]` section of _/opt/congregate/data/congregate.conf_ (for both low side and high side nodes):
 
 ```bash
 export_import_timeout = <number-of-seconds>
