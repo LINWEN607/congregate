@@ -47,6 +47,7 @@ class ConfigTests(unittest.TestCase):
             "yes",  # password reset email
             "no",    # randomized password
             "30",   # import wait time
+            "3600",  # export_import_timeout
             "no",   # Wave spreadsheet
             "no",   # slack
             "no"    # mongo
@@ -67,11 +68,11 @@ class ConfigTests(unittest.TestCase):
                                 config.generate_config()
 
         # load the file that was just written
-        with open("{0}congregate.conf".format(test_dir_prefix), "r") as f:
+        with open(f"{test_dir_prefix}congregate.conf", "r") as f:
             generated = f.readlines()
 
         # load the reference file
-        with open("{0}test_full_ext_src_skeleton_bitbucket_server.conf".format(test_dir_prefix), "r") as f:
+        with open(f"{test_dir_prefix}test_full_ext_src_skeleton_bitbucket_server.conf", "r") as f:
             reference = f.readlines()
 
         self.assertListEqual(generated, reference)
@@ -107,6 +108,7 @@ class ConfigTests(unittest.TestCase):
             "yes",  # password reset email
             "no",    # randomized password
             "30",   # import wait time
+            "3600",  # export_import_timeout
             "no",   # Wave spreadsheet
             "no",   # slack
             "no"    # mongo
@@ -127,11 +129,11 @@ class ConfigTests(unittest.TestCase):
                                 config.generate_config()
 
         # load the file that was just written
-        with open("{0}congregate.conf".format(test_dir_prefix), "r") as f:
+        with open(f"{test_dir_prefix}congregate.conf", "r") as f:
             generated = f.readlines()
 
         # load the reference file
-        with open("{0}test_full_ext_src_skeleton_github_server.conf".format(test_dir_prefix), "r") as f:
+        with open(f"{test_dir_prefix}test_full_ext_src_skeleton_github_server.conf", "r") as f:
             reference = f.readlines()
 
         self.assertListEqual(generated, reference)
@@ -213,11 +215,11 @@ class ConfigTests(unittest.TestCase):
                                         config.generate_config()
 
         # load the file that was just written
-        with open("{0}congregate.conf".format(test_dir_prefix), "r") as f:
+        with open(f"{test_dir_prefix}congregate.conf", "r") as f:
             generated = f.readlines()
 
         # load the reference file
-        with open("{0}test_not_ext_src_src_parent_group_path_mirror_name_filesystem_skeleton.conf".format(test_dir_prefix), "r") as f:
+        with open(f"{test_dir_prefix}test_not_ext_src_src_parent_group_path_mirror_name_filesystem_skeleton.conf", "r") as f:
             reference = f.readlines()
 
         self.assertListEqual(generated, reference)
@@ -307,11 +309,11 @@ class ConfigTests(unittest.TestCase):
                                                 config.generate_config()
 
         # load the file that was just written
-        with open("{0}congregate.conf".format(test_dir_prefix), "r") as f:
+        with open(f"{test_dir_prefix}congregate.conf", "r") as f:
             generated = f.readlines()
 
         # load the reference file
-        with open("{0}test_not_ext_src_parent_group_path_no_mirror_name_aws_default.conf".format(test_dir_prefix), "r") as f:
+        with open(f"{test_dir_prefix}test_not_ext_src_parent_group_path_no_mirror_name_aws_default.conf", "r") as f:
             reference = f.readlines()
 
         self.assertListEqual(generated, reference)
@@ -402,11 +404,11 @@ class ConfigTests(unittest.TestCase):
                                                 config.generate_config()
 
         # load the file that was just written
-        with open("{0}congregate.conf".format(test_dir_prefix), "r") as f:
+        with open(f"{test_dir_prefix}congregate.conf", "r") as f:
             generated = f.readlines()
 
         # load the reference file
-        with open("{0}test_not_ext_src_parent_group_path_no_mirror_name_aws_hashed_sso.conf".format(test_dir_prefix), "r") as f:
+        with open(f"{test_dir_prefix}test_not_ext_src_parent_group_path_no_mirror_name_aws_hashed_sso.conf", "r") as f:
             reference = f.readlines()
 
         self.assertListEqual(generated, reference)
@@ -494,11 +496,11 @@ class ConfigTests(unittest.TestCase):
                                         config.generate_config()
 
         # load the file that was just written
-        with open("{0}congregate.conf".format(test_dir_prefix), "r") as f:
+        with open(f"{test_dir_prefix}congregate.conf", "r") as f:
             generated = f.readlines()
 
         # load the reference file
-        with open("{0}test_not_ext_src_parent_group_path_no_mirror_name_aws.conf".format(test_dir_prefix), "r") as f:
+        with open(f"{test_dir_prefix}test_not_ext_src_parent_group_path_no_mirror_name_aws.conf", "r") as f:
             reference = f.readlines()
 
         self.assertListEqual(generated, reference)
@@ -579,11 +581,11 @@ class ConfigTests(unittest.TestCase):
                                         config.generate_config()
 
         # load the file that was just written
-        with open("{0}congregate.conf".format(test_dir_prefix), "r") as f:
+        with open(f"{test_dir_prefix}congregate.conf", "r") as f:
             generated = f.readlines()
 
         # load the reference file
-        with open("{0}test_not_ext_src_no_parent_group_path_mirror_name_filesystem_skeleton.conf".format(test_dir_prefix), "r") as f:
+        with open(f"{test_dir_prefix}test_not_ext_src_no_parent_group_path_mirror_name_filesystem_skeleton.conf", "r") as f:
             reference = f.readlines()
 
         self.assertListEqual(generated, reference)
@@ -622,11 +624,11 @@ class ConfigTests(unittest.TestCase):
             config.update_config(data)
 
         # load the file that was just written
-        with open("{0}congregate.conf".format(test_dir_prefix), "r") as f:
+        with open(f"{test_dir_prefix}congregate.conf", "r") as f:
             generated = f.readlines()
 
         # load the reference file
-        with open("{0}test_not_ext_src_src_parent_group_path_mirror_name_filesystem_skeleton.conf".format(test_dir_prefix), "r") as f:
+        with open(f"{test_dir_prefix}test_not_ext_src_src_parent_group_path_mirror_name_filesystem_skeleton.conf", "r") as f:
             reference = f.readlines()
 
         self.assertListEqual(generated, reference)
@@ -665,11 +667,11 @@ class ConfigTests(unittest.TestCase):
             update = config.update_config(data)
 
         # load the file that was just written
-        with open("{0}congregate.conf".format(test_dir_prefix), "r") as f:
+        with open(f"{test_dir_prefix}congregate.conf", "r") as f:
             generated = f.readlines()
 
         # load the reference file
-        with open("{0}test_not_ext_src_src_parent_group_path_mirror_name_filesystem_skeleton.conf".format(test_dir_prefix), "r") as f:
+        with open(f"{test_dir_prefix}test_not_ext_src_src_parent_group_path_mirror_name_filesystem_skeleton.conf", "r") as f:
             reference = f.readlines()
 
         self.assertListEqual(generated, reference)
@@ -677,7 +679,7 @@ class ConfigTests(unittest.TestCase):
 
 
 def mock_file(conf):
-    with open("{0}congregate.conf".format(test_dir_prefix), "w") as f:
+    with open(f"{test_dir_prefix}congregate.conf", "w") as f:
         conf.write(f)
 
 

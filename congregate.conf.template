@@ -195,6 +195,7 @@ export_import_status_check_time = 10
 
 ### The maximum amount of time (in seconds) to wait for exports or imports. It differs for local filesystem and AWS
 ### Consider "3600" for local filesystem and "1200" for AWS
+### The export part is only applicable to GL->GL migrations
 export_import_timeout = 3600
 
 ### Presents the Slack Incoming Webhooks URL for sending alerts (logs) to a dedicated GitLab internal private channel.

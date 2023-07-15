@@ -276,7 +276,7 @@ def generate_config():
                export_import_status_check_time or "10")
     export_import_timeout = input(
         "Timeout (in seconds) for group or project export or import (Default: '3600'): ")
-    config.set("SOURCE", "export_import_timeout",
+    config.set("APP", "export_import_timeout",
                export_import_timeout or "3600")
     wave_spreadsheet = input(
         "(Optional) Spreadsheet containing wave information (yes or no): ")
