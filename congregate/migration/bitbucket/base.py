@@ -47,18 +47,18 @@ class BitBucketServer(BaseClass):
                 "username": user["slug"],
                 "name": user["displayName"],
                 "email": user["emailAddress"].lower(),
-                "state": "active" if user["active"] else "deactivated"
-                # "is_admin": self.is_admin(user["slug"])
+                "state": "active" if user["active"] else "deactivated",
+                "is_admin": self.is_admin(user["slug"])
             }
         self.log.warning(
             f"User {user['slug']} is either not needed or missing the email address. Skipping")
         return None
 
-    # def is_admin(self, user_slug):
-    #     for user in self.users_api.get_user_permissions(user_slug):
-    #         if user["user"]["slug"] == user_slug and user["permission"] in constants.BBS_ADMINS:
-    #             return True
-    #     return False
+    def is_admin(self, user_slug):
+        for user in self.users_api.get_user_permissions(user_slug):
+            if user["user"]["slug"] == user_slug and user["permission"] in constants.BBS_ADMINS:
+                return True
+        return False
 
     def is_user_needed(self, user):
         return user.get("slug", "").lower() not in self.config.users_to_ignore
