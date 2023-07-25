@@ -5,6 +5,7 @@ Congregate is an internal tool for GitLab Professional Services to handle migrat
 * GitLab self-managed   :arrow_right: gitlab.com
 * GitLab self-managed   :arrow_right: GitLab self-managed
 * gitlab.com            :arrow_right: gitlab.com
+* gitlab.com            :arrow_right: GitLab self-managed
 * Bitbucket Server      :arrow_right: gitlab.com
 * Bitbucket Server      :arrow_right: GitLab self-managed
 * GitHub Enterprise     :arrow_right: gitlab.com

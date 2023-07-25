@@ -26,6 +26,7 @@ nav:
       - Bitbucket: bitbucket-migration-features-matrix.md
       - GitHub: github-migration-features-matrix.md
       - Migration Workflows: workflow.md
+      - Migration Methods: migration-methods.md
   - Development:
       - Set up development environment: setup-dev-env.md
       - GitHub Development Setup: github-development-setup.md
