@@ -26,6 +26,7 @@ from congregate.migration.gitlab.keys import KeysClient
 from congregate.migration.gitlab.projects import ProjectsClient, ProjectsApi
 from congregate.migration.gitlab.groups import GroupsClient, GroupsApi
 from congregate.migration.meta.base_ext_ci import BaseExternalCiClient
+from congregate.migration.bitbucket.keys import KeysClient as bbKeysClient
 
 
 class MigrateClient(BaseClass):
@@ -56,6 +57,7 @@ class MigrateClient(BaseClass):
         self.projects = ProjectsClient()
         self.projects_api = ProjectsApi()
         self.keys = KeysClient()
+        self.bbkeys = bbKeysClient()
         super().__init__()
         self.dry_run = dry_run
         self.processes = processes
@@ -207,6 +209,23 @@ class MigrateClient(BaseClass):
                         self.keys.migrate_user_ssh_keys(old_user, new_user)
                         # Migrate GPG keys
                         self.keys.migrate_user_gpg_keys(old_user, new_user)
+                else:
+                    self.log.warning(
+                        f"Could not create user. User may exist with a different primary email. Check previous logs warnings. Userdata follows:\n{user_data}")
+                    # Return the "original" new_user setting
+                    return {
+                        "email": email,
+                        "id": None
+                    }
+            if not self.dry_run and self.config.source_type == "Bitbucket Server":
+                if new_user:
+                    found_user = new_user if new_user.get(
+                        "id") is not None else mig_utils.find_user_by_email_comparison_without_id(email)
+                    new_user["id"] = found_user.get(
+                        "id") if found_user else None
+                    if found_user:
+                        # Migrate SSH keys
+                        self.bbkeys.migrate_bb_user_ssh_keys(old_user, new_user)
                 else:
                     self.log.warning(
                         f"Could not create user. User may exist with a different primary email. Check previous logs warnings. Userdata follows:\n{user_data}")

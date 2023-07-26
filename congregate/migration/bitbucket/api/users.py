@@ -29,3 +29,13 @@ class UsersApi():
         Core REST API: https://docs.atlassian.com/bitbucket-server/rest/7.13.0/bitbucket-rest.html#idp69
         """
         return self.api.list_all(f"admin/permissions/users?filter={slug}")
+    
+    def get_user_ssh_keys(self, userID):
+        """
+        Retrieve a page of ssh keys
+        :param userID: (str) the username of the user to retrieve the keys for. If no username is specified, the ssh keys will be retrieved for the current authenticated user.
+
+        Core REST API: https://docs.atlassian.com/bitbucket-server/rest/7.13.0/bitbucket-ssh-rest.html#idp24
+        """
+        return self.api.generate_get_request(f"keys?user={userID}")
+
