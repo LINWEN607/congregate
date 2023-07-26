@@ -39,6 +39,8 @@ class BitBucketServerApi(BaseClass):
         if url is None:
             url = self.generate_bb_v1_request_url(
                 api, branch_permissions=branch_permissions)
+        else:
+            url = {self.config.source_host}/{url}/{api}
 
         headers = self.generate_v4_request_headers()
 
