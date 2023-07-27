@@ -2,7 +2,6 @@ from gitlab_ps_utils.misc_utils import strip_netloc, is_error_message_present
 from gitlab_ps_utils.dict_utils import pop_multiple_keys
 
 from requests.exceptions import RequestException
-import json
 
 from congregate.migration.bitbucket.api.users import UsersApi
 from congregate.migration.bitbucket.base import BitBucketServer
@@ -29,8 +28,7 @@ class KeysClient(BitBucketServer):
                         f"Failed to fetch user {email} SSH key ({k})")
                     return False
                 # Extract relevant data
-                data = json.loads(k)
-                values_list = data["values"]
+                values_list = k["values"]
                 extracted_data = {"text": values_list[0]["text"], "label": values_list[0]["label"]}
 
                 self.glusers_api.create_user_ssh_key(
