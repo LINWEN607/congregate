@@ -33,6 +33,7 @@ class MergeRequestApprovalsClient(DbOrHttpMixin, BaseGitLabClient):
                 return self.migrate_project_approvals(new_id, old_id, name)
             self.log.warning(
                 f"Merge requests are disabled for project '{name}'")
+            return None
         except Exception as e:
             self.log.error(
                 f"Failed to migrate project '{name}' MR approvals:\n{e}")
@@ -50,10 +51,10 @@ class MergeRequestApprovalsClient(DbOrHttpMixin, BaseGitLabClient):
                 return False
             self.log.info(
                 f"Migrating project '{name}' MR approval configuration")
-            conf = from_dict(
-                data_class=ProjectLevelApproverPayload(), data=conf)
+            conf_payload = from_dict(
+                data_class=ProjectLevelApproverPayload, data=conf)
             self.projects_api.change_project_level_mr_approval_configuration(
-                new_id, self.dest_host, self.dest_token, conf)
+                new_id, self.dest_host, self.dest_token, conf_payload.to_dict())
 
             # migrate approval rules
             resp = self.get_data(
@@ -91,7 +92,7 @@ class MergeRequestApprovalsClient(DbOrHttpMixin, BaseGitLabClient):
                 )
             return True
         except TypeError as te:
-            self.log.error(f"Project '{name}' MR approvals:\n{resp} - {te}")
+            self.log.error(f"Project '{name}' MR approvals:\n{te}")
             return False
         except RequestException as re:
             self.log.error(
