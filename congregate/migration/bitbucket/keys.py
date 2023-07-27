@@ -10,7 +10,7 @@ from congregate.helpers.mdbc import MongoConnector
 from congregate.migration.gitlab.api.users import UsersApi as GLUsersAPI
 
 
-class Client(BitBucketServer):
+class KeysClient(BitBucketServer):
     def __init__(self):
         self.users_api = UsersApi()
         self.glusers_api = GLUsersAPI()

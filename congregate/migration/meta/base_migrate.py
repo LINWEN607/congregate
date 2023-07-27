@@ -217,7 +217,7 @@ class MigrateClient(BaseClass):
                         "email": email,
                         "id": None
                     }
-            if not self.dry_run and self.config.source_type == "Bitbucket Server":
+            if not self.dry_run and self.config.source_type == "bitbucket server":
                 if new_user:
                     found_user = new_user if new_user.get(
                         "id") is not None else mig_utils.find_user_by_email_comparison_without_id(email)
