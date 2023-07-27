@@ -24,7 +24,7 @@ NOTE: Features not listed in the matrix should be presumed to be not yet support
 |                | Members/permission mapping |             | :x:                  | :white_check_mark:   |
 | **User**       |
 |                | Account                    |             | :x:                  | :white_check_mark:   |
-|                | SSH Keys                   |             | :x:                  | :heavy_minus_sign:   |
+|                | SSH Keys                   |             | :x:                  | :white_check_mark:   |
 
 *See [limitations](https://docs.gitlab.com/ee/user/project/import/bitbucket_server.html#items-that-are-not-imported) of the BB server importer
 
