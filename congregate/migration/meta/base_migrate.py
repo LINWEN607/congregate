@@ -199,41 +199,9 @@ class MigrateClient(BaseClass):
                     new_user = self.users.handle_user_creation_status(
                         response, user_data)
             if not self.dry_run and self.config.source_type == "gitlab":
-                if new_user:
-                    found_user = new_user if new_user.get(
-                        "id") is not None else mig_utils.find_user_by_email_comparison_without_id(email)
-                    new_user["id"] = found_user.get(
-                        "id") if found_user else None
-                    if found_user:
-                        # Migrate SSH keys
-                        self.keys.migrate_user_ssh_keys(old_user, new_user)
-                        # Migrate GPG keys
-                        self.keys.migrate_user_gpg_keys(old_user, new_user)
-                else:
-                    self.log.warning(
-                        f"Could not create user. User may exist with a different primary email. Check previous logs warnings. Userdata follows:\n{user_data}")
-                    # Return the "original" new_user setting
-                    return {
-                        "email": email,
-                        "id": None
-                    }
+                self.gl_user_creation(self, new_user, old_user, email, user)
             if not self.dry_run and self.config.source_type == "bitbucket server":
-                if new_user:
-                    found_user = new_user if new_user.get(
-                        "id") is not None else mig_utils.find_user_by_email_comparison_without_id(email)
-                    new_user["id"] = found_user.get(
-                        "id") if found_user else None
-                    if found_user:
-                        # Migrate SSH keys
-                        self.bbkeys.migrate_bb_user_ssh_keys(old_user, new_user)
-                else:
-                    self.log.warning(
-                        f"Could not create user. User may exist with a different primary email. Check previous logs warnings. Userdata follows:\n{user_data}")
-                    # Return the "original" new_user setting
-                    return {
-                        "email": email,
-                        "id": None
-                    }
+                self.bb_user_creation(self, new_user, old_user, email, user)
         except RequestException as e:
             self.log.error(
                 f"Failed to create user {user_data}, with error:\n{e}")
@@ -241,6 +209,47 @@ class MigrateClient(BaseClass):
             self.log.error(f"Could not get response text/JSON. Error was {e}")
             self.log.error(print_exc(e))
         return new_user
+    
+    def gl_user_creation(self, new_user, old_user, email, user):
+        if new_user:
+            found_user = new_user if new_user.get(
+                "id") is not None else mig_utils.find_user_by_email_comparison_without_id(email)
+            new_user["id"] = found_user.get(
+                "id") if found_user else None
+            if found_user:
+                # Migrate SSH keys
+                self.keys.migrate_user_ssh_keys(old_user, new_user)
+                # Migrate GPG keys
+                self.keys.migrate_user_gpg_keys(old_user, new_user)
+        else:
+            user_data = self.users.generate_user_data(user)
+            self.log.warning(
+                f"Could not create user. User may exist with a different primary email. Check previous logs warnings. Userdata follows:\n{user_data}")
+            # Return the "original" new_user setting
+            return {
+                "email": email,
+                "id": None
+            }
+        
+    def bb_user_creation(self, new_user, old_user, email, user):
+        if new_user:
+            found_user = new_user if new_user.get(
+                "id") is not None else mig_utils.find_user_by_email_comparison_without_id(email)
+            new_user["id"] = found_user.get(
+                "id") if found_user else None
+            if found_user:
+                # Migrate SSH keys
+                self.bbkeys.migrate_bb_user_ssh_keys(old_user, new_user)
+        else:
+            user_data = self.users.generate_user_data(user)
+            self.log.warning(
+                f"Could not create user. User may exist with a different primary email. Check previous logs warnings. Userdata follows:\n{user_data}")
+            # Return the "original" new_user setting
+            return {
+                "email": email,
+                "id": None
+            }
+
 
     def disable_shared_ci(self, path, pid):
         # Disable Auto DevOps
