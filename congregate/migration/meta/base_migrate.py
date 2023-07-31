@@ -201,7 +201,7 @@ class MigrateClient(BaseClass):
             if not self.dry_run and self.config.source_type == "gitlab":
                 self.gl_user_creation(new_user, old_user, email, user)
             if not self.dry_run and self.config.source_type == "bitbucket server":
-                self.bb_user_creation(new_user, old_user, email, user)
+                self.bb_user_creation(new_user, username, email, user)
         except RequestException as e:
             self.log.error(
                 f"Failed to create user {user_data}, with error:\n{e}")
