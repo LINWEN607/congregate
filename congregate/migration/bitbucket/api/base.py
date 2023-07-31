@@ -9,9 +9,11 @@ from congregate.helpers.base_class import BaseClass
 
 class BitBucketServerApi(BaseClass):
 
-    def generate_bb_v1_request_url(self, api, branch_permissions=False):
+    def generate_bb_v1_request_url(self, api, branch_permissions=False, ssh_permissions=False):
         if branch_permissions:
             return f"{self.config.source_host}/rest/branch-permissions/2.0/{api}"
+        if ssh_permissions:
+            return f"{self.config.source_host}/rest/ssh/1.0/{api}"
         return f"{self.config.source_host}/rest/api/1.0/{api}"
 
     def generate_v4_request_headers(self, branch_permissions=False):
@@ -24,7 +26,7 @@ class BitBucketServerApi(BaseClass):
         }
 
     @stable_retry
-    def generate_get_request(self, api, url=None, params=None, branch_permissions=False):
+    def generate_get_request(self, api, url=None, params=None, branch_permissions=False, ssh_permissions=False):
         """
         Generates GET request to BitBucket API.
         You will need to provide the access token, and specific api url.
@@ -38,9 +40,8 @@ class BitBucketServerApi(BaseClass):
 
         if url is None:
             url = self.generate_bb_v1_request_url(
-                api, branch_permissions=branch_permissions)
-        else:
-            url = f"{self.config.source_host}/{url}/{api}"
+                api, branch_permissions=branch_permissions, ssh_permissions=ssh_permissions)
+
 
         headers = self.generate_v4_request_headers()
 

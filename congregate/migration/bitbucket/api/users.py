@@ -37,5 +37,6 @@ class UsersApi():
 
         Core REST API: https://docs.atlassian.com/bitbucket-server/rest/7.13.0/bitbucket-ssh-rest.html#idp24
         """
-        return self.api.generate_get_request(f"keys?user={userID}", "rest/ssh/1.0")
+        return self.api.generate_get_request(f"keys?user={userID}", ssh_permissions=True)
+
 
