@@ -26,8 +26,13 @@ class KeysClient(BitBucketServer):
                     self.log.error(
                         f"Failed to fetch user {old_user} SSH key ({k})")
                     return False
+                # Sometimes the label value doesn't exist
+                try:
+                    title_value = k["label"]
+                except KeyError:
+                    title_value = f"{old_user} migrated key"
                 # Extract relevant data
-                extracted_data = {"key": k["text"], "title": k["label"]}
+                extracted_data = {"key": k["text"], "title": title_value}
 
                 self.glusers_api.create_user_ssh_key(
                     self.config.destination_host, self.config.destination_token, new_user.get("id", None), extracted_data)

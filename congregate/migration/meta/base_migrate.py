@@ -206,7 +206,7 @@ class MigrateClient(BaseClass):
             self.log.error(
                 f"Failed to create user {user_data}, with error:\n{e}")
         except Exception as e:
-            self.log.error(f"Could not get response text/JSON. Error was {e}")
+            self.log.error(f"Could not get response text/JSON for {user}. Error was {e}")
             self.log.error(print_exc(e))
         return new_user
     
