@@ -424,7 +424,7 @@ def is_gl_version_older_than(set_version, host, token, log):
     return False
 
 
-def get_stage_wave_paths(project):
+def get_stage_wave_paths(project, group_path=None):
     """
     Construct stage_wave destination namespace and path_with_namespace
     """
@@ -434,8 +434,9 @@ def get_stage_wave_paths(project):
     if target_namespace := get_target_namespace(project):
         tn = target_namespace
     else:
+        # Group full path, e.g. a/b/c of a/b/c/d
         tn = get_dst_path_with_namespace(
-            project).rsplit("/", 1)[0]
+            project, group_path=group_path).rsplit("/", 1)[0]
     return dstn_pwn, tn
 
 

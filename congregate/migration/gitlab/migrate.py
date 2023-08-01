@@ -482,13 +482,16 @@ class GitLabMigrateClient(MigrateClient):
             result[filename] = ImportExportClient(src_host=src_host, src_token=src_token).export_project(
                 project, dry_run=self.dry_run)
             if self.config.airgap:
-                exported_features = self.export_single_project_features(project, src_host, src_token)
+                exported_features = self.export_single_project_features(
+                    project, src_host, src_token)
                 result[filename] = {
                     'exported': True,
                     'exported_features': exported_features
                 }
-                final_path = create_archive(pid, f"{self.config.filesystem_path}/downloads/{filename}")
-                self.log.info(f"Saved project [{name}:{pid}] archive to {final_path}")
+                final_path = create_archive(
+                    pid, f"{self.config.filesystem_path}/downloads/{filename}")
+                self.log.info(
+                    f"Saved project [{name}:{pid}] archive to {final_path}")
                 delete_project_features(pid)
         except (IOError, RequestException) as oe:
             self.log.error(
@@ -502,55 +505,63 @@ class GitLabMigrateClient(MigrateClient):
         src_id = project["id"]
         archived = project["archived"]
         path = project["path_with_namespace"]
-        dst_path_with_namespace = mig_utils.get_dst_path_with_namespace(
+        dst_host = dst_host or self.config.destination_host
+        dst_token = dst_token or self.config.destination_token
+        dst_pwn, tn = mig_utils.get_stage_wave_paths(
             project, group_path=group_path)
         result = {
-            dst_path_with_namespace: False
+            dst_pwn: False
         }
         import_id = None
         try:
-            if isinstance(project, str):
-                project = json_loads(project)
-            dst_pid = self.projects.find_project_by_path(
-                self.config.destination_host, self.config.destination_token, dst_path_with_namespace)
-            # Certain project features cannot be migrated when archived
-            if archived and not self.dry_run:
-                self.log.info(
-                    "Unarchiving source project {0} (ID: {1})".format(path, src_id))
-                self.projects_api.unarchive_project(
-                    self.config.source_host, self.config.source_token, src_id)
-            if dst_pid:
-                import_status = misc_utils.safe_json_response(self.projects_api.get_project_import_status(
-                    self.config.destination_host, self.config.destination_token, dst_pid))
-                self.log.info("Project {0} (ID: {1}) found on destination, with import status: {2}".format(
-                    dst_path_with_namespace, dst_pid, import_status))
-                import_id = dst_pid
-                if self.dry_run:
-                    result[dst_path_with_namespace] = dst_pid
+            if self.groups.find_group_id_by_path(dst_host, dst_token, tn):
+                if isinstance(project, str):
+                    project = json_loads(project)
+                dst_pid = self.projects.find_project_by_path(
+                    dst_host, dst_token, dst_pwn)
+
+                # Certain project features cannot be migrated when archived
+                if archived and not self.dry_run:
+                    self.log.info(
+                        f"Unarchiving source project '{path}' (ID: {src_id})")
+                    self.projects_api.unarchive_project(
+                        self.config.source_host, self.config.source_token, src_id)
+                if dst_pid:
+                    import_status = misc_utils.safe_json_response(self.projects_api.get_project_import_status(
+                        dst_host, dst_token, dst_pid))
+                    self.log.info(
+                        f"Project {dst_pwn} (ID: {dst_pid}) found on destination, with import status: {import_status}")
+                    import_id = dst_pid
+                    if self.dry_run:
+                        result[dst_pwn] = dst_pid
+                else:
+                    self.log.info(
+                        f"{misc_utils.get_dry_log(self.dry_run)}Project '{dst_pwn}' NOT found on destination, importing...")
+                    ie_client = ImportExportClient(
+                        dest_host=dst_host, dest_token=dst_token)
+                    import_id = ie_client.import_project(
+                        project, dry_run=self.dry_run, group_path=group_path or tn)
+                if import_id and not self.dry_run:
+                    # Disable Shared CI
+                    self.disable_shared_ci(dst_pwn, import_id)
+                    # Post import features
+                    self.log.info(
+                        f"Migrating additional source project '{path}' (ID: {src_id}) GitLab features")
+                    result[dst_pwn] = self.migrate_single_project_features(
+                        project, import_id, dest_host=dst_host, dest_token=dst_token)
             else:
-                self.log.info(
-                    f"{misc_utils.get_dry_log(self.dry_run)}Project {dst_path_with_namespace} NOT found on destination, importing...")
-                ie_client = ImportExportClient(dest_host=dst_host, dest_token=dst_token)
-                import_id = ie_client.import_project(
-                    project, dry_run=self.dry_run, group_path=group_path)
-            if import_id and not self.dry_run:
-                # Disable Shared CI
-                self.disable_shared_ci(dst_path_with_namespace, import_id)
-                # Post import features
-                self.log.info(
-                    "Migrating source project {0} (ID: {1}) info".format(path, src_id))
-                result[dst_path_with_namespace] = self.migrate_single_project_features(
-                    project, import_id, dest_host=dst_host, dest_token=dst_token)
+                self.log.warning(
+                    f"Skipping import. Target namespace {tn} does not exist for project '{path}'")
         except (RequestException, KeyError, OverflowError) as oe:
-            self.log.error("Failed to import project {0} (ID: {1}) with error:\n{2}".format(
-                path, src_id, oe))
+            self.log.error(
+                f"Failed to import project '{path}' (ID: {src_id}):\n{oe}")
         except Exception as e:
             self.log.error(e)
             self.log.error(print_exc())
         finally:
             if archived and not self.dry_run:
                 self.log.info(
-                    "Archiving back source project {0} (ID: {1})".format(path, src_id))
+                    f"Archiving back source project '{path}' (ID: {src_id})")
                 self.projects_api.archive_project(
                     self.config.source_host, self.config.source_token, src_id)
             if self.config.airgap:
@@ -583,7 +594,8 @@ class GitLabMigrateClient(MigrateClient):
         results["environments"] = EnvironmentsClient(dest_host=dest_host, dest_token=dest_token).migrate_project_environments(
             src_id, dst_id, path_with_namespace, jobs_enabled)
 
-        vars_client = VariablesClient(dest_host=dest_host, dest_token=dest_token)
+        vars_client = VariablesClient(
+            dest_host=dest_host, dest_token=dest_token)
         # CI/CD Variables
         results["cicd_variables"] = vars_client.migrate_cicd_variables(
             src_id, dst_id, path_with_namespace, "projects", jobs_enabled)
@@ -637,7 +649,7 @@ class GitLabMigrateClient(MigrateClient):
         """
         if not self.dry_run:
             self.log.info("exporting single project features")
-            
+
             path_with_namespace = project["path_with_namespace"]
             src_id = project["id"]
             jobs_enabled = project.get("jobs_enabled", False)
@@ -656,7 +668,8 @@ class GitLabMigrateClient(MigrateClient):
             results["environments"] = EnvironmentsClient(src_host=src_host, src_token=src_token).migrate_project_environments(
                 src_id, None, path_with_namespace, jobs_enabled)
 
-            vars_client = VariablesClient(src_host=src_host, src_token=src_token)
+            vars_client = VariablesClient(
+                src_host=src_host, src_token=src_token)
             # CI/CD Variables
             results["cicd_variables"] = vars_client.migrate_cicd_variables(
                 src_id, None, path_with_namespace, "projects", jobs_enabled)
@@ -673,17 +686,19 @@ class GitLabMigrateClient(MigrateClient):
 
             return results
 
+
 @shared_task
 def export_task(project: dict, host: str, token: str):
-    client = GitLabMigrateClient(dry_run=False, skip_users=True, 
-                           skip_groups=True, skip_project_import=True)
+    client = GitLabMigrateClient(dry_run=False, skip_users=True,
+                                 skip_groups=True, skip_project_import=True)
     return client.handle_exporting_projects(project, src_host=host, src_token=token)
+
 
 @shared_task
 def import_task(file_path: str, group: dict, host: str, token: str):
-    client = GitLabMigrateClient(dry_run=False, skip_users=True, 
-                           skip_groups=True, skip_project_import=True)
+    client = GitLabMigrateClient(dry_run=False, skip_users=True,
+                                 skip_groups=True, skip_project_import=True)
     project_features, export_filename = extract_archive(file_path)
 
-    return client.handle_importing_projects(project_features, dst_host=host, dst_token=token, 
-                                    group_path=group['full_path'], filename=export_filename)
+    return client.handle_importing_projects(project_features, dst_host=host, dst_token=token,
+                                            group_path=group['full_path'], filename=export_filename)

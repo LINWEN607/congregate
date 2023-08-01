@@ -92,8 +92,8 @@ class WaveStageCLI(BaseStageClass):
                     repo_url + '.git')) or self.project_paths.get(self.sanitize_project_path(repo_url, host=scm_source))):
                 obj = self.get_project_metadata(project)
                 if parent_path := column_mapping.get("Parent Path"):
-                    obj["target_namespace"] = row.get(
-                        parent_path, "").strip("/")
+                    obj["target_namespace"] = (
+                        row.get(parent_path, "") or "").strip("/")
                     obj["override_dstn_ns"] = bool(row.get("Override"))
                     if row.get("SWC AA ID"):
                         obj['swc_manager_name'] = row.get('SWC Manager Name')
@@ -104,7 +104,7 @@ class WaveStageCLI(BaseStageClass):
                             f"No 'SWC AA ID' (SWC_ID) provided for {obj['target_namespace']}")
                 else:
                     self.log.warning(
-                        "The parent path doesn't exist or the parent path name has been misspelled.")
+                        "The 'Parent Path' column is missing or misspelled.")
                 self.append_project_data(
                     obj, wave_data, row, dry_run=dry_run)
             elif group := self.find_group(repo_url):
@@ -149,8 +149,7 @@ class WaveStageCLI(BaseStageClass):
         for item in mapping:
             if mapping[item] in columns:
                 i += 1
-        if i == len(mapping):
-            return True
+        return i == len(mapping)
 
     def check_spreadsheet_lengths(self, mapping, columns):
         '''
@@ -227,20 +226,26 @@ class WaveStageCLI(BaseStageClass):
             self.append_member_to_members_list([], member, dry_run)
 
     def append_parent_group_full_path(self, full_path, wave_row, parent_path):
-        if parent_path := self.config.wave_spreadsheet_column_mapping.get(
-                "Parent Path"):
+        if wave_path := wave_row.get(parent_path):
             if wave_row.get("Override"):
-                return wave_row[parent_path]
+                return wave_path or full_path
             if len(set(full_path.split("/")) -
-                    set(parent_path.split("/"))) <= 1:
-                return f"{wave_row[parent_path]}/{full_path}"
-            return full_path
+                    set(wave_path.split("/"))) <= 1:
+                return f"{wave_path}/{full_path}".strip("/")
+        self.log.warning(
+            f"No 'Parent Path' value defined ({wave_path}). Defaulting 'full_path' to '{full_path}'")
+        return full_path
 
     def get_parent_id(self, wave_row, parent_path):
-        if req := safe_json_response(self.groups_api.get_group_by_full_path(wave_row[parent_path].lstrip("/"),
-                                                                            self.config.destination_host,
-                                                                            self.config.destination_token)):
-            return req.get("id")
+        if full_path := wave_row.get(parent_path, ""):
+            if req := safe_json_response(self.groups_api.get_group_by_full_path(
+                    full_path.lstrip("/"),
+                    self.config.destination_host,
+                    self.config.destination_token)):
+                return req.get("id")
+        self.log.warning(
+            f"No 'Parent Path' value defined ({full_path}). Defaulting `parent_id` to 'null'")
+        return None
 
     def handle_parent_group(self, wave_row, group):
         if parent_path := self.config.wave_spreadsheet_column_mapping.get(
@@ -248,6 +253,10 @@ class WaveStageCLI(BaseStageClass):
             group["full_path"] = self.append_parent_group_full_path(
                 group["full_path"], wave_row, parent_path)
             group["parent_id"] = self.get_parent_id(wave_row, parent_path)
+        else:
+            self.log.error(
+                f"No 'Parent Path' defined ({parent_path}). Exiting")
+            sys.exit(os.EX_CONFIG)
 
     def sanitize_project_path(self, http_url_to_repo, host=""):
         host = host if host else self.config.source_host
@@ -261,3 +270,4 @@ class WaveStageCLI(BaseStageClass):
                 return group
             self.log.warning(
                 f"Possible invalid group {repo_url} found. Review spreadsheet.")
+        return None
