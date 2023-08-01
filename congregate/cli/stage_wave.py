@@ -21,6 +21,11 @@ class WaveStageCLI(BaseStageClass):
         self.groups_api = GroupsApi()
         super().__init__()
 
+    def parent_path_fail(self, parent_path):
+        self.log.error(
+            f"'Parent Path' column missing or misspelled ({parent_path}). Exiting...")
+        sys.exit(os.EX_CONFIG)
+
     def stage_data(self, wave_to_stage, dry_run=True,
                    skip_users=False, scm_source=None):
         self.stage_wave(wave_to_stage, dry_run, scm_source)
@@ -103,8 +108,7 @@ class WaveStageCLI(BaseStageClass):
                         self.log.info(
                             f"No 'SWC AA ID' (SWC_ID) provided for {obj['target_namespace']}")
                 else:
-                    self.log.warning(
-                        "The 'Parent Path' column is missing or misspelled.")
+                    self.parent_path_fail(parent_path)
                 self.append_project_data(
                     obj, wave_data, row, dry_run=dry_run)
             elif group := self.find_group(repo_url):
@@ -207,6 +211,8 @@ class WaveStageCLI(BaseStageClass):
                 else:
                     self.log.info(
                         f"No 'SWC AA ID' (SWC_ID) provided for {obj['target_namespace']}")
+            else:
+                self.parent_path_fail(parent_path)
             # Append all project members to staged users
             for project_member in obj["members"]:
                 self.append_member_to_members_list([], project_member, dry_run)
@@ -254,9 +260,7 @@ class WaveStageCLI(BaseStageClass):
                 group["full_path"], wave_row, parent_path)
             group["parent_id"] = self.get_parent_id(wave_row, parent_path)
         else:
-            self.log.error(
-                f"No 'Parent Path' defined ({parent_path}). Exiting")
-            sys.exit(os.EX_CONFIG)
+            self.parent_path_fail(parent_path)
 
     def sanitize_project_path(self, http_url_to_repo, host=""):
         host = host if host else self.config.source_host

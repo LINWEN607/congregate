@@ -37,9 +37,11 @@ class StageWaveTests(unittest.TestCase):
         column_mapping.return_value = {
             "Wave name": "Wave name",
             "Wave date": "Wave date",
-            "Source Url": "Source Url"
+            "Source Url": "Source Url",
+            "Parent Path": "Parent Path"
         }
-        columns_to_use.return_value = ["Wave name", "Wave date", "Source Url"]
+        columns_to_use.return_value = [
+            "Wave name", "Wave date", "Source Url", "Parent Path"]
         read_as_json.return_value = [
             {
                 "Wave name": "Wave1",
@@ -48,7 +50,8 @@ class StageWaveTests(unittest.TestCase):
                 "Wave date": 1609459200000,
                 "notneeded3": -1,
                 "notneeded4": "qqq",
-                "Source Url": "http://example.com/diaspora/diaspora-client.git"
+                "Source Url": "http://example.com/diaspora/diaspora-client.git",
+                "Parent Path": "group_path_1"
             },
             {
                 "Wave name": "Wave1",
@@ -57,7 +60,8 @@ class StageWaveTests(unittest.TestCase):
                 "Wave date": 1609459200000,
                 "notneeded3": 0,
                 "notneeded4": "qqq",
-                "Source Url": "http://example.com/brightbox/puppet.git"
+                "Source Url": "http://example.com/brightbox/puppet.git",
+                "Parent Path": "group_path_2"
             }
         ]
         expected = [
@@ -86,7 +90,9 @@ class StageWaveTests(unittest.TestCase):
                 'shared_runners_enabled': True,
                 'archived': False,
                 'shared_with_groups': [],
-                'default_branch': 'master'
+                'default_branch': 'master',
+                'target_namespace': 'group_path_1',
+                'override_dstn_ns': False
             },
             {
                 "id": 80,
@@ -113,7 +119,9 @@ class StageWaveTests(unittest.TestCase):
                 'shared_runners_enabled': True,
                 'archived': False,
                 'shared_with_groups': [],
-                'default_branch': 'master'
+                'default_branch': 'master',
+                'target_namespace': 'group_path_2',
+                'override_dstn_ns': False
             }
         ]
 
@@ -121,9 +129,8 @@ class StageWaveTests(unittest.TestCase):
         actual = self.wcli.staged_projects
 
         self.assertEqual(len(expected), len(actual))
-        for i in range(len(expected)):
-            self.assertEqual(
-                expected[i].items(), actual[i].items())
+        for i, j in enumerate(expected):
+            self.assertDictEqual(j, actual[i])
 
     @mock.patch.object(WaveStageCLI, 'open_users_file')
     @mock.patch.object(WaveStageCLI, 'open_groups_file')
@@ -146,9 +153,11 @@ class StageWaveTests(unittest.TestCase):
         column_mapping.return_value = {
             "Wave name": "Wave name",
             "Wave date": "Wave date",
-            "Source Url": "Source Url"
+            "Source Url": "Source Url",
+            "Parent Path": "Parent Path"
         }
-        columns_to_use.return_value = ["Wave name", "Wave date", "Source Url"]
+        columns_to_use.return_value = [
+            "Wave name", "Wave date", "Source Url", "Parent Path"]
         read_as_json.return_value = [
             {
                 "Wave name": "Wave1",
@@ -157,7 +166,8 @@ class StageWaveTests(unittest.TestCase):
                 "Wave date": 1609459200000,
                 "notneeded3": -1,
                 "notneeded4": "qqq",
-                "Source Url": "http://example.com/diaspora/diaspora-client.git"
+                "Source Url": "http://example.com/diaspora/diaspora-client.git",
+                "Parent Path": "group_path_1"
             },
             {
                 "Wave name": "Wave1",
@@ -166,7 +176,8 @@ class StageWaveTests(unittest.TestCase):
                 "Wave date": 1609459200000,
                 "notneeded3": 0,
                 "notneeded4": "qqq",
-                "Source Url": "http://example.com/brightbox/puppet"
+                "Source Url": "http://example.com/brightbox/puppet",
+                "Parent Path": "group_path_2"
             }
         ]
         expected = [
@@ -195,7 +206,9 @@ class StageWaveTests(unittest.TestCase):
                 'shared_runners_enabled': True,
                 'archived': False,
                 'shared_with_groups': [],
-                'default_branch': 'master'
+                'default_branch': 'master',
+                'target_namespace': 'group_path_1',
+                'override_dstn_ns': False
             },
             {
                 "id": 80,
@@ -222,7 +235,9 @@ class StageWaveTests(unittest.TestCase):
                 'shared_runners_enabled': True,
                 'archived': False,
                 'shared_with_groups': [],
-                'default_branch': 'master'
+                'default_branch': 'master',
+                'target_namespace': 'group_path_2',
+                'override_dstn_ns': False
             }
         ]
 
@@ -230,9 +245,8 @@ class StageWaveTests(unittest.TestCase):
         actual = self.wcli.staged_projects
 
         self.assertEqual(len(expected), len(actual))
-        for i in range(len(expected)):
-            self.assertEqual(
-                expected[i].items(), actual[i].items())
+        for i, j in enumerate(expected):
+            self.assertDictEqual(j, actual[i])
 
     @mock.patch.object(WaveStageCLI, 'open_users_file')
     @mock.patch.object(WaveStageCLI, 'open_groups_file')
@@ -255,9 +269,11 @@ class StageWaveTests(unittest.TestCase):
         column_mapping.return_value = {
             "Wave name": "Wave name",
             "Wave date": "Wave date",
-            "Source Url": "Source Url"
+            "Source Url": "Source Url",
+            "Parent Path": "Parent Path"
         }
-        columns_to_use.return_value = ["Wave name", "Wave date", "Source Url"]
+        columns_to_use.return_value = [
+            "Wave name", "Wave date", "Source Url", "Parent Path"]
         read_as_json.return_value = [
             {
                 "Wave name": "Wave1",
@@ -266,7 +282,8 @@ class StageWaveTests(unittest.TestCase):
                 "Wave date": 1609459200000,
                 "notneeded3": -1,
                 "notneeded4": "qqq",
-                "Source Url": "http://example.com/diaspora/diaspora-client.git"
+                "Source Url": "http://example.com/diaspora/diaspora-client.git",
+                "Parent Path": "group_path_1"
             },
             {
                 "Wave name": "Wave1",
@@ -275,7 +292,8 @@ class StageWaveTests(unittest.TestCase):
                 "Wave date": 1609459200000,
                 "notneeded3": 0,
                 "notneeded4": "qqq",
-                "Source Url": "http://example.com/foo-bar-3"
+                "Source Url": "http://example.com/foo-bar-3",
+                "Parent Path": "group_path_2"
             }
         ]
         expected = [
@@ -300,11 +318,13 @@ class StageWaveTests(unittest.TestCase):
                         "access_level": 30
                     }
                 ],
-                'http_url_to_repo': 'http://example.com/diaspora/diaspora-client.git',
-                'shared_runners_enabled': True,
-                'archived': False,
-                'shared_with_groups': [],
-                'default_branch': 'master'
+                "http_url_to_repo": "http://example.com/diaspora/diaspora-client.git",
+                "shared_runners_enabled": True,
+                "archived": False,
+                "shared_with_groups": [],
+                "default_branch": "master",
+                "target_namespace": "group_path_1",
+                "override_dstn_ns": False
             },
             {
                 "id": 6,
@@ -327,11 +347,13 @@ class StageWaveTests(unittest.TestCase):
                         "access_level": 30
                     }
                 ],
-                'http_url_to_repo': 'http://example.com/brightbox/puppet.git',
-                'shared_runners_enabled': True,
-                'archived': False,
-                'shared_with_groups': [],
-                'default_branch': 'master'
+                "http_url_to_repo": "http://example.com/brightbox/puppet.git",
+                "shared_runners_enabled": True,
+                "archived": False,
+                "shared_with_groups": [],
+                "default_branch": "master",
+                "target_namespace": "group_path_2",
+                "override_dstn_ns": False
             }
         ]
 
@@ -339,9 +361,8 @@ class StageWaveTests(unittest.TestCase):
         actual = self.wcli.staged_projects
 
         self.assertEqual(len(expected), len(actual))
-        for i in range(len(expected)):
-            self.assertEqual(
-                expected[i].items(), actual[i].items())
+        for i, j in enumerate(expected):
+            self.assertDictEqual(j, actual[i])
 
     @mock.patch.object(WaveStageCLI, 'get_parent_id')
     @mock.patch.object(WaveStageCLI, 'open_users_file')
@@ -364,7 +385,6 @@ class StageWaveTests(unittest.TestCase):
             "Wave name": "Wave name",
             "Wave date": "Wave date",
             "Source Url": "Source Url",
-            "Parent Path": "Group",
             "swc_manager_name": "SWC Manager Name",
             "swc_manager_email": "SWC Manager Email",
             "swc_id": "SWC AA ID",
@@ -479,9 +499,8 @@ class StageWaveTests(unittest.TestCase):
         actual = self.wcli.staged_projects
 
         self.assertEqual(len(expected), len(actual))
-        for i in range(len(expected)):
-            self.assertEqual(
-                expected[i].items(), actual[i].items())
+        for i, j in enumerate(expected):
+            self.assertDictEqual(j, actual[i])
 
     @mock.patch.object(WaveStageCLI, 'open_users_file')
     @mock.patch.object(WaveStageCLI, 'open_groups_file')
