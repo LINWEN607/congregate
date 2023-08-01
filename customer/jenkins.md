@@ -2,7 +2,7 @@
 
 ## Jenkins Server Preparations
 
-1. See this project `(LINK COMING)`. It was used to stand up a server with the customer’s Jenkins version and test the plugin implementation.
+1. See this [project](https://gitlab.com/gitlab-org/professional-services-automation/delivery-kits/jenkins-integration)
 1. Ensure Jenkins Global Build Discarder is installed and max number of builds is set reasonably. Suggest 25.
     1. If there is too much data, the plugin updates will take hours or days as some plugins have to look at and/or modify every build
 1. There are 3 Gitlab plugins that need to be installed.
