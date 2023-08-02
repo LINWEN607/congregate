@@ -47,6 +47,7 @@ class ConfigTests(unittest.TestCase):
             "yes",  # password reset email
             "no",    # randomized password
             "30",   # import wait time
+            "3600",  # export_import_timeout
             "no",   # Wave spreadsheet
             "no",   # slack
             "no"    # mongo
@@ -67,11 +68,11 @@ class ConfigTests(unittest.TestCase):
                                 config.generate_config()
 
         # load the file that was just written
-        with open("{0}congregate.conf".format(test_dir_prefix), "r") as f:
+        with open(f"{test_dir_prefix}congregate.conf", "r") as f:
             generated = f.readlines()
 
         # load the reference file
-        with open("{0}test_full_ext_src_skeleton_bitbucket_server.conf".format(test_dir_prefix), "r") as f:
+        with open(f"{test_dir_prefix}test_full_ext_src_skeleton_bitbucket_server.conf", "r") as f:
             reference = f.readlines()
 
         self.assertListEqual(generated, reference)
@@ -107,6 +108,7 @@ class ConfigTests(unittest.TestCase):
             "yes",  # password reset email
             "no",    # randomized password
             "30",   # import wait time
+            "3600",  # export_import_timeout
             "no",   # Wave spreadsheet
             "no",   # slack
             "no"    # mongo
@@ -127,11 +129,11 @@ class ConfigTests(unittest.TestCase):
                                 config.generate_config()
 
         # load the file that was just written
-        with open("{0}congregate.conf".format(test_dir_prefix), "r") as f:
+        with open(f"{test_dir_prefix}congregate.conf", "r") as f:
             generated = f.readlines()
 
         # load the reference file
-        with open("{0}test_full_ext_src_skeleton_github_server.conf".format(test_dir_prefix), "r") as f:
+        with open(f"{test_dir_prefix}test_full_ext_src_skeleton_github_server.conf", "r") as f:
             reference = f.readlines()
 
         self.assertListEqual(generated, reference)
@@ -164,7 +166,6 @@ class ConfigTests(unittest.TestCase):
             "yes",  # source parent group
             "0",   # source parent group ID
             # "source_group_full_path",   # source parent group path
-            "3600",  # export_import_timeout
             "yes",  # migrating registries
             "source_registry_url",    # source registry url
             "destination_registry_url",    # destination registry url
@@ -175,6 +176,7 @@ class ConfigTests(unittest.TestCase):
             "yes",  # password reset email
             "no",    # randomized password
             "30",   # import wait time
+            "3600",  # export_import_timeout
             "no",   # Wave spreadsheet
             "yes",   # slack
             "https://slack.url",   # slack_url
@@ -213,11 +215,11 @@ class ConfigTests(unittest.TestCase):
                                         config.generate_config()
 
         # load the file that was just written
-        with open("{0}congregate.conf".format(test_dir_prefix), "r") as f:
+        with open(f"{test_dir_prefix}congregate.conf", "r") as f:
             generated = f.readlines()
 
         # load the reference file
-        with open("{0}test_not_ext_src_src_parent_group_path_mirror_name_filesystem_skeleton.conf".format(test_dir_prefix), "r") as f:
+        with open(f"{test_dir_prefix}test_not_ext_src_src_parent_group_path_mirror_name_filesystem_skeleton.conf", "r") as f:
             reference = f.readlines()
 
         self.assertListEqual(generated, reference)
@@ -252,7 +254,6 @@ class ConfigTests(unittest.TestCase):
             "source_hostname",  # source host
             # "source_access_token", # source token
             "no",  # source parent group
-            "3600",  # export_import_timeout
             "yes",  # migrating registries
             # "source_access_token", # source token
             "source_registry_url",    # source registry url
@@ -268,6 +269,7 @@ class ConfigTests(unittest.TestCase):
             "yes",  # password reset email
             "no",    # randomized password
             "30",   # import wait time
+            "3600",  # export_import_timeout
             "no",   # Wave spreadsheet
             "yes",   # slack
             "https://slack.url",   # slack_url
@@ -307,11 +309,11 @@ class ConfigTests(unittest.TestCase):
                                                 config.generate_config()
 
         # load the file that was just written
-        with open("{0}congregate.conf".format(test_dir_prefix), "r") as f:
+        with open(f"{test_dir_prefix}congregate.conf", "r") as f:
             generated = f.readlines()
 
         # load the reference file
-        with open("{0}test_not_ext_src_parent_group_path_no_mirror_name_aws_default.conf".format(test_dir_prefix), "r") as f:
+        with open(f"{test_dir_prefix}test_not_ext_src_parent_group_path_no_mirror_name_aws_default.conf", "r") as f:
             reference = f.readlines()
 
         self.assertListEqual(generated, reference)
@@ -347,7 +349,6 @@ class ConfigTests(unittest.TestCase):
             "source_hostname",  # source host
             # "source_access_token", # source token
             "no",  # source parent group
-            "3600",  # export_import_timeout
             "yes",  # migrating registries
             # "source_access_token", # source token
             "source_registry_url",    # source registry url
@@ -363,6 +364,7 @@ class ConfigTests(unittest.TestCase):
             "yes",  # password reset email
             "no",    # randomized password
             "30",   # import wait time
+            "3600",  # export_import_timeout
             "no",   # Wave spreadsheet
             "yes",   # slack
             "https://slack.url",   # slack_url
@@ -402,11 +404,11 @@ class ConfigTests(unittest.TestCase):
                                                 config.generate_config()
 
         # load the file that was just written
-        with open("{0}congregate.conf".format(test_dir_prefix), "r") as f:
+        with open(f"{test_dir_prefix}congregate.conf", "r") as f:
             generated = f.readlines()
 
         # load the reference file
-        with open("{0}test_not_ext_src_parent_group_path_no_mirror_name_aws_hashed_sso.conf".format(test_dir_prefix), "r") as f:
+        with open(f"{test_dir_prefix}test_not_ext_src_parent_group_path_no_mirror_name_aws_hashed_sso.conf", "r") as f:
             reference = f.readlines()
 
         self.assertListEqual(generated, reference)
@@ -442,7 +444,6 @@ class ConfigTests(unittest.TestCase):
             "no",  # external_src_url
             "source_hostname",  # source host
             "no",  # source parent group
-            "1200",  # export_import_timeout
             "yes",  # migrating registries
             # "source_access_token", # source token
             "source_registry_url",    # source registry url
@@ -458,6 +459,7 @@ class ConfigTests(unittest.TestCase):
             "yes",  # password reset email
             "no",    # randomized password
             "60",   # import wait time
+            "1200",  # export_import_timeout
             "no",   # Wave spreadsheet
             "no",   # slack
             "no"    # mongo
@@ -494,11 +496,11 @@ class ConfigTests(unittest.TestCase):
                                         config.generate_config()
 
         # load the file that was just written
-        with open("{0}congregate.conf".format(test_dir_prefix), "r") as f:
+        with open(f"{test_dir_prefix}congregate.conf", "r") as f:
             generated = f.readlines()
 
         # load the reference file
-        with open("{0}test_not_ext_src_parent_group_path_no_mirror_name_aws.conf".format(test_dir_prefix), "r") as f:
+        with open(f"{test_dir_prefix}test_not_ext_src_parent_group_path_no_mirror_name_aws.conf", "r") as f:
             reference = f.readlines()
 
         self.assertListEqual(generated, reference)
@@ -529,7 +531,6 @@ class ConfigTests(unittest.TestCase):
             "source_hostname",  # source host
             # "source_access_token", # source token
             "no",  # source parent group
-            "3600",  # export_import_timeout
             "yes",  # migrating registries
             "source_registry_url",    # source registry url
             "destination_registry_url",    # destination registry url
@@ -540,6 +541,7 @@ class ConfigTests(unittest.TestCase):
             "yes",  # password reset email
             "no",    # randomized password
             "30",   # import wait time
+            "3600",  # export_import_timeout
             "no",   # Wave spreadsheet
             "yes",   # slack
             "https://slack.url",   # slack_url
@@ -579,11 +581,11 @@ class ConfigTests(unittest.TestCase):
                                         config.generate_config()
 
         # load the file that was just written
-        with open("{0}congregate.conf".format(test_dir_prefix), "r") as f:
+        with open(f"{test_dir_prefix}congregate.conf", "r") as f:
             generated = f.readlines()
 
         # load the reference file
-        with open("{0}test_not_ext_src_no_parent_group_path_mirror_name_filesystem_skeleton.conf".format(test_dir_prefix), "r") as f:
+        with open(f"{test_dir_prefix}test_not_ext_src_no_parent_group_path_mirror_name_filesystem_skeleton.conf", "r") as f:
             reference = f.readlines()
 
         self.assertListEqual(generated, reference)
@@ -602,7 +604,6 @@ class ConfigTests(unittest.TestCase):
             "src_access_token":"dGVzdA==",\
             "src_parent_group_id":"0",\
             "src_parent_group_path":"source_group_full_path",\
-            "export_import_timeout":"3600",\
             "src_registry_url":"source_registry_url",\
             "dstn_registry_url":"destination_registry_url",\
             "location":"aws",\
@@ -615,6 +616,7 @@ class ConfigTests(unittest.TestCase):
             "reset_pwd":"False",\
             "force_rand_pwd":"True",\
             "export_import_status_check_time":"30",\
+            "export_import_timeout":"3600",\
             "slack_url":"https://slack.url"\
         }'
 
@@ -622,11 +624,11 @@ class ConfigTests(unittest.TestCase):
             config.update_config(data)
 
         # load the file that was just written
-        with open("{0}congregate.conf".format(test_dir_prefix), "r") as f:
+        with open(f"{test_dir_prefix}congregate.conf", "r") as f:
             generated = f.readlines()
 
         # load the reference file
-        with open("{0}test_not_ext_src_src_parent_group_path_mirror_name_filesystem_skeleton.conf".format(test_dir_prefix), "r") as f:
+        with open(f"{test_dir_prefix}test_not_ext_src_src_parent_group_path_mirror_name_filesystem_skeleton.conf", "r") as f:
             reference = f.readlines()
 
         self.assertListEqual(generated, reference)
@@ -645,7 +647,6 @@ class ConfigTests(unittest.TestCase):
             "src_access_token":"dGVzdA==",\
             "src_parent_group_id":"0",\
             "src_parent_group_path":"source_group_full_path",\
-            "export_import_timeout":"3600",\
             "src_registry_url":"source_registry_url",\
             "dstn_registry_url":"destination_registry_url",\
             "location":"aws",\
@@ -658,6 +659,7 @@ class ConfigTests(unittest.TestCase):
             "reset_pwd":"True",\
             "force_rand_pwd":"False",\
             "export_import_status_check_time":"30",\
+            "export_import_timeout":"3600",\
             "slack_url":"https://slack.url"\
         }'
 
@@ -665,11 +667,11 @@ class ConfigTests(unittest.TestCase):
             update = config.update_config(data)
 
         # load the file that was just written
-        with open("{0}congregate.conf".format(test_dir_prefix), "r") as f:
+        with open(f"{test_dir_prefix}congregate.conf", "r") as f:
             generated = f.readlines()
 
         # load the reference file
-        with open("{0}test_not_ext_src_src_parent_group_path_mirror_name_filesystem_skeleton.conf".format(test_dir_prefix), "r") as f:
+        with open(f"{test_dir_prefix}test_not_ext_src_src_parent_group_path_mirror_name_filesystem_skeleton.conf", "r") as f:
             reference = f.readlines()
 
         self.assertListEqual(generated, reference)
@@ -677,7 +679,7 @@ class ConfigTests(unittest.TestCase):
 
 
 def mock_file(conf):
-    with open("{0}congregate.conf".format(test_dir_prefix), "w") as f:
+    with open(f"{test_dir_prefix}congregate.conf", "w") as f:
         conf.write(f)
 
 

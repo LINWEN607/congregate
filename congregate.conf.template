@@ -87,9 +87,6 @@ src_access_token = *****
 # src_tier = core
 # src_parent_group_id = 0
 # src_parent_group_path = source_group_full_path
-### The maximum amount of time (in seconds) to wait for exports. It differs for local filesystem and AWS
-### Consider "3600" for local filesystem and "1200" for AWS
-# export_import_timeout = 3600
 # src_registry_url = source_registry_url
 
 ### Consider below changes when the source is a Bitbucket server, rest all other configuration remains same.
@@ -195,6 +192,12 @@ filesystem_path = /absolute_path
 ### We can adjust it (10 by default) depending whether we are migrating during peak hours or not.
 ### In general it should be increased when using multiple processes i.e. when the API cannot handle all the requests.
 export_import_status_check_time = 10
+
+### The maximum amount of time (in seconds) to wait for exports or imports. It differs for local filesystem and AWS
+### Consider "3600" for local filesystem and "1200" for AWS
+### The export part is only applicable to GL->GL migrations
+export_import_timeout = 3600
+
 ### Presents the Slack Incoming Webhooks URL for sending alerts (logs) to a dedicated GitLab internal private channel.
 ### Optionally used during customer migrations, mainly to gitlab.com, but also an option for migrations to self-managed.
 # slack_url = https://slack.url

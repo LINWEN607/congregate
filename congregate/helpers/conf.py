@@ -196,17 +196,6 @@ class Config(BaseConfig):
     def source_registry(self):
         return self.prop("SOURCE", "src_registry_url")
 
-    @property
-    def export_import_timeout(self):
-        """
-        The maximum amount of time to wait for a group or project export or import.
-        We should adjust it depending on the size of the largest projects we are migrating.
-        In general 1h should be sufficient for each export or import process.
-        We can always go back and run the project post-migration if it takes longer to import.
-        :return: The set config value of 3600 seconds (one hour) as default
-        """
-        return self.prop_int("SOURCE", "export_import_timeout", default=3600)
-
 # CI_SOURCE
     def list_ci_source_config(self, ci_source_options):
         """
@@ -342,6 +331,17 @@ class Config(BaseConfig):
         """
         return self.prop_int(
             "APP", "export_import_status_check_time", default=10)
+
+    @property
+    def export_import_timeout(self):
+        """
+        The maximum amount of time to wait for a group or project export or import.
+        We should adjust it depending on the size of the largest projects we are migrating.
+        In general 1h should be sufficient for each export or import process.
+        We can always go back and run the project post-migration if it takes longer to import.
+        :return: The set config value of 3600 seconds (one hour) as default
+        """
+        return self.prop_int("APP", "export_import_timeout", default=3600)
 
     @property
     def slack_url(self):

@@ -352,8 +352,7 @@ class StageWaveTests(unittest.TestCase):
                 "archived": False,
                 "shared_with_groups": [],
                 "default_branch": "master",
-                "target_namespace": "group_path_2",
-                "override_dstn_ns": False
+                "target_namespace": "group_path_2"
             }
         ]
 

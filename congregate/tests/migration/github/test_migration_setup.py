@@ -57,7 +57,6 @@ from congregate.migration.github.api.orgs import OrgsApi
 #             "no",  # external_src_url
 #             os.getenv("GITLAB_SRC"),  # source host
 #             "no",  # single group migration
-#             "300",  # export_import_timeout
 #             "yes",  # migrating registries
 #             # self.t.generate_token("source_token", "2020-08-27", url=os.getenv("GITLAB_SRC"), username="root", pword=uuid4().hex), # source token
 #             os.getenv("GITLAB_SRC_REG_URL"),  # source registry url
@@ -73,6 +72,7 @@ from congregate.migration.github.api.orgs import OrgsApi
 #             "yes",  # password reset email
 #             "no",  # randomized password
 #             "5",  # import wait time
+#             "300",  # export_import_timeout
 #             ""  # slack_url
 #         ]
 #         tokens = [
