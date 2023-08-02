@@ -6,19 +6,19 @@ from typing import Optional, List
 class UserPayload():
     username: str
     name: str
-    state: str
-    location: str
-    skype: str
-    linkedin: str
-    twitter: str
-    website_url: str
-    organization: str
     email: str
-    identities: list
-    can_create_group: bool
-    can_create_project: bool
-    two_factor_enabled: bool
-    external: bool
+    state: Optional[str] = ""
+    location: Optional[str] = ""
+    skype: Optional[str] = ""
+    linkedin: Optional[str] = ""
+    twitter: Optional[str] = ""
+    website_url: Optional[str] = ""
+    organization: Optional[str] = ""
+    identities: Optional[List[dict]] = field(default_factory=list)
+    can_create_group: Optional[bool] = False
+    can_create_project: Optional[bool] = False
+    two_factor_enabled: Optional[bool] = False
+    external: Optional[bool] = False
 
     # Parameters that may not have existed yet on older GitLab versions
     projects_limit: Optional[int] = None  # May be popped during listing
