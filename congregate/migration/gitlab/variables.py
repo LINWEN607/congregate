@@ -69,16 +69,14 @@ class VariablesClient(DbOrHttpMixin, BaseGitLabClient):
     def migrate_pipeline_schedule_variables(
             self, old_id, new_id, name, enabled):
         try:
-            if enabled and (src_schedules := list(
-                self.get_data(
-                            self.projects_api.get_all_project_pipeline_schedules,
-                            (old_id, self.src_host, self.src_token),
-                            'pipeline_schedules',
-                            old_id,
-                            airgap=self.config.airgap,
-                            airgap_import=self.config.airgap_import
-                            )
-            )):
+            if enabled:
+                src_schedules = list(self.get_data(
+                    self.projects_api.get_all_project_pipeline_schedules,
+                    (old_id, self.src_host, self.src_token),
+                    'pipeline_schedules',
+                    old_id,
+                    airgap=self.config.airgap,
+                    airgap_import=self.config.airgap_import))
                 for sps in src_schedules:
                     if not self.config.airgap_export:
                         for dps in list(self.projects_api.get_all_project_pipeline_schedules(
@@ -100,16 +98,16 @@ class VariablesClient(DbOrHttpMixin, BaseGitLabClient):
                             name, sps, None, new_id, old_id)
                 return True
             self.log.info(
-                f"Pipeline schedule variables are disabled ({enabled}) for project {name}")
+                f"Project '{name}' pipeline schedule variables are disabled ({enabled})")
             return None
         except Exception as e:
             self.log.error(
-                f"Failed to migrate project {name} pipeline schedule variables, with error:\n{e}")
+                f"Failed to migrate project '{name}' pipeline schedule variables:\n{e}")
             return False
 
     def handle_project_pipeline_variables(self, p_name, sps, dps_id, new_id, old_id):
         self.log.info(
-            f"Migrating project {p_name} pipeline schedule ({sps['description']}) variables")
+            f"Migrating project '{p_name}' pipeline schedule ({sps['description']}) variables")
 
         pipeline_schedule_vars = self.get_data(
             self.projects_api.get_single_project_pipeline_schedule,
