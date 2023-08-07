@@ -743,7 +743,7 @@ class ProjectsApi(GitLabApiWrapper):
             :return: Response object containing the response to POST /projects/:pid/pipeline_schedules/:psid/variables
         """
         if not message:
-            message = f"Creating new variable for project {pid} pipeline schedule {psid}"
+            message = f"Creating project {pid} new pipeline schedule variable {psid}"
         return self.api.generate_post_request(host, token, f"projects/{pid}/pipeline_schedules/{psid}/variables", json.dumps(data), description=message)
 
     def get_all_project_hooks(self, pid, host, token):

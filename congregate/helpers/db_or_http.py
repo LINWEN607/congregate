@@ -1,5 +1,6 @@
 from congregate.helpers.mdbc import MongoConnector
 
+
 class DbOrHttpMixin():
     """
         Mixin to help switch between HTTP requests or storing POST
@@ -11,13 +12,13 @@ class DbOrHttpMixin():
         if airgap and airgap_export:
             mongo = MongoConnector()
             mongo.db[mongo_coll].update_one(
-                {'id': src_id}, 
-                {'$push': {key: data}}, 
+                {'id': src_id},
+                {'$push': {key: data}},
                 upsert=True)
             mongo.close_connection()
         else:
             req_func(*params, data)
-    
+
     def get_data(self, req_func, params, key, src_id, airgap=False, airgap_import=False, mongo_coll=default_collection):
         if airgap and airgap_import:
             mongo = MongoConnector()
@@ -26,5 +27,4 @@ class DbOrHttpMixin():
             })
             mongo.close_connection()
             return record.get(key)
-        else:
-            return req_func(*params)
+        return req_func(*params)
