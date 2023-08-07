@@ -106,12 +106,10 @@ class MergeRequestApprovalsClient(DbOrHttpMixin, BaseGitLabClient):
         :param user_ids: Current list of approver ids. Will be defaulted to an empty on None
         :return: The current user_id list compose of user_ids append the user id from the new_user, if found
         """
-        if new_user and isinstance(new_user, list):
-            new_user_dict = new_user[0]
-            if new_user_dict and isinstance(new_user_dict, dict):
-                if new_user_id := new_user_dict.get("id"):
-                    user_ids.append(new_user_id)
-                    return user_ids
+        if new_user and isinstance(new_user, dict):
+            if new_user_id := new_user.get("id"):
+                user_ids.append(new_user_id)
+                return user_ids
         self.log.warning(
             f"Could not find MR approver {field} '{user[field]}' on destination:\n{new_user}")
         return user_ids
