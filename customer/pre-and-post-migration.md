@@ -3,7 +3,7 @@
 ## Related Links
 
 - [Customer Migration Change Management](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/blob/master/customer/customer-migration-change-management.md#post-migration-checklist-for-project-owners-and-maintainers)
-- [Migration Pre and Post-requisites]()
+- [Migration Readiness](./migration-readiness-checklist.md)
 - [Frequently Asked Migration Questions](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/blob/master/customer/famq.md#what-are-a-customers-obligations-and-responsibilities-prior-during-and-after-a-migration)
 
 ## Pre-Migration
