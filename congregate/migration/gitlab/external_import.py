@@ -154,7 +154,7 @@ class ImportClient(BaseClass):
                         break
                     repository = dig(project_statistics, 'data',
                                 'project', 'repository')
-                    if imported and repository["empty"]:
+                    if imported and repository.get("empty") is True:
                         self.log.info(
                             f"Repository is empty for {full_path}. Import is complete")
                         success = True
