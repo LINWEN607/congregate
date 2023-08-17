@@ -152,6 +152,13 @@ class ImportClient(BaseClass):
                             self.log.warning(f"Git repo {full_path} is empty")
                         success = True
                         break
+                    repository = dig(project_statistics, 'data',
+                                'project', 'repository')
+                    if imported and repository["empty"]:
+                        self.log.info(
+                            f"Repository is empty for {full_path}. Import is complete")
+                        success = True
+                        break
             if total_time >= timeout:
                 self.log.error(
                     f"Max import time exceeded for {full_path}. Skipping post-migration phase")

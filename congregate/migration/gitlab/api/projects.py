@@ -1115,6 +1115,9 @@ class ProjectsApi(GitLabApiWrapper):
                                 lfsObjectsSize,
                                 storageSize
                             }
+                        repository {
+                                empty
+                            }
                         }
                 }
             """ % project_full_path
