@@ -236,8 +236,11 @@ class BaseDiffClient(BaseClass):
                 discrepancy = dest_lines - src_lines
                 src_lines += discrepancy
                 dest_lines -= discrepancy
-            src_lines += self.total_number_of_differences(diff)
-            original_accuracy = dest_lines / src_lines
+            if 0 in [src_lines, dest_lines]:
+                original_accuracy = 1.0
+            else:
+                src_lines += self.total_number_of_differences(diff)
+                original_accuracy = dest_lines / (src_lines or 1.0)
         else:
             original_accuracy = 1.0
 
@@ -301,7 +304,7 @@ class BaseDiffClient(BaseClass):
                             result = "failure"
                     else:
                         total_number_of_keys -= 1
-                accuracy = percentage_sum / total_number_of_keys if total_number_of_keys else 0
+                accuracy = percentage_sum / total_number_of_keys if total_number_of_keys else 1
                 if result is None:
                     result = "success"
         except Exception as e:
@@ -333,7 +336,7 @@ class BaseDiffClient(BaseClass):
                     percentage_sum += obj_accuracy
                     if obj_accuracy == 0:
                         result = "failure"
-                accuracy = percentage_sum / total_number_of_keys if total_number_of_keys else 0
+                accuracy = percentage_sum / total_number_of_keys if total_number_of_keys else 1
                 if result is None:
                     result = "success"
         except Exception as e:

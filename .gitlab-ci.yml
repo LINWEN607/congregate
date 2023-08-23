@@ -294,6 +294,7 @@ check ldap compose yaml:
       changes:
         - .gitlab-ci.yml
         - congregate/helpers/**/*
+        - congregate/migration/diff/*
         - congregate/migration/gitlab/**/*
         - congregate/migration/migrate.py
         - congregate/tests/migration/gitlab/test_*_setup.py
