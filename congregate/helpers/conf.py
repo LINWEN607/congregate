@@ -407,9 +407,9 @@ class Config(BaseConfig):
     @property
     def mongo_host(self):
         """
-        The explicit host for the mongodb connection. Defaults to None
+        The explicit host for the mongodb connection. Defaults to localhost
         """
-        return self.prop("APP", "mongo_host", default=None)
+        return self.prop("APP", "mongo_host", default="localhost")
 
     @property
     def mongo_port(self):
