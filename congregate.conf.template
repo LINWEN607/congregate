@@ -226,6 +226,14 @@ export_import_timeout = 3600
 mongo_host = localhost
 mongo_port = 27017
 
+### Redis configuration - for running air-gapped migrations
+# redis_host = localhost
+# redis_port = 6379
+
+### gRPC configuration - for migrating package registries (Maven)
+# grpc_host = localhost
+# maven_port = 50051
+
 ### Setting to enforce SSL Verification with our API requests. Defaults to True
 ssl_verify = True
 
