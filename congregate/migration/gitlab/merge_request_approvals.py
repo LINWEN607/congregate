@@ -122,7 +122,7 @@ class MergeRequestApprovalsClient(DbOrHttpMixin, BaseGitLabClient):
         s_token = self.config.source_token
         d_host = self.config.destination_host
         d_token = self.config.destination_token
-        for u in rule["users"]:
+        for u in rule["eligible_approvers"]:
             if u.get("id"):
                 if user := safe_json_response(self.users_api.get_user(u["id"], s_host, s_token)):
                     self.get_missing_user_rule_params(
