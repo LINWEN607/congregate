@@ -54,6 +54,10 @@ This runbook covers the process of preparing and cleaning up after a migration f
 
     **NOTE:** The group needs to have SAML configured.
 
+* [ ] (gitlab.com) Verify that 2FA is setup on the admin user.
+
+* [ ] (gitlab.com) Verify that the the admin user's `Projects limit` is set to 0 (https://gitlab.com/admin/users/<admin_user>/edit). This should have been set at account creation. If it wasn't, please verify that the issue template for the admin user creation includes this verbiage
+
 * [ ] Create one-off Personal Access Tokens (PATs) for the Admin user account on the source and destination instance.
   * The PATs should have an expiry date of the estimated last day (wave) of the migration.
   * [ ] (gitlab.com) Inform SIRT about every Admin token creation and/or user impersonation.
