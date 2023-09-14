@@ -489,6 +489,14 @@ class Config(BaseConfig):
         to the source instance
         """
         return self.prop_bool("APP", "airgap_import", default=False)
+    
+    @property
+    def direct_transfer(self):
+        """
+        Sets default GitLab import method to use Direct Transfer
+        instead of file-based export/import
+        """
+        return self.prop_bool("APP", "direct_transfer", default=False)
 
 # HIDDEN PROPERTIES
 

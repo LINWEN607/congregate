@@ -91,6 +91,18 @@ class InstanceApi(GitLabApiWrapper):
         """
         return self.api.list_all(host, token, "deploy_keys")
 
+    def get_application_settings(self, host, token):
+        """
+        Retrieve GitLab instance application settings.
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/settings.html#get-current-application-settings
+
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :return: Response object containing the response to GET /application/settings
+        """
+        return self.api.generate_get_request(host, token, "application/settings")
+
     def change_application_settings(self, host, token, data, message=None):
         """
         Use an API call to modify GitLab instance application settings.

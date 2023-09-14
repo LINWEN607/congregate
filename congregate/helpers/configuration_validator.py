@@ -8,6 +8,7 @@ from gitlab_ps_utils.json_utils import json_pretty
 from congregate.helpers.conf import Config
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
+from congregate.migration.gitlab.api.instance import InstanceApi
 from congregate.helpers.utils import is_github_dot_com
 
 
@@ -27,6 +28,7 @@ class ConfigurationValidator(Config):
         self._dstn_token_validated_in_session = False
         self._src_token_validated_in_session = False
         self._airgap_validated_in_session = False
+        self._direct_transfer_validated_in_session = False
         super().__init__(path=path)
 
     @property
@@ -88,6 +90,17 @@ class ConfigurationValidator(Config):
                 return ag
             try:
                 return self.validate_airgap_configuration()
+            except ConfigurationException as ce:
+                sys.exit(ce)
+        return False
+    
+    @property
+    def direct_transfer(self):
+        if direct_transfer := self.prop_bool("APP", "direct_transfer", default=False):
+            if self.direct_transfer_validated_in_session:
+                return direct_transfer
+            try:
+                return self.validate_direct_transfer_enabled()
             except ConfigurationException as ce:
                 sys.exit(ce)
         return False
@@ -241,6 +254,34 @@ class ConfigurationValidator(Config):
                 'airgap', msg="Invalid configuration. Air-gap is enabled but neither airgap_export nor airgap_import is enabled. Set one of them to True"
             )
         return True
+    
+    def validate_direct_transfer_enabled(self):
+        instance_api = InstanceApi()
+        src_settings = safe_json_response(instance_api.get_application_settings(self.source_host, self.source_token))
+        src_bulk_import, src_max_download = self.__get_bulk_import_settings(src_settings)
+        dest_settings = safe_json_response(instance_api.get_application_settings(self.source_host, self.source_token))
+        dest_bulk_import, dest_max_download = (False, 0)
+        if dest_settings:
+            dest_bulk_import, dest_max_download = self.__get_bulk_import_settings(dest_settings)
+            if src_bulk_import and dest_bulk_import:
+                if src_max_download == dest_max_download:
+                    return True
+                else:
+                    print("Warning: bulk_import_max_download_file_size does not match on source and destination. Update settings if possible")
+                raise ConfigurationException(
+                    'direct_transfer', f"Direct transfer is not enabled on both sources. Source: ({src_bulk_import}) Destination: ({dest_bulk_import})"
+                )
+        else:
+            print("Warning: Cannot confirm bulk import is enabled on destination. This could be due to using a regular user personal access token.")
+        if src_bulk_import:
+            return True
+        raise ConfigurationException(
+            'direct_transfer', f"Direct transfer is not enabled on the source instance. Please enable it in the admin settings. See docs: https://docs.gitlab.com/ee/administration/settings/import_and_export_settings.html#enable-migration-of-groups-and-projects-by-direct-transfer"
+        )
+        
+    def __get_bulk_import_settings(self, settings):
+        return (settings.get("bulk_import_enabled", False),
+                settings.get("bulk_import_max_download_file_size", False))
 
     @property
     def dstn_parent_id_validated_in_session(self):
@@ -265,6 +306,10 @@ class ConfigurationValidator(Config):
     @property
     def airgap_validated_in_session(self):
         return self._airgap_validated_in_session
+    
+    @property
+    def direct_transfer_validated_in_session(self):
+        return self._direct_transfer_validated_in_session
 
     @dstn_parent_id_validated_in_session.setter
     def dstn_parent_id_validated_in_session(self, value):
@@ -289,3 +334,7 @@ class ConfigurationValidator(Config):
     @airgap_validated_in_session.setter
     def airgap_validated_in_session(self, value):
         self._airgap_validated_in_session = value
+
+    @direct_transfer_validated_in_session.setter
+    def direct_transfer_validated_in_session(self, value):
+        self._direct_transfer_validated_in_session = value
