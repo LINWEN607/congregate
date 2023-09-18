@@ -259,7 +259,7 @@ class ConfigurationValidator(Config):
         instance_api = InstanceApi()
         src_settings = safe_json_response(instance_api.get_application_settings(self.source_host, self.source_token))
         src_bulk_import, src_max_download = self.__get_bulk_import_settings(src_settings)
-        dest_settings = safe_json_response(instance_api.get_application_settings(self.source_host, self.source_token))
+        dest_settings = safe_json_response(instance_api.get_application_settings(self.destination_host, self.destination_token))
         dest_bulk_import, dest_max_download = (False, 0)
         if dest_settings:
             dest_bulk_import, dest_max_download = self.__get_bulk_import_settings(dest_settings)
@@ -268,6 +268,7 @@ class ConfigurationValidator(Config):
                     return True
                 else:
                     print("Warning: bulk_import_max_download_file_size does not match on source and destination. Update settings if possible")
+            else:
                 raise ConfigurationException(
                     'direct_transfer', f"Direct transfer is not enabled on both sources. Source: ({src_bulk_import}) Destination: ({dest_bulk_import})"
                 )

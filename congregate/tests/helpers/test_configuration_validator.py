@@ -5,9 +5,11 @@ import responses
 from gitlab_ps_utils.exceptions import ConfigurationException
 from gitlab_ps_utils.string_utils import obfuscate
 from gitlab_ps_utils.api import GitLabApi
+from congregate.migration.gitlab.api.instance import InstanceApi
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
 from congregate.tests.mockapi.gitlab.users import MockUsersApi as GLMockUsers
+from congregate.tests.mockapi.gitlab.settings import MockAppSettingsApi as GLMockSettings
 from congregate.tests.mockapi.github.users import MockUsersApi as GHMockUsers
 from congregate.tests.mockapi.bitbucket.users import MockUsersApi as BBSUsers
 from congregate.tests.mockapi.gitlab.token import invalid_token
@@ -21,6 +23,7 @@ class ConfigurationValidationTests(unittest.TestCase):
         self.groups = MockGroupsApi()
         self.users = GLMockUsers()
         self.github_users = GHMockUsers()
+        self.gl_settings = GLMockSettings
         self.bbs_users = BBSUsers()
         self.config = ConfigurationValidator(
             path="congregate/tests/cli/data/test_not_ext_src_parent_group_path_no_mirror_name_aws_default.conf")
@@ -595,3 +598,152 @@ class ConfigurationValidationTests(unittest.TestCase):
                                  obfuscate("Enter secret: "))
         self.config.dstn_token_validated_in_session = True
         self.assertEqual(self.config.destination_token, "test")
+
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.src_token_validated_in_session')
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_token_validated_in_session')
+    @mock.patch.object(GitLabApi, "generate_v4_request_url")
+    @mock.patch.object(InstanceApi, "get_application_settings")
+    def test_direct_transfer_all_good(self, app_settings, url, src_token, dstn_token):
+        # Mock validate src and dstn tokens
+        src_token.return_value = True
+        dstn_token.return_value = True
+        url_value = "htts://gitlab.com/api/v4/application_settings"
+        url.return_value = url_value
+
+        # Set direct_transfer to true to trigger validation
+        self.config.as_obj().set("APP", "direct_transfer", "true")
+
+        # Set up mock src settings API call
+        src_setting_resp = mock.MagicMock()
+        type(src_setting_resp).status_code = mock.PropertyMock(return_value=200)
+        src_setting_resp.json.return_value = self.gl_settings.application_settings()
+
+        # Set up mock dstn settings API call
+        dstn_setting_resp = mock.MagicMock()
+        type(dstn_setting_resp).status_code = mock.PropertyMock(return_value=200)
+        dstn_setting_resp.json.return_value = self.gl_settings.application_settings()
+
+        # Add mock objects to get_application_settings side effects
+        app_settings.side_effect = [src_setting_resp, dstn_setting_resp]
+
+        self.assertTrue(self.config.direct_transfer)
+
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.src_token_validated_in_session')
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_token_validated_in_session')
+    @mock.patch.object(GitLabApi, "generate_v4_request_url")
+    @mock.patch.object(InstanceApi, "get_application_settings")
+    def test_direct_transfer_not_enabled_on_dstn(self, app_settings, url, src_token, dstn_token):
+        # Mock validate src and dstn tokens
+        src_token.return_value = True
+        dstn_token.return_value = True
+        url_value = "htts://gitlab.com/api/v4/application_settings"
+        url.return_value = url_value
+
+        # Set direct_transfer to true to trigger validation
+        self.config.as_obj().set("APP", "direct_transfer", "true")
+
+        # Set up mock src settings API call
+        src_setting_resp = mock.MagicMock()
+        type(src_setting_resp).status_code = mock.PropertyMock(return_value=200)
+        src_setting_resp.json.return_value = self.gl_settings.application_settings()
+
+        # Set up mock dstn settings API call, this time mocking bulk import is disabled on dstn
+        set_to_false = self.gl_settings.application_settings()
+        set_to_false['bulk_import_enabled'] = False
+        dstn_setting_resp = mock.MagicMock()
+        type(dstn_setting_resp).status_code = mock.PropertyMock(return_value=200)
+        dstn_setting_resp.json.return_value = set_to_false
+
+        # Add mock objects to get_application_settings side effects
+        app_settings.side_effect = [src_setting_resp, dstn_setting_resp]
+
+        self.assertRaises(ConfigurationException,
+                          self.config.validate_direct_transfer_enabled)
+    
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.src_token_validated_in_session')
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_token_validated_in_session')
+    @mock.patch.object(GitLabApi, "generate_v4_request_url")
+    @mock.patch.object(InstanceApi, "get_application_settings")
+    def test_direct_transfer_not_enabled_on_src(self, app_settings, url, src_token, dstn_token):
+        # Mock validate src and dstn tokens
+        src_token.return_value = True
+        dstn_token.return_value = True
+        url_value = "htts://gitlab.com/api/v4/application_settings"
+        url.return_value = url_value
+
+        # Set direct_transfer to true to trigger validation
+        self.config.as_obj().set("APP", "direct_transfer", "true")
+
+        # Set up mock src settings API call, this time mocking bulk import is disabled on src
+        set_to_false = self.gl_settings.application_settings()
+        set_to_false['bulk_import_enabled'] = False
+        src_setting_resp = mock.MagicMock()
+        type(src_setting_resp).status_code = mock.PropertyMock(return_value=200)
+        src_setting_resp.json.return_value = set_to_false
+        
+        # Set up mock dstn settings API call
+        dstn_setting_resp = mock.MagicMock()
+        type(dstn_setting_resp).status_code = mock.PropertyMock(return_value=200)
+        dstn_setting_resp.json.return_value = self.gl_settings.application_settings()
+
+        # Add mock objects to get_application_settings side effects
+        app_settings.side_effect = [src_setting_resp, dstn_setting_resp]
+
+        self.assertRaises(ConfigurationException,
+                          self.config.validate_direct_transfer_enabled)
+    
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.src_token_validated_in_session')
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_token_validated_in_session')
+    @mock.patch.object(GitLabApi, "generate_v4_request_url")
+    @mock.patch.object(InstanceApi, "get_application_settings")
+    def test_direct_transfer_mismatched_download_size_warning(self, app_settings, url, src_token, dstn_token):
+        # Mock validate src and dstn tokens
+        src_token.return_value = True
+        dstn_token.return_value = True
+        url_value = "htts://gitlab.com/api/v4/application_settings"
+        url.return_value = url_value
+
+        # Set direct_transfer to true to trigger validation
+        self.config.as_obj().set("APP", "direct_transfer", "true")
+
+        # Set up mock src settings API call
+        src_setting_resp = mock.MagicMock()
+        type(src_setting_resp).status_code = mock.PropertyMock(return_value=200)
+        src_setting_resp.json.return_value = self.gl_settings.application_settings()
+
+        # Set up mock dstn settings API call, this time setting the download size to a different size than src
+        set_to_false = self.gl_settings.application_settings()
+        set_to_false['bulk_import_max_download_file_size'] = 1024
+        dstn_setting_resp = mock.MagicMock()
+        type(dstn_setting_resp).status_code = mock.PropertyMock(return_value=200)
+        dstn_setting_resp.json.return_value = set_to_false
+        app_settings.side_effect = [src_setting_resp, dstn_setting_resp]
+
+        self.assertTrue(self.config.direct_transfer)
+    
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.src_token_validated_in_session')
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_token_validated_in_session')
+    @mock.patch.object(GitLabApi, "generate_v4_request_url")
+    @mock.patch.object(InstanceApi, "get_application_settings")
+    def test_direct_transfer_unknown_dest_settings(self, app_settings, url, src_token, dstn_token):
+        # Mock validate src and dstn tokens
+        src_token.return_value = True
+        dstn_token.return_value = True
+        url_value = "htts://gitlab.com/api/v4/application_settings"
+        url.return_value = url_value
+
+        # Set direct_transfer to true to trigger validation
+        self.config.as_obj().set("APP", "direct_transfer", "true")
+
+        # Set up mock src settings API call
+        src_setting_resp = mock.MagicMock()
+        type(src_setting_resp).status_code = mock.PropertyMock(return_value=200)
+        src_setting_resp.json.return_value = self.gl_settings.application_settings()
+
+        # Set up empty dstn settings API call
+        dstn_setting_resp = mock.MagicMock()
+        type(dstn_setting_resp).status_code = mock.PropertyMock(return_value=403)
+        dstn_setting_resp.json.return_value = None
+        app_settings.side_effect = [src_setting_resp, dstn_setting_resp]
+
+        self.assertTrue(self.config.direct_transfer)
