@@ -267,13 +267,13 @@ class ConfigurationValidator(Config):
                 if src_max_download == dest_max_download:
                     return True
                 else:
-                    print(f"Warning: bulk_import_max_download_file_size does not match on source (max {src_max_download}) and destination (max {dest_max_download}). Update settings if possible")
+                    print(f"Warning: bulk_import_max_download_file_size does not match on source (max {src_max_download}) and destination (max {dest_max_download}). Update settings if possible. See docs: See docs: https://docs.gitlab.com/ee/api/settings.html#change-application-settings")
             else:
                 raise ConfigurationException(
-                    'direct_transfer', f"Direct transfer is not enabled on both sources. Source: ({src_bulk_import}) Destination: ({dest_bulk_import})"
+                    'direct_transfer', f"Direct transfer is not enabled on both sources. Source: ({src_bulk_import}) Destination: ({dest_bulk_import}). Update settings if possible. See docs: https://docs.gitlab.com/ee/api/settings.html#change-application-settings"
                 )
         else:
-            print("Warning: Cannot confirm bulk import is enabled on destination. This could be due to using a regular user personal access token.")
+            print("Warning: Cannot confirm bulk import is enabled on destination. This could be due to using a regular user personal access token. See docs: https://docs.gitlab.com/ee/api/settings.html#get-current-application-settings")
         if src_bulk_import:
             return True
         raise ConfigurationException(
