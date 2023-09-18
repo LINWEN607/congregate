@@ -1,5 +1,5 @@
 class MockAppSettingsApi():
-    def application_settings():
+    def application_settings(self):
         return {
             "default_projects_limit" : 100000,
             "signup_enabled" : True,

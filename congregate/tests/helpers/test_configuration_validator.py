@@ -23,7 +23,7 @@ class ConfigurationValidationTests(unittest.TestCase):
         self.groups = MockGroupsApi()
         self.users = GLMockUsers()
         self.github_users = GHMockUsers()
-        self.gl_settings = GLMockSettings
+        self.gl_settings = GLMockSettings()
         self.bbs_users = BBSUsers()
         self.config = ConfigurationValidator(
             path="congregate/tests/cli/data/test_not_ext_src_parent_group_path_no_mirror_name_aws_default.conf")
