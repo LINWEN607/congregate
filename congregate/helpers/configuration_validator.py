@@ -267,7 +267,7 @@ class ConfigurationValidator(Config):
                 if src_max_download == dest_max_download:
                     return True
                 else:
-                    print("Warning: bulk_import_max_download_file_size does not match on source and destination. Update settings if possible")
+                    print(f"Warning: bulk_import_max_download_file_size does not match on source (max {src_max_download}) and destination (max {dest_max_download}). Update settings if possible")
             else:
                 raise ConfigurationException(
                     'direct_transfer', f"Direct transfer is not enabled on both sources. Source: ({src_bulk_import}) Destination: ({dest_bulk_import})"
