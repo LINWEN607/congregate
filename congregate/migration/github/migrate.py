@@ -4,6 +4,9 @@
     Copyright (c) 2023 - GitLab
 """
 
+import sys
+import os
+
 from gitlab_ps_utils import json_utils, misc_utils, string_utils
 
 import congregate.helpers.migrate_utils as mig_utils
@@ -102,7 +105,8 @@ class GitHubMigrateClient(MigrateClient):
                     staged_projects):
                 if is_dot_com(self.config.destination_host):
                     self.log.warning(
-                        "Please manually migrate USER repos to gitlab.com")
+                        "Please re-stage w/o USER repos and manually migrate USER repos to gitlab.com")
+                    sys.exit(os.EX_DATAERR)
                 self.log.warning(
                     f"USER repos staged ({len(user_projects)}):\n{json_utils.json_pretty(user_projects)}")
             self.log.info("Importing repos from GitHub")

@@ -4,6 +4,9 @@
     Copyright (c) 2023 - GitLab
 """
 
+import sys
+import os
+
 from json import loads as json_loads
 from traceback import print_exc
 from requests.exceptions import RequestException
@@ -423,7 +426,8 @@ class GitLabMigrateClient(MigrateClient):
                     staged_projects):
                 if is_dot_com(self.config.destination_host):
                     self.log.warning(
-                        "Please manually migrate USER projects to gitlab.com")
+                        "Please re-stage w/o USER projects and manually migrate USER projects to gitlab.com")
+                    sys.exit(os.EX_DATAERR)
                 self.log.warning(
                     f"USER projects staged ({len(user_projects)}):\n{json_utils.json_pretty(user_projects)}")
             if not self.skip_project_export:
