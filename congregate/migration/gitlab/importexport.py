@@ -21,6 +21,7 @@ from congregate.migration.gitlab.api.namespaces import NamespacesApi
 from congregate.helpers.migrate_utils import get_project_dest_namespace, is_user_project, get_user_project_namespace, \
     get_export_filename_from_namespace_and_name, get_dst_path_with_namespace, get_full_path_with_parent_namespace, \
     is_loc_supported, check_is_project_or_group_for_logging, migration_dry_run
+from congregate.helpers.utils import is_dot_com
 
 
 class ImportExportClient(BaseGitLabClient):
@@ -236,6 +237,10 @@ class ImportExportClient(BaseGitLabClient):
         import_id = None
 
         if is_user_project(project):
+            if is_dot_com(self.dest_host):
+                self.log.warning(
+                    f"'{path}' is a USER project and may not migrate to gitlab.com. Please migrate manually")
+                return import_id
             dest_namespace = get_user_project_namespace(project)
             self.log.info(
                 f"{dry}'{path}' is a USER project. Importing to USER namespace '{dest_namespace}'")

@@ -11,7 +11,7 @@ from shutil import copy
 from time import time
 from datetime import timedelta, datetime
 from gitlab_ps_utils.misc_utils import is_error_message_present, get_dry_log, safe_json_response, strip_netloc
-from gitlab_ps_utils.json_utils import read_json_file_into_object, write_json_to_file
+from gitlab_ps_utils.json_utils import read_json_file_into_object, write_json_to_file, json_pretty
 from gitlab_ps_utils.dict_utils import dig
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.utils import is_dot_com, get_congregate_path
@@ -158,14 +158,14 @@ def check_for_staged_user_projects(staged_projects):
         :return: True if user projects are found in staged_projects, else False
     """
     if user_projects := get_staged_user_projects(staged_projects):
-        b.log.warning("User projects staged:\n{}".format(
-            "\n".join(u for u in user_projects)))
+        b.log.warning(
+            f"USER projects staged ({len(user_projects)}):\n{json_pretty(user_projects)}")
     return user_projects
 
 
 def get_user_project_namespace(p):
     """
-    Determine if user project should be imported under the import_user (.com or self-managed root) or member namespace (self-managed)
+    Determine if user project should be imported under the import_user (self-managed root) or member namespace (self-managed)
 
         :param p: The JSON object representing a GitLab project
         :param: namespace:
@@ -173,7 +173,7 @@ def get_user_project_namespace(p):
     """
     p_namespace = dig(p, 'namespace', 'full_path') if isinstance(
         p.get("namespace"), dict) else p["namespace"]
-    if is_dot_com(b.config.destination_host) or p_namespace == "root":
+    if p_namespace == "root":
         b.log.info(
             f"User project {p['path_with_namespace']} is assigned to import user (ID: {b.config.import_user_id})")
         user = safe_json_response(users_api.get_user(

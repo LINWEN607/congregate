@@ -13,6 +13,7 @@ from gitlab_ps_utils.dict_utils import rewrite_list_into_dict, dig
 from gitlab_ps_utils.json_utils import json_pretty
 
 from congregate.helpers.migrate_utils import get_staged_user_projects
+from congregate.helpers.utils import is_dot_com
 from congregate.cli.stage_base import BaseStageClass
 
 
@@ -30,8 +31,11 @@ class ProjectStageCLI(BaseStageClass):
         self.build_staging_data(projects_to_stage, dry_run, scm_source)
         if user_projects := get_staged_user_projects(
                 remove_dupes(self.staged_projects)):
+            if is_dot_com(self.config.destination_host):
+                self.log.warning(
+                    "Please manually migrate USER projects to gitlab.com")
             self.log.warning(
-                f"User projects staged ({len(user_projects)}):\n{json_pretty(user_projects)}")
+                f"USER projects staged ({len(user_projects)}):\n{json_pretty(user_projects)}")
         if self.config.source_type == "gitlab":
             self.list_staged_users_without_public_email()
 
