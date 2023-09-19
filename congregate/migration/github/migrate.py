@@ -106,7 +106,6 @@ class GitHubMigrateClient(MigrateClient):
                 if is_dot_com(self.config.destination_host):
                     self.log.warning(
                         "Please re-stage w/o USER repos and manually migrate USER repos to gitlab.com")
-                    sys.exit(os.EX_DATAERR)
                 self.log.warning(
                     f"USER repos staged ({len(user_projects)}):\n{json_utils.json_pretty(user_projects)}")
             self.log.info("Importing repos from GitHub")
@@ -128,10 +127,17 @@ class GitHubMigrateClient(MigrateClient):
             self.create_issue_reporting(staged_projects, import_results)
 
     def import_github_repo(self, project):
+        pwn = project.get("path_with_namespace")
         dstn_pwn, tn = mig_utils.get_stage_wave_paths(project)
         host = self.config.destination_host
         token = self.config.destination_token
         project_id = None
+        if mig_utils.is_user_project(project) and is_dot_com(self.config.destination_host):
+            log = f"'{pwn}' is a USER repo and may not migrate to gitlab.com. Please migrate manually"
+            self.log.warning(f"Skipping import. {log}")
+            return self.ext_import.get_result_data(dstn_pwn, {
+                "error": log
+            })
         if self.group_structure or self.groups.find_group_id_by_path(host, token, tn):
             gh_host, gh_token = self.get_host_and_token()
             # Already imported
