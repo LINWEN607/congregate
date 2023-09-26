@@ -10,7 +10,7 @@ NOTE: Features not listed in the matrix should be presumed to be not yet support
 
 ## Bitbucket Server
 
-| Main           | Feature                    | Sub-feature | GitLab               | Congregate           |
+| Main           | Feature                    | Sub-feature | GitLab BBS importer  | Congregate           |
 | -------------- | -------------------------- | ----------- | -------------------- | -------------------- |
 | **Project**    |
 |                | GL Group creation          |             | :white_check_mark:   | :white_check_mark:   |
