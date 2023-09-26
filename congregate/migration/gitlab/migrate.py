@@ -36,9 +36,13 @@ from congregate.migration.gitlab.clusters import ClustersClient
 from congregate.migration.gitlab.environments import EnvironmentsClient
 from congregate.migration.gitlab.branches import BranchesClient
 from congregate.migration.gitlab.packages import PackagesClient
+from congregate.migration.gitlab.bulk_imports import BulkImportsClient
 from congregate.helpers.mdbc import MongoConnector
 from congregate.migration.meta.api_models.single_project_features import SingleProjectFeatures
 from congregate.migration.meta.api_models.project_details import ProjectDetails
+from congregate.migration.meta.api_models.bulk_import_configuration import BulkImportconfiguration
+from congregate.migration.meta.api_models.bulk_import_entity import BulkImportEntity
+from congregate.migration.meta.api_models.bulk_import import BulkImportPayload
 
 
 class GitLabMigrateClient(MigrateClient):
