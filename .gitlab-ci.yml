@@ -585,9 +585,10 @@ container-scan-build:debian:
         - docker/release/debian.Dockerfile
 
 # Scanning the centos image
-container_scanning:
-  services:
-    - docker:${DOCKER_VERSION}-dind
+container_scanning_custom:
+  extends: container_scanning
+  # services:
+  #   - docker:${DOCKER_VERSION}-dind
   variables:
     DOCKER_IMAGE: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-centos
     DOCKERFILE_PATH: "docker/release/centos.Dockerfile"
@@ -595,8 +596,6 @@ container_scanning:
     DOCKER_DRIVER: overlay2
     DOCKER_TLS_CERTDIR: "/certs"
     DOCKER_HOST: tcp://docker:2376
-  script:
-    - gtcs scan
   rules:
     - if: "$CI_PIPELINE_SOURCE != 'schedule'"
       changes:
@@ -606,28 +605,27 @@ container_scanning:
         - docker/release/debian.Dockerfile
 
 slim_container_scanning:
-  services:
-    - docker:${DOCKER_VERSION}-dind
+  extends: container_scanning_custom
+  # services:
+  #   - docker:${DOCKER_VERSION}-dind
   variables:
-    DOCKER_IMAGE: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-slim-centos
-    DOCKERFILE_PATH: "docker/release/slim.Dockerfile"
+    DOCKER_IMAGE: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-debian
+    DOCKERFILE_PATH: "docker/release/debian.Dockerfile"
     GIT_STRATEGY: "fetch"
     DOCKER_DRIVER: overlay2
     DOCKER_TLS_CERTDIR: "/certs"
-    DOCKER_HOST: tcp://docker:2376
-  script:
-    - gtcs scan
+  # tags:
+  #   - gitlab-org-docker
   rules:
     - if: "$CI_PIPELINE_SOURCE != 'schedule'"
       changes:
         - pyproject.toml
         - frontend/package.json
-        - docker/release/centos.Dockerfile
-        - docker/release/debian.Dockerfile
         - docker/release/slim.Dockerfile
+        - docker/release/slim.dockerignore
 
 debian_container_scanning:
-  extends: container_scanning
+  extends: container_scanning_custom
   services:
     - docker:${DOCKER_VERSION}-dind
   variables:
