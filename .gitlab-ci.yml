@@ -590,7 +590,7 @@ container_scanning_custom:
   # services:
   #   - docker:${DOCKER_VERSION}-dind
   variables:
-    DOCKER_IMAGE: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-centos
+    CS_DEFAULT_BRANCH_IMAGE: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-centos
     DOCKERFILE_PATH: "docker/release/centos.Dockerfile"
     GIT_STRATEGY: "fetch"
     DOCKER_DRIVER: overlay2
@@ -609,7 +609,7 @@ slim_container_scanning:
   # services:
   #   - docker:${DOCKER_VERSION}-dind
   variables:
-    DOCKER_IMAGE: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-debian
+    CS_DEFAULT_BRANCH_IMAGE: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-slim
     DOCKERFILE_PATH: "docker/release/debian.Dockerfile"
     GIT_STRATEGY: "fetch"
     DOCKER_DRIVER: overlay2
@@ -629,7 +629,7 @@ debian_container_scanning:
   services:
     - docker:${DOCKER_VERSION}-dind
   variables:
-    DOCKER_IMAGE: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-debian
+    CS_DEFAULT_BRANCH_IMAGE: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-debian
     DOCKERFILE_PATH: "docker/release/debian.Dockerfile"
     GIT_STRATEGY: "fetch"
     DOCKER_DRIVER: overlay2
