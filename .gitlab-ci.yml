@@ -555,6 +555,21 @@ container-scan-build:centos:
         - frontend/package.json
         - docker/release/centos.Dockerfile
 
+container-scan-build:centos-slim:
+  stage: build
+  extends:
+    - .docker-build
+  variables:
+    DISTRO: "slim"
+    RELEASE_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-centos-slim
+  rules:
+    - if: "$CI_PIPELINE_SOURCE != 'schedule'"
+      changes:
+        - pyproject.toml
+        - frontend/package.json
+        - docker/release/slim.Dockerfile
+        - docker/release/slim.dockerignore
+
 container-scan-build:debian:
   stage: build
   extends:
@@ -589,6 +604,27 @@ container_scanning:
         - frontend/package.json
         - docker/release/centos.Dockerfile
         - docker/release/debian.Dockerfile
+
+slim_container_scanning:
+  services:
+    - docker:${DOCKER_VERSION}-dind
+  variables:
+    DOCKER_IMAGE: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-slim-centos
+    DOCKERFILE_PATH: "docker/release/slim.Dockerfile"
+    GIT_STRATEGY: "fetch"
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: "/certs"
+    DOCKER_HOST: tcp://docker:2376
+  script:
+    - gtcs scan
+  rules:
+    - if: "$CI_PIPELINE_SOURCE != 'schedule'"
+      changes:
+        - pyproject.toml
+        - frontend/package.json
+        - docker/release/centos.Dockerfile
+        - docker/release/debian.Dockerfile
+        - docker/release/slim.Dockerfile
 
 debian_container_scanning:
   extends: container_scanning
