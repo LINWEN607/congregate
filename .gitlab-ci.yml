@@ -609,7 +609,7 @@ slim_container_scanning:
   # services:
   #   - docker:${DOCKER_VERSION}-dind
   variables:
-    CS_IMAGE: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-slim
+    CS_IMAGE: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-centos-slim
     DOCKERFILE_PATH: "docker/release/debian.Dockerfile"
     GIT_STRATEGY: "fetch"
     DOCKER_DRIVER: overlay2
