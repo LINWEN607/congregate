@@ -91,9 +91,9 @@ class ListClient(BaseClass):
 
     def list_bitbucket_data(self):
         mongo, p, g, u = self.mongo_init(subset=self.subset)
-        groups_client = BitBucketGroups()
+        user_groups_client = BitBucketGroups()
         # Save repo and project user groups
-        groups = groups_client.retrieve_group_info()
+        user_groups = user_groups_client.retrieve_group_info()
         if not self.skip_users:
             users = BitBucketUsers()
             users.retrieve_user_info(processes=self.processes)
@@ -103,7 +103,7 @@ class ListClient(BaseClass):
             projects = BitBucketProjects(
                 subset=self.subset, skip_project_members=self.skip_project_members, skip_group_members=self.skip_group_members)
             # Determine whether BB project groups should be saved as GL group members
-            projects.set_user_groups(groups)
+            projects.set_user_groups(user_groups)
             projects.retrieve_project_info(processes=self.processes)
             mongo.dump_collection_to_file(
                 g, f"{self.app_path}/data/groups.json")
@@ -115,7 +115,7 @@ class ListClient(BaseClass):
             repos = BitBucketRepos(
                 subset=self.subset, skip_project_members=self.skip_project_members, skip_group_members=self.skip_group_members)
             # Determine whether BB repo groups should be saved as GL project members
-            repos.set_user_groups(groups)
+            repos.set_user_groups(user_groups)
             repos.retrieve_repo_info(processes=self.processes)
             mongo.dump_collection_to_file(
                 p, f"{self.app_path}/data/projects.json")
