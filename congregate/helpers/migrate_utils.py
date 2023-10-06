@@ -207,6 +207,9 @@ def find_user_by_email_comparison_without_id(email, src=False):
         # Will searching for an explicit email actually return more than one?
         # Probably is just an array of 1
         for user in users:
+            if not isinstance(user, dict):
+                b.log.error(f"Failed to find user by email '{email}':\n{user}")
+                return None
             if user and user.get(
                     "email") and user["email"].lower() == email.lower():
                 b.log.info(
