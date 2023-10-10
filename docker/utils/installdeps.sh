@@ -3,6 +3,7 @@
 install_debian_deps() {
     dep_path=$1
     apt update -y
+    apt upgrade -y
     while read library; do
         apt install -y $library
     done <$dep_path
