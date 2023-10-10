@@ -512,6 +512,25 @@ centos rolling release:
         - pyproject.toml
         - frontend/package.json
         - docker/release/centos.Dockerfile
+        - docker/release/centos
+
+slim rolling release:
+  extends:
+    - .docker-build
+  stage: rolling release
+  variables:
+    DISTRO: "slim"
+    RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:rolling-centos-slim"
+  rules:
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
+      changes:
+        - congregate/**/*.py
+        - frontend/**/*
+        - congregate.sh
+        - pyproject.toml
+        - frontend/package.json
+        - docker/release/slim.Dockerfile
+        - docker/release/centos
 
 centos-release-tag:
   extends:
@@ -523,6 +542,17 @@ centos-release-tag:
     DISTRO: "centos"
     RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME-centos"
     LATEST: "$CI_REGISTRY_IMAGE:latest-centos"
+
+slim-centos-release-tag:
+  extends:
+    - .docker-build
+  rules:
+    - if: "$CI_COMMIT_TAG"
+  stage: release
+  variables:
+    DISTRO: "slim"
+    RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME-centos-slim"
+    LATEST: "$CI_REGISTRY_IMAGE:latest-centos-slim"
 
 centos-no-mongo rolling release:
   extends:
@@ -610,7 +640,7 @@ slim_container_scanning:
   #   - docker:${DOCKER_VERSION}-dind
   variables:
     CS_IMAGE: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-centos-slim
-    DOCKERFILE_PATH: "docker/release/debian.Dockerfile"
+    DOCKERFILE_PATH: "docker/release/slim.Dockerfile"
     GIT_STRATEGY: "fetch"
     DOCKER_DRIVER: overlay2
     DOCKER_TLS_CERTDIR: "/certs"
