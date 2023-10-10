@@ -512,7 +512,7 @@ centos rolling release:
         - pyproject.toml
         - frontend/package.json
         - docker/release/centos.Dockerfile
-        - docker/release/centos
+        - docker/release/centos/**/*
 
 slim rolling release:
   extends:
@@ -530,7 +530,8 @@ slim rolling release:
         - pyproject.toml
         - frontend/package.json
         - docker/release/slim.Dockerfile
-        - docker/release/centos
+        - docker/release/slim.dockerignore
+        - docker/release/centos/**/*
 
 centos-release-tag:
   extends:
