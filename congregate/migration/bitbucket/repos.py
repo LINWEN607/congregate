@@ -16,16 +16,15 @@ from congregate.helpers.mdbc import MongoConnector
 
 
 class ReposClient(BitBucketServer):
-    def __init__(self, subset=False, skip_project_members=False, skip_group_members=False):
+    def __init__(self, subset=False):
         self.projects_api = ProjectsApi()
         self.repos_api = ReposApi()
         self.gl_projects_api = GLProjectsApi()
         self.unique_projects = set()
         super().__init__()
         self.subset = subset
-        self.skip_project_members = skip_project_members
-        self.skip_group_members = skip_group_members
 
+    # Save BBS repo user groups as GL project members
     def set_user_groups(self, groups):
         self.user_groups = groups
 

@@ -5,7 +5,8 @@ Copyright (c) 2022 - GitLab
 Usage:
     congregate init
     congregate list [--processes=<n>] [--partial] [--skip-users] [--skip-groups] [--skip-group-members] [--skip-projects] [--skip-project-members] [--skip-ci] [--src-instances] [--subset]
-    congregate configure
+    congregate configure # Deprecated. Manually create config file and validate it by running 'congregate validate-config'
+    congregate validate-config
     congregate generate-reporting
     congregate stage-projects <projects>... [--skip-users] [--commit] [--scm-source=hostname]
     congregate stage-groups <groups>... [--skip-users] [--commit] [--scm-source=hostname]
@@ -130,6 +131,7 @@ Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/projects.json.
     init                                    Creates additional directories and files required by congregate
     configure                               Configure congregate for migrating between two instances and save it to {CONGREGATE_PATH}/data/congregate.conf.
+    validate-config                         Run configuration validator
     generate-reporting                      Run reporting on staged projects.
     stage-projects                          Stage projects to {CONGREGATE_PATH}/data/staged_projects.json,
                                                 their parent groups to {CONGREGATE_PATH}/data/staged_groups.json.
@@ -224,6 +226,7 @@ if __name__ == '__main__':
     from gitlab_ps_utils.dict_utils import dig
     from gitlab_ps_utils.string_utils import obfuscate, deobfuscate
     from congregate.helpers import conf
+    from congregate.helpers.configuration_validator import ConfigurationValidator
     from congregate.helpers.utils import get_congregate_path, rotate_logs, stitch_json_results
     from congregate.helpers.ui_utils import spin_up_ui
 else:
@@ -235,6 +238,7 @@ else:
     from gitlab_ps_utils.dict_utils import dig
     from gitlab_ps_utils.string_utils import obfuscate, deobfuscate
     from congregate.helpers import conf
+    from congregate.helpers.configuration_validator import ConfigurationValidator
     from congregate.helpers.utils import get_congregate_path, rotate_logs, stitch_json_results
     from congregate.helpers.ui_utils import spin_up_ui
 
@@ -280,11 +284,14 @@ def main():
         if SCM_SOURCE:
             SCM_SOURCE = strip_netloc(SCM_SOURCE)
 
-        from congregate.cli.config import generate_config
         from congregate.helpers.migrate_utils import clean_data, add_post_migration_stats, write_results_to_file, toggle_maintenance_mode
 
         if arguments["configure"]:
-            generate_config()
+            log.info("Config CLI has been Deprecated. Validate config file by running `congregate validate-config`")
+        elif arguments["validate-config"]:
+            c = ConfigurationValidator()
+            for v in dir(c):
+                getattr(c, v)
         else:
             from gitlab_ps_utils.string_utils import convert_to_underscores
             from congregate.migration.gitlab.users import UsersClient
