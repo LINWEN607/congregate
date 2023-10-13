@@ -212,7 +212,7 @@ For each migration attempt check if any project or group imports failed or have 
   * [Import project via Rails console](https://docs.gitlab.com/ee/development/import_project.html#importing-via-the-rails-console)
 * [Import project via Rake task](https://docs.gitlab.com/ee/development/import_project.html#importing-via-a-rake-task)
 
-<!-- TO DO: No diff reports exist for BB server at this time
+</details>
 
 ### Post Migration
 
@@ -237,13 +237,16 @@ p "Number of Services import failures: #{services_import_failures.count}"
 p "Number of Protected Branches import failures: #{protected_branches_import_failures.count}"
 ```
 
--->
+### Archive Staged Projects
+
+* [ ] Upon successfull migration and diff report discuss with customer when to archive staged projects on source
+* [ ] Notify the customer in the customer-facing Slack channel you are archiving projects on source
+* [ ] Run `nohup ./congregate.sh set-bb-read-only-branch-permissions --bb-projects --commit > data/waves/wave_<insert_wave_number>/archive.log 2>&1 &`
+  * **NOTE:** Make sure to have the correct `data/staged_projects` file present
 
 ### Rollback
 
-If **any** data was migrated incorrectly (i.e. to the wrong namespace), you **must** rollback the migration wave **completely**
-
-</details>
+<details><summary>If <b>any</b> data was migrated incorrectly (i.e. to the wrong namespace), you <b>must</b> rollback the migration wave <b>completely</b>. Section collapsed by default.</summary>
 
 #### Users
 
@@ -263,5 +266,7 @@ If **any** data was migrated incorrectly (i.e. to the wrong namespace), you **mu
 * [ ] Copy `data/logs/congregate.log` and `data/logs/audit.log` to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
 * [ ] Post a comment describing the reason for the rollback and attach the rollback log and `data/logs/audit.log`
 * [ ] Follow these [instructions in the handbook](https://about.gitlab.com/handbook/engineering/security/#engaging-the-security-on-call) and link to this issue.
+
+</details>
 
 /confidential
