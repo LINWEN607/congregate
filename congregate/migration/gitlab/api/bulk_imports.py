@@ -28,7 +28,7 @@ class BulkImportApi(GitLabApiWrapper):
         """
         Get a list of all entities related to a bulk import request
 
-        GitLab API Doc: https://docs.gitlab.com/ee/api/bulk_imports.html#list-all-group-or-project-migrations-entities
+        GitLab API Doc: https://docs.gitlab.com/ee/api/bulk_imports.html#list-group-or-project-migration-entities
 
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance

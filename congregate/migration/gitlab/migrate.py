@@ -706,3 +706,16 @@ def import_task(file_path: str, group: dict, host: str, token: str):
 
     return client.handle_importing_projects(project_features, dst_host=host, dst_token=token,
                                             group_path=group['full_path'], filename=export_filename)
+
+
+@shared_task
+def post_migration_task(project: dict, import_id: int, dst_pwn: str, dst_host: str, dst_token: str):
+    client = GitLabMigrateClient(dry_run=False, skip_users=True,
+        skip_groups=True, skip_project_import=True)
+    # Disable Shared CI
+    client.disable_shared_ci(dst_pwn, import_id)
+    # Post import features
+    # client.log.info(
+    #     f"Migrating additional source project '{path}' (ID: {src_id}) GitLab features")
+    return client.migrate_single_project_features(
+        project, import_id, dest_host=dst_host, dest_token=dst_token)

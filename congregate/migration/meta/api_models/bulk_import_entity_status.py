@@ -18,7 +18,6 @@ class BulkImportEntityStatus:
     created_at: str
     updated_at: str
     failures: List[dict]
-    migrate_projects: bool
 
     def to_dict(self):
         return asdict(self)
