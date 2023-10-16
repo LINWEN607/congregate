@@ -1,3 +1,4 @@
+from copy import deepcopy as copy
 from json import dumps
 from congregate.migration.gitlab.api.base_api import GitLabApiWrapper
 
@@ -18,10 +19,11 @@ class BulkImportApi(GitLabApiWrapper):
         """
     
         if not message:
-            audit_data = data.copy()
+            audit_data = copy(data)
             audit_data.pop("personal_access_token", None)
             audit_data.get('configuration', {}).pop('access_token', None)
             message = f"Triggering new group or project bulk import with data {audit_data}"
+        print(f"\n\nDATA: {data}")
         return self.api.generate_post_request(host, token, "bulk_imports", dumps(data), description=message)
     
     def get_bulk_import_entities(self, host, token, id):
@@ -34,7 +36,7 @@ class BulkImportApi(GitLabApiWrapper):
             :param: token: (str) Access token to GitLab instance
             :param: id: (str) ID of the bulk import request
         """
-        return self.api.list_all(host, token, f"bulk_import/{id}/entities")
+        return self.api.list_all(host, token, f"bulk_imports/{id}/entities")
 
     def get_bulk_imports(self, host, token, data, query_params=""):
         """

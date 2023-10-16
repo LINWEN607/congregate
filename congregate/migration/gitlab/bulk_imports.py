@@ -15,10 +15,14 @@ class BulkImportsClient(BaseGitLabClient):
 
 
     def trigger_bulk_import(self, payload: BulkImportPayload):
-        if import_request := safe_json_response(
-            self.bulk_import.start_new_bulk_import(self.dest_host, self.dest_token, payload.to_dict())):
-            self.log.info("Successfully triggered bulk import request")
-            return (import_request.get('id'), list(self.bulk_import.get_bulk_import_entities(self.dest_host, self.dest_token, import_request.get('id'))))
+        import_response = self.bulk_import.start_new_bulk_import(self.dest_host, self.dest_token, payload.to_dict())
+        if import_response.status_code in [200, 201, 202]:
+            import_response = import_response.json()
+            self.log.info(f"Successfully triggered bulk import request with response: {import_response}")
+            sleep(3)
+            return (import_response.get('id'), list(self.bulk_import.get_bulk_import_entities(self.dest_host, self.dest_token, import_response.get('id'))), None)
+        else:
+            return (None, None, import_response.text)
 
     def poll_import_status(self, id):
         while True:
@@ -28,7 +32,8 @@ class BulkImportsClient(BaseGitLabClient):
                     return True
                 else:
                     self.log.info(f'Bulk import {id} still in progress')
-                    sleep(self.config.export_import_timeout)
+                    # sleep(self.config.export_import_timeout)
+                    sleep(10)
 
     def poll_single_entity_status(self, entity) -> BulkImportEntityStatus:
         entity_id = entity.get('id')
@@ -38,10 +43,11 @@ class BulkImportsClient(BaseGitLabClient):
                 entity = from_dict(data_class=BulkImportEntityStatus, data=resp)
                 if entity.status == 'finished':
                     self.log.info(f"Entity import for '{entity.destination_full_path}' is complete. Moving on to post-migration tasks")
-                    return entity
+                    return entity.to_dict()
                 else:
                     self.log.info(f"Entity import for '{entity.destination_full_path}' in progress")
-                    sleep(self.config.export_import_timeout)
+                    # sleep(self.config.export_import_timeout)
+                    sleep(10)
 
     
 

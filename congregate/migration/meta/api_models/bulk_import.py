@@ -9,4 +9,21 @@ class BulkImportPayload:
     entities: List[BulkImportEntity]
 
     def to_dict(self):
-        return asdict(self)
+        return strip_none(asdict(self))
+    
+def strip_none(source, dest=None):
+    if not dest:
+        dest = {}
+    if isinstance(source, dict):
+        for k, v in source.items():
+            if v:
+                if isinstance(v, dict):
+                    dest[k] = strip_none(v)
+                elif isinstance(v, list):
+                    dest[k] = []
+                    for e in v:
+                        dest[k].append(strip_none(e))
+                else:
+                    dest[k] = v
+        return dest
+    return source

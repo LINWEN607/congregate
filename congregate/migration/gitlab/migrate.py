@@ -710,14 +710,18 @@ def import_task(file_path: str, group: dict, host: str, token: str):
 
 
 @shared_task
-def post_migration_task(entity: BulkImportEntityStatus):
+def post_migration_task(entity, dest_host, dest_token):
     client = GitLabMigrateClient(dry_run=False, skip_users=True,
         skip_groups=True, skip_project_import=True)
-    project = client.projects.find_project_by_path(client.config.source_host, client.config.source_token, entity.source_full_path)
-    # Disable Shared CI
-    client.disable_shared_ci(entity.destination_full_path, entity.project_id)
-    # Post import features
-    # client.log.info(
-    #     f"Migrating additional source project '{path}' (ID: {src_id}) GitLab features")
-    return client.migrate_single_project_features(
-        project, entity.project_id, dest_host=client.config.destination_host, dest_token=client.config.destination_token)
+    entity = from_dict(data_class=BulkImportEntityStatus, data=entity)
+    if entity.entity_type == "project":
+        project = client.projects.find_project_by_path(client.config.source_host, client.config.source_token, entity.source_full_path)
+        # Disable Shared CI
+        # client.disable_shared_ci(entity.destination_full_path, entity.project_id)
+        # Post import features
+        # client.log.info(
+        #     f"Migrating additional source project '{path}' (ID: {src_id}) GitLab features")
+        return client.migrate_single_project_features(
+            project, entity.project_id, dest_host=dest_host, dest_token=dest_token)
+    if entity.entity_type == "group":
+        return "Migrated group"

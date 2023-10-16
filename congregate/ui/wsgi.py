@@ -8,6 +8,7 @@ from congregate.ui.stage import StageAPI
 from congregate.ui.models import data_retrieval
 from congregate.ui.logs import logger
 from congregate.ui.airgap import airgap_routes
+from congregate.ui.direct_transfer import direct_transfer_routes
 from congregate.ui import config
 
 app = Flask(__name__,
@@ -39,3 +40,4 @@ register_api(app, StageAPI, UsersClient, 'users')
 app.register_blueprint(data_retrieval, url_prefix='/data')
 app.register_blueprint(logger)
 app.register_blueprint(airgap_routes, url_prefix='/airgap')
+app.register_blueprint(direct_transfer_routes, url_prefix='/direct_transfer')
