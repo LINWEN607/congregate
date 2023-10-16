@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from celery import group, chain, chunks
+from celery import group, chain
 from flask import jsonify, Blueprint, request, redirect, current_app
 from werkzeug.utils import secure_filename
 from gitlab_ps_utils.misc_utils import safe_json_response
@@ -22,7 +22,7 @@ def trigger_direct_transfer():
     dt_id, dt_entities = dt_client.trigger_bulk_import(payload)
     result = group(
         watch_import_status(dest_host, dest_token, dt_id),
-        watch_import_entity_status.chunks(dt_entities, 1)
+        chain(watch_import_entity_status.chunks(dt_entities, 1), post_migration_task)
     )
     return jsonify({
         'status': 'triggered direct transfer jobs',

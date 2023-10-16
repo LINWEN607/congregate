@@ -43,6 +43,7 @@ from congregate.migration.meta.api_models.project_details import ProjectDetails
 from congregate.migration.meta.api_models.bulk_import_configuration import BulkImportconfiguration
 from congregate.migration.meta.api_models.bulk_import_entity import BulkImportEntity
 from congregate.migration.meta.api_models.bulk_import import BulkImportPayload
+from congregate.migration.meta.api_models.bulk_import_entity_status import BulkImportEntityStatus
 
 
 class GitLabMigrateClient(MigrateClient):
@@ -709,13 +710,14 @@ def import_task(file_path: str, group: dict, host: str, token: str):
 
 
 @shared_task
-def post_migration_task(project: dict, import_id: int, dst_pwn: str, dst_host: str, dst_token: str):
+def post_migration_task(entity: BulkImportEntityStatus):
     client = GitLabMigrateClient(dry_run=False, skip_users=True,
         skip_groups=True, skip_project_import=True)
+    project = client.projects.find_project_by_path(client.config.source_host, client.config.source_token, entity.source_full_path)
     # Disable Shared CI
-    client.disable_shared_ci(dst_pwn, import_id)
+    client.disable_shared_ci(entity.destination_full_path, entity.project_id)
     # Post import features
     # client.log.info(
     #     f"Migrating additional source project '{path}' (ID: {src_id}) GitLab features")
     return client.migrate_single_project_features(
-        project, import_id, dest_host=dst_host, dest_token=dst_token)
+        project, entity.project_id, dest_host=client.config.destination_host, dest_token=client.config.destination_token)

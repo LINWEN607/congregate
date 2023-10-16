@@ -30,7 +30,7 @@ class BulkImportsClient(BaseGitLabClient):
                     self.log.info(f'Bulk import {id} still in progress')
                     sleep(self.config.export_import_timeout)
 
-    def poll_single_entity_status(self, entity):
+    def poll_single_entity_status(self, entity) -> BulkImportEntityStatus:
         entity_id = entity.get('id')
         dt_id = entity.get('bulk_import_id')
         while True:
@@ -38,7 +38,7 @@ class BulkImportsClient(BaseGitLabClient):
                 entity = from_dict(data_class=BulkImportEntityStatus, data=resp)
                 if entity.status == 'finished':
                     self.log.info(f"Entity import for '{entity.destination_full_path}' is complete. Moving on to post-migration tasks")
-                    return entity.to_dict()
+                    return entity
                 else:
                     self.log.info(f"Entity import for '{entity.destination_full_path}' in progress")
                     sleep(self.config.export_import_timeout)
