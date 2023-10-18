@@ -1,6 +1,7 @@
 from dataclasses import dataclass, asdict
 from flask import Flask
 from celery import Celery, Task
+from celery.result import AsyncResult
 from congregate.helpers.configuration_validator import ConfigurationValidator
 
 def celery_init_app(app: Flask) -> Celery:
@@ -25,6 +26,9 @@ def generate_celery_config():
         result_backend=f"mongodb://{c.mongo_host}:{c.mongo_port}/jobs",
         task_ignore_results=True
     ).to_dict()
+
+def get_task_status(id):
+    return AsyncResult(id)
 
 @dataclass
 class CeleryConfig():
