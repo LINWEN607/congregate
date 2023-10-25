@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Congregate - GitLab instance migration utility 
+# Congregate - GitLab instance migration utility
 #
 # Copyright (c) 2022 - GitLab
 #
@@ -8,7 +8,7 @@
 #
 
 # We are trapping ctrl+c to help clean up any dangling PIDs on a forced quit
-trap rm_pid INT TERM QUIT
+trap rm_pid INT TERM QUIT EXIT
 
 function rm_pid() {
     rm -f /tmp/congregate.pid
