@@ -6,14 +6,17 @@ ENV CONGREGATE_PATH=/opt/congregate \
     APP_NAME=congregate \
     PIP_DEFAULT_TIMEOUT=100
 
-WORKDIR /opt/congregate
-
 COPY docker/release/centos/mongo_repo /etc/yum.repos.d/mongodb-org-4.4.repo
 COPY docker/release/centos/deps /opt/congregate/setup/deps
 COPY docker/utils/installdeps.sh /opt/congregate/setup/installdeps.sh
 COPY docker/release/centos/update-rc.sh /opt/congregate/setup/update-rc.sh
 
-RUN ./setup/installdeps.sh setup/deps && ./setup/update-rc.sh
+RUN cd /opt/congregate/setup && \
+    chmod +x installdeps.sh update-rc.sh && \
+    ./installdeps.sh deps && \
+    ./update-rc.sh
+
+WORKDIR /opt/congregate
 
 RUN rm -r /opt/congregate/setup
 
@@ -77,20 +80,6 @@ RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/inst
 
 RUN export PATH=$PATH:$HOME/.local/bin && \
     echo "export PATH=$PATH" >> ~/.zshrc
-
-# Set up the bashrc
-RUN echo 'if [ -z "$(ps aux | grep mongo | grep -v grep)" ]; then sudo mongod --fork --logpath /var/log/mongodb/mongod.log; fi' >> ~/.bashrc && \
-    echo 'if [ -z "$(ps aux | grep mongo | grep -v grep)" ]; then sudo mongod --fork --logpath /var/log/mongodb/mongod.log; fi' >> ~/.zshrc
-RUN echo "alias python='python3.8'" >> ~/.bashrc && \
-    echo "alias python='python3.8'" >> ~/.zshrc
-RUN echo "alias python3='python3.8'" >> ~/.bashrc && \
-    echo "alias python3='python3.8'" >> ~/.zshrc
-RUN echo "alias pip='python3.8 -m pip'" >> ~/.bashrc && \
-    echo "alias pip='python3.8 -m pip'" >> ~/.zshrc
-RUN echo "alias ll='ls -al'" >> ~/.bashrc && \
-    echo "alias ll='ls -al'" >> ~/.zshrc
-RUN echo "alias license='cat /opt/congregate/LICENSE'" >> ~/.bashrc && \
-    echo "alias license='cat /opt/congregate/LICENSE'" >> ~/.zshrc
 
 RUN echo "CHECKING PYTHON VERSION" && \
     python3.8 -V
