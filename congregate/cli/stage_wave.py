@@ -211,9 +211,9 @@ class WaveStageCLI(BaseStageClass):
             else:
                 self.log.warning(
                     f"Please manually migrate '{p_type}' project '{p_path}' ({p_id}) to gitlab.com")
-        except KeyError:
+        except Exception as e:
             self.log.error(
-                f"Failed to append project '{p_path}' ({p_id}) to staged projects")
+                f"Failed to append project '{p_path}' ({p_id}) to staged projects:\n{e}")
             sys.exit(os.EX_DATAERR)
 
     def append_group_data(self, group, groups_to_stage,
