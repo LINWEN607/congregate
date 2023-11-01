@@ -158,7 +158,7 @@ def check_for_staged_user_projects(staged_projects):
         :return: True if user projects are found in staged_projects, else False
     """
     if user_projects := get_staged_user_projects(staged_projects):
-        b.log.warning("USER projects staged ({}):\n{}".format(
+        b.log.warning("USER projects staged (Count : {}):\n{}".format(
             len(user_projects), "\n".join(u for u in user_projects)))
     return user_projects
 

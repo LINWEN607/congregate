@@ -101,7 +101,7 @@ class GitHubMigrateClient(MigrateClient):
             if user_projects := mig_utils.get_staged_user_projects(
                     staged_projects):
                 self.log.warning(
-                    f"USER repos staged ({len(user_projects)}):\n{json_utils.json_pretty(user_projects)}")
+                    f"USER repos staged (Count : {len(user_projects)}):\n{json_utils.json_pretty(user_projects)}")
             self.log.info("Importing repos from GitHub")
             import_results = list(ir for ir in self.multi.start_multi_process(
                 self.import_github_repo, staged_projects, processes=self.processes, nestable=True))

@@ -195,7 +195,7 @@ class WaveStageCLI(BaseStageClass):
                 return None
 
             self.log.info(
-                f"{get_dry_log(dry_run)}Staging project '{p_path}' (ID: {p_id})"
+                f"{get_dry_log(dry_run)}Staging project '{p_path}' (Source ID: {p_id})"
                 f"[{len(self.staged_projects) + 1}/{len(p_range) if p_range else len(projects_to_stage)}]"
             )
             self.staged_projects.append(project)
