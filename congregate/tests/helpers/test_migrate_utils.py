@@ -774,7 +774,7 @@ class MigrateTests(unittest.TestCase):
             self.assertListEqual(mutils.check_for_staged_user_projects([{}]), [
                                  "path_with_namespace"])
             self.assertListEqual(al.output, [
-                                 'WARNING:congregate.helpers.base_class:USER projects staged (1):\npath_with_namespace'])
+                                 'WARNING:congregate.helpers.base_class:USER projects staged (Count : 1):\npath_with_namespace'])
 
     @patch("congregate.helpers.migrate_utils.get_staged_user_projects")
     def test_check_for_staged_user_projects_false_when_none_found(self, mock_get_staged_user_projects):

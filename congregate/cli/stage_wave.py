@@ -9,11 +9,15 @@ import sys
 from gitlab_ps_utils.misc_utils import get_dry_log, safe_json_response
 from gitlab_ps_utils.dict_utils import rewrite_list_into_dict, dig
 from gitlab_ps_utils.string_utils import clean_split
+from gitlab_ps_utils.list_utils import remove_dupes
+from gitlab_ps_utils.json_utils import json_pretty
+
 from congregate.migration.meta.etl import WaveSpreadsheetHandler
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.cli.stage_base import BaseStageClass
 from congregate.cli.stage_projects import ProjectStageCLI
 from congregate.helpers.utils import is_dot_com
+from congregate.helpers.migrate_utils import get_staged_user_projects
 
 
 class WaveStageCLI(BaseStageClass):
@@ -30,6 +34,15 @@ class WaveStageCLI(BaseStageClass):
     def stage_data(self, wave_to_stage, dry_run=True,
                    skip_users=False, scm_source=None):
         self.stage_wave(wave_to_stage, dry_run, scm_source)
+        if user_projects := get_staged_user_projects(
+                remove_dupes(self.staged_projects)):
+            self.log.warning(
+                f"USER projects staged (Count : {len(user_projects)}):\n{json_pretty(user_projects)}")
+            if is_dot_com(self.config.destination_host):
+                self.log.warning(
+                    "Please manually migrate USER projects to gitlab.com")
+        if self.config.source_type == "gitlab":
+            self.list_staged_users_without_public_email()
         if not dry_run:
             self.write_staging_files(skip_users=skip_users)
 
@@ -168,40 +181,39 @@ class WaveStageCLI(BaseStageClass):
         for member in project["members"]:
             self.append_member_to_members_list([], member, dry_run)
 
+        p_id = project["id"]
+        p_path = project['path_with_namespace']
+        p_type = project["project_type"]
         try:
-            p_path = project['path_with_namespace']
-            p_id = project["id"]
-            p_type = project["project_type"]
             if p_type == "group" or (p_type == "user" and not is_dot_com(self.config.destination_host)):
                 if parent_group_id := dig(self.rewritten_projects.get(p_id), "namespace", "id"):
-                    group_to_stage = self.rewritten_groups[parent_group_id].copy(
-                    )
-                    self.log.info(
-                        f"{get_dry_log(dry_run)}Staging group {group_to_stage['full_path']} (ID: {group_to_stage['id']})")
-                    group_to_stage.pop("projects", None)
-                    self.handle_parent_group(wave_row, group_to_stage)
-                    self.staged_groups.append(group_to_stage)
+                    if group_to_stage := self.rewritten_groups[parent_group_id]:
+                        self.log.info(
+                            f"{get_dry_log(dry_run)}Staging group {group_to_stage['full_path']} (ID: {group_to_stage['id']})")
+                        self.handle_parent_group(wave_row, group_to_stage)
+                        self.staged_groups.append(
+                            self.format_group(group_to_stage))
 
-                    # Append all group members to staged users
-                    for member in group_to_stage["members"]:
-                        self.append_member_to_members_list([], member, dry_run)
+                        # Append all group members to staged users
+                        for member in group_to_stage["members"]:
+                            self.append_member_to_members_list(
+                                [], member, dry_run)
+                        self.log.info(
+                            f"{get_dry_log(dry_run)}Staging project '{p_path}' (ID: {p_id})"
+                            f"[{len(self.staged_projects) + 1}/{len(p_range) if p_range else len(projects_to_stage)}]")
+                        self.staged_projects.append(project)
+                    else:
+                        self.log.warning(
+                            f"Project '{p_path}' ({p_id}) parent group ID {parent_group_id} NOT found among listed groups")
                 else:
                     self.log.warning(
-                        f"Project '{p_path}' NOT found among listed projects")
-                    return None
+                        f"Project '{p_path}' ({p_id}) NOT found among listed projects")
             else:
                 self.log.warning(
-                    f"Please manually migrate '{p_type}' project '{p_path}' to gitlab.com")
-                return None
-
-            self.log.info(
-                f"{get_dry_log(dry_run)}Staging project '{p_path}' (Source ID: {p_id})"
-                f"[{len(self.staged_projects) + 1}/{len(p_range) if p_range else len(projects_to_stage)}]"
-            )
-            self.staged_projects.append(project)
+                    f"Please manually migrate '{p_type}' project '{p_path}' ({p_id}) to gitlab.com")
         except KeyError:
             self.log.error(
-                f"Parent group ID {parent_group_id} not found among listed groups")
+                f"Failed to append project '{p_path}' ({p_id}) to staged projects")
             sys.exit(os.EX_DATAERR)
 
     def append_group_data(self, group, groups_to_stage,

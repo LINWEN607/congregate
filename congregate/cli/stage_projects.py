@@ -7,6 +7,7 @@ Copyright (c) 2022 - GitLab
 import re
 import sys
 import os
+
 from gitlab_ps_utils.misc_utils import get_dry_log
 from gitlab_ps_utils.list_utils import remove_dupes
 from gitlab_ps_utils.dict_utils import rewrite_list_into_dict, dig
@@ -32,14 +33,12 @@ class ProjectStageCLI(BaseStageClass):
         if user_projects := get_staged_user_projects(
                 remove_dupes(self.staged_projects)):
             self.log.warning(
-                f"USER projects staged ({len(user_projects)}):\n{json_pretty(user_projects)}")
+                f"USER projects staged (Count : {len(user_projects)}):\n{json_pretty(user_projects)}")
             if is_dot_com(self.config.destination_host):
                 self.log.warning(
                     "Please manually migrate USER projects to gitlab.com")
-                sys.exit(os.EX_DATAERR)
         if self.config.source_type == "gitlab":
             self.list_staged_users_without_public_email()
-
         if not dry_run:
             self.write_staging_files(skip_users=skip_users)
 
@@ -125,26 +124,36 @@ class ProjectStageCLI(BaseStageClass):
         for member in obj.get("members", []):
             self.append_member_to_members_list([], member, dry_run)
 
-        if obj.get("project_type") == "group":
-            parent_group_id = dig(project, "namespace", "id")
-            try:
-                if group_to_stage := self.rewritten_groups[parent_group_id]:
-                    self.log.info(
-                        f"{get_dry_log(dry_run)}Staging group {group_to_stage['full_path']} (ID: {group_to_stage['id']})")
-                    self.staged_groups.append(
-                        self.format_group(group_to_stage))
+        o_id = obj.get("id")
+        o_path = obj.get("path_with_namespace")
+        o_type = obj.get("project_type")
+        try:
+            if o_type == "group" or (o_type == "user" and not is_dot_com(self.config.destination_host)):
+                if parent_group_id := dig(project, "namespace", "id"):
+                    if group_to_stage := self.rewritten_groups[parent_group_id]:
+                        self.log.info(
+                            f"{get_dry_log(dry_run)}Staging group {group_to_stage['full_path']} (ID: {group_to_stage['id']})")
+                        self.staged_groups.append(
+                            self.format_group(group_to_stage))
 
-                    # Append all group members to staged users
-                    for member in group_to_stage.get("members", []):
-                        self.append_member_to_members_list([], member, dry_run)
+                        # Append all group members to staged users
+                        for member in group_to_stage.get("members", []):
+                            self.append_member_to_members_list(
+                                [], member, dry_run)
+                        self.log.info(
+                            f"{get_dry_log(dry_run)}Staging project '{o_path}' (ID: {o_id})"
+                            f"[{len(self.staged_projects) + 1}/{len(p_range) if p_range else len(projects_to_stage)}]")
+                        self.staged_projects.append(obj)
+                    else:
+                        self.log.warning(
+                            f"Project '{o_path}' ({o_id}) parent group ID {parent_group_id} NOT found among listed groups")
                 else:
                     self.log.warning(
-                        f"Project {project.get('path_with_namespace')} parent group ID {parent_group_id} NOT found among listed groups")
-            except KeyError:
-                self.log.error(
-                    f"Parent group ID {parent_group_id} NOT found among listed groups")
-                sys.exit(os.EX_DATAERR)
-
-        self.log.info(
-            f"{get_dry_log(dry_run)}Staging project {obj['path_with_namespace']} (ID: {obj['id']}) [{len(self.staged_projects) + 1}/{len(p_range) if p_range else len(projects_to_stage)}]")
-        self.staged_projects.append(obj)
+                        f"Project '{o_path}' ({o_id}) NOT found among listed projects")
+            else:
+                self.log.warning(
+                    f"Please manually migrate '{o_type}' project '{o_path}' to gitlab.com")
+        except KeyError:
+            self.log.error(
+                f"Failed to append project '{o_path}' ({o_id}) to staged projects")
+            sys.exit(os.EX_DATAERR)
