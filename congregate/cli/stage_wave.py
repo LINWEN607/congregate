@@ -13,6 +13,7 @@ from congregate.migration.meta.etl import WaveSpreadsheetHandler
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.cli.stage_base import BaseStageClass
 from congregate.cli.stage_projects import ProjectStageCLI
+from congregate.helpers.utils import is_dot_com
 
 
 class WaveStageCLI(BaseStageClass):
@@ -168,8 +169,11 @@ class WaveStageCLI(BaseStageClass):
             self.append_member_to_members_list([], member, dry_run)
 
         try:
-            if project["project_type"] == "group":
-                if parent_group_id := dig(self.rewritten_projects.get(project["id"]), "namespace", "id"):
+            p_path = project['path_with_namespace']
+            p_id = project["id"]
+            p_type = project["project_type"]
+            if p_type == "group" or (p_type == "user" and not is_dot_com(self.config.destination_host)):
+                if parent_group_id := dig(self.rewritten_projects.get(p_id), "namespace", "id"):
                     group_to_stage = self.rewritten_groups[parent_group_id].copy(
                     )
                     self.log.info(
@@ -183,10 +187,15 @@ class WaveStageCLI(BaseStageClass):
                         self.append_member_to_members_list([], member, dry_run)
                 else:
                     self.log.warning(
-                        f"Project {project['path_with_namespace']} NOT found among listed projects")
+                        f"Project '{p_path}' NOT found among listed projects")
+                    return None
+            else:
+                self.log.warning(
+                    f"Please manually migrate '{p_type}' project '{p_path}' to gitlab.com")
+                return None
 
             self.log.info(
-                f"{get_dry_log(dry_run)}Staging project {project['path_with_namespace']} (ID: {project['id']})"
+                f"{get_dry_log(dry_run)}Staging project '{p_path}' (ID: {p_id})"
                 f"[{len(self.staged_projects) + 1}/{len(p_range) if p_range else len(projects_to_stage)}]"
             )
             self.staged_projects.append(project)

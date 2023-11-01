@@ -7,7 +7,6 @@
 from gitlab_ps_utils import json_utils, misc_utils
 
 import congregate.helpers.migrate_utils as mig_utils
-from congregate.helpers.utils import is_dot_com
 
 from congregate.migration.meta.base_migrate import MigrateClient
 from congregate.migration.gitlab.external_import import ImportClient
@@ -103,9 +102,6 @@ class BitBucketServerMigrateClient(MigrateClient):
                 staged_projects, are_projects=True)
             if user_projects := mig_utils.get_staged_user_projects(
                     staged_projects):
-                if is_dot_com(self.config.destination_host):
-                    self.log.warning(
-                        "Please re-stage w/o USER repos and manually migrate USER repos to gitlab.com")
                 self.log.warning(
                     f"USER repos staged ({len(user_projects)}):\n{json_utils.json_pretty(user_projects)}")
             self.log.info("Importing BitBucket repos")
@@ -129,12 +125,6 @@ class BitBucketServerMigrateClient(MigrateClient):
         host = self.config.destination_host
         token = self.config.destination_token
         project_id = None
-        if mig_utils.is_user_project(project) and is_dot_com(self.config.destination_host):
-            log = f"'{pwn}' is a USER repo and may not migrate to gitlab.com. Please migrate manually"
-            self.log.warning(f"Skipping import. {log}")
-            return self.ext_import.get_result_data(dstn_pwn, {
-                "error": log
-            })
         if self.group_structure or self.groups.find_group_id_by_path(host, token, tn):
             # Already imported
             if dst_pid := self.projects.find_project_by_path(host, token, dstn_pwn):

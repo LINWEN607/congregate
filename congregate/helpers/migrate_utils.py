@@ -173,7 +173,7 @@ def get_user_project_namespace(p):
     """
     p_namespace = dig(p, 'namespace', 'full_path') if isinstance(
         p.get("namespace"), dict) else p["namespace"]
-    if p_namespace == "root":
+    if is_dot_com(b.config.destination_host) or p_namespace == "root":
         b.log.info(
             f"User project {p['path_with_namespace']} is assigned to import user (ID: {b.config.import_user_id})")
         user = safe_json_response(users_api.get_user(

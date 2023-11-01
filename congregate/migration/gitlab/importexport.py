@@ -237,10 +237,6 @@ class ImportExportClient(BaseGitLabClient):
         import_id = None
 
         if is_user_project(project):
-            if is_dot_com(self.dest_host):
-                self.log.warning(
-                    f"'{path}' is a USER project and may not migrate to gitlab.com. Please migrate manually")
-                return import_id
             dest_namespace = get_user_project_namespace(project)
             self.log.info(
                 f"{dry}'{path}' is a USER project. Importing to USER namespace '{dest_namespace}'")

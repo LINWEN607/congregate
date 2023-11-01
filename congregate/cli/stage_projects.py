@@ -31,11 +31,12 @@ class ProjectStageCLI(BaseStageClass):
         self.build_staging_data(projects_to_stage, dry_run, scm_source)
         if user_projects := get_staged_user_projects(
                 remove_dupes(self.staged_projects)):
+            self.log.warning(
+                f"USER projects staged ({len(user_projects)}):\n{json_pretty(user_projects)}")
             if is_dot_com(self.config.destination_host):
                 self.log.warning(
                     "Please manually migrate USER projects to gitlab.com")
-            self.log.warning(
-                f"USER projects staged ({len(user_projects)}):\n{json_pretty(user_projects)}")
+                sys.exit(os.EX_DATAERR)
         if self.config.source_type == "gitlab":
             self.list_staged_users_without_public_email()
 
