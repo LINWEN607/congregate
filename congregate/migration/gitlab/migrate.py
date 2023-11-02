@@ -715,13 +715,16 @@ def post_migration_task(entity, dest_host, dest_token):
         skip_groups=True, skip_project_import=True)
     entity = from_dict(data_class=BulkImportEntityStatus, data=entity)
     if entity.entity_type == "project":
-        project = client.projects.find_project_by_path(client.config.source_host, client.config.source_token, entity.source_full_path)
-        # Disable Shared CI
-        # client.disable_shared_ci(entity.destination_full_path, entity.project_id)
-        # Post import features
-        # client.log.info(
-        #     f"Migrating additional source project '{path}' (ID: {src_id}) GitLab features")
+        source_pid = client.projects.find_project_by_path(
+            client.config.source_host, client.config.source_token, entity.source_full_path)
+        source_project = misc_utils.safe_json_response(
+            client.projects.projects_api.get_project(
+                source_pid, client.config.source_host, client.config.source_token)
+            )
         return client.migrate_single_project_features(
-            project, entity.project_id, dest_host=dest_host, dest_token=dest_token)
+            source_project, entity.project_id, dest_host=dest_host, dest_token=dest_token)
     if entity.entity_type == "group":
-        return "Migrated group"
+        group = client.groups.find_group_by_path(
+            client.config.source_host, client.config.source_token, entity.source_full_path)
+        return client.migrate_single_group_features(
+            group['id'], entity.namespace_id, entity.destination_full_path)

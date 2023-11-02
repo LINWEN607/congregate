@@ -14,7 +14,6 @@ class BulkImportsClient(BaseGitLabClient):
                          dest_host=dest_host, dest_token=dest_token)
         self.bulk_import = BulkImportApi()
 
-
     def trigger_bulk_import(self, payload: BulkImportPayload):
         import_response = self.bulk_import.start_new_bulk_import(self.dest_host, self.dest_token, payload.to_dict())
         total_entity_count = 0
@@ -39,8 +38,7 @@ class BulkImportsClient(BaseGitLabClient):
                     return True
                 else:
                     self.log.info(f'Bulk import {id} still in progress')
-                    # sleep(self.config.export_import_timeout)
-                    sleep(10)
+                    sleep(self.config.poll_interval)
 
     def poll_single_entity_status(self, entity) -> BulkImportEntityStatus:
         entity_id = entity.get('id')
@@ -53,8 +51,7 @@ class BulkImportsClient(BaseGitLabClient):
                     return entity.to_dict()
                 else:
                     self.log.info(f"Entity import for '{entity.destination_slug}' in progress")
-                    # sleep(self.config.export_import_timeout)
-                    sleep(10)
+                    sleep(self.config.poll_interval)
     
     def calculate_entity_count(self, full_path):
         groups_api = GroupsApi()
@@ -67,8 +64,6 @@ class BulkImportsClient(BaseGitLabClient):
         if not total_subgroup_count:
             total_subgroup_count = len(list(groups_api.get_all_group_subgroups(gid, self.config.source_host, self.config.source_token)))
         return total_project_count + total_subgroup_count + 1
-
-    
 
 @shared_task
 def watch_import_status(dest_host: str, dest_token: str, id: int):

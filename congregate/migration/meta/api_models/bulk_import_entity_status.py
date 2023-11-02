@@ -12,11 +12,11 @@ class BulkImportEntityStatus:
     destination_slug: str
     destination_namespace: str
     # parent_id: Optional[int]
-    # namespace_id: Optional[int]
-    # project_id: Optional[int]
     created_at: str
     updated_at: str
     failures: List[dict]
+    namespace_id: Optional[int]
+    project_id: Optional[int]
     destination_full_path: Optional[str] = ""
 
     def to_dict(self):
