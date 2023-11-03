@@ -72,7 +72,6 @@ class ConfigurationValidator(Config):
         # Air-gapped migrations w/ no access to destination
         self.dstn_token_validated_in_session = self.validate_dstn_token(
             dstn_token) if not self.airgap else True
-        self.dstn_token_validated_in_session = True
         return dstn_token
 
     @property
