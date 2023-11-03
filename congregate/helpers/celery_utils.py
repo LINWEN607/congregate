@@ -30,6 +30,16 @@ def generate_celery_config():
 def get_task_status(id):
     return AsyncResult(id)
 
+def find_arg_prop(res: AsyncResult, prop_key: str):
+    '''
+        Super simple dict key value lookup across an tuple of arguments
+
+        This does not dig into a nested dictionary
+    '''
+    for arg in res.args:
+        if isinstance(arg, dict):
+            return arg.get(prop_key)
+
 @dataclass
 class CeleryConfig():
     broker_url: str

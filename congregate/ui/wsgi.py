@@ -1,5 +1,6 @@
+from os import getenv
 from flask import Flask, render_template
-# from flask_cors import CORS
+from flask_cors import CORS
 from congregate.helpers import celery_utils
 from congregate.cli.stage_projects import ProjectStageCLI
 from congregate.cli.stage_groups import GroupStageCLI
@@ -21,7 +22,8 @@ app.config.from_mapping(
 )
 
 # TODO: add check for development mode to enable cors
-# CORS(app)
+if int(getenv('FLASK_DEBUG', 0)) == 1:
+    CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 celery_app = celery_utils.celery_init_app(app)
 
@@ -37,7 +39,9 @@ def register_api(app, api, client, name):
 register_api(app, StageAPI, ProjectStageCLI, 'projects')
 register_api(app, StageAPI, GroupStageCLI, 'groups')
 register_api(app, StageAPI, UsersClient, 'users')
-app.register_blueprint(data_retrieval, url_prefix='/data')
+app.register_blueprint(data_retrieval, url_prefix='/api/data')
 app.register_blueprint(logger)
-app.register_blueprint(airgap_routes, url_prefix='/airgap')
-app.register_blueprint(direct_transfer_routes, url_prefix='/direct_transfer')
+if config.airgap:
+    app.register_blueprint(airgap_routes, url_prefix='/api/airgap')
+if config.direct_transfer:
+    app.register_blueprint(direct_transfer_routes, url_prefix='/api/direct_transfer')

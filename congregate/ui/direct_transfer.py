@@ -2,7 +2,7 @@ from dacite import from_dict
 from celery import chain
 from flask import jsonify, Blueprint, request
 
-from congregate.helpers.celery_utils import get_task_status
+from congregate.helpers.celery_utils import get_task_status, find_arg_prop
 from congregate.migration.gitlab.migrate import post_migration_task
 from congregate.migration.gitlab.bulk_imports import BulkImportsClient, watch_import_entity_status, watch_import_status
 from congregate.migration.meta.api_models.bulk_import import BulkImportPayload
@@ -41,6 +41,8 @@ def get_import_status(id):
     res = get_task_status(id)
     return jsonify({
         'task-id': id,
-        'status': res.status
+        'status': res.state,
+        'task_name': res.name,
+        'entity_name': find_arg_prop(res, 'destination_name')
     }), 200
 

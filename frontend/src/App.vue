@@ -10,8 +10,19 @@
     <div id = "content">
       <router-view/>
     </div>
+    <Toaster/>
   </div>
 </template>
+<script>
+import Toaster from '@/components/Toaster.vue'
+
+export default {
+  name: 'App',
+  components: {
+    Toaster
+  }
+}
+</script>
 
 <style lang="less">
 #app {
@@ -20,6 +31,9 @@
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
+  height: 100%;
+  display: flex;
+  flex-wrap: nowrap;
 }
 
 body {
@@ -38,15 +52,17 @@ body {
 #nav {
   background-color: #FF851B;
   color :hsl(28, 100%, 20%);
-  position: fixed;
-  width: 10%;
-  height: 100%;
   text-align: left;
-
+  flex: 0 0 11em;
   h1 {
     font-size: 1.5em;
     text-indent: 0.5em;
     padding: 0.5em 0;
+  }
+
+  h2 {
+    font-size: 1em;
+    padding: 0;
   }
 
   a {
@@ -82,11 +98,8 @@ body {
 }
 
 #content {
-  position: relative;
-  left: 10%;
-  right: 5%;
-  width: 85%;
-  padding-top: 1em;
+  flex-grow: 12;
+  padding: 1em 1em 0 1em;
   color: #111;
 }
 
@@ -102,21 +115,5 @@ body {
   padding: 1em 1em 10em;
 }
 
-.summary-list {
-  li {
-    list-style: none;
-    text-align: left;
-    padding: 1em;
-    background: #ccc;
-    border-top: 1px solid #000;
-  }
-  table {
-    border-spacing: 1px;
-    border-collapse: separate;
-    td, th {
-      padding: 1em;
-      border: 1px solid #000;
-    }
-  }
-}
+
 </style>

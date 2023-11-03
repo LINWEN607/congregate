@@ -17,4 +17,4 @@ class StageAPI(MethodView):
     
     def __message(self, obj, obj_type):
         num = len(obj)
-        return f"Staged {num} {obj_type}{'s' if num > 1 or num == 0 else ''}"
+        return f"Staged {num} {obj_type}"

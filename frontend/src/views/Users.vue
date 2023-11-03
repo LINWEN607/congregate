@@ -68,7 +68,7 @@ export default {
   },
   methods: {
     getData: function () {
-      axios.get('/data/users').then(response => {
+      axios.get(`${import.meta.env.VITE_API_ROOT}/api/data/users`).then(response => {
         this.rows = response.data
         this.getStagedData()
       }).catch(function (error) {
@@ -76,7 +76,7 @@ export default {
       })
     },
     getStagedData: function () {
-      axios.get('/data/staged_users').then(response => {
+      axios.get(`${import.meta.env.VITE_API_ROOT}/api/data/staged_users`).then(response => {
         let ids = []
         response.data.forEach(element => {
           ids.push(element.id)
@@ -100,8 +100,18 @@ export default {
         this.$refs['users-table'].selectedRows.forEach(element => {
           usernames.push(element.username)
         })
-        axios.post('/api/stage/users', String(usernames)).then(response => {
+        axios.post(`${import.meta.env.VITE_API_ROOT}/api/stage/users`, String(usernames)).then(response => {
           console.log(response)
+          this.$emitter.emit('alert', {
+            'message': response.data,
+            'messageType': 'done'
+          })
+        }).catch(response => {
+          console.log(response)
+          this.$emitter.emit('alert', {
+            'message': 'Unable to stage users',
+            'messageType': 'error'
+          })
         })
       }
     }

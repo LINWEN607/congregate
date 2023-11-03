@@ -21,6 +21,25 @@ export default {
 }
 </script>
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="less">
+table {
+  border-spacing: 0;
+  border: 1px solid #000;
+  border-bottom: none;
+}
+th {
+  background-color: #aaa;
+  border-right: 1px solid #000;
+  border-bottom: 1px solid #000;
+}
+td {
+  border-right: 1px solid #000;
+  border-bottom: 1px solid #000;
+}
+th, td {
+  padding: 1em;
+}
+th:last-child, td:last-child {
+  border-right: none;
+}
 </style>
