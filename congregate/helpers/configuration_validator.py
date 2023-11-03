@@ -69,8 +69,10 @@ class ConfigurationValidator(Config):
             "DESTINATION", "dstn_access_token", default=None, obfuscated=True)
         if self.dstn_token_validated_in_session:
             return dstn_token
+        # Air-gapped migrations w/ no access to destination
         self.dstn_token_validated_in_session = self.validate_dstn_token(
             dstn_token) if not self.airgap else True
+        self.dstn_token_validated_in_session = True
         return dstn_token
 
     @property
@@ -93,7 +95,7 @@ class ConfigurationValidator(Config):
             except ConfigurationException as ce:
                 sys.exit(ce)
         return False
-    
+
     @property
     def direct_transfer(self):
         if direct_transfer := self.prop_bool("APP", "direct_transfer", default=False):
@@ -154,7 +156,10 @@ class ConfigurationValidator(Config):
             user = safe_json_response(self.users.get_current_user(
                 self.destination_host, dstn_token))
             error, user = is_error_message_present(user)
-            if error or not user or not user.get("is_admin"):
+            # Admin token required when migrating from GitLab
+            is_admin = user.get(
+                "is_admin") if self.source_type == "gitlab" else True
+            if error or not user or not is_admin:
                 raise ConfigurationException(
                     "destination_token", msg=f"Invalid user and/or token:\n{json_pretty(user)}")
             return True
@@ -254,20 +259,25 @@ class ConfigurationValidator(Config):
                 'airgap', msg="Invalid configuration. Air-gap is enabled but neither airgap_export nor airgap_import is enabled. Set one of them to True"
             )
         return True
-    
+
     def validate_direct_transfer_enabled(self):
         instance_api = InstanceApi()
-        src_settings = safe_json_response(instance_api.get_application_settings(self.source_host, self.source_token))
-        src_bulk_import, src_max_download = self.__get_bulk_import_settings(src_settings)
-        dest_settings = safe_json_response(instance_api.get_application_settings(self.destination_host, self.destination_token))
+        src_settings = safe_json_response(
+            instance_api.get_application_settings(self.source_host, self.source_token))
+        src_bulk_import, src_max_download = self.__get_bulk_import_settings(
+            src_settings)
+        dest_settings = safe_json_response(instance_api.get_application_settings(
+            self.destination_host, self.destination_token))
         dest_bulk_import, dest_max_download = (False, 0)
         if dest_settings:
-            dest_bulk_import, dest_max_download = self.__get_bulk_import_settings(dest_settings)
+            dest_bulk_import, dest_max_download = self.__get_bulk_import_settings(
+                dest_settings)
             if src_bulk_import and dest_bulk_import:
                 if src_max_download == dest_max_download:
                     return True
                 else:
-                    print(f"Warning: bulk_import_max_download_file_size does not match on source (max {src_max_download}) and destination (max {dest_max_download}). Update settings if possible. See docs: See docs: https://docs.gitlab.com/ee/api/settings.html#change-application-settings")
+                    print(
+                        f"Warning: bulk_import_max_download_file_size does not match on source (max {src_max_download}) and destination (max {dest_max_download}). Update settings if possible. See docs: See docs: https://docs.gitlab.com/ee/api/settings.html#change-application-settings")
             else:
                 raise ConfigurationException(
                     'direct_transfer', f"Direct transfer is not enabled on both sources. Source: ({src_bulk_import}) Destination: ({dest_bulk_import}). Update settings if possible. See docs: https://docs.gitlab.com/ee/api/settings.html#change-application-settings"
@@ -279,7 +289,7 @@ class ConfigurationValidator(Config):
         raise ConfigurationException(
             'direct_transfer', f"Direct transfer is not enabled on the source instance. Please enable it in the admin settings. See docs: https://docs.gitlab.com/ee/administration/settings/import_and_export_settings.html#enable-migration-of-groups-and-projects-by-direct-transfer"
         )
-        
+
     def __get_bulk_import_settings(self, settings):
         return (settings.get("bulk_import_enabled", False),
                 settings.get("bulk_import_max_download_file_size", False))
@@ -307,7 +317,7 @@ class ConfigurationValidator(Config):
     @property
     def airgap_validated_in_session(self):
         return self._airgap_validated_in_session
-    
+
     @property
     def direct_transfer_validated_in_session(self):
         return self._direct_transfer_validated_in_session
