@@ -218,10 +218,13 @@ def find_user_by_email_comparison_without_id(email, src=False):
             # Allow secondary emails in user search (as of 13.7)
             if user and user.get("email"):
                 b.log.warning(
-                    f"Found user by email {email}, with primary set to {user['email']}")
-            else:
-                b.log.error(
-                    f"Could NOT find user by primary email {email}")
+                    f"Found user by secondary email {email}, with primary set to {user['email']}")
+            # When using non-admin token for migrations from non-gitlab sources
+            if user and user.get("id") and b.config.source_type != "gitlab":
+                b.log.warning(f"Found user by public email {email}")
+                return user
+            b.log.error(
+                f"Could NOT find user by primary email {email}")
     else:
         b.log.error(f"User email NOT provided ({email}). Skipping")
     return None

@@ -312,8 +312,7 @@ class ProjectsClient(BaseClass):
         for member in members:
             user_id_req = find_user_by_email_comparison_without_id(
                 member["email"])
-            member["user_id"] = user_id_req.get(
-                "id", None) if user_id_req else None
+            member["user_id"] = user_id_req.get("id") if user_id_req else None
             result[member["email"]] = False
             if member.get("user_id"):
                 resp = safe_json_response(self.projects_api.add_member(

@@ -705,19 +705,7 @@ class UsersClient(BaseClass):
                     "email": response["email"],
                     "id": response["id"]
                 }
-
-    def stage_data(self, users, dry_run=False):
-        user_file = read_json_file_into_object(
-            "%s/data/users.json" % self.app_path)
-        staged_users = []
-        for user in filter(None, users):
-            for u in user_file:
-                if user == u["username"]:
-                    staged_users.append(u)
-                    self.log.info(
-                        "Staging user (%s) [%d/%d]" % (u["email"], len(staged_users), len(users)))
-        write_json_to_file(f"{self.app_path}/data/staged_users.json",
-                           remove_dupes(staged_users), log=self.log)
+        return None
 
     def delete_users(self, dry_run=True, hard_delete=False):
         staged_users = get_staged_users()
