@@ -11,7 +11,7 @@ from shutil import copy
 from time import time
 from datetime import timedelta, datetime
 from gitlab_ps_utils.misc_utils import is_error_message_present, get_dry_log, safe_json_response, strip_netloc
-from gitlab_ps_utils.json_utils import read_json_file_into_object, write_json_to_file
+from gitlab_ps_utils.json_utils import read_json_file_into_object, write_json_to_file, json_pretty
 from gitlab_ps_utils.dict_utils import dig
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.utils import is_dot_com, get_congregate_path
@@ -158,14 +158,14 @@ def check_for_staged_user_projects(staged_projects):
         :return: True if user projects are found in staged_projects, else False
     """
     if user_projects := get_staged_user_projects(staged_projects):
-        b.log.warning("User projects staged:\n{}".format(
-            "\n".join(u for u in user_projects)))
+        b.log.warning("USER projects staged (Count : {}):\n{}".format(
+            len(user_projects), "\n".join(u for u in user_projects)))
     return user_projects
 
 
 def get_user_project_namespace(p):
     """
-    Determine if user project should be imported under the import_user (.com or self-managed root) or member namespace (self-managed)
+    Determine if user project should be imported under the import_user (self-managed root) or member namespace (self-managed)
 
         :param p: The JSON object representing a GitLab project
         :param: namespace:
@@ -207,6 +207,9 @@ def find_user_by_email_comparison_without_id(email, src=False):
         # Will searching for an explicit email actually return more than one?
         # Probably is just an array of 1
         for user in users:
+            if not isinstance(user, dict):
+                b.log.error(f"Failed to find user by email '{email}':\n{user}")
+                return None
             if user and user.get(
                     "email") and user["email"].lower() == email.lower():
                 b.log.info(
@@ -215,10 +218,13 @@ def find_user_by_email_comparison_without_id(email, src=False):
             # Allow secondary emails in user search (as of 13.7)
             if user and user.get("email"):
                 b.log.warning(
-                    f"Found user by email {email}, with primary set to {user['email']}")
-            else:
-                b.log.error(
-                    f"Could NOT find user by primary email {email}")
+                    f"Found user by secondary email {email}, with primary set to {user['email']}")
+            # When using non-admin token for migrations from non-gitlab sources
+            if user and user.get("id") and b.config.source_type != "gitlab":
+                b.log.warning(f"Found user by public email {email}")
+                return user
+            b.log.error(
+                f"Could NOT find user by primary email {email}")
     else:
         b.log.error(f"User email NOT provided ({email}). Skipping")
     return None

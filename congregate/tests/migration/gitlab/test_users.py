@@ -339,12 +339,15 @@ class UsersTests(unittest.TestCase):
                   new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, 'destination_token',
                   new_callable=PropertyMock)
+    @patch.object(ConfigurationValidator, 'source_type',
+                  new_callable=PropertyMock)
     @patch.object(UsersApi, "search_for_user_by_email")
-    def test_block_user_no_user_match(self, mock_search, dest_token, src_token, dest_host):
+    def test_block_user_no_user_match(self, mock_search, source_type, dest_token, src_token, dest_host):
         dest_host.side_effect = ["https://gitlabdestination.com",
                                  "https://gitlabdestination.com", "https://gitlabdestination.com"]
         src_token.side_effect = ["token", "token", "token"]
         dest_token.side_effect = ["token", "token", "token"]
+        source_type.return_value = "gitlab"
 
         mock_search.return_value = [self.mock_users.get_dummy_old_users()[0]]
 

@@ -286,8 +286,25 @@ def main():
 
         from congregate.helpers.migrate_utils import clean_data, add_post_migration_stats, write_results_to_file, toggle_maintenance_mode
 
-        if arguments["configure"]:
-            log.info("Config CLI has been Deprecated. Validate config file by running `congregate validate-config`")
+        if arguments["obfuscate"]:
+            data = obfuscate("Secret:")
+            if platform == "darwin":
+                subprocess.run("pbcopy", universal_newlines=True,
+                               input=data, check=True)
+                print("Masked secret copied to clipboard (pbcopy)")
+            else:
+                print(f"Masked secret: {data}")
+        elif arguments["deobfuscate"]:
+            data = deobfuscate(input("Masked secret:"))
+            if platform == "darwin":
+                subprocess.run("pbcopy", universal_newlines=True,
+                               input=data, check=True)
+                print("Secret copied to clipboard (pbcopy)")
+            else:
+                print(f"Secret: {data}")
+        elif arguments["configure"]:
+            log.info(
+                "Config CLI has been Deprecated. Validate config file by running `congregate validate-config`")
         elif arguments["validate-config"]:
             c = ConfigurationValidator()
             for v in dir(c):
@@ -430,7 +447,8 @@ def main():
             if arguments["update-members-access-level"]:
                 current_level = arguments["--current-level"] or "Owner"
                 target_level = arguments["--target-level"] or "Guest"
-                users.update_members_access_level(current_level, target_level, skip_groups=SKIP_GROUPS, skip_projects=SKIP_PROJECTS, dry_run=DRY_RUN)
+                users.update_members_access_level(
+                    current_level, target_level, skip_groups=SKIP_GROUPS, skip_projects=SKIP_PROJECTS, dry_run=DRY_RUN)
             if arguments["update-aws-creds"]:
                 if config.s3_access_key and config.s3_secret_key:
                     command = f"aws configure set aws_access_key_id {config.s3_access_key}"
@@ -701,24 +719,8 @@ def main():
                     dry_run=DRY_RUN, disable_cicd=arguments["--disable-cicd"])
             if arguments["create-staged-projects-fork-relation"]:
                 projects.create_staged_projects_fork_relation(dry_run=DRY_RUN)
-        if arguments["obfuscate"]:
-            data = obfuscate("Secret:")
-            if platform == "darwin":
-                subprocess.run("pbcopy", universal_newlines=True,
-                               input=data, check=True)
-                print("Masked secret copied to clipboard (pbcopy)")
-            else:
-                print(f"Masked secret: {data}")
-        if arguments["deobfuscate"]:
-            data = deobfuscate(input("Masked secret:"))
-            if platform == "darwin":
-                subprocess.run("pbcopy", universal_newlines=True,
-                               input=data, check=True)
-                print("Secret copied to clipboard (pbcopy)")
-            else:
-                print(f"Secret: {data}")
-        if arguments["url-rewrite-only"]:
-            projects.perform_url_rewrite_only(dry_run=DRY_RUN)
+            if arguments["url-rewrite-only"]:
+                projects.perform_url_rewrite_only(dry_run=DRY_RUN)
 
 
 if __name__ == "__main__":

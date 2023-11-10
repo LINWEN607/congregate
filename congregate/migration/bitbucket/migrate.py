@@ -14,47 +14,48 @@ from congregate.migration.gitlab.branches import BranchesClient
 from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
 from congregate.migration.bitbucket.repos import ReposClient
 
+
 class BitBucketServerMigrateClient(MigrateClient):
-    def __init__(self, 
-                 dry_run=True, 
-                 processes=None, 
-                 only_post_migration_info=False, 
-                 start=None, 
-                 skip_users=False, 
-                 remove_members=False, 
-                 hard_delete=False, 
-                 stream_groups=False, 
-                 skip_groups=False, 
-                 skip_projects=False, 
-                 skip_group_export=False, 
-                 skip_group_import=False, 
-                 skip_project_export=False, 
-                 skip_project_import=False, 
-                 subgroups_only=False, 
-                 scm_source=None, 
+    def __init__(self,
+                 dry_run=True,
+                 processes=None,
+                 only_post_migration_info=False,
+                 start=None,
+                 skip_users=False,
+                 remove_members=False,
+                 hard_delete=False,
+                 stream_groups=False,
+                 skip_groups=False,
+                 skip_projects=False,
+                 skip_group_export=False,
+                 skip_group_import=False,
+                 skip_project_export=False,
+                 skip_project_import=False,
+                 subgroups_only=False,
+                 scm_source=None,
                  group_structure=False):
         self.ext_import = ImportClient()
         self.project_repository_api = ProjectRepositoryApi()
         self.bbs_repos_client = ReposClient()
         self.branches = BranchesClient()
-        super().__init__(dry_run, 
-                         processes, 
-                         only_post_migration_info, 
-                         start, 
-                         skip_users, 
-                         remove_members, 
-                         hard_delete, 
-                         stream_groups, 
-                         skip_groups, 
-                         skip_projects, 
-                         skip_group_export, 
-                         skip_group_import, 
-                         skip_project_export, 
-                         skip_project_import, 
-                         subgroups_only, 
-                         scm_source, 
+        super().__init__(dry_run,
+                         processes,
+                         only_post_migration_info,
+                         start,
+                         skip_users,
+                         remove_members,
+                         hard_delete,
+                         stream_groups,
+                         skip_groups,
+                         skip_projects,
+                         skip_group_export,
+                         skip_group_import,
+                         skip_project_export,
+                         skip_project_import,
+                         subgroups_only,
+                         scm_source,
                          group_structure)
-    
+
     def migrate(self):
         dry_log = misc_utils.get_dry_log(self.dry_run)
 
@@ -101,8 +102,8 @@ class BitBucketServerMigrateClient(MigrateClient):
                 staged_projects, are_projects=True)
             if user_projects := mig_utils.get_staged_user_projects(
                     staged_projects):
-                self.log.warning("User repos staged:\n{}".format(
-                    "\n".join(u for u in user_projects)))
+                self.log.warning(
+                    f"USER repos staged ({len(user_projects)}):\n{json_utils.json_pretty(user_projects)}")
             self.log.info("Importing BitBucket repos")
             import_results = list(ir for ir in self.multi.start_multi_process(
                 self.import_bitbucket_repo, staged_projects, processes=self.processes, nestable=True))
@@ -117,7 +118,7 @@ class BitBucketServerMigrateClient(MigrateClient):
         else:
             self.log.warning(
                 "SKIP: No BitBucket repos staged for migration")
-    
+
     def import_bitbucket_repo(self, project):
         pwn = project.get("path_with_namespace")
         dstn_pwn, tn = mig_utils.get_stage_wave_paths(project)

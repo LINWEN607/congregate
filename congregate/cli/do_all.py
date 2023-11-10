@@ -5,12 +5,10 @@ from gitlab_ps_utils.file_utils import is_recent_file
 from congregate.cli.stage_groups import GroupStageCLI
 from congregate.cli.list_source import ListClient
 from congregate.migration.gitlab.users import UsersClient
-from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.migrate import MigrateClient
 from congregate.helpers.base_class import BaseClass
 
 users = UsersClient()
-groups = GroupsClient()
 list_client = ListClient()
 b = BaseClass()
 

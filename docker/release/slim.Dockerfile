@@ -6,14 +6,17 @@ ENV CONGREGATE_PATH=/opt/congregate \
     APP_NAME=congregate \
     PIP_DEFAULT_TIMEOUT=100
 
-WORKDIR /opt/congregate
-
 COPY docker/release/centos/mongo_repo /etc/yum.repos.d/mongodb-org-4.4.repo
 COPY docker/release/centos/deps /opt/congregate/setup/deps
 COPY docker/utils/installdeps.sh /opt/congregate/setup/installdeps.sh
 COPY docker/release/centos/update-rc.sh /opt/congregate/setup/update-rc.sh
 
-RUN ./setup/installdeps.sh setup/deps && ./setup/update-rc.sh
+RUN cd /opt/congregate/setup && \
+    chmod +x installdeps.sh update-rc.sh && \
+    ./installdeps.sh deps && \
+    ./update-rc.sh
+
+WORKDIR /opt/congregate
 
 RUN rm -r /opt/congregate/setup
 
@@ -67,7 +70,7 @@ RUN rm -f /usr/bin/python3 && \
 # Set permissions to execute the congregate command
 RUN cd /opt/congregate && \
     chmod +x congregate.sh && \
-    ln congregate.sh /usr/bin/congregate 
+    ln congregate.sh /usr/bin/congregate
 
 # Switch to ps-user for the rest of the installation
 USER ps-user

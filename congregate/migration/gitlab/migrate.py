@@ -426,8 +426,8 @@ class GitLabMigrateClient(MigrateClient):
                 staged_projects, are_projects=True)
             if user_projects := mig_utils.get_staged_user_projects(
                     staged_projects):
-                self.log.warning("User projects staged:\n{}".format(
-                    "\n".join(u for u in user_projects)))
+                self.log.warning(
+                    f"USER projects staged ({len(user_projects)}):\n{json_utils.json_pretty(user_projects)}")
             if not self.skip_project_export:
                 self.log.info("{}Exporting projects".format(dry_log))
                 export_results = list(er for er in self.multi.start_multi_process(
