@@ -7,6 +7,7 @@ from congregate.migration.gitlab.base_gitlab_client import BaseGitLabClient
 from congregate.migration.gitlab.api.bulk_imports import BulkImportApi
 from congregate.migration.meta.api_models.bulk_import import BulkImportPayload
 from congregate.migration.meta.api_models.bulk_import_entity_status import BulkImportEntityStatus
+from congregate.migration.meta.data_models.dry_run import DryRunData
 
 class BulkImportsClient(BaseGitLabClient):
     def __init__(self, src_host=None, src_token=None, dest_host=None, dest_token=None):
@@ -14,21 +15,33 @@ class BulkImportsClient(BaseGitLabClient):
                          dest_host=dest_host, dest_token=dest_token)
         self.bulk_import = BulkImportApi()
 
-    def trigger_bulk_import(self, payload: BulkImportPayload):
-        import_response = self.bulk_import.start_new_bulk_import(self.dest_host, self.dest_token, payload.to_dict())
-        total_entity_count = 0
-        for entity in payload.entities:
-            total_entity_count += self.calculate_entity_count(entity.source_full_path)
-        if import_response.status_code in [200, 201, 202]:
-            import_response = import_response.json()
-            self.log.info(f"Successfully triggered bulk import request with response: {import_response}")
-            self.log.info(f"total entity count: {total_entity_count}")
-            while len(list(self.bulk_import.get_bulk_import_entities(self.dest_host, self.dest_token, import_response.get('id')))) != total_entity_count:
-                self.log.debug(f"Waiting to see all {total_entity_count} entities populated.")
-                sleep(2)          
-            return (import_response.get('id'), list(self.bulk_import.get_bulk_import_entities(self.dest_host, self.dest_token, import_response.get('id'))), None)
+    def trigger_bulk_import(self, payload: BulkImportPayload, dry_run=True):
+        if not dry_run:
+            import_response = self.bulk_import.start_new_bulk_import(self.dest_host, self.dest_token, payload.to_dict())
+            total_entity_count = 0
+            for entity in payload.entities:
+                total_entity_count += self.calculate_entity_count(entity.source_full_path)
+            if import_response.status_code in [200, 201, 202]:
+                import_response = import_response.json()
+                self.log.info(f"Successfully triggered bulk import request with response: {import_response}")
+                self.log.info(f"total entity count: {total_entity_count}")
+                while len(list(self.bulk_import.get_bulk_import_entities(self.dest_host, self.dest_token, import_response.get('id')))) != total_entity_count:
+                    self.log.debug(f"Waiting to see all {total_entity_count} entities populated.")
+                    sleep(2)          
+                return (import_response.get('id'), list(self.bulk_import.get_bulk_import_entities(self.dest_host, self.dest_token, import_response.get('id'))), None)
+            else:
+                return (None, None, import_response.text)
         else:
-            return (None, None, import_response.text)
+            dry_run_data = []
+            for entity in payload.entities:
+                print(entity)
+                if entity.source_type == 'group_entity':
+                    drd = self.get_all_group_paths(entity.source_full_path)
+                    dry_run_data.append(drd.to_dict())
+                elif entity.source_type == 'project_entity':
+                    drd = DryRunData(projects=[entity.source_full_path])
+                    dry_run_data.append(drd.to_dict())
+            return (None, dry_run_data, None)
 
     def poll_import_status(self, id):
         while True:
@@ -54,6 +67,12 @@ class BulkImportsClient(BaseGitLabClient):
                     sleep(self.config.poll_interval)
     
     def calculate_entity_count(self, full_path):
+        """
+            Get total count of entities included in the direct transfer request
+
+            This is used downstream to poll the DT API to make sure all the entities have been
+            created before we move on to other tasks
+        """
         groups_api = GroupsApi()
         group = safe_json_response(groups_api.get_group_by_full_path(full_path, self.config.source_host, self.config.source_token))
         gid = group.get('id')
@@ -64,6 +83,20 @@ class BulkImportsClient(BaseGitLabClient):
         if not total_subgroup_count:
             total_subgroup_count = len(list(groups_api.get_all_group_subgroups(gid, self.config.source_host, self.config.source_token)))
         return total_project_count + total_subgroup_count + 1
+
+    def get_all_group_paths(self, full_path):
+        """
+            Get list of all group and project paths in a dry-run
+        """
+        groups_api = GroupsApi()
+        group = safe_json_response(groups_api.get_group_by_full_path(full_path, self.config.source_host, self.config.source_token))
+        paths = DryRunData(top_level_group=group.get('full_path'))
+        gid = group.get('id')
+        for project in groups_api.get_all_group_projects(gid, self.config.source_host, self.config.source_token, include_subgroups=True):
+            paths.projects.append(project.get('path_with_namespace'))
+        for subgroup in groups_api.get_all_group_subgroups(gid, self.config.source_host, self.config.source_token):
+            paths.subgroups.append(subgroup.get('full_path'))
+        return paths
 
 @shared_task
 def watch_import_status(dest_host: str, dest_token: str, id: int):
