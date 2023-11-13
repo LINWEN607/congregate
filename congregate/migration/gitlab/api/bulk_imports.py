@@ -7,7 +7,7 @@ class BulkImportApi(GitLabApiWrapper):
 
     def start_new_bulk_import(self, host, token, data, message=None):
         """
-        Import your projects from GitHub to GitLab via the API
+        Import your projects from GitLab to GitLab via the direct transfer API
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/bulk_imports.html#start-a-new-group-or-project-migration
 
@@ -23,7 +23,6 @@ class BulkImportApi(GitLabApiWrapper):
             audit_data.pop("personal_access_token", None)
             audit_data.get('configuration', {}).pop('access_token', None)
             message = f"Triggering new group or project bulk import with data {audit_data}"
-        print(f"\n\nDATA: {data}")
         return self.api.generate_post_request(host, token, "bulk_imports", dumps(data), description=message)
     
     def get_bulk_import_entities(self, host, token, id):

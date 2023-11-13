@@ -503,9 +503,9 @@ class Config(BaseConfig):
         """
         Sets the polling interval for async watch jobs sent to Celery in seconds
 
-        Defaults to 10 seconds
+        Defaults to 30 seconds
         """
-        return self.prop_int("APP", "poll_interval", default=10)
+        return self.prop_int("APP", "poll_interval", default=30)
 
 # HIDDEN PROPERTIES
 
