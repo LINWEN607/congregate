@@ -48,6 +48,9 @@ class BulkImportsClient(BaseGitLabClient):
                 if resp.get('status') == 'finished':
                     self.log.info(f'Bulk import {id} finished')
                     return True
+                elif resp.get('status') == 'failed':
+                    self.log.error(f"Bulk import {id} failed. Refer to Congregate and GitLab logs for more information")
+                    return False
                 else:
                     self.log.info(f'Bulk import {id} still in progress')
                     sleep(self.config.poll_interval)
@@ -61,6 +64,9 @@ class BulkImportsClient(BaseGitLabClient):
                 if entity.status == 'finished':
                     self.log.info(f"Entity import for '{entity.destination_slug}' is complete. Moving on to post-migration tasks")
                     return entity.to_dict()
+                elif entity.status == 'failed':
+                    self.log.error(f"Entity import for '{entity.destination_slug}' failed. Refer to Congregate and GitLab logs for more information")
+                    return None
                 else:
                     self.log.info(f"Entity import for '{entity.destination_slug}' in progress")
                     sleep(self.config.poll_interval)
