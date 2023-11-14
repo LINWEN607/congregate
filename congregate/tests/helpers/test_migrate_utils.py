@@ -893,7 +893,7 @@ class MigrateTests(unittest.TestCase):
     def test_is_gl_version_older_than_newer_false(self, mock_version):
         mock_get = MagicMock()
         type(mock_get).status_code = PropertyMock(return_value=200)
-        mock_get.json.return_value = self.mock_version.get_12_0_version()
+        mock_get.json.return_value = self.mock_version.get_12_version()
         mock_version.return_value = mock_get
         self.assertFalse(mutils.is_gl_version_older_than(
             12, "host", "token", "log"))
@@ -902,7 +902,7 @@ class MigrateTests(unittest.TestCase):
     def test_is_gl_version_older_than_older_true(self, mock_version):
         mock_get = MagicMock()
         type(mock_get).status_code = PropertyMock(return_value=200)
-        mock_get.json.return_value = self.mock_version.get_12_0_version()
+        mock_get.json.return_value = self.mock_version.get_12_version()
         mock_version.return_value = mock_get
         with self.assertLogs(mutils.b.log, level="INFO"):
             self.assertTrue(mutils.is_gl_version_older_than(

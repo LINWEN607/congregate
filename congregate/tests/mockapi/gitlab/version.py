@@ -9,8 +9,8 @@ class MockVersionApi():
             "revision": "4e963fe"
         }
 
-    def get_12_0_version(self):
+    def get_12_version(self):
         return {
-            "version": "12.0.0",
+            "version": "12.5.0",
             "revision": "4e963fe"
         }

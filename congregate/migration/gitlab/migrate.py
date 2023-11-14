@@ -114,7 +114,9 @@ class GitLabMigrateClient(MigrateClient):
         self.hooks.migrate_instance_hooks(dry_run=self.dry_run)
 
         # Instance clusters
-        self.clusters.migrate_instance_clusters(dry_run=self.dry_run)
+        if mig_utils.is_gl_version_older_than(14.5, self.config.source_host, self.config.source_token,
+                                              "Certificate-based clusters are still supported"):
+            self.clusters.migrate_instance_clusters(dry_run=self.dry_run)
 
         # Remove import user from parent group to avoid inheritance
         # (self-managed only)
@@ -395,8 +397,10 @@ class GitLabMigrateClient(MigrateClient):
             src_gid, dst_gid, full_path, "group", src_gid)
 
         # Clusters
-        results["clusters"] = self.clusters.migrate_group_clusters(
-            src_gid, dst_gid, full_path)
+        if mig_utils.is_gl_version_older_than(14.5, self.config.source_host, self.config.source_token,
+                                              "Certificate-based clusters are still supported"):
+            results["clusters"] = self.clusters.migrate_group_clusters(
+                src_gid, dst_gid, full_path)
 
         if self.config.source_tier not in ["core", "free"]:
             # Hooks (Webhooks)
@@ -623,8 +627,10 @@ class GitLabMigrateClient(MigrateClient):
                 src_id, dst_id, path_with_namespace)
 
             # Clusters
-            results["clusters"] = self.clusters.migrate_project_clusters(
-                src_id, dst_id, path_with_namespace, jobs_enabled)
+            if mig_utils.is_gl_version_older_than(14.5, self.config.source_host, self.config.source_token,
+                                                "Certificate-based clusters are still supported"):
+                results["clusters"] = self.clusters.migrate_project_clusters(
+                    src_id, dst_id, path_with_namespace, jobs_enabled)
 
         if self.config.source_tier not in ["core", "free"]:
             # Push Rules - handled by GitLab Importer as of 13.6

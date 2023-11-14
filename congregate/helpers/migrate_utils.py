@@ -424,8 +424,9 @@ def is_gl_version_older_than(set_version, host, token, log):
     Lookup GL instance version and throw custom log based
     """
     version = safe_json_response(instance_api.get_version(host, token))
-    if version and version.get("version") and int(version["version"].split(".")[0]) < set_version:
-        b.log.info(f"{log} on GitLab version {version}")
+    # Include minor version digit, e.g. 16.7
+    if version and version.get("version") and float(".".join(version["version"].split(".",2)[:2])) < set_version:
+        b.log.info(f"{log} on GitLab version '{version}'")
         return True
     return False
 
