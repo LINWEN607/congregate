@@ -44,7 +44,7 @@ class BulkImportsClient(BaseGitLabClient):
 
     def poll_import_status(self, id):
         while True:
-            if resp := safe_json_response(self.bulk_import.get_bulk_imports_id(self.dest_host, self.dest_token, id)):
+            if resp := safe_json_response(self.bulk_import.get_bulk_import_status(self.dest_host, self.dest_token, id)):
                 if resp.get('status') == 'finished':
                     self.log.info(f'Bulk import {id} finished')
                     return True

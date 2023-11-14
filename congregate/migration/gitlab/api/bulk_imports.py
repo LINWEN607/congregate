@@ -53,7 +53,7 @@ class BulkImportApi(GitLabApiWrapper):
         return self.api.list_all(host, token, f"bulk_imports{query_params}")
     
 
-    def get_bulk_imports_id(self, host, token, id):
+    def get_bulk_import_status(self, host, token, id):
         """
         Get a specific import request from a single group or project migration details via the API
     
