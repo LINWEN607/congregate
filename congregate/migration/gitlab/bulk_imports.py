@@ -34,7 +34,6 @@ class BulkImportsClient(BaseGitLabClient):
         else:
             dry_run_data = []
             for entity in payload.entities:
-                print(entity)
                 if entity.source_type == 'group_entity':
                     drd = self.get_all_group_paths(entity.source_full_path)
                     dry_run_data.append(drd.to_dict())

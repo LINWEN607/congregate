@@ -26,7 +26,7 @@ def trigger_direct_transfer(dry_run=True):
             # and then once that job completes, trigger post migration tasks
             res = chain(
                 watch_import_entity_status.s(dt_client.config.destination_host, dt_client.config.destination_token, entity), 
-                post_migration_task.s(dt_client.config.destination_host, dt_client.config.destination_token)
+                post_migration_task.s(dt_client.config.destination_host, dt_client.config.destination_token, dry_run=dry_run)
             ).apply_async(queue='celery')
             entity_ids.append(res.id)
         return jsonify({

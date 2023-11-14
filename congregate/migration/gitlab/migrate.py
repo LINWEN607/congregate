@@ -710,21 +710,22 @@ def import_task(file_path: str, group: dict, host: str, token: str):
 
 
 @shared_task
-def post_migration_task(entity, dest_host, dest_token):
-    client = GitLabMigrateClient(dry_run=False, skip_users=True,
+def post_migration_task(entity, dest_host, dest_token, dry_run=True):
+    client = GitLabMigrateClient(dry_run=dry_run, skip_users=True,
         skip_groups=True, skip_project_import=True)
     entity = from_dict(data_class=BulkImportEntityStatus, data=entity)
+    mongo = MongoConnector()
     if entity.entity_type == "project":
-        source_pid = client.projects.find_project_by_path(
-            client.config.source_host, client.config.source_token, entity.source_full_path)
-        source_project = misc_utils.safe_json_response(
-            client.projects.projects_api.get_project(
-                source_pid, client.config.source_host, client.config.source_token)
-            )
+        project_col = f"projects-{misc_utils.strip_netloc(client.config.source_host)}"
+        source_project = mongo.safe_find_one(project_col, {
+            'path_with_namespace': entity.source_full_path
+        })
         return client.migrate_single_project_features(
             source_project, entity.project_id, dest_host=dest_host, dest_token=dest_token)
     if entity.entity_type == "group":
-        group = client.groups.find_group_by_path(
-            client.config.source_host, client.config.source_token, entity.source_full_path)
+        group_col = f"groups-{misc_utils.strip_netloc(client.config.source_host)}"
+        source_group = mongo.safe_find_one(group_col, {
+            'path_with_namespace': entity.source_full_path
+        })
         return client.migrate_single_group_features(
-            group['id'], entity.namespace_id, entity.destination_full_path)
+            source_group['id'], entity.namespace_id, entity.destination_full_path)
