@@ -37,7 +37,7 @@ from congregate.migration.gitlab.environments import EnvironmentsClient
 from congregate.migration.gitlab.branches import BranchesClient
 from congregate.migration.gitlab.packages import PackagesClient
 from congregate.migration.gitlab.bulk_imports import BulkImportsClient
-from congregate.helpers.mdbc import MongoConnector
+from congregate.helpers.mdbc import MongoConnector, mongo_connection
 from congregate.migration.meta.api_models.single_project_features import SingleProjectFeatures
 from congregate.migration.meta.api_models.project_details import ProjectDetails
 from congregate.migration.meta.api_models.bulk_import_configuration import BulkImportconfiguration
@@ -710,11 +710,11 @@ def import_task(file_path: str, group: dict, host: str, token: str):
 
 
 @shared_task
-def post_migration_task(entity, dest_host, dest_token, dry_run=True):
+@mongo_connection
+def post_migration_task(entity, dest_host, dest_token, mongo=None, dry_run=True):
     client = GitLabMigrateClient(dry_run=dry_run, skip_users=True,
         skip_groups=True, skip_project_import=True)
     entity = from_dict(data_class=BulkImportEntityStatus, data=entity)
-    mongo = MongoConnector()
     if entity.entity_type == "project":
         project_col = f"projects-{misc_utils.strip_netloc(client.config.source_host)}"
         source_project = mongo.safe_find_one(project_col, {
