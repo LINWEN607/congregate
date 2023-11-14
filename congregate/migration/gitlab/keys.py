@@ -84,9 +84,9 @@ class KeysClient(BaseGitLabClient):
 
     def migrate_user_ssh_keys(self, old_user, new_user):
         try:
-            email = old_user.get("email", None)
+            email = old_user.get("email")
             resp = self.users_api.get_all_user_ssh_keys(old_user.get(
-                "id", None), self.config.source_host, self.config.source_token)
+                "id"), self.config.source_host, self.config.source_token)
             ssh_keys = iter(resp.json())
             self.log.info(f"Migrating user {email} SSH keys")
             for k in ssh_keys:
@@ -98,7 +98,7 @@ class KeysClient(BaseGitLabClient):
                 # Remove unused key-values before posting key
                 k = pop_multiple_keys(k, ["id", "created_at"])
                 self.users_api.create_user_ssh_key(
-                    self.config.destination_host, self.config.destination_token, new_user.get("id", None), k)
+                    self.config.destination_host, self.config.destination_token, new_user.get("id"), k)
             return True
         except TypeError as te:
             self.log.error(f"User {email} SSH keys {resp} {te}")
@@ -110,9 +110,9 @@ class KeysClient(BaseGitLabClient):
 
     def migrate_user_gpg_keys(self, old_user, new_user):
         try:
-            email = old_user.get("email", None)
+            email = old_user.get("email")
             resp = self.users_api.get_all_user_gpg_keys(old_user.get(
-                "id", None), self.config.source_host, self.config.source_token)
+                "id"), self.config.source_host, self.config.source_token)
             ssh_keys = iter(resp.json())
             self.log.info(f"Migrating user {email} GPG keys")
             for k in ssh_keys:
@@ -124,7 +124,7 @@ class KeysClient(BaseGitLabClient):
                 # Remove unused key-values before posting key
                 k = pop_multiple_keys(k, ["id", "created_at"])
                 self.users_api.create_user_gpg_key(
-                    self.config.destination_host, self.config.destination_token, new_user.get("id", None), k)
+                    self.config.destination_host, self.config.destination_token, new_user.get("id"), k)
             return True
         except TypeError as te:
             self.log.error(f"User {email} GPG keys {resp} {te}")
