@@ -354,7 +354,7 @@ class GroupsApi(GitLabApiWrapper):
         """
         return self.api.list_all(host, token, f"groups/{gid}/projects?include_subgroups={include_subgroups}&with_shared={with_shared}")
 
-    def get_all_group_projects_count(self, gid, host, token, include_subgroups=True, with_shared=True):
+    def get_all_group_projects_count(self, gid, host, token, include_subgroups=True, with_shared=False):
         """
         Get a total count of projects in this group
 

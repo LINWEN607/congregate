@@ -1,12 +1,54 @@
 # Migrating data via Direct Transfer
 
-## Triggering a migration
+## Triggering a migration (dry-run)
 
-To trigger a migration via direct transfer in Congregate, you make a POST call to `/direct_transfer/import` with a payload matching the payload of our bulk import API. For example:
+To trigger a migration via direct transfer in Congregate, you make a POST call to `/direct_transfer/import` with a payload matching the payload of our bulk import API. By default, this does a dry-run so no data is migrated to the destination, but we can see a list of entities expected to be migrated. For example:
 
 ```bash
 curl --request POST \
   --url http://localhost:8000/direct_transfer/import \
+  --header 'Content-Type: application/json' \
+  --data '{
+      "configuration": {
+        "url": "<source-url>",
+        "access_token": "<source-token>"
+      },
+      "entities": [
+        {
+          "source_full_path": "<path-where-entity-will-go>",
+          "source_type": "(group_entity|project_entity)",
+          "destination_slug": "<group/project URL slug>",
+          "destination_namespace": "<namespace>"
+        }
+      ]
+    }'
+```
+
+You should see a response like:
+
+```json
+{
+  "dry_run_data": [
+    {
+      "projects": [
+        "path/to/project",
+        ...
+      ],
+      "subgroups": [],
+      "top_level_group": "path/to/tlg"
+    }
+  ],
+  "status": "dry run successful"
+}
+```
+
+## Triggering a migration (actual run)
+
+If the dry-run response looks correct, you can add the `commit` parameter to the request. To trigger a migration via direct transfer in Congregate, you make a POST call to `/direct_transfer/import?commit=true` with a payload matching the payload of our bulk import API. For example:
+
+```bash
+curl --request POST \
+  --url http://localhost:8000/direct_transfer/import?commit=true \
   --header 'Content-Type: application/json' \
   --data '{
       "configuration": {
@@ -70,7 +112,7 @@ Once the direct transfer finishes, another task is sent to the queue to handle a
 We utilize a task queue (Celery) when migrating via direct transfer.
 We send a series of tasks to a queue to process and we can monitor them through a tool called Flower.
 
-To access flower, navigate to http(s)://<url-where-congregate-is-running>/5555 to see a list of jobs in the queue
+To access flower, navigate to http(s)://<url-where-congregate-is-running>:5555 to see a list of jobs in the queue
 
 The `overall_status_id` in the response monitors the overall status of the migration so if that is still in a started or running state, there is still data migrating either with direct transfer or Congregate
 

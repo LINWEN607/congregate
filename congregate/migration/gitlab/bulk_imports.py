@@ -27,7 +27,7 @@ class BulkImportsClient(BaseGitLabClient):
                 self.log.info(f"total entity count: {total_entity_count}")
                 while len(list(self.bulk_import.get_bulk_import_entities(self.dest_host, self.dest_token, import_response.get('id')))) != total_entity_count:
                     self.log.debug(f"Waiting to see all {total_entity_count} entities populated.")
-                    sleep(2)          
+                    sleep(self.config.poll_interval)          
                 return (import_response.get('id'), list(self.bulk_import.get_bulk_import_entities(self.dest_host, self.dest_token, import_response.get('id'))), None)
             else:
                 return (None, None, import_response.text)
