@@ -301,7 +301,7 @@ class Manage_Repos():
         # If we made it this far, we should probably make sure all the branches
         # are checked out as well
         cmd = 'for remote in `git branch -r | grep -v master `; do git checkout --track $remote ; done'
-        rc_branch = subprocess.call(cmd, cwd=self.cwd, shell=True)
+        rc_branch = subprocess.call(cmd, cwd=self.cwd, shell=False)
         print(rc_branch)
 
         self.cwd = "."
