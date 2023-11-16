@@ -64,7 +64,7 @@ export default {
   },
   methods: {
     getData: function () {
-      axios.get('/data/groups').then(response => {
+      axios.get(`${import.meta.env.VITE_API_ROOT}/api/data/groups`).then(response => {
         this.rows = response.data
         this.getStagedData()
       }).catch(function (error) {
@@ -72,7 +72,7 @@ export default {
       })
     },
     getStagedData: function () {
-      axios.get('/data/staged_groups').then(response => {
+      axios.get(`${import.meta.env.VITE_API_ROOT}/api/data/staged_groups`).then(response => {
         var ids = []
         response.data.forEach(element => {
           ids.push(element.id)
@@ -94,8 +94,18 @@ export default {
         this.$refs['groups-table'].selectedRows.forEach(element => {
           ids.push(element.id)
         })
-        axios.post('/api/stage/groups', String(ids)).then(response => {
+        axios.post(`${import.meta.env.VITE_API_ROOT}/api/stage/groups`, String(ids)).then(response => {
           console.log(response)
+          this.$emitter.emit('alert', {
+            'message': response.data,
+            'messageType': 'done'
+          })
+        }).catch(response => {
+          console.log(response)
+          this.$emitter.emit('alert', {
+            'message': 'Unable to stage groups',
+            'messageType': 'error'
+          })
         })
       }
     }

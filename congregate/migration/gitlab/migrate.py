@@ -36,9 +36,14 @@ from congregate.migration.gitlab.clusters import ClustersClient
 from congregate.migration.gitlab.environments import EnvironmentsClient
 from congregate.migration.gitlab.branches import BranchesClient
 from congregate.migration.gitlab.packages import PackagesClient
-from congregate.helpers.mdbc import MongoConnector
+from congregate.migration.gitlab.bulk_imports import BulkImportsClient
+from congregate.helpers.mdbc import MongoConnector, mongo_connection
 from congregate.migration.meta.api_models.single_project_features import SingleProjectFeatures
 from congregate.migration.meta.api_models.project_details import ProjectDetails
+from congregate.migration.meta.api_models.bulk_import_configuration import BulkImportconfiguration
+from congregate.migration.meta.api_models.bulk_import_entity import BulkImportEntity
+from congregate.migration.meta.api_models.bulk_import import BulkImportPayload
+from congregate.migration.meta.api_models.bulk_import_entity_status import BulkImportEntityStatus
 
 
 class GitLabMigrateClient(MigrateClient):
@@ -708,3 +713,30 @@ def import_task(file_path: str, group: dict, host: str, token: str):
 
     return client.handle_importing_projects(project_features, dst_host=host, dst_token=token,
                                             group_path=group['full_path'], filename=export_filename)
+
+
+@shared_task
+@mongo_connection
+def post_migration_task(entity, dest_host, dest_token, mongo=None, dry_run=True):
+    # In the event a direct transfer entity import fails, the entity parameter could be None
+    # and then we will need to skip doing any post migration tasks
+    if entity:
+        client = GitLabMigrateClient(dry_run=dry_run, skip_users=True,
+            skip_groups=True, skip_project_import=True)
+        entity = from_dict(data_class=BulkImportEntityStatus, data=entity)
+        if entity.entity_type == "project":
+            project_col = f"projects-{misc_utils.strip_netloc(client.config.source_host)}"
+            source_project = mongo.safe_find_one(project_col, {
+                'path_with_namespace': entity.source_full_path
+            })
+            return client.migrate_single_project_features(
+                source_project, entity.project_id, dest_host=dest_host, dest_token=dest_token)
+        if entity.entity_type == "group":
+            group_col = f"groups-{misc_utils.strip_netloc(client.config.source_host)}"
+            source_group = mongo.safe_find_one(group_col, {
+                'path_with_namespace': entity.source_full_path
+            })
+            return client.migrate_single_group_features(
+                source_group['id'], entity.namespace_id, entity.destination_full_path)
+    else:
+        return False

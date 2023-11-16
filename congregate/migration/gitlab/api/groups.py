@@ -354,6 +354,21 @@ class GroupsApi(GitLabApiWrapper):
         """
         return self.api.list_all(host, token, f"groups/{gid}/projects?include_subgroups={include_subgroups}&with_shared={with_shared}")
 
+    def get_all_group_projects_count(self, gid, host, token, include_subgroups=True, with_shared=False):
+        """
+        Get a total count of projects in this group
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/groups.html#list-a-groups-projects
+
+            :param: gid: (int) GitLab group ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :param: include_subgroups: (bool) Include projects in subgroups of this group. Default is false
+            :param: with_shared: (bool) Include projects shared to this group. Default is true
+            :yield: Generator returning JSON of each result from GET /groups/:id/projects
+        """
+        return self.api.get_count(host, token, f"groups/{gid}/projects?include_subgroups={include_subgroups}&with_shared={with_shared}")
+
     def get_all_group_subgroups(self, gid, host, token):
         """
         Get a list of visible direct subgroups in a group
@@ -366,6 +381,19 @@ class GroupsApi(GitLabApiWrapper):
             :yield: Generator returning JSON of each result from GET /groups/:id/subgroups
         """
         return self.api.list_all(host, token, f"groups/{gid}/subgroups")
+    
+    def get_all_group_subgroups_count(self, gid, host, token):
+        """
+        Get a list of visible direct subgroups in a group
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/groups.html#list-a-groups-subgroups
+
+            :param: gid: (int) GitLab group ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /groups/:id/subgroups
+        """
+        return self.api.get_count(host, token, f"groups/{gid}/subgroups")
 
     def get_all_descendant_groups(self, gid, host, token):
         """

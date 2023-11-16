@@ -1,6 +1,7 @@
 from dataclasses import dataclass, asdict
 from flask import Flask
 from celery import Celery, Task
+from celery.result import AsyncResult
 from congregate.helpers.configuration_validator import ConfigurationValidator
 
 def celery_init_app(app: Flask) -> Celery:
@@ -25,6 +26,19 @@ def generate_celery_config():
         result_backend=f"mongodb://{c.mongo_host}:{c.mongo_port}/jobs",
         task_ignore_results=True
     ).to_dict()
+
+def get_task_status(id):
+    return AsyncResult(id)
+
+def find_arg_prop(res: AsyncResult, prop_key: str):
+    '''
+        Super simple dict key value lookup across an tuple of arguments
+
+        This does not dig into a nested dictionary
+    '''
+    for arg in res.args:
+        if isinstance(arg, dict):
+            return arg.get(prop_key)
 
 @dataclass
 class CeleryConfig():

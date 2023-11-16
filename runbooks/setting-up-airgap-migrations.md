@@ -9,7 +9,7 @@ In an air-gapped environment, specifically where the source and destination inst
 
 - A VM with a container runtime (docker, podman, rancher, etc) and docker-compose installed
 - Access to the [congregate container registry](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/container_registry/2394823)
-- Ability to download MongoDB and Redis images
+- Ability to download MongoDB and Redis images from a container registry
 
 ## Setting up the Congregate nodes
 

@@ -1,5 +1,6 @@
 <template>
   <div class="home">
+    <h2>Staged Data Summary</h2>
     <ul class = "summary-list">
       <li class = "summary-title" v-on:click="showHideProjects()">Total Projects: {{ projectSummary }}</li>
       <li v-show="showStagedProjects"><SummaryTable
@@ -17,7 +18,6 @@
             v-bind:data="stagedUsers"
         /></li>
     </ul>
-
   </div>
 </template>
 
@@ -44,7 +44,7 @@ export default {
     }
   },
   mounted: function () {
-    axios.get('/data/summary').then(response => {
+    axios.get(`${import.meta.env.VITE_API_ROOT}/api/data/summary`).then(response => {
       this.projectSummary = response.data['Total Staged Projects']
       this.groupSummary = response.data['Total Staged Groups']
       this.userSummary = response.data['Total Staged Users']
@@ -84,5 +84,18 @@ export default {
 <style scoped lang="less">
 .summary-title {
   cursor: pointer;
+}
+.summary-list {
+  padding-left: 0;
+  li {
+    list-style: none;
+    text-align: left;
+    padding: 1em;
+    background: #ccc;
+    border-top: 1px solid #000;
+  }
+}
+h2 {
+  text-align: left;
 }
 </style>

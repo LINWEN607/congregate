@@ -497,6 +497,15 @@ class Config(BaseConfig):
         instead of file-based export/import
         """
         return self.prop_bool("APP", "direct_transfer", default=False)
+    
+    @property
+    def poll_interval(self):
+        """
+        Sets the polling interval for async watch jobs sent to Celery in seconds
+
+        Defaults to 30 seconds
+        """
+        return self.prop_int("APP", "poll_interval", default=30)
 
 # HIDDEN PROPERTIES
 
