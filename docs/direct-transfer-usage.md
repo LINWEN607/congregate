@@ -112,7 +112,7 @@ Once the direct transfer finishes, another task is sent to the queue to handle a
 We utilize a task queue (Celery) when migrating via direct transfer.
 We send a series of tasks to a queue to process and we can monitor them through a tool called Flower.
 
-To access flower, navigate to http(s)://<url-where-congregate-is-running>:5555 to see a list of jobs in the queue
+To access flower, navigate to `http(s)://<url-where-congregate-is-running>:5555` to see a list of jobs in the queue
 
 The `overall_status_id` in the response monitors the overall status of the migration so if that is still in a started or running state, there is still data migrating either with direct transfer or Congregate
 
