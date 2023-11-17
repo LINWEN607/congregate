@@ -13,10 +13,16 @@ nav:
   - Home: index.md
   - Usage:
       - Getting Started: using-congregate.md
-      - Extras:
-          - LDAP Group Sync: ldap-group-sync.md
+      - CLI-based Migrations: using-congregate.md
+      - UI/API-based Migrations: 
+        - via Direct Transfer:
+          - Direct Transfer Setup: direct-transfer-api.md
+          - Direct Transfer Usage: direct-transfer-usage.md
+        - Air-gapped Migrations:
           - Air-gapped Migration Setup: setting-up-airgap-migrations.md
           - Air-gapped Migration Usage: airgapped-migration-usage.md
+      - Extras:
+        - LDAP Group Sync: ldap-group-sync.md
   - Readme: project_readme.md
   - Installation:
       - Full Setup: full_setup.md
