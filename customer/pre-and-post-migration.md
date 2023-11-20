@@ -25,7 +25,7 @@
   - Ip allowlisting: Settings > General > Restrict access by IP address
   - Restricted access based on email domain: Settings > General > Restrict membership by email domain
 
-#### Migration Wave File (GitLab and Bitbucket Source)
+#### Migration Wave File
 
 - Once the PSE has access to the customer’s gitlab instance they will generate a file called wave-file.csv
 - This file lists out every gitlab project on the customer’s instance and includes an unpopulated wave# and wave date column for each project
@@ -34,11 +34,11 @@
 
 ### Customer Coordinator
 
-- Customer is to send out communications to their users. 
+- Customer is to send out communications to their users.
 - Users should be aware that all of their Gitlab projects are in the process of being migrated to Gitlab.com
 - Specific teams of users should know the tentative dates of when their specific projects are to be migrated
 
-#### Scheduling and constraints 
+#### Scheduling and constraints
 
 - Migration waves are comprised of about 200 projects and the total time for a migration takes about 8 hours to complete based on the size of the projects involved in the particular wave
 - A migration wave is scheduled with a customer at least 5 days in advance in order to give the PSE time to ensure that no other customer migrations to GitLab.com will take place during the migration window
@@ -96,7 +96,7 @@
 #### Updating and Running Pipelines
 
 - In many cases pipelines contain specific hooks that point to various resources or other locations with the project structure
-- If any hooks are pointing to a private instance or localhost for example, which is not accessible from the destination instance (eg: gitlab.com) the instance will see them as invalid and fail when creating them. 
+- If any hooks are pointing to a private instance or localhost for example, which is not accessible from the destination instance (eg: gitlab.com) the instance will see them as invalid and fail when creating them.
     - Members of the user teams should update these hooks project and group CI/CD variables are migrated, but values that are source specific, e.g. project url or hostname, should be updated to the new values
 - Secrets (tokens) that may be present in certain features, e.g. hooks, are not exposed in the API response and therefore not migrated. Those individual features have to be newly created
 - There may be other elements of your pipelines that need to be updated depending on your pipeline and underlying tech-stack but the previous examples are at least what you can expect to need to update
