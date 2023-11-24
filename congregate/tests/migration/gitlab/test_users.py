@@ -349,7 +349,7 @@ class UsersTests(unittest.TestCase):
         dest_token.side_effect = ["token", "token", "token"]
         source_type.return_value = "gitlab"
 
-        mock_search.return_value = [self.mock_users.get_dummy_old_users()[0]]
+        mock_search.return_value = []
 
         self.assertEqual(self.users.block_user(
             self.mock_users.get_dummy_user()), None)
