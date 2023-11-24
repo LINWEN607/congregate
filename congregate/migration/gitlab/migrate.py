@@ -36,13 +36,9 @@ from congregate.migration.gitlab.clusters import ClustersClient
 from congregate.migration.gitlab.environments import EnvironmentsClient
 from congregate.migration.gitlab.branches import BranchesClient
 from congregate.migration.gitlab.packages import PackagesClient
-from congregate.migration.gitlab.bulk_imports import BulkImportsClient
 from congregate.helpers.mdbc import MongoConnector, mongo_connection
 from congregate.migration.meta.api_models.single_project_features import SingleProjectFeatures
 from congregate.migration.meta.api_models.project_details import ProjectDetails
-from congregate.migration.meta.api_models.bulk_import_configuration import BulkImportconfiguration
-from congregate.migration.meta.api_models.bulk_import_entity import BulkImportEntity
-from congregate.migration.meta.api_models.bulk_import import BulkImportPayload
 from congregate.migration.meta.api_models.bulk_import_entity_status import BulkImportEntityStatus
 
 
@@ -583,9 +579,9 @@ class GitLabMigrateClient(MigrateClient):
             Subsequent function to update project info AFTER import
         """
         project.pop("members", None)
-        path_with_namespace = project["path_with_namespace"]
-        shared_with_groups = project["shared_with_groups"]
         src_id = project["id"]
+        src_path = project["path_with_namespace"]
+        shared_with_groups = project["shared_with_groups"]
         jobs_enabled = project["jobs_enabled"]
         results = {}
 
@@ -593,58 +589,63 @@ class GitLabMigrateClient(MigrateClient):
 
         # Set default branch
         self.branches.set_branch(
-            path_with_namespace, dst_id, project.get("default_branch"))
+            src_path, dst_id, project.get("default_branch"))
 
         # Shared with groups
         results["shared_with_groups"] = self.projects.add_shared_groups(
-            dst_id, path_with_namespace, shared_with_groups)
+            dst_id, src_path, shared_with_groups)
 
         # Environments
         results["environments"] = EnvironmentsClient(dest_host=dest_host, dest_token=dest_token).migrate_project_environments(
-            src_id, dst_id, path_with_namespace, jobs_enabled)
+            src_id, dst_id, src_path, jobs_enabled)
 
         vars_client = VariablesClient(
             dest_host=dest_host, dest_token=dest_token)
         # CI/CD Variables
         results["cicd_variables"] = vars_client.migrate_cicd_variables(
-            src_id, dst_id, path_with_namespace, "projects", jobs_enabled)
+            src_id, dst_id, src_path, "projects", jobs_enabled)
 
         # Pipeline Schedule Variables
         results["pipeline_schedule_variables"] = vars_client.migrate_pipeline_schedule_variables(
-            src_id, dst_id, path_with_namespace, jobs_enabled)
+            src_id, dst_id, src_path, jobs_enabled)
 
         if not self.config.airgap:
             # Deploy Keys
             results["deploy_keys"] = self.keys.migrate_project_deploy_keys(
-                src_id, dst_id, path_with_namespace)
+                src_id, dst_id, src_path)
 
             # Container Registries
             if self.config.source_registry and self.config.destination_registry:
                 results["container_registry"] = self.registries.migrate_registries(
-                    src_id, dst_id, path_with_namespace)
+                    src_id, dst_id, src_path)
 
             # Package Registries
             results["package_registry"] = self.packages.migrate_project_packages(
-                src_id, dst_id, path_with_namespace)
+                src_id, dst_id, src_path)
 
             # Hooks (Webhooks)
             results["project_hooks"] = self.hooks.migrate_project_hooks(
-                src_id, dst_id, path_with_namespace)
+                src_id, dst_id, src_path)
 
             # Clusters
             if mig_utils.is_gl_version_older_than(14.5, self.config.source_host, self.config.source_token,
-                                                "Certificate-based clusters are still supported"):
+                                                  "Certificate-based clusters are still supported"):
                 results["clusters"] = self.clusters.migrate_project_clusters(
-                    src_id, dst_id, path_with_namespace, jobs_enabled)
+                    src_id, dst_id, src_path, jobs_enabled)
 
         if self.config.source_tier not in ["core", "free"]:
             # Push Rules - handled by GitLab Importer as of 13.6
             # results["push_rules"] = self.pushrules.migrate_push_rules(
-            #     src_id, dst_id, path_with_namespace)
+            #     src_id, dst_id, src_path)
 
             # Merge Request Approvals
             results["project_level_mr_approvals"] = MergeRequestApprovalsClient(dest_host=dest_host, dest_token=dest_token).migrate_project_level_mr_approvals(
-                src_id, dst_id, path_with_namespace)
+                src_id, dst_id, src_path)
+
+        # Source fields
+        results["src_id"] = src_id
+        results["src_path"] = src_path
+        results["src_url"] = project["http_url_to_repo"]
 
         if self.config.remapping_file_path:
             self.projects.migrate_gitlab_variable_replace_ci_yml(dst_id)
@@ -722,7 +723,7 @@ def post_migration_task(entity, dest_host, dest_token, mongo=None, dry_run=True)
     # and then we will need to skip doing any post migration tasks
     if entity:
         client = GitLabMigrateClient(dry_run=dry_run, skip_users=True,
-            skip_groups=True, skip_project_import=True)
+                                     skip_groups=True, skip_project_import=True)
         entity = from_dict(data_class=BulkImportEntityStatus, data=entity)
         if entity.entity_type == "project":
             project_col = f"projects-{misc_utils.strip_netloc(client.config.source_host)}"
