@@ -247,6 +247,7 @@ Certain GitLab features are migrated but not adapted to the destination instance
   * [ ] (gitlab.com) Update direct group and project membership to allow specific user and group MR approval rules in projects
 * [ ] Update instance and group level (custom) project templates
 * [ ] Update and/or create any features that are not migrated (based on migration features matrix)
+* [ ] Update project environment states on destination as they are not propagated via API (all are `active`)
 
 </details>
 

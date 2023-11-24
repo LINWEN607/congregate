@@ -187,6 +187,7 @@ Copy the following data and add subsequent rows for single group migration
 
 #### Migrate groups and projects
 
+* [ ] If container registries are migrated make sure to set `/var/run/docker.sock` permissions for `ps-user` by running `sudo chmod 666 /var/run/docker.sock`.
 * [ ] Notify in the internal Slack channel dedicated to this migration you are starting the migration wave
 * [ ] Notify the customer in the customer-facing Slack channel you are starting the migration wave
 * [ ] Run the following command `nohup ./congregate.sh migrate --skip-users --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log 2>&1 &`

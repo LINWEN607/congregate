@@ -97,7 +97,7 @@
 
 - In many cases pipelines contain specific hooks that point to various resources or other locations with the project structure
 - If any hooks are pointing to a private instance or localhost for example, which is not accessible from the destination instance (eg: gitlab.com) the instance will see them as invalid and fail when creating them.
-    - Members of the user teams should update these hooks project and group CI/CD variables are migrated, but values that are source specific, e.g. project url or hostname, should be updated to the new values
+  - Members of the user teams should update these hooks project and group CI/CD variables are migrated, but values that are source specific, e.g. project url or hostname, should be updated to the new values
 - Secrets (tokens) that may be present in certain features, e.g. hooks, are not exposed in the API response and therefore not migrated. Those individual features have to be newly created
 - There may be other elements of your pipelines that need to be updated depending on your pipeline and underlying tech-stack but the previous examples are at least what you can expect to need to update
 - If you are using an external system for CI/CD, such as Jenkins or Circle CI, make sure that system is functioning properly and picking up changes.
@@ -121,6 +121,7 @@ Certain GitLab features are migrated but not adapted to the destination instance
 - Enable project-level shared runners (default: true)
 - Disable AutoDevOps (default: true)
 
-### project, group and system hooks
-- NOTE: if they are pointing to a private instance or localhost gitlab.com will see them as invalid and fail creating them
+### Project, group and system hooks
+
+- **NOTE:** If they are pointing to a private instance or localhost gitlab.com will see them as invalid and fail creating them
 - Badges

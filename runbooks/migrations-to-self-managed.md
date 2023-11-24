@@ -147,6 +147,7 @@ Copy the following data and add subsequent rows for single group migration
 
 #### Prepare groups and projects
 
+* [ ] If container registries are migrated make sure to set `/var/run/docker.sock` permissions for `ps-user` by running `sudo chmod 666 /var/run/docker.sock`.
 * [ ] Review migration schedule (see customer migration schedule)
 * [ ] Check the status of the destination instance
   * [ ] Confirm you can reach the UI of the instance
