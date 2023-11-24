@@ -219,6 +219,7 @@ def find_user_by_email_comparison_without_id(email, src=False):
             if user and user.get("email"):
                 b.log.warning(
                     f"Found user by secondary email {email}, with primary set to {user['email']}")
+                return user
             # When using non-admin token for migrations from non-gitlab sources
             if user and user.get("id") and b.config.source_type != "gitlab":
                 b.log.warning(f"Found user by public email {email}")
@@ -425,7 +426,7 @@ def is_gl_version_older_than(set_version, host, token, log):
     """
     version = safe_json_response(instance_api.get_version(host, token))
     # Include minor version digit, e.g. 16.7
-    if version and version.get("version") and float(".".join(version["version"].split(".",2)[:2])) < set_version:
+    if version and version.get("version") and float(".".join(version["version"].split(".", 2)[:2])) < set_version:
         b.log.info(f"{log} on GitLab version '{version}'")
         return True
     return False
