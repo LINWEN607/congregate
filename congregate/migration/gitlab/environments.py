@@ -1,7 +1,7 @@
 from requests.exceptions import RequestException
 from dacite import from_dict
 
-from gitlab_ps_utils.misc_utils import is_error_message_present
+from gitlab_ps_utils.misc_utils import is_error_message_present, safe_json_response
 
 from congregate.helpers.db_or_http import DbOrHttpMixin
 from congregate.migration.gitlab.base_gitlab_client import BaseGitLabClient
@@ -36,7 +36,7 @@ class EnvironmentsClient(DbOrHttpMixin, BaseGitLabClient):
                     self.log.error(
                         f"Failed to fetch environments ({env}) for project {name}")
                     return False
-                self.send_data(
+                create_resp = self.send_data(
                     self.projects.create_environment,
                     (self.dest_host, self.dest_token, dest_id),
                     'project_environments',
@@ -44,6 +44,7 @@ class EnvironmentsClient(DbOrHttpMixin, BaseGitLabClient):
                     self.generate_environment_data(env),
                     airgap=self.config.airgap,
                     airgap_export=self.config.airgap_export)
+                self.update_state(name, dest_id, env, create_resp)
             return True
         except TypeError as te:
             self.log.error(
@@ -56,3 +57,15 @@ class EnvironmentsClient(DbOrHttpMixin, BaseGitLabClient):
 
     def generate_environment_data(self, environment):
         return from_dict(data_class=NewProjectEnvironmentPayload, data=environment).to_dict()
+
+    def update_state(self, name, dest_id, env, resp):
+        if resp.status_code != 201:
+            self.log.error(
+                f"Failed to create project '{name} (ID: {dest_id}) environment:\n{resp} - {resp.text}")
+        elif env.get("state") in ["stopping", "stopped"]:
+            resp_json = safe_json_response(resp) or {}
+            update_resp = self.projects.stop_environment(
+                self.dest_host, self.dest_token, dest_id, resp_json.get("id"))
+            if update_resp.status_code != 200:
+                self.log.error(
+                    f"Failed to stop project '{name}' (ID: {dest_id}) environment '{env.get('name')}'")

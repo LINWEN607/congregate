@@ -1089,6 +1089,23 @@ class ProjectsApi(GitLabApiWrapper):
             message = f"Creating new environment for project {pid} with payload {str(data)}"
         return self.api.generate_post_request(host, token, f"projects/{pid}/environments", json.dumps(data), description=message)
 
+    def stop_environment(self, host, token, pid, eid, message=None):
+        """
+        It returns 200 if the environment was successfully stopped, and 404 if the environment does not exist.
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/environments.html#stop-an-environment
+
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :param: pid: (int/str) GitLab project ID
+            :param: eid: (int) The ID of the environment.
+            :return: Response object containing the response to POST /projects/:pid/environments/:eid/stop
+
+        """
+        if not message:
+            message = f"Stopping environment {eid} for project {pid}"
+        return self.api.generate_post_request(host, token, f"projects/{pid}/environments/{eid}/stop", {}, description=message)
+
     def delete_environment(self, pid, eid, host, token):
         """
         Delete a project environment
