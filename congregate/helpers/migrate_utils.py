@@ -11,7 +11,7 @@ from shutil import copy
 from time import time
 from datetime import timedelta, datetime
 from gitlab_ps_utils.misc_utils import is_error_message_present, get_dry_log, safe_json_response, strip_netloc
-from gitlab_ps_utils.json_utils import read_json_file_into_object, write_json_to_file, json_pretty
+from gitlab_ps_utils.json_utils import read_json_file_into_object, write_json_to_file
 from gitlab_ps_utils.dict_utils import dig
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.utils import is_dot_com, get_congregate_path

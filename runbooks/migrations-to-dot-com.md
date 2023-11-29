@@ -128,7 +128,7 @@ Copy the following data and add subsequent rows for single group migration
   * **NOTE:** The command assumes you have no groups or projects staged
 * [ ] Confirm everything looks correct and move on to the next step in the runbook
   * Specifically, review the API requests and make sure the paths look correct.
-  * If anything looks wrong in the dry run, make a note of it in the issue and reach out to @gitlab-org/professional-services-automation/tools/migration for review. Do not proceed with the migration if the dry run data looks incorrect. If this is incorrect, the data we send will be incorrect.
+  * If anything looks wrong in the dry run, make a note of it in the issue and reach out to `@gitlab-org/professional-services-automation/tools/migration` for review. Do not proceed with the migration if the dry run data looks incorrect. If this is incorrect, the data we send will be incorrect.
 * [ ] Copy `data/results/dry_run_user_migration.json` to `/opt/congregate/data/waves/user_wave/` and attach to this issue
 * [ ] Notify in the internal Slack channel dedicated to this migration you have completed dry run for the user wave
 
@@ -152,6 +152,7 @@ Copy the following data and add subsequent rows for single group migration
 
 * [ ] Review migration schedule (see customer migration schedule)
 * [ ] Confirm all users have logged in and linked their SAML accounts (if applicable)
+  * [ ] Disable top-level group SSO enforcement to allow membership and contribution mapping for users that do not have their SAML account linked
   * See Customer migration prerequisites for details
 * [ ] Check the status of **gitlab.com** (https://status.gitlab.com/)
   * [ ] Confirm you can reach the UI of the instance
@@ -161,19 +162,17 @@ Copy the following data and add subsequent rows for single group migration
 * [ ] Run `nohup ./congregate.sh list > data/waves/listing.log 2>&1 &` at the beginning of the migration blackout period
 * [ ] Stage groups or projects based on the wave schedule in the UI
   * [ ] If staging by group make sure to stage all sub-groups as well
-* [ ] Create a directory called "waves" in `/opt/congregate/data` in the container if it doesn't already exist
-* [ ] Create a directory called `wave_<insert_wave_number>` in `/opt/congregate/data/waves` if it doesn't already exist
 * [ ] Copy all staged data to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
 * [ ] Make sure the group(s) you are migrating to have shared runners enabled
   * This is to avoid a group import bug : GitLab issue 276930 (Not linked to avoid mention)
   * Originally avoided by fixing another bug : GitLab issue 290291 (Not linked to avoid mention)
-* [ ] On the destination parent group uncheck `Enable delayed project deletion` (*Settings -> General -> Permissions, LFS, 2FA*)
-  * This is required in order to have Congregate immediately delete projects that fail to import or import with a failed status
 * [ ] If `Restrict membership by email domain` is configured for the top-level group (*Settings -> General -> Permissions, LFS, 2FA*) make sure to add the Admin user's `gitlab.com` email domain
   * This is to avoid group and project import failures
 * [ ] (as of **14.0**) Set `public_email` field for all staged users on source by running `./congregate.sh set-staged-users-public-email`
   * Skip running command if source version is **< 14.0** and destination version is **>= 14.0**
 * [ ] Notify in the internal Slack channel dedicated to this migration you have completed preparation for the wave
+
+**NOTE:** Projects and groups (except top-level group) are by (instance) default deleted after 7 days. In the meantime their name and path changes and the projects are archived. To immediately delete them one (Owner) has to delete them again. Adding `permanently_remove` immediately removes them via API.
 
 #### Dry run groups and projects
 
@@ -181,7 +180,7 @@ Copy the following data and add subsequent rows for single group migration
   * [ ] If only sub-groups are staged make sure to add `--subgroups-only`
 * [ ] Confirm everything looks correct and move on to the next step in the runbook
   * Specifically, review the API requests and make sure the paths look correct. For example, make sure any parent IDs or namespaces are matching the parent ID and parent namespaces we have specified in the congregate config.
-  * If anything looks wrong in the dry run, make a note of it in the issue and reach out to @gitlab-org/professional-services-automation/tools/migration for review. Do not proceed with the migration if the dry run data looks incorrect. If this is incorrect, the data we send will be incorrect.
+  * If anything looks wrong in the dry run, make a note of it in the issue and reach out to `@gitlab-org/professional-services-automation/tools/migration` for review. Do not proceed with the migration if the dry run data looks incorrect. If this is incorrect, the data we send will be incorrect.
 * [ ] Copy `data/results/dry_run_*_migration.json` to `/opt/congregate/data/waves/wave_<insert_wave_number>/` and attach to this issue
 * [ ] Notify in the internal Slack channel dedicated to this migration you have completed dry run for the wave
 

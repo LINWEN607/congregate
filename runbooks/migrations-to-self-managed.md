@@ -121,7 +121,7 @@ Copy the following data and add subsequent rows for single group migration
   * **NOTE:** The command assumes you have no groups or projects staged
 * [ ] Confirm everything looks correct and move on to the next step in the runbook
   * Specifically, review the API requests and make sure the paths look correct.
-  * If anything looks wrong in the dry run, make a note of it in the issue and reach out to @gitlab-org/professional-services-automation/tools/migration for review. Do not proceed with the migration if the dry run data looks incorrect. If this is incorrect, the data we send will be incorrect.
+  * If anything looks wrong in the dry run, make a note of it in the issue and reach out to `@gitlab-org/professional-services-automation/tools/migration` for review. Do not proceed with the migration if the dry run data looks incorrect. If this is incorrect, the data we send will be incorrect.
 * [ ] Copy `data/results/dry_run_user_migration.json` to `/opt/congregate/data/waves/user_wave/` and attach to this issue
 * [ ] Notify in the internal Slack channel dedicated to this migration you have completed dry run for the user wave
 * [ ] Request customer sign-off
@@ -176,7 +176,7 @@ Copy the following data and add subsequent rows for single group migration
   * [ ] If only sub-groups are staged make sure to add `--subgroups-only`
 * [ ] Confirm everything looks correct and move on to the next step in the runbook
   * Specifically, review the API requests and make sure the paths look correct. For example, make sure any parent IDs or namespaces are matching the parent ID and parent namespaces we have specified in the congregate config.
-  * If anything looks wrong in the dry run, make a note of it in the issue and reach out to @gitlab-org/professional-services-automation/tools/migration for review. Do not proceed with the migration if the dry run data looks incorrect. If this is incorrect, the data we send will be incorrect.
+  * If anything looks wrong in the dry run, make a note of it in the issue and reach out to `@gitlab-org/professional-services-automation/tools/migration` for review. Do not proceed with the migration if the dry run data looks incorrect. If this is incorrect, the data we send will be incorrect.
 * [ ] Copy `data/results/dry_run_*_migration.json` to `/opt/congregate/data/waves/wave_<insert_wave_number>/` and attach to this issue
 * [ ] Notify in the internal Slack channel dedicated to this migration you have completed dry run for the wave
 * [ ] Request customer sign-off
