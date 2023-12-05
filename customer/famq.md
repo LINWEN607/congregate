@@ -138,7 +138,7 @@ This doesn't mean we shouldn't migrate them, since `blocked`, `deactivated` and 
 
 ## Do Git commit/tag mappings propagate during migration?
 
-A Git author’s `username` and `email` persist in Git data. Therefore it doesn’t matter how the Git repo is imported (GitHub, BBS, SaaS, SM, etc.) - the `username` and `email` will remain attached to the commits and tags. The difference comes in with how these are linked if a matching user is **not** found on the final GitLab destination.
+A Git author’s `username` and `email` persist in Git data. Therefore regardless of how the Git repo is imported (GitHub, BBS, SaaS, SM, etc.) - the `username` and `email` will remain attached to the commits and tags. The difference comes in with how these are linked if a matching user is **not** found on the final GitLab destination.
 
 With one user (e.g. User1) having a user matching their `email` on GitLab and another user (e.g. User2) that doesn’t have a matching user.
 
