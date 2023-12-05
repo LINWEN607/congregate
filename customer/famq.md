@@ -136,6 +136,26 @@ This doesn't mean we shouldn't migrate them, since `blocked`, `deactivated` and 
 * removed by enforcing SSO
 * (Admin only) soft deleted from the instance
 
+## Do Git commit/tag mappings propagate during migration?
+
+A Git author’s `username` and `email` persist in Git data. Therefore it doesn’t matter how the Git repo is imported (GitHub, BBS, SaaS, SM, etc.) - the `username` and `email` will remain attached to the commits and tags. The difference comes in with how these are linked if a matching user is **not** found on the final GitLab destination.
+
+With one user (e.g. User1) having a user matching their `email` on GitLab and another user (e.g. User2) that doesn’t have a matching user.
+
+### Commits
+
+* User1's commits have a hyperlink to the GitLab user profile
+* User2's commits shows the original author’s `username` but does not have a hyperlink to the GitLab user profile. It has a generated avatar and does not assign it to the project’s creator.
+
+**NOTE:** The [Git docs on commits](https://git-scm.com/docs/git-commit#_commit_information) indicate which author data is stored along with every commit - this is saved as commit metadata in a Git repo.
+
+### Tags
+
+* User1's tags have a hyperlink to the GitLab user profile
+* User2's tags shows the `email` but does not have a hyperlink to the GitLab user profile. Same as for commits, it doesn’t assign to the project’s creator.
+
+More good news is that if the users are created after the import with matching emails, it will be displayed correctly.
+
 ## Are GitLab Runners migrated and configured as part of the migration?
 
 No, they are not part of the migration.
