@@ -231,33 +231,35 @@ Copy the following data and add subsequent rows for single group migration
       * `json.exception.class`
       * `json.extra.relation_name`
 
-### Large Project Migration
+### Migrate over 5 GB Large Projects
 
-<details><summary>Instructions for large project which is over 5G.</summary>
+<details><summary>Instructions for migrating large projects.</summary>
 
-On GitLab.com the value of the maximum import file size is set to 5GB, it causes failure when we try to import the project through `congregate`` or GitLab UI.
+#### Import the Project from AWS S3 for Large Projects
 
-### Import the Project from AWS S3 for Large Project
+**NOTE**: If the project size is bigger than 5 GB, less than 10 GB. We can import the project from AWS S3 through API.
 
-**NOTE**: If the project is bigger than 5 GB, less than 10 GB. We can import the project from AWS S3 through API.
+1. Steps to install AWS CLI and connect to AWS S3
 
-<details><summary>Steps to install AWS CLI and connect to S3</summary>
-1. [Install the AWS CLI](https://docs.aws.amazon.com/cli/v1/userguide/cli-chap-install.html)
-2. `aws configure` to [Configure the AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html)
-3. `aws s3 ls s3://<bucket_name>` to verify if you can list your bucket
-4. `aws s3 cp <the project.tar.gz> s3://<bucket_name>` to upload the projact package to S3 bucket
+   1. [Install the AWS CLI](https://docs.aws.amazon.com/cli/v1/userguide/cli-chap-install.html)
+   2. `aws configure` to [configure the AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html)
+   3. `aws s3 ls s3://<bucket_name>` to verify if you can list your bucket
+   4. `aws s3 cp <the project.tar.gz> s3://<bucket_name>` to upload the projact package to S3 bucket
 
-Follow (Import the Project from AWS S3)[https://docs.gitlab.com/ee/api/project_import_export.html#import-a-file-from-aws-s3] to import the project from S3 to SaaS
+2. Follow [Import the Project from AWS S3](https://docs.gitlab.com/ee/api/project_import_export.html#import-a-file-from-aws-s3) to import the project from S3 to SaaS
 
-</details>
-
-#### Workarounds for large repositories
+#### Workarounds for Large Repositories
 
 Maximum import size limitations can prevent an import from being successful. If changing the import limits is not possible, you can try one of the workarounds listed here.
 
 [Workaround Option 1](https://docs.gitlab.com/ee/user/project/settings/import_export_troubleshooting.html#workaround-option-1)
 
 [Workaround Option 2](https://docs.gitlab.com/ee/user/project/settings/import_export_troubleshooting.html#workaround-option-2) 
+
+
+#### Manually Execute Export Projects
+
+You can [manually execute the export project](https://docs.gitlab.com/ee/user/project/settings/import_export_troubleshooting.html#manually-execute-export-steps) excluded unneeded exporters for example LFS objects to reduce the project size, and import LFS objects separately as the post migration
 
 </details>
 
