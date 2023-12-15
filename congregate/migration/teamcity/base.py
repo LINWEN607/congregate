@@ -11,7 +11,7 @@ from gitlab_ps_utils.dict_utils import dig
 from gitlab_ps_utils.string_utils import convert_to_underscores
 from congregate.migration.meta.base_ext_ci import BaseExternalCiClient
 from congregate.migration.teamcity.api.base import TeamcityApi
-from congregate.helpers.mdbc import MongoConnector
+from congregate.helpers.congregate_mdbc import CongregateMongoConnector
 
 
 class TeamcityClient(BaseExternalCiClient):
@@ -28,7 +28,7 @@ class TeamcityClient(BaseExternalCiClient):
             build_configs, 'buildTypes', 'buildType'), processes=processes)
 
     def handle_retrieving_tc_jobs(self, job):
-        mongo = MongoConnector()
+        mongo = CongregateMongoConnector()
         job_name = job['@id']
         scm_data = self.teamcity_api.get_build_vcs_roots(job_name)
         tc_host = strip_netloc(self.teamcity_api.host)

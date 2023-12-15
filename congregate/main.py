@@ -332,7 +332,7 @@ def main():
             from congregate.migration.github.diff.repodiff import RepoDiffClient as GHRepoDiffClient
             from congregate.migration.bitbucket.diff.repodiff import RepoDiffClient as BBSRepoDiffClient
             from congregate.helpers.user_util import map_users, map_and_stage_users_by_email_match
-            from congregate.helpers.mdbc import MongoConnector
+            from congregate.helpers.congregate_mdbc import CongregateMongoConnector
             from congregate.migration.github.repos import ReposClient as GHReposClient
             from congregate.migration.bitbucket.repos import ReposClient as BBReposClient
             from congregate.cli.ldap_group_sync import LdapGroupSync
@@ -683,19 +683,19 @@ def main():
                     result_type=result_type, steps=steps, order=order)
                 write_results_to_file(new_results, result_type, log=log)
             if arguments["dump-database"]:
-                m = MongoConnector()
+                m = CongregateMongoConnector()
                 for collection in m.db.list_collection_names():
                     print(f"Dumping collection {collection} to file")
                     m.dump_collection_to_file(
                         collection, f"{app_path}/data/{convert_to_underscores(collection)}.json")
             if arguments["reingest"]:
-                m = MongoConnector()
+                m = CongregateMongoConnector()
                 for asset in arguments["<assets>"]:
                     print(f"Reingesting {asset} into database")
                     m.re_ingest_into_mongo(asset)
             if arguments["clean-database"]:
                 if not DRY_RUN:
-                    m = MongoConnector()
+                    m = CongregateMongoConnector()
                     m.clean_db(keys=arguments["--keys"])
                 else:
                     print("\nThis command will drop all collections in the congregate database and then recreate the structure. Please append `--commit` to clean the database")

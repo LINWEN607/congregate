@@ -7,7 +7,7 @@ import warnings
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     import mongomock
-from congregate.helpers.mdbc import MongoConnector
+from congregate.helpers.congregate_mdbc import CongregateMongoConnector
 from congregate.tests.mockapi.bitbucket.repos import MockReposApi
 from congregate.migration.bitbucket.repos import ReposClient
 from congregate.migration.bitbucket.api.repos import ReposApi
@@ -21,7 +21,7 @@ class ReposTests(unittest.TestCase):
         self.repos = ReposClient()
         self.mock_groups = MockGroupsApi()
 
-    @patch.object(MongoConnector, "close_connection")
+    @patch.object(CongregateMongoConnector, "close_connection")
     @patch.object(ReposApi, "get_all_repos")
     @patch.object(ReposApi, "get_all_repo_users")
     @patch.object(ReposApi, "get_repo_default_branch")
@@ -122,7 +122,7 @@ class ReposTests(unittest.TestCase):
         listed_project = [self.mock_repos.get_all_repos(
         )[0], self.mock_repos.get_all_repos()[1]]
 
-        mongo = MongoConnector(client=mongomock.MongoClient)
+        mongo = CongregateMongoConnector(client=mongomock.MongoClient)
         for project in listed_project:
             self.repos.handle_retrieving_repos(project, mongo=mongo)
 
@@ -133,7 +133,7 @@ class ReposTests(unittest.TestCase):
             self.assertEqual(
                 actual_repos[i].items(), expected_repos[i].items())
 
-    @patch.object(MongoConnector, "close_connection")
+    @patch.object(CongregateMongoConnector, "close_connection")
     @patch.object(ReposApi, "get_all_repos")
     @patch.object(ReposApi, "get_all_repo_users")
     @patch.object(ReposApi, "get_all_repo_groups")
@@ -274,7 +274,7 @@ class ReposTests(unittest.TestCase):
         listed_project = [self.mock_repos.get_all_repos(
         )[0], self.mock_repos.get_all_repos()[1]]
 
-        mongo = MongoConnector(client=mongomock.MongoClient)
+        mongo = CongregateMongoConnector(client=mongomock.MongoClient)
         for project in listed_project:
             self.repos.handle_retrieving_repos(project, mongo=mongo)
 

@@ -16,7 +16,7 @@ from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
 from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
 from congregate.migration.github.repos import ReposClient
 from congregate.helpers.migrate_utils import get_target_project_path
-from congregate.helpers.mdbc import MongoConnector
+from congregate.helpers.congregate_mdbc import CongregateMongoConnector
 
 
 class RepoDiffClient(BaseDiffClient):
@@ -79,7 +79,7 @@ class RepoDiffClient(BaseDiffClient):
         # Staged or listed project
         group_namespace = project.get("namespace", "") or dig(
             project, "namespace", "full_path")
-        mongo = MongoConnector()
+        mongo = CongregateMongoConnector()
         if (self.results.get(target_project_path) or isinstance(self.results.get(target_project_path), int)) and self.asset_exists(self.gl_projects_api.get_project, project_id):
             project_diff = self.handle_endpoints(project)
             diff_report[target_project_path] = project_diff

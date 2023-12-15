@@ -3,7 +3,7 @@ from requests.exceptions import RequestException
 from gitlab_ps_utils.misc_utils import is_error_message_present, strip_netloc
 from gitlab_ps_utils.dict_utils import pop_multiple_keys
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.mdbc import MongoConnector
+from congregate.helpers.congregate_mdbc import CongregateMongoConnector
 from congregate.helpers.utils import is_dot_com
 from congregate.migration.github.api.repos import ReposApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
@@ -25,7 +25,7 @@ class KeysClient(BaseClass):
             src_keys = iter(self.repos_api.get_all_repo_deploy_keys(
                 owner, path))
             if not mongo:
-                mongo = MongoConnector()
+                mongo = CongregateMongoConnector()
             coll = f"keys-{strip_netloc(src_host)}"
             for key in src_keys:
                 # Remove unused key-values before posting key

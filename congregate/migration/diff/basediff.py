@@ -8,7 +8,7 @@ from gitlab_ps_utils.jsondiff import Comparator
 
 from congregate.helpers.migrate_utils import get_target_project_path, get_full_path_with_parent_namespace
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.mdbc import MongoConnector
+from congregate.helpers.congregate_mdbc import CongregateMongoConnector
 
 
 class BaseDiffClient(BaseClass):
@@ -107,7 +107,7 @@ class BaseDiffClient(BaseClass):
             Queries MongoDB for all diff_report collections
             and outputs them to the HTML report format
         """
-        mongo = MongoConnector()
+        mongo = CongregateMongoConnector()
         for diff_col in mongo.wildcard_collection_query("diff_report"):
             diff = {}
             for d, _ in mongo.stream_collection(diff_col):
@@ -680,6 +680,6 @@ class BaseDiffClient(BaseClass):
 
     def drop_diff_report_collections(self):
         self.log.info("Dropping all diff_report_* mongo db collections")
-        mongo = MongoConnector()
+        mongo = CongregateMongoConnector()
         for diff_col in mongo.wildcard_collection_query("diff_report"):
             mongo.drop_collection(diff_col)

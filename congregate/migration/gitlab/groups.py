@@ -5,7 +5,7 @@ from gitlab_ps_utils.list_utils import remove_dupes
 from gitlab_ps_utils.json_utils import json_pretty
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.mdbc import MongoConnector
+from congregate.helpers.congregate_mdbc import CongregateMongoConnector, mongo_connection
 from congregate.helpers.migrate_utils import get_full_path_with_parent_namespace, is_top_level_group, get_staged_groups, \
     find_user_by_email_comparison_without_id
 from congregate.migration.gitlab.variables import VariablesClient
@@ -29,7 +29,7 @@ class GroupsClient(BaseClass):
     def traverse_groups(self, host, token, group):
         gid = group.get("id")
         if gid and gid not in self.unique_groups:
-            mongo = MongoConnector()
+            mongo = CongregateMongoConnector()
             for k in constants.GROUP_KEYS_TO_IGNORE:
                 group.pop(k, None)
             self.unique_groups.add(gid)

@@ -36,7 +36,7 @@ from congregate.migration.gitlab.clusters import ClustersClient
 from congregate.migration.gitlab.environments import EnvironmentsClient
 from congregate.migration.gitlab.branches import BranchesClient
 from congregate.migration.gitlab.packages import PackagesClient
-from congregate.helpers.mdbc import MongoConnector, mongo_connection
+from congregate.helpers.congregate_mdbc import CongregateMongoConnector, mongo_connection
 from congregate.migration.meta.api_models.single_project_features import SingleProjectFeatures
 from congregate.migration.meta.api_models.project_details import ProjectDetails
 from congregate.migration.meta.api_models.bulk_import_entity_status import BulkImportEntityStatus
@@ -667,7 +667,7 @@ class GitLabMigrateClient(MigrateClient):
             jobs_enabled = project.get("jobs_enabled", False)
             results = {}
 
-            mongo = MongoConnector()
+            mongo = CongregateMongoConnector()
             mongo.create_collection_with_unique_index('project_features', 'id')
             mongo.db['project_features'].insert_one(SingleProjectFeatures(
                 id=src_id,
