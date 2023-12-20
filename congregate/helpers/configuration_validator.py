@@ -147,7 +147,10 @@ class ConfigurationValidator(Config):
                 if group_resp["visibility"] == "public":
                     raise ConfigurationException(
                         "dstn_parent_group_path", msg=f"Public destination parent group: {group_full_path}. Please set visibility to 'internal' or 'private'")
-                return True
+            else:
+                raise ConfigurationException(
+                        "dstn_parent_group_path", msg=f"Destination group in config [{dstn_parent_group_path}] does not match group path from API response [{group_full_path}] Please correct configuration settings")
+            return True
         return True
 
     def validate_dstn_token(self, dstn_token):
