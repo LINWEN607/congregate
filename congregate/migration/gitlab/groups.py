@@ -36,7 +36,7 @@ class GroupsClient(BaseClass):
 
             # Save all group members as part of group metadata
             group["members"] = [] if self.skip_group_members else list(
-                self.groups_api.get_all_group_members(gid, host, token))
+                self.groups_api.get_all_group_members_incl_inherited(gid, host, token))
 
             # Save all group projects ID references as part of group metadata
             # Only list direct projects to avoid overhead
@@ -48,7 +48,7 @@ class GroupsClient(BaseClass):
                     project.pop(k, None)
                 # Avoids having to list all parent group projects i.e. listing only projects
                 project["members"] = [] if self.skip_project_members else list(
-                    self.projects_api.get_members(pid, host, token))
+                    self.projects_api.get_members_incl_inherited(pid, host, token))
                 mongo.insert_data(f"projects-{strip_netloc(host)}", project)
 
             # Save all descendant groups ID references as part of group metadata

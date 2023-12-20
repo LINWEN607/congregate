@@ -564,7 +564,7 @@ class UsersClient(BaseClass):
     def retrieve_user_info(self, host, token, processes=None):
         if self.config.src_parent_group_path:
             users = []
-            for user in self.groups_api.get_all_group_members(
+            for user in self.groups_api.get_all_group_members_incl_inherited(
                     self.config.src_parent_id, host, token):
                 users.append(safe_json_response(
                     self.users_api.get_user(user["id"], host, token)))

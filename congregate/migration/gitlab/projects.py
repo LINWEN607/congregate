@@ -79,7 +79,7 @@ class ProjectsClient(BaseClass):
             for k in constants.PROJECT_KEYS_TO_IGNORE:
                 project.pop(k, None)
             project["members"] = [] if self.skip_project_members else list(
-                self.projects_api.get_members(project["id"], host, token))
+                self.projects_api.get_members_incl_inherited(project["id"], host, token))
             mongo.insert_data(f"projects-{strip_netloc(host)}", project)
         mongo.close_connection()
 
