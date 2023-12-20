@@ -102,13 +102,13 @@ class ProjectsClient(BaseClass):
                         self.config.destination_host, self.config.destination_token, new_id, data.to_dict())
                     if r.status_code == 201:
                         self.log.info(
-                            f"Shared project {path} with group {dst_full_path}")
+                            f"Shared project '{path}' with group '{dst_full_path}'")
                     else:
                         self.log.error(
-                            f"Failed to share project {path} with group {dst_full_path}, using payload\n{data} due to:\n{r} - {r.text}")
+                            f"Failed to share project '{path}' with group '{dst_full_path}', using payload\n{data} due to:\n{r} - {r.text}")
                 else:
                     self.log.error(
-                        f"Failed to find group {dst_full_path} on destination using new ID {new_gid}")
+                        f"Failed to find group shared group '{dst_full_path}' on destination using new ID {new_gid}")
             return True
         except RequestException as re:
             self.log.error(

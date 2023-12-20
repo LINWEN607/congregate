@@ -389,7 +389,7 @@ def sanitize_name(name, full_path, is_group=False):
             f"Renaming invalid {'group' if is_group else 'project'} name '{name}' -> '{valid}' ({full_path})")
         if is_group:
             b.log.error(
-                f"Sub-group {name} ({full_path}) requires a rename on source or direct import")
+                f"Sub-group '{name}' ({full_path}) requires a rename on source or direct import")
     return valid
 
 

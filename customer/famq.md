@@ -162,6 +162,14 @@ No, they are not part of the migration.
 
 Please see [here](#q1) for more details on the topic.
 
+## Are GitLab CI pipelines triggered after import?
+
+By default, Congregate disables shared Runners on the project level, as well as AutoDevOps.
+
+This is to prevent triggering any pipelines, either by pipeline schedules or post-import commits.
+
+On gitlab.com (SaaS) private Runners are preferred to shared ones.
+
 ## Are all project level features and configurations migrated?
 
 No and/or not entirely.
