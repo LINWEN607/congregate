@@ -156,11 +156,13 @@ class ConfigurationValidator(Config):
                 self.destination_host, dstn_token))
             error, user = is_error_message_present(user)
             # Admin token required when migrating from GitLab
-            is_admin = user.get(
-                "is_admin") if self.source_type == "gitlab" else True
-            if error or not user or not is_admin:
+            if error or not user:
                 raise ConfigurationException(
                     "destination_token", msg=f"Invalid user and/or token:\n{json_pretty(user)}")
+            is_admin = user.get(
+                "is_admin") if self.source_type == "gitlab" else True
+            if not is_admin:
+                print("Destination token is currently assigned to a standard user. Some API endpoints may not behave correctly")
             return True
         return True
 
