@@ -75,7 +75,7 @@ class ReposTests(unittest.TestCase):
                 "visibility": "private",
                 "description": "",
                 "id": 6,
-                "archived": "false",
+                "archived": False,
                 "http_url_to_repo": "http://localhost:7990/scm/tgp/android.git"
             },
             {
@@ -112,7 +112,7 @@ class ReposTests(unittest.TestCase):
                 "visibility": "private",
                 "description": "Just another test repo",
                 "id": 13,
-                "archived": "false",
+                "archived": False,
                 "http_url_to_repo": "http://localhost:7990/scm/atp/another-test-repo.git"
             }
         ]
@@ -130,8 +130,8 @@ class ReposTests(unittest.TestCase):
             "projects-bitbucket.company.com")]
 
         for i, _ in enumerate(expected_repos):
-            self.assertEqual(
-                actual_repos[i].items(), expected_repos[i].items())
+            self.assertDictEqual(
+                actual_repos[i], expected_repos[i])
 
     @patch.object(CongregateMongoConnector, "close_connection")
     @patch.object(ReposApi, "get_all_repos")
@@ -225,7 +225,7 @@ class ReposTests(unittest.TestCase):
                 ],
                 "groups": {'stash-users': 20, 'test-group': 20},
                 "default_branch": "develop",
-                "archived": "false",
+                "archived": False,
                 "http_url_to_repo": "http://localhost:7990/scm/tgp/android.git"
             },
             {
@@ -262,7 +262,7 @@ class ReposTests(unittest.TestCase):
                 ],
                 "groups": {},
                 "default_branch": "master",
-                "archived": "false",
+                "archived": False,
                 "http_url_to_repo": "http://localhost:7990/scm/atp/another-test-repo.git"
             }
         ]
@@ -282,5 +282,5 @@ class ReposTests(unittest.TestCase):
             "projects-bitbucket.company.com")]
 
         for i, _ in enumerate(expected_repos):
-            self.assertEqual(
-                actual_repos[i].items(), expected_repos[i].items())
+            self.assertDictEqual(
+                actual_repos[i], expected_repos[i])
