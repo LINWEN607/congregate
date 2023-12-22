@@ -75,6 +75,7 @@ class ReposTests(unittest.TestCase):
                 "visibility": "private",
                 "description": "",
                 "id": 6,
+                "archived": "false",
                 "http_url_to_repo": "http://localhost:7990/scm/tgp/android.git"
             },
             {
@@ -111,6 +112,7 @@ class ReposTests(unittest.TestCase):
                 "visibility": "private",
                 "description": "Just another test repo",
                 "id": 13,
+                "archived": "false",
                 "http_url_to_repo": "http://localhost:7990/scm/atp/another-test-repo.git"
             }
         ]
@@ -223,6 +225,7 @@ class ReposTests(unittest.TestCase):
                 ],
                 "groups": {'stash-users': 20, 'test-group': 20},
                 "default_branch": "develop",
+                "archived": "false",
                 "http_url_to_repo": "http://localhost:7990/scm/tgp/android.git"
             },
             {
@@ -259,6 +262,7 @@ class ReposTests(unittest.TestCase):
                 ],
                 "groups": {},
                 "default_branch": "master",
+                "archived": "false",
                 "http_url_to_repo": "http://localhost:7990/scm/atp/another-test-repo.git"
             }
         ]
