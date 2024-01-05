@@ -4,16 +4,19 @@ import os
 import sys
 
 from urllib.parse import quote_plus
+from pathlib import Path
 
 
 def traverse_dir(directory):
     files = []
     for root, _, filenames in os.walk(directory):
         for fn in filenames:
-            if root != directory:
-                files.append(f"{''.join(root.split('/')[1:])}/{fn}")
-            else:
-                files.append(fn)
+            # Quick fix to exclude any files other than markdown
+            if Path(fn).suffix == '.md':
+                if root != directory:
+                    files.append(f"{''.join(root.split('/')[1:])}/{fn}")
+                else:
+                    files.append(fn)
     return files
 
 
