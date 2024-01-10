@@ -261,7 +261,7 @@ class GroupsApi(GitLabApiWrapper):
         """
         Gets a list of group members viewable by the authenticated user, including inherited members through ancestor groups
 
-        GitLab API Doc: https://docs.gitlab.com/ee/api/members.html#list-all-members-of-a-group-or-project-including-inherited-members
+        GitLab API Doc: https://docs.gitlab.com/ee/api/members.html#list-all-members-of-a-group-or-project-including-inherited-and-invited-members
 
             :param: gid: (int) GitLab group ID
             :param: host: (str) GitLab host URL
@@ -381,7 +381,7 @@ class GroupsApi(GitLabApiWrapper):
             :yield: Generator returning JSON of each result from GET /groups/:id/subgroups
         """
         return self.api.list_all(host, token, f"groups/{gid}/subgroups")
-    
+
     def get_all_group_subgroups_count(self, gid, host, token):
         """
         Get a list of visible direct subgroups in a group
