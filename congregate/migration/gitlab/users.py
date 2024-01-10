@@ -12,7 +12,7 @@ from gitlab_ps_utils.dict_utils import rewrite_list_into_dict, rewrite_json_list
 from gitlab_ps_utils.list_utils import remove_dupes
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.mdbc import MongoConnector
+from congregate.helpers.congregate_mdbc import CongregateMongoConnector
 from congregate.helpers.migrate_utils import get_staged_users, find_user_by_email_comparison_without_id, is_gl_version_older_than
 from congregate.helpers.utils import is_dot_com
 from congregate.migration.gitlab import constants
@@ -580,7 +580,7 @@ class UsersClient(BaseClass):
         # mongo should be set to None unless this function is being used in a
         # unit test
         if not mongo:
-            mongo = MongoConnector()
+            mongo = CongregateMongoConnector()
         user["email"] = user["email"].lower()
         projects_limit = self.config.projects_limit
         if projects_limit:

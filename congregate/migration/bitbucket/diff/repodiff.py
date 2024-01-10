@@ -16,7 +16,7 @@ from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
 from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
 from congregate.helpers.migrate_utils import get_target_project_path, get_full_path_with_parent_namespace
-from congregate.helpers.mdbc import MongoConnector
+from congregate.helpers.congregate_mdbc import CongregateMongoConnector
 
 
 class RepoDiffClient(BaseDiffClient):
@@ -82,7 +82,7 @@ class RepoDiffClient(BaseDiffClient):
         self.results_mtime = getmtime(self.results_path)
         self.source_data = [i for i in read_json_file_into_object(
             f"{self.app_path}/data/staged_groups.json") if i]
-        mongo = MongoConnector()
+        mongo = CongregateMongoConnector()
         for parent in self.source_data:
             parent_path = parent["full_path"]
             target_parent_path = get_full_path_with_parent_namespace(
@@ -122,7 +122,7 @@ class RepoDiffClient(BaseDiffClient):
         # Staged or listed project
         group_namespace = project.get("namespace", "") or dig(
             project, "namespace", "full_path")
-        mongo = MongoConnector()
+        mongo = CongregateMongoConnector()
         if (self.results.get(target_project_path) or isinstance(self.results.get(target_project_path), int)) and self.asset_exists(self.gl_projects_api.get_project, project_id):
             project_diff = self.handle_endpoints(project)
             return self.insert_diff(project_diff, mongo, group_namespace, target_project_path)

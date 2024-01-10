@@ -7,7 +7,7 @@ from pytest import mark
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     import mongomock
-from congregate.helpers.mdbc import MongoConnector
+from congregate.helpers.congregate_mdbc import CongregateMongoConnector
 from congregate.tests.mockapi.bitbucket.projects import MockProjectsApi
 from congregate.migration.bitbucket.projects import ProjectsClient
 from congregate.migration.bitbucket.base import BitBucketServer
@@ -23,7 +23,7 @@ class ProjectsTests(unittest.TestCase):
         self.projects = ProjectsClient()
         self.mock_groups = MockGroupsApi()
 
-    @patch.object(MongoConnector, "close_connection")
+    @patch.object(CongregateMongoConnector, "close_connection")
     @patch.object(ProjectsApi, "get_all_project_users")
     @patch.object(ProjectsApi, "get_all_project_repos")
     @patch.object(ProjectsApi, "get_all_projects")
@@ -94,7 +94,7 @@ class ProjectsTests(unittest.TestCase):
         listed_project = [self.mock_projects.get_all_projects(
         )[0], self.mock_projects.get_all_projects()[1]]
 
-        mongo = MongoConnector(client=mongomock.MongoClient)
+        mongo = CongregateMongoConnector(client=mongomock.MongoClient)
         for project in listed_project:
             self.projects.handle_retrieving_projects(project, mongo=mongo)
 
@@ -105,7 +105,7 @@ class ProjectsTests(unittest.TestCase):
             self.assertEqual(
                 actual_projects[i].items(), expected_projects[i].items())
 
-    @patch.object(MongoConnector, "close_connection")
+    @patch.object(CongregateMongoConnector, "close_connection")
     @patch.object(ProjectsApi, "get_all_project_groups")
     @patch.object(ProjectsApi, "get_all_project_users")
     @patch.object(ProjectsApi, "get_all_project_repos")
@@ -234,7 +234,7 @@ class ProjectsTests(unittest.TestCase):
         listed_projects = [self.mock_projects.get_all_projects(
         )[0], self.mock_projects.get_all_projects()[1]]
 
-        mongo = MongoConnector(client=mongomock.MongoClient)
+        mongo = CongregateMongoConnector(client=mongomock.MongoClient)
         for project in listed_projects:
             self.projects.handle_retrieving_projects(project, mongo=mongo)
 

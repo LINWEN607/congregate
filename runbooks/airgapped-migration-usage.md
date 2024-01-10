@@ -6,7 +6,7 @@ Assuming a Congregate node on the source low-side network exists, you can trigge
 
 ```bash
 curl --request POST \
-  --url http://<congregate-source-node>:8000/airgap/export \
+  --url http://<congregate-source-node>:8000/api/airgap/export \
   --header 'Content-Type: application/json' \
   --data '{
 	"host": "https://<source-gitlab-instance>",
@@ -25,7 +25,7 @@ Importing to the destination network should be handled by the GitLab admins on t
 
 ```bash
 curl --request POST \
-  --url https://<congregate-destination-node>:8000/airgap/import \
+  --url https://<congregate-destination-node>:8000/api/airgap/import \
   --header 'Content-Type: multipart/form-data;' \
   --form host=https://<destination-gitlab-instance> \
   --form token=<personal-access-token> \

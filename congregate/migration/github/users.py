@@ -1,7 +1,7 @@
 from gitlab_ps_utils.misc_utils import safe_json_response, is_error_message_present, strip_netloc
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.mdbc import MongoConnector
+from congregate.helpers.congregate_mdbc import CongregateMongoConnector
 from congregate.migration.github.api.users import UsersApi
 from congregate.migration.github.api.orgs import OrgsApi
 from congregate.migration.github.meta.github_browser import GitHubBrowser
@@ -43,7 +43,7 @@ class UsersClient(BaseClass):
         # mongo should be set to None unless this function is being used in a
         # unit test
         if not mongo:
-            mongo = MongoConnector()
+            mongo = CongregateMongoConnector()
         single_user = safe_json_response(
             self.users_api.get_user(user["login"]))
         error, single_user = is_error_message_present(single_user)

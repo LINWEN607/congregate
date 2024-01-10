@@ -22,7 +22,7 @@ from congregate.migration.github.users import UsersClient as GitHubUsers
 from congregate.migration.jenkins.base import JenkinsClient as JenkinsData
 from congregate.migration.teamcity.base import TeamcityClient as TeamcityData
 
-from congregate.helpers.mdbc import MongoConnector
+from congregate.helpers.congregate_mdbc import CongregateMongoConnector
 
 
 class ListClient(BaseClass):
@@ -164,7 +164,7 @@ class ListClient(BaseClass):
         mongo.close_connection()
 
     def list_jenkins_data(self):
-        mongo = MongoConnector()
+        mongo = CongregateMongoConnector()
         for i, single_jenkins_ci_source in enumerate(
                 self.config.list_ci_source_config("jenkins_ci_source")):
             collection_name = f"jenkins-{single_jenkins_ci_source.get('jenkins_ci_src_hostname').split('//')[-1]}"
@@ -175,7 +175,7 @@ class ListClient(BaseClass):
                 collection_name, f"{self.app_path}/data/jenkins-{i}.json")
 
     def list_teamcity_data(self):
-        mongo = MongoConnector()
+        mongo = CongregateMongoConnector()
         for i, single_teamcity_ci_source in enumerate(
                 self.config.list_ci_source_config("teamcity_ci_source")):
             collection_name = f"teamcity-{single_teamcity_ci_source.get('tc_ci_src_hostname').split('//')[-1]}"
@@ -238,7 +238,7 @@ class ListClient(BaseClass):
                     f.write("[]")
 
     def mongo_init(self, subset=False):
-        mongo = MongoConnector()
+        mongo = CongregateMongoConnector()
         src_hostname = strip_netloc(self.config.source_host)
         p = f"projects-{src_hostname}"
         g = f"groups-{src_hostname}"

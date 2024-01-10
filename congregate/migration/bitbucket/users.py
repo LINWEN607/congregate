@@ -2,7 +2,7 @@ from gitlab_ps_utils.misc_utils import strip_netloc, is_error_message_present
 
 from congregate.migration.bitbucket.api.users import UsersApi
 from congregate.migration.bitbucket.base import BitBucketServer
-from congregate.helpers.mdbc import MongoConnector
+from congregate.helpers.congregate_mdbc import CongregateMongoConnector
 
 
 class UsersClient(BitBucketServer):
@@ -23,7 +23,7 @@ class UsersClient(BitBucketServer):
             # mongo should be set to None unless this function is being used in a
             # unit test
             if not mongo:
-                mongo = MongoConnector()
+                mongo = CongregateMongoConnector()
             if formatted_user := self.format_user(user):
                 mongo.insert_data(
                     f"users-{strip_netloc(self.config.source_host)}",

@@ -6,7 +6,7 @@ from io import BytesIO
 from pathlib import Path
 from dacite import from_dict
 from congregate.helpers.configuration_validator import Config
-from congregate.helpers.mdbc import mongo_connection
+from congregate.helpers.congregate_mdbc import mongo_connection
 from congregate.migration.meta.api_models.single_project_features import SingleProjectFeatures
     
 def create_archive(pid, export_file):

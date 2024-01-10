@@ -8,7 +8,7 @@ with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     import mongomock
 
-from congregate.helpers.mdbc import MongoConnector
+from congregate.helpers.congregate_mdbc import CongregateMongoConnector
 from congregate.tests.mockapi.bitbucket.users import MockUsersApi
 from congregate.migration.bitbucket.api.users import UsersApi
 from congregate.migration.bitbucket.users import UsersClient
@@ -20,7 +20,7 @@ class UsersTests(unittest.TestCase):
     def setUp(self):
         self.mock_users = MockUsersApi()
 
-    @patch.object(MongoConnector, "close_connection")
+    @patch.object(CongregateMongoConnector, "close_connection")
     @patch.object(UsersApi, "get_all_users")
     @patch('congregate.helpers.conf.Config.source_token',
            new_callable=PropertyMock)
@@ -57,7 +57,7 @@ class UsersTests(unittest.TestCase):
             }
         ]
 
-        mongo = MongoConnector(client=mongomock.MongoClient)
+        mongo = CongregateMongoConnector(client=mongomock.MongoClient)
 
         for user in self.mock_users.get_all_users():
             users.handle_retrieving_users(user, mongo=mongo)
@@ -69,7 +69,7 @@ class UsersTests(unittest.TestCase):
         for i, _ in enumerate(expected_users):
             self.assertDictEqual(expected_users[i], actual_users[i])
 
-    @patch.object(MongoConnector, "close_connection")
+    @patch.object(CongregateMongoConnector, "close_connection")
     @patch.object(UsersApi, "get_all_users")
     @patch('congregate.helpers.conf.Config.source_token',
            new_callable=PropertyMock)
@@ -102,7 +102,7 @@ class UsersTests(unittest.TestCase):
             }
         ]
 
-        mongo = MongoConnector(client=mongomock.MongoClient)
+        mongo = CongregateMongoConnector(client=mongomock.MongoClient)
 
         for user in self.mock_users.get_all_users():
             users.handle_retrieving_users(user, mongo=mongo)

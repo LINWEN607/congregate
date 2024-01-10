@@ -18,22 +18,17 @@ class MongoConnectorTests(unittest.TestCase):
             mock_list_ci_sources.side_effect = [{}, {}]
             with patch("congregate.helpers.conf.Config.source_host", new_callable=PropertyMock) as mock_source_host:
                 mock_source_host.return_value = "http://github.example.com"
-                self.c = MongoConnector(client=mongomock.MongoClient)
-
-    def test_init(self):
-        expected = ["projects-github.example.com",
-                    "groups-github.example.com", "users-github.example.com", "keys-github.example.com"]
-        self.assertListEqual(self.c.db.list_collection_names(), expected)
+                self.c = MongoConnector(db='test', client=mongomock.MongoClient)
 
     def test_insert_duplicate_data(self):
         data = {
             "id": 1,
             "hello": "world"
         }
-        self.c.insert_data("users", data)
-        self.c.insert_data("users", data)
+        self.c.insert_data("sample", data)
+        self.c.insert_data("sample", data)
 
-        actual_number_of_documents = self.c.db.users.count_documents({})
+        actual_number_of_documents = self.c.db.sample.count_documents({})
 
         self.assertEqual(actual_number_of_documents, 1)
 
@@ -42,9 +37,9 @@ class MongoConnectorTests(unittest.TestCase):
             "id": 1,
             "hello": "world"
         }, True)
-        self.c.insert_data("users", data)
+        self.c.insert_data("sample", data)
 
-        actual = self.c.db['users'].find_one()
+        actual = self.c.db['sample'].find_one()
         actual.pop("_id")
         expected = {
             "id": 1,
@@ -85,19 +80,6 @@ class MongoConnectorTests(unittest.TestCase):
             actual.append(u)
 
         self.assertListEqual(data, actual)
-
-    def test_find_user_email(self):
-        data = {
-            "id": 1,
-            "email": "jdoe@email.com",
-            "username": "jdoe"
-        }
-        self.c.insert_data("users-github.example.com", data)
-
-        actual = self.c.find_user_email("jdoe")
-        expected = "jdoe@email.com"
-
-        self.assertEqual(expected, actual)
 
     @patch('builtins.open',
            new=mock_open(read_data=b'[{"id": 1,"hello": "world"}]'))

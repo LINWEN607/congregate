@@ -7,7 +7,7 @@ import warnings
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     import mongomock
-from congregate.helpers.mdbc import MongoConnector
+from congregate.helpers.congregate_mdbc import CongregateMongoConnector
 from congregate.tests.mockapi.bitbucket.repos import MockReposApi
 from congregate.migration.bitbucket.repos import ReposClient
 from congregate.migration.bitbucket.api.repos import ReposApi
@@ -21,7 +21,7 @@ class ReposTests(unittest.TestCase):
         self.repos = ReposClient()
         self.mock_groups = MockGroupsApi()
 
-    @patch.object(MongoConnector, "close_connection")
+    @patch.object(CongregateMongoConnector, "close_connection")
     @patch.object(ReposApi, "get_all_repos")
     @patch.object(ReposApi, "get_all_repo_users")
     @patch.object(ReposApi, "get_repo_default_branch")
@@ -75,6 +75,7 @@ class ReposTests(unittest.TestCase):
                 "visibility": "private",
                 "description": "",
                 "id": 6,
+                "archived": False,
                 "http_url_to_repo": "http://localhost:7990/scm/tgp/android.git"
             },
             {
@@ -111,6 +112,7 @@ class ReposTests(unittest.TestCase):
                 "visibility": "private",
                 "description": "Just another test repo",
                 "id": 13,
+                "archived": False,
                 "http_url_to_repo": "http://localhost:7990/scm/atp/another-test-repo.git"
             }
         ]
@@ -120,7 +122,7 @@ class ReposTests(unittest.TestCase):
         listed_project = [self.mock_repos.get_all_repos(
         )[0], self.mock_repos.get_all_repos()[1]]
 
-        mongo = MongoConnector(client=mongomock.MongoClient)
+        mongo = CongregateMongoConnector(client=mongomock.MongoClient)
         for project in listed_project:
             self.repos.handle_retrieving_repos(project, mongo=mongo)
 
@@ -128,10 +130,10 @@ class ReposTests(unittest.TestCase):
             "projects-bitbucket.company.com")]
 
         for i, _ in enumerate(expected_repos):
-            self.assertEqual(
-                actual_repos[i].items(), expected_repos[i].items())
+            self.assertDictEqual(
+                actual_repos[i], expected_repos[i])
 
-    @patch.object(MongoConnector, "close_connection")
+    @patch.object(CongregateMongoConnector, "close_connection")
     @patch.object(ReposApi, "get_all_repos")
     @patch.object(ReposApi, "get_all_repo_users")
     @patch.object(ReposApi, "get_all_repo_groups")
@@ -223,6 +225,7 @@ class ReposTests(unittest.TestCase):
                 ],
                 "groups": {'stash-users': 20, 'test-group': 20},
                 "default_branch": "develop",
+                "archived": False,
                 "http_url_to_repo": "http://localhost:7990/scm/tgp/android.git"
             },
             {
@@ -259,6 +262,7 @@ class ReposTests(unittest.TestCase):
                 ],
                 "groups": {},
                 "default_branch": "master",
+                "archived": False,
                 "http_url_to_repo": "http://localhost:7990/scm/atp/another-test-repo.git"
             }
         ]
@@ -270,7 +274,7 @@ class ReposTests(unittest.TestCase):
         listed_project = [self.mock_repos.get_all_repos(
         )[0], self.mock_repos.get_all_repos()[1]]
 
-        mongo = MongoConnector(client=mongomock.MongoClient)
+        mongo = CongregateMongoConnector(client=mongomock.MongoClient)
         for project in listed_project:
             self.repos.handle_retrieving_repos(project, mongo=mongo)
 
@@ -278,5 +282,5 @@ class ReposTests(unittest.TestCase):
             "projects-bitbucket.company.com")]
 
         for i, _ in enumerate(expected_repos):
-            self.assertEqual(
-                actual_repos[i].items(), expected_repos[i].items())
+            self.assertDictEqual(
+                actual_repos[i], expected_repos[i])

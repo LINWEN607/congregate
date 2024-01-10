@@ -8,7 +8,7 @@ with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     import mongomock
 
-from congregate.helpers.mdbc import MongoConnector
+from congregate.helpers.congregate_mdbc import CongregateMongoConnector
 from congregate.tests.mockapi.github.orgs import MockOrgsApi
 from congregate.tests.mockapi.github.repos import MockReposApi
 from congregate.tests.mockapi.github.teams import MockTeamsApi
@@ -26,7 +26,7 @@ class OrgsTests(unittest.TestCase):
         self.mock_orgs = MockOrgsApi()
         self.mock_repos = MockReposApi()
         self.mock_teams = MockTeamsApi()
-        self.mongo_mock = MongoConnector(client=mongomock.MongoClient)
+        self.mongo_mock = CongregateMongoConnector(client=mongomock.MongoClient)
         self.orgs = OrgsClient(host="https://github.example.com", token="123")
 
     def tearDown(self):

@@ -132,6 +132,7 @@ class BitBucketServer(BaseClass):
             "id": repo["id"],
             "path": repo["slug"],
             "name": repo["name"],
+            "archived": repo.get("archived", False),
             "namespace": {
                 "id": dig(repo, 'project', 'id'),
                 "path": repo_path,

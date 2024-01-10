@@ -12,7 +12,7 @@ from gitlab_ps_utils.misc_utils import get_dry_log, get_timedelta, \
     get_decoded_string_from_b64_response_content, do_yml_sub, strip_scheme
 from gitlab_ps_utils.json_utils import json_pretty, read_json_file_into_object, write_json_to_file
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.mdbc import MongoConnector
+from congregate.helpers.congregate_mdbc import CongregateMongoConnector
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
@@ -70,7 +70,7 @@ class ProjectsClient(BaseClass):
 
     def handle_retrieving_project(self, host, token, project, mongo=None):
         if not mongo:
-            mongo = MongoConnector()
+            mongo = CongregateMongoConnector()
 
         error, project = is_error_message_present(project)
         if error or not project:
