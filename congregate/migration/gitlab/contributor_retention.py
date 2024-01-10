@@ -1,3 +1,7 @@
+import json
+from gitlab_ps_utils.dict_utils import dig
+from gitlab_ps_utils.api import GitLabApi
+from gitlab_ps_utils.misc_utils import safe_json_response
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.users import UsersClient
 from congregate.migration.gitlab.api.projects import ProjectsApi
@@ -9,67 +13,54 @@ from congregate.helpers.migrate_utils import find_user_by_email_comparison_witho
 
 class ContributorRetentionClient(BaseClass):
     GROUP_ELEMENTS = ['epics']
-    PROJECT_ELEMENTS = ['commits', 'issues', 'merge_requests', 'snippets']
-    NOTES_FIELDS = ['user_notes_count', 'notes']
+    PROJECT_ELEMENTS = ['issues', 'mergeRequests', 'snippets']
 
-    def __init__(self, host, token, id, asset_type='project'):
+    def __init__(self, id, full_path, asset_type='project'):
+        super().__init__()
+        self.api = GitLabApi()
         self.users = UsersClient()
         self.projects = ProjectsApi()
         self.groups = GroupsApi()
         self.issues = IssuesApi()
         self.mr = MergeRequestsApi()
-        self.host = host
-        self.token = token
         self.id = id
+        self.full_path = full_path
         self.members = self.get_members(asset_type)
         self.contributor_map = {}
-        self.project_elements = {
-            'commits': {
-                'list_function': self.projects.get_project_repository_commits,
-                'notes_function': self.projects.get_project_repository_commit_comments
-            },
-            'issues': {
-                'list_function': self.issues.get_all_project_issues,
-                'notes_function': self.issues.get_all_project_issue_notes
-            },
-            'merge_requests': {
-                'list_function': self.mr.get_all_project_merge_requests,
-                'notes_function': self.mr.get_merge_request_notes
-            },
-            'snippets': {
-                'list_function': self.projects.get_all_project_snippets,
-                'notes_function': self.projects.get_project_snippet_notes
-            }
-        }
-        super().__init__()
 
     def build_map(self):
-        for element, functions in self.project_elements.items():
-            self.log.info(f"Retrieving contributors in {element}")
-            self.retrieve_contributors(functions['list_function'], functions['notes_function'])
+        for element in self.PROJECT_ELEMENTS:
+            self.retrieve_contributors(element)
+    
+    def retrieve_contributors(self, element):
+        hasNextPage = True
+        cursor = ""
+        while hasNextPage:
+            query = self.generate_contributors_query(element, cursor)
+            if data := safe_json_response(
+                self.api.generate_post_request(self.config.source_host, self.config.source_token, None, json.dumps(query), graphql_query=True)):
+                print(f"Retrieved {len(dig(data, 'data', 'project', element, 'nodes', default=[]))} {element}")
+                for node in dig(data, 'data', 'project', element, 'nodes', default=[]):
+                    author = dig(node, 'author')
+                    self.add_contributor_to_map(author)
+                    for commenter in dig(node, 'commenters', 'nodes', default=[]):
+                        self.add_contributor_to_map(commenter)
+                cursor = dig(data, 'data', 'project', element, 'pageInfo', 'endCursor')
+                hasNextPage = dig(data, 'data', 'project', element,'pageInfo', 'hasNextPage', default=False)
+            else:
+                print("Request failed")
 
-    def retrieve_contributors(self, project_element_list, project_element_notes):
-        '''
-            Retrieves contributors from a specific element of a project (see elements list above)
-        '''
-        # iterate over results from a listing API endpoint
-        for el in project_element_list(self.id, self.host, self.token):
-            # if the element has notes
-            # pass in the element endpoint with '/notes' appended to it
-            # match = [el.get(field) for field in self.NOTES_FIELDS if el.get(field) is not None]
-            # if match:
-            #     self.retrieve_contributors(project_element_notes, None)
-            
-            # Grab author metadata from response
-            author = el.get('author')
-            if not author:
-                author_email = el.get('author_email')
-            # If the author is not already a project member
-            if author not in self.members:
-                # Add the element/element note author to the contributor map
-                author_email = self.users.users_api.get_user_email(author['id'], self.config.source_host, self.config.source_token)
-                author['email'] = author_email
-                self.contributor_map[author_email] = author
+    def add_contributor_to_map(self, author):
+        if author:
+            author_email = author.get('username')
+        # if not author:
+        #     author_email = element.get('author_email')
+        # If the author is not already a project member
+        if author not in self.members:
+            # Add the element/element note author to the contributor map
+            # author_email = self.users.users_api.get_user_email(author['id'], self.config.source_host, self.config.source_token)
+            # author['email'] = author_email
+            self.contributor_map[author_email] = author
 
     def add_contributors_to_project(self, contributors, pid, host, token):
         '''
@@ -101,5 +92,32 @@ class ContributorRetentionClient(BaseClass):
         elif asset_type == 'group':
             return self.groups.get_all_group_members(self.id, self.config.source_host, self.config.source_token)
         
+    def generate_contributors_query(self, element, cursor):
+        return {
+                "query": """
+                    query {
+                        project(fullPath: "%s"){
+                        %s(after: "%s") {
+                            nodes {
+                                author{
+                                    id
+                                    username
+                                },
+                                commenters {
+                                    nodes {
+                                        id
+                                        username
+                                    }
+                                }
+                            }
+                            pageInfo {
+                                endCursor,
+                                hasNextPage
+                            }
+                        }
+                        }
+                    }
+                """ % (self.full_path, element, cursor)
+            }
 
     
