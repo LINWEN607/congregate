@@ -40,7 +40,8 @@ class MigrateClient(BaseClass):
         subgroups_only=False,
         scm_source=None,
         reg_dry_run=False,
-        group_structure=False
+        group_structure=False,
+        retain_contributors=False
     ):
         self.projects = ProjectsClient()
         self.projects_api = ProjectsApi()
@@ -65,6 +66,7 @@ class MigrateClient(BaseClass):
         self.scm_source = scm_source
         self.group_structure = group_structure
         self.reg_dry_run = reg_dry_run
+        self.retain_contributors = retain_contributors
 
     def migrate(self):
         self.log.info(
@@ -97,7 +99,8 @@ class MigrateClient(BaseClass):
                                 skip_project_import=self.skip_project_import,
                                 subgroups_only=self.subgroups_only,
                                 reg_dry_run=self.reg_dry_run,
-                                group_structure=self.group_structure
+                                group_structure=self.group_structure,
+                                retain_contributors=self.retain_contributors
                                 ).migrate()
         elif self.config.source_type == "bitbucket server":
             BitBucketServerMigrateClient(dry_run=self.dry_run, 

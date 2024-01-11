@@ -15,18 +15,18 @@ class ContributorRetentionClient(BaseClass):
     GROUP_ELEMENTS = ['epics']
     PROJECT_ELEMENTS = ['issues', 'mergeRequests', 'snippets']
 
-    def __init__(self, id, full_path, asset_type='project'):
+    def __init__(self, src_id, dest_id, full_path, asset_type='project', dry_run=True):
         super().__init__()
         self.api = GitLabApi()
         self.users = UsersClient()
         self.projects = ProjectsApi()
         self.groups = GroupsApi()
-        self.issues = IssuesApi()
-        self.mr = MergeRequestsApi()
-        self.id = id
+        self.src_id = src_id
+        self.dest_id = dest_id
         self.full_path = full_path
         self.members = self.get_members(asset_type)
         self.contributor_map = {}
+        self.dry_run = dry_run
 
     def build_map(self):
         for element in self.PROJECT_ELEMENTS:
@@ -65,35 +65,54 @@ class ContributorRetentionClient(BaseClass):
             author['email'] = author_email
             self.contributor_map[author_email] = author
 
-    def add_contributors_to_project(self, contributors, pid, host, token):
+    def add_contributors_to_project(self):
         '''
             Add contributors from contributor map to source project
         '''
-        for contributor in contributors.items():
-            new_member_payload = NewMember(user_id=contributor['id'], access_level=10)
-            self.projects.add_member(pid, host, token, new_member_payload.to_dict())
+        for contributor, data in self.contributor_map.items():
+            new_member_payload = NewMember(user_id=data['id'], access_level=10)
+            if self.dry_run:
+                self.log.info(f"DRY_RUN: Adding contributor {contributor} to project {self.full_path}")
+            else:
+                self.log.info(f"Adding contributor {contributor} to project {self.full_path}")
+                self.projects.add_member(self.src_id, self.config.source_host, self.config.source_token, new_member_payload.to_dict())
     
-    def add_contributors_to_group(self, contributors, pid, host, token):
+    def add_contributors_to_group(self):
         '''
             Add contributors from contributor map to source group
         '''
-        for contributor in contributors.items():
+        for contributor in self.contributor_map.items():
             new_member_payload = NewMember(user_id=contributor['id'], access_level=10)
-            self.groups.add_member_to_group(pid, host, token, new_member_payload.to_dict())
+            self.groups.add_member_to_group(self.src_id, self.config.source_host, self.config.source_token, new_member_payload.to_dict())
 
-    def remove_contributors_from_project(self):
+    def remove_contributors_from_project(self, source=False):
         '''
             Remove all contributors who were not originally members from the project
         '''
-        for contributor in self.contributor_map.items():
-            dest_user = find_user_by_email_comparison_without_id(contributor.get('email'))
-            self.projects.remove_member(self.id, dest_user['id'], self.config.destination_host, self.config.destination_token)
+        if source:
+            host = self.config.source_host
+            token = self.config.source_token
+            pid = self.src_id
+        else:
+            host = self.config.destination_host
+            token = self.config.destination_token
+            pid = self.dest_id
+        for contributor, data in self.contributor_map.items():
+            if source:
+                user = data
+            else:
+                user = find_user_by_email_comparison_without_id(data.get('email'))
+            if self.dry_run:
+                self.log.info(f"DRY_RUN: Removing contributor {contributor} from project {self.full_path}")
+            else:
+                self.log.info(f"Removing contributor {contributor} from project {self.full_path}")
+                self.projects.remove_member(pid, user['id'], host, token)
     
     def get_members(self, asset_type):
         if asset_type == 'project':
-            return rewrite_list_into_dict(list(self.projects.get_members(self.id, self.config.source_host, self.config.source_token)), "username")
+            return rewrite_list_into_dict(list(self.projects.get_members(self.src_id, self.config.source_host, self.config.source_token)), "email")
         elif asset_type == 'group':
-            return rewrite_list_into_dict(list(self.groups.get_all_group_members(self.id, self.config.source_host, self.config.source_token)), "username")
+            return rewrite_list_into_dict(list(self.groups.get_all_group_members(self.src_id, self.config.source_host, self.config.source_token)), "email")
         
     def generate_contributors_query(self, element, cursor):
         return {

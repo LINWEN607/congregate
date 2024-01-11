@@ -40,6 +40,7 @@ from congregate.helpers.congregate_mdbc import CongregateMongoConnector, mongo_c
 from congregate.migration.meta.api_models.single_project_features import SingleProjectFeatures
 from congregate.migration.meta.api_models.project_details import ProjectDetails
 from congregate.migration.meta.api_models.bulk_import_entity_status import BulkImportEntityStatus
+from congregate.migration.gitlab.contributor_retention import ContributorRetentionClient
 
 
 class GitLabMigrateClient(MigrateClient):
@@ -61,7 +62,8 @@ class GitLabMigrateClient(MigrateClient):
                  subgroups_only=False,
                  scm_source=None,
                  group_structure=False,
-                 reg_dry_run=False):
+                 reg_dry_run=False,
+                 retain_contributors=False):
         self.ie = ImportExportClient()
         self.variables = VariablesClient()
         self.users = UsersClient()
@@ -99,7 +101,8 @@ class GitLabMigrateClient(MigrateClient):
                          skip_project_import,
                          subgroups_only,
                          scm_source,
-                         group_structure)
+                         group_structure,
+                         retain_contributors)
 
     def migrate(self):
         # Users
@@ -482,10 +485,19 @@ class GitLabMigrateClient(MigrateClient):
             filename: False
         }
         try:
+            c_retention = None
+            if self.retain_contributors:
+                self.log.info(f"{dry_log}Contributor Retention is enabled. Adding all project contributors as project members")
+                c_retention = ContributorRetentionClient(pid, None, project['path_with_namespace'], dry_run=self.dry_run)
+                c_retention.build_map()
+                c_retention.add_contributors_to_project()
             self.log.info(
                 f"{dry_log}Exporting project {project['path_with_namespace']} (ID: {pid}) as {filename}")
             result[filename] = ImportExportClient(src_host=src_host, src_token=src_token).export_project(
                 project, dry_run=self.dry_run)
+            if self.retain_contributors:
+                self.log.info(f"{dry_log}Contributor Retention is enabled. Project export is complete Removing all project contributors from members")
+                c_retention.remove_contributors_from_project(source=True)
             if self.config.airgap:
                 exported_features = self.export_single_project_features(
                     project, src_host, src_token)
@@ -649,6 +661,13 @@ class GitLabMigrateClient(MigrateClient):
 
         if self.config.remapping_file_path:
             self.projects.migrate_gitlab_variable_replace_ci_yml(dst_id)
+
+        c_retention = None
+        if self.retain_contributors:
+            self.log.info(f"Contributor Retention is enabled. Project {project['path_with_namespace']} has been imported so removing all project contributors as project members")
+            c_retention = ContributorRetentionClient(src_id, dst_id, project['path_with_namespace'], dry_run=self.dry_run)
+            c_retention.build_map()
+            c_retention.remove_contributors_from_project()
 
         self.remove_import_user(dst_id, host=dest_host, token=dest_token)
         if self.config.airgap:
