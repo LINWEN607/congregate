@@ -1,5 +1,5 @@
 import json
-from gitlab_ps_utils.dict_utils import dig
+from gitlab_ps_utils.dict_utils import dig, rewrite_list_into_dict
 from gitlab_ps_utils.api import GitLabApi
 from gitlab_ps_utils.misc_utils import safe_json_response
 from congregate.helpers.base_class import BaseClass
@@ -35,11 +35,13 @@ class ContributorRetentionClient(BaseClass):
     def retrieve_contributors(self, element):
         hasNextPage = True
         cursor = ""
+        count = 0
         while hasNextPage:
             query = self.generate_contributors_query(element, cursor)
             if data := safe_json_response(
                 self.api.generate_post_request(self.config.source_host, self.config.source_token, None, json.dumps(query), graphql_query=True)):
-                print(f"Retrieved {len(dig(data, 'data', 'project', element, 'nodes', default=[]))} {element}")
+                count += len(dig(data, 'data', 'project', element, 'nodes', default=[]))
+                self.log.info(f"Retrieved {count} {element}")
                 for node in dig(data, 'data', 'project', element, 'nodes', default=[]):
                     author = dig(node, 'author')
                     self.add_contributor_to_map(author)
@@ -48,18 +50,19 @@ class ContributorRetentionClient(BaseClass):
                 cursor = dig(data, 'data', 'project', element, 'pageInfo', 'endCursor')
                 hasNextPage = dig(data, 'data', 'project', element,'pageInfo', 'hasNextPage', default=False)
             else:
-                print("Request failed")
+                self.log.error("Request failed")
 
     def add_contributor_to_map(self, author):
-        if author:
-            author_email = author.get('username')
-        # if not author:
-        #     author_email = element.get('author_email')
         # If the author is not already a project member
-        if author not in self.members:
+        if author['username'] not in self.members:
+            # extracting ID from GQL string 'gid://gitlab/user/<id>'
+            author['id'] = author['id'].split("/")[-1]
             # Add the element/element note author to the contributor map
-            # author_email = self.users.users_api.get_user_email(author['id'], self.config.source_host, self.config.source_token)
-            # author['email'] = author_email
+            if author.get('publicEmail'):
+                author_email = author['publicEmail']
+            else:
+                author_email = self.users.users_api.get_user_email(author['id'], self.config.source_host, self.config.source_token)
+            author['email'] = author_email
             self.contributor_map[author_email] = author
 
     def add_contributors_to_project(self, contributors, pid, host, token):
@@ -88,9 +91,9 @@ class ContributorRetentionClient(BaseClass):
     
     def get_members(self, asset_type):
         if asset_type == 'project':
-            return self.projects.get_members(self.id, self.config.source_host, self.config.source_token)
+            return rewrite_list_into_dict(list(self.projects.get_members(self.id, self.config.source_host, self.config.source_token)), "username")
         elif asset_type == 'group':
-            return self.groups.get_all_group_members(self.id, self.config.source_host, self.config.source_token)
+            return rewrite_list_into_dict(list(self.groups.get_all_group_members(self.id, self.config.source_host, self.config.source_token)), "username")
         
     def generate_contributors_query(self, element, cursor):
         return {
@@ -102,11 +105,13 @@ class ContributorRetentionClient(BaseClass):
                                 author{
                                     id
                                     username
+                                    publicEmail
                                 },
                                 commenters {
                                     nodes {
                                         id
                                         username
+                                        publicEmail
                                     }
                                 }
                             }
