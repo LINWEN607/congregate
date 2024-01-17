@@ -3,9 +3,19 @@
     <div id="nav">
       <h1>Congregate</h1>
       <router-link to="/">Home</router-link>
-      <router-link to="/projects">Projects</router-link>
-      <router-link to="/groups">Groups</router-link>
-      <router-link to="/users">Users</router-link>
+      <!-- <router-link to="/list">List Data</router-link> -->
+      <details class="collapsible-nav">
+        <summary>Stage Data</summary>
+        <ul class = "nested-nav">
+          <li><router-link to="/projects">Projects</router-link></li>
+          <li><router-link to="/groups">Groups</router-link></li>
+          <li><router-link to="/users">Users</router-link></li>
+        </ul>
+      </details>
+      <!-- <router-link to="/migrate">Migrate Data</router-link> -->
+      <hr>
+      <a :href="flowerUrl" target="_blank">Task Queue</a>
+      <router-link to="/settings">Settings</router-link>
     </div>
     <div id = "content">
       <router-view/>
@@ -14,12 +24,48 @@
   </div>
 </template>
 <script>
+import axios from 'axios'
+import { mapStores } from 'pinia'
 import Toaster from '@/components/Toaster.vue'
+import { useSystemStore } from '@/stores/system'
+import { listJobs, migrateJobs, matchFunction } from '@/scripts/job-status'
 
 export default {
   name: 'App',
   components: {
     Toaster
+  },
+  data() {
+    return {
+      flowerUrl: import.meta.env.VITE_FLOWER_URL
+    }
+  },
+  computed: {
+    ...mapStores(useSystemStore)
+  },
+  mounted: function() {
+    this.getJobsByStatus()
+    axios.get(`${import.meta.env.VITE_API_ROOT}/api/settings`).then(response => {
+      this.systemStore.updateSettings(response.data)
+      this.$emitter.emit('settings-updated')
+    })
+  },
+  methods: {
+    getJobsByStatus: function() {
+      axios.get(`${import.meta.env.VITE_API_ROOT}/api/jobs/status/started/count`).then(response => {
+        let match = null
+        if ((match = matchFunction(listJobs, response.data))) {
+          axios.get(`${import.meta.env.VITE_API_ROOT}/api/jobs/name/${match}`).then(response => {
+            this.$emitter.emit('listing-in-progress', response.data[0].id)
+          })
+        }
+        if ((match = matchFunction(migrateJobs, response.data))) {
+          axios.get(`${import.meta.env.VITE_API_ROOT}/api/jobs/name/${match}`).then(response => {
+            this.$emitter.emit('migration-in-progress', response.data[0].id)
+          })
+        }
+      })
+    }
   }
 }
 </script>
@@ -49,9 +95,39 @@ body {
   background-position: center;
 }
 
+h2 {
+  text-align: left;
+}
+
+.nested-nav {
+  font-weight: bold;
+  margin: 0;
+  padding-left: 0;
+}
+
+.collapsible-nav summary {
+  font-weight: bold;
+  padding: 0.5em;
+}
+
+.nested-nav li {
+  padding-left: 1em;
+}
+
+.collapsible-nav summary:hover {
+  background-color: #663000;
+  color: #FF851B;
+  text-decoration-line: underline;
+  cursor: pointer;
+}
+
+.collapsible-nav > summary {
+  list-style: none;
+}
+
 #nav {
   background-color: #FF851B;
-  color :hsl(28, 100%, 20%);
+  color :#663000;
   text-align: left;
   flex: 0 0 11em;
   h1 {
@@ -65,15 +141,20 @@ body {
     padding: 0;
   }
 
+  hr {
+    border: 1px solid #663000;
+    width: 90%;
+  }
+
   a {
     font-weight: bold;
-    color: hsl(28, 100%, 20%);
+    color: #663000;
     display: block;
     text-indent: 0.5em;
     padding: 0.5em 0;
 
     &.router-link-exact-active {
-      background-color: hsl(28, 100%, 20%);
+      background-color: #663000;
       color: #FF851B;
     }
 
@@ -85,7 +166,7 @@ body {
     }
 
     &:hover {
-      background-color: hsl(28, 100%, 20%);
+      background-color: #663000;
       color: #FF851B;
       text-decoration-line: underline;
     }
@@ -115,5 +196,33 @@ body {
   padding: 1em 1em 10em;
 }
 
+a {
+  font-weight: bold;
+  color: #000;
+}
+a:hover {
+  font-weight: bold;
+  color: #FF851B;
+  text-decoration: none;
+}
 
+.loader {
+    width: 25px;
+    height: 25px;
+    border: 3px solid #FF851B;
+    border-bottom-color: transparent;
+    border-radius: 50%;
+    display: inline-block;
+    box-sizing: border-box;
+    animation: rotation 1s linear infinite;
+    }
+
+    @keyframes rotation {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+    } 
 </style>

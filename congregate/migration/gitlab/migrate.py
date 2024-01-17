@@ -735,7 +735,7 @@ def import_task(file_path: str, group: dict, host: str, token: str):
                                             group_path=group['full_path'], filename=export_filename)
 
 
-@shared_task
+@shared_task(name='post-migration-task')
 @mongo_connection
 def post_migration_task(entity, dest_host, dest_token, mongo=None, dry_run=True):
     # In the event a direct transfer entity import fails, the entity parameter could be None
@@ -754,7 +754,7 @@ def post_migration_task(entity, dest_host, dest_token, mongo=None, dry_run=True)
         if entity.entity_type == "group":
             group_col = f"groups-{misc_utils.strip_netloc(client.config.source_host)}"
             source_group = mongo.safe_find_one(group_col, {
-                'path_with_namespace': entity.source_full_path
+                'full_path': entity.source_full_path
             })
             return client.migrate_single_group_features(
                 source_group['id'], entity.namespace_id, entity.destination_full_path)

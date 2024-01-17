@@ -1,6 +1,8 @@
 import os
 import sys
 
+from celery import shared_task
+
 from gitlab_ps_utils.misc_utils import strip_netloc
 from gitlab_ps_utils.string_utils import deobfuscate
 
@@ -62,8 +64,9 @@ class ListClient(BaseClass):
         if not self.skip_users:
             users = UsersClient()
             users.retrieve_user_info(host, token, processes=self.processes)
-            mongo.dump_collection_to_file(
-                u, f"{self.app_path}/data/users.json")
+            if not self.config.direct_transfer:
+                mongo.dump_collection_to_file(
+                    u, f"{self.app_path}/data/users.json")
 
         # Lists all groups and group projects
         if not self.skip_groups:
@@ -71,8 +74,9 @@ class ListClient(BaseClass):
             groups.skip_group_members = self.skip_group_members
             groups.skip_project_members = self.skip_project_members
             groups.retrieve_group_info(host, token, processes=self.processes)
-            mongo.dump_collection_to_file(
-                g, f"{self.app_path}/data/groups.json")
+            if not self.config.direct_transfer:
+                mongo.dump_collection_to_file(
+                    g, f"{self.app_path}/data/groups.json")
 
         # Listing groups on gitlab.com will also list their projects
         # Listing on-prem includes personal projects
@@ -83,7 +87,7 @@ class ListClient(BaseClass):
                 host, token, processes=self.processes)
 
         # When to dump listed projects
-        if not self.skip_projects:
+        if not self.skip_projects and not self.config.direct_transfer:
             mongo.dump_collection_to_file(
                 p, f"{self.app_path}/data/projects.json")
 
@@ -252,3 +256,13 @@ class ListClient(BaseClass):
             if not self.skip_users:
                 mongo.drop_collection(u)
         return mongo, p, g, u
+
+
+@shared_task
+def list_data(partial=False, skip_users=False, skip_groups=False, skip_group_members=False,
+              skip_projects=False, skip_project_members=False, skip_ci=False, 
+              src_instances=False, subset=False):
+    client = ListClient(partial=partial, skip_users=skip_users, skip_groups=skip_groups, skip_group_members=skip_group_members,
+              skip_projects=skip_projects, skip_project_members=skip_project_members, skip_ci=skip_ci, 
+              src_instances=src_instances, subset=subset)
+    return client.list_data()

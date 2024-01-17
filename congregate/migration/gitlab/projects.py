@@ -6,13 +6,14 @@ from sqlite3 import DataError
 from time import time
 from requests.exceptions import RequestException
 from tqdm import tqdm
+from celery import shared_task
 
 from gitlab_ps_utils.misc_utils import get_dry_log, get_timedelta, \
     is_error_message_present, safe_json_response, strip_netloc, \
     get_decoded_string_from_b64_response_content, do_yml_sub, strip_scheme
 from gitlab_ps_utils.json_utils import json_pretty, read_json_file_into_object, write_json_to_file
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.congregate_mdbc import CongregateMongoConnector
+from congregate.helpers.congregate_mdbc import mongo_connection, CongregateMongoConnector
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
@@ -52,26 +53,29 @@ class ProjectsClient(BaseClass):
         return False
 
     def retrieve_project_info(self, host, token, processes=None):
-        if self.config.src_parent_group_path:
-            self.multi.start_multi_process_stream_with_args(
-                self.handle_retrieving_project,
-                self.groups_api.get_all_group_projects(
-                    self.config.src_parent_id, host, token, with_shared=False),
-                host,
-                token,
-                processes=processes)
+        if self.config.direct_transfer:
+            for project in self.projects_api.get_all_projects(host, token):
+                handle_retrieving_project.delay(host, token, project)
         else:
-            self.multi.start_multi_process_stream_with_args(
-                self.handle_retrieving_project,
-                self.projects_api.get_all_projects(host, token),
-                host,
-                token,
-                processes=processes)
-
+            if self.config.src_parent_group_path:
+                self.multi.start_multi_process_stream_with_args(
+                    self.handle_retrieving_project,
+                    self.groups_api.get_all_group_projects(
+                        self.config.src_parent_id, host, token, with_shared=False),
+                    host,
+                    token,
+                    processes=processes)
+            else:
+                self.multi.start_multi_process_stream_with_args(
+                    self.handle_retrieving_project,
+                    self.projects_api.get_all_projects(host, token),
+                    host,
+                    token,
+                    processes=processes)
+            
     def handle_retrieving_project(self, host, token, project, mongo=None):
         if not mongo:
             mongo = CongregateMongoConnector()
-
         error, project = is_error_message_present(project)
         if error or not project:
             self.log.error(f"Failed to list project:\n{project}")
@@ -1012,3 +1016,17 @@ class ProjectsClient(BaseClass):
                            "message": "error", "exception": str(ex)}
         finally:
             return return_dict or {"id": import_id, "path": dst_path_with_namespace, "message": "success", "exception": None}
+
+@shared_task(name='retrieve-projects')
+@mongo_connection
+def handle_retrieving_project(host, token, project, mongo=None):
+    pc = ProjectsClient()
+    error, project = is_error_message_present(project)
+    if error or not project:
+        pc.log.error(f"Failed to list project:\n{project}")
+    else:
+        for k in constants.PROJECT_KEYS_TO_IGNORE:
+            project.pop(k, None)
+        project["members"] = [] if pc.skip_project_members else list(
+            pc.projects_api.get_members(project["id"], host, token))
+        mongo.insert_data(f"projects-{strip_netloc(host)}", project)

@@ -1,6 +1,6 @@
 <template>
   <div class="groups">
-    Groups
+    <h2>Stage Groups</h2>
     <div class="table">
         <vue-good-table
             ref="groups-table"

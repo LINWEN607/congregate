@@ -4,6 +4,7 @@ from gitlab_ps_utils.misc_utils import get_timedelta, safe_json_response, strip_
 from gitlab_ps_utils.list_utils import remove_dupes
 from gitlab_ps_utils.json_utils import json_pretty
 
+from celery import shared_task
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.congregate_mdbc import CongregateMongoConnector, mongo_connection
 from congregate.helpers.migrate_utils import get_full_path_with_parent_namespace, is_top_level_group, get_staged_groups, \
@@ -68,16 +69,21 @@ class GroupsClient(BaseClass):
     def retrieve_group_info(self, host, token, location="source", processes=None):
         prefix = location if location != "source" else ""
 
-        if self.config.src_parent_group_path:
-            self.multi.start_multi_process_stream_with_args(self.traverse_groups,
-                                                            self.groups_api.get_all_subgroups(
-                                                                self.config.src_parent_id, host, token), host, token, processes=processes)
-            self.traverse_groups(host, token, safe_json_response(self.groups_api.get_group(
-                self.config.src_parent_id, host, token)))
+        if self.config.direct_transfer:
+            for group in self.groups_api.get_all_groups(
+                host, token):
+                traverse_groups_task.delay(host, token, group)
         else:
-            self.multi.start_multi_process_stream_with_args(self.traverse_groups, self.groups_api.get_all_groups(
-                host, token), host, token, processes=processes)
-
+            if self.config.src_parent_group_path:
+                self.multi.start_multi_process_stream_with_args(self.traverse_groups,
+                                                                self.groups_api.get_all_subgroups(
+                                                                    self.config.src_parent_id, host, token), host, token, processes=processes)
+                self.traverse_groups(host, token, safe_json_response(self.groups_api.get_group(
+                    self.config.src_parent_id, host, token)))
+            else:
+                self.multi.start_multi_process_stream_with_args(self.traverse_groups, self.groups_api.get_all_groups(
+                    host, token), host, token, processes=processes)
+            
     def append_groups(self, groups):
         with open(f"{self.app_path}/data/groups.json", "r") as f:
             group_file = json.load(f)
@@ -262,3 +268,43 @@ class GroupsClient(BaseClass):
                     "destination_name": g["name"],
                     "destination_namespace": namespace})
         return entities, result
+
+@shared_task(name='traverse-groups')
+@mongo_connection
+def traverse_groups_task(host, token, group, mongo=None):
+    gc = GroupsClient()
+    gid = group.get("id")
+    if gid and gid not in gc.unique_groups:
+        for k in constants.GROUP_KEYS_TO_IGNORE:
+            group.pop(k, None)
+        gc.unique_groups.add(gid)
+
+        # Save all group members as part of group metadata
+        group["members"] = [] if gc.skip_group_members else list(
+            gc.groups_api.get_all_group_members(gid, host, token))
+
+        # Save all group projects ID references as part of group metadata
+        # Only list direct projects to avoid overhead
+        group["projects"] = []
+        for project in gc.groups_api.get_all_group_projects(gid, host, token, include_subgroups=False, with_shared=False):
+            pid = project.get("id")
+            group["projects"].append(pid)
+            for k in constants.PROJECT_KEYS_TO_IGNORE:
+                project.pop(k, None)
+            # Avoids having to list all parent group projects i.e. listing only projects
+            project["members"] = [] if gc.skip_project_members else list(
+                gc.projects_api.get_members(pid, host, token))
+            mongo.insert_data(f"projects-{strip_netloc(host)}", project)
+
+        # Save all descendant groups ID references as part of group metadata
+        group["desc_groups"] = []
+        for g in gc.groups_api.get_all_descendant_groups(gid, host, token):
+            group["desc_groups"].append(g.get("id"))
+
+        # Traverse subgroups
+        for subgroup in gc.groups_api.get_all_subgroups(
+                gid, host, token):
+            gc.log.debug(f"Traversing into subgroup {subgroup.get('full_path')}")
+            traverse_groups_task.delay(
+                host, token, subgroup)
+        mongo.insert_data(f"groups-{strip_netloc(host)}", group)

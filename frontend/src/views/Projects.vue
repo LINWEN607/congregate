@@ -1,6 +1,6 @@
 <template>
   <div class='projects'>
-    Projects
+    <h2>Stage Projects</h2>
     <div class="table">
       <vue-good-table
             ref="projects-table"

@@ -2,10 +2,13 @@ from time import sleep
 from dacite import from_dict
 from celery import shared_task
 from gitlab_ps_utils.misc_utils import safe_json_response
+from congregate.helpers.migrate_utils import get_project_dest_namespace
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.base_gitlab_client import BaseGitLabClient
 from congregate.migration.gitlab.api.bulk_imports import BulkImportApi
 from congregate.migration.meta.api_models.bulk_import import BulkImportPayload
+from congregate.migration.meta.api_models.bulk_import_entity import BulkImportEntity
+from congregate.migration.meta.api_models.bulk_import_configuration import BulkImportconfiguration
 from congregate.migration.meta.api_models.bulk_import_entity_status import BulkImportEntityStatus
 from congregate.migration.meta.data_models.dry_run import DryRunData
 
@@ -35,7 +38,7 @@ class BulkImportsClient(BaseGitLabClient):
             dry_run_data = []
             for entity in payload.entities:
                 if entity.source_type == 'group_entity':
-                    drd = self.get_all_group_paths(entity.source_full_path)
+                    drd = self.get_all_group_paths(entity)
                     dry_run_data.append(drd.to_dict())
                 elif entity.source_type == 'project_entity':
                     drd = DryRunData(projects=[entity.source_full_path])
@@ -89,26 +92,68 @@ class BulkImportsClient(BaseGitLabClient):
             total_subgroup_count = len(list(groups_api.get_all_group_subgroups(gid, self.config.source_host, self.config.source_token)))
         return total_project_count + total_subgroup_count + 1
 
-    def get_all_group_paths(self, full_path):
+    def get_all_group_paths(self, entity: BulkImportEntity):
         """
             Get list of all group and project paths in a dry-run
         """
         groups_api = GroupsApi()
-        group = safe_json_response(groups_api.get_group_by_full_path(full_path, self.config.source_host, self.config.source_token))
-        paths = DryRunData(top_level_group=group.get('full_path'))
+        group = safe_json_response(groups_api.get_group_by_full_path(entity.source_full_path, self.config.source_host, self.config.source_token))
+        paths = DryRunData(top_level_group=group.get('full_path'), entity=entity)
         gid = group.get('id')
         for project in groups_api.get_all_group_projects(gid, self.config.source_host, self.config.source_token, include_subgroups=True):
             paths.projects.append(project.get('path_with_namespace'))
         for subgroup in groups_api.get_all_group_subgroups(gid, self.config.source_host, self.config.source_token):
             paths.subgroups.append(subgroup.get('full_path'))
         return paths
+    
+    def build_payload(self, staged_data, entity_type, skip_projects=False):
+        """
+            Build out the direct transfer API payload based on the staged data
+        """
+        config = BulkImportconfiguration(url=self.config.source_host, access_token=self.config.source_token)
+        entities = []
+        for data in staged_data:
+            if entity_type == 'group':
+                entities.append(self.build_group_entity(data, skip_projects=skip_projects))
+            elif entity_type == 'project':
+                entities.append(self.build_project_entity(data))
+        return BulkImportPayload(configuration=config, entities=entities)
+    
+    def build_group_entity(self, group_data, skip_projects=False):
+        """
+            Build a single direct transfer group entity
 
-@shared_task
+            Note: this currently doesn't work with stage wave
+        """
+        return BulkImportEntity(
+            source_type=f"group_entity",
+            source_full_path=group_data['full_path'],
+            destination_slug=group_data['path'],
+            destination_namespace=self.config.dstn_parent_group_path,
+            # destination_name=group_data['name'],
+            migrate_projects=(not skip_projects)
+        )
+    
+    def build_project_entity(self, project_data):
+        """
+            Build a single direct transfer project entity
+
+            Note: this currently doesn't work with stage wave
+        """
+        return BulkImportEntity(
+            source_type=f"project_entity",
+            source_full_path=project_data['path_with_namespace'],
+            destination_slug=project_data['path'],
+            destination_namespace=get_project_dest_namespace(project_data),
+            destination_name=project_data['name'],
+        )
+
+@shared_task(name='watch-import-status')
 def watch_import_status(dest_host: str, dest_token: str, id: int):
     client = BulkImportsClient(src_host=None, src_token=None, dest_host=dest_host, dest_token=dest_token)
     return client.poll_import_status(id)
 
-@shared_task
+@shared_task(name='watch-import-entity-status')
 def watch_import_entity_status(dest_host: str, dest_token: str, entity: dict):
     client = BulkImportsClient(src_host=None, src_token=None, dest_host=dest_host, dest_token=dest_token)
     return client.poll_single_entity_status(entity)
