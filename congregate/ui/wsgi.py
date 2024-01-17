@@ -4,7 +4,7 @@ from flask_cors import CORS
 from congregate.helpers import celery_utils
 from congregate.cli.stage_projects import ProjectStageCLI
 from congregate.cli.stage_groups import GroupStageCLI
-from congregate.migration.gitlab.users import UsersClient
+from congregate.cli.stage_users import UserStageCLI
 from congregate.ui.stage import StageAPI
 from congregate.ui.list import list_functions
 from congregate.ui.models import data_retrieval
@@ -41,7 +41,7 @@ def register_api(app, api, client, name):
 
 register_api(app, StageAPI, ProjectStageCLI, 'projects')
 register_api(app, StageAPI, GroupStageCLI, 'groups')
-register_api(app, StageAPI, UsersClient, 'users')
+register_api(app, StageAPI, UserStageCLI, 'users')
 app.register_blueprint(data_retrieval, url_prefix='/api/data')
 app.register_blueprint(logger)
 app.register_blueprint(settings, url_prefix='/api')

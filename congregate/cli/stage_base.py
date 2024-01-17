@@ -10,7 +10,7 @@ import os
 from gitlab_ps_utils.misc_utils import get_dry_log, strip_netloc
 from gitlab_ps_utils.list_utils import remove_dupes_with_keys, remove_dupes
 from gitlab_ps_utils.dict_utils import dig
-from gitlab_ps_utils.json_utils import json_pretty
+from gitlab_ps_utils.json_utils import json_pretty, write_json_to_file
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.migrate_utils import sanitize_name, is_gl_version_older_than, sanitize_project_path
@@ -73,18 +73,35 @@ class BaseStageClass(BaseClass):
             :param: staged_users:(dict) staged users
             :param: staged_groups: (dict) staged groups
         """
-        with open(f"{self.app_path}/data/staged_groups.json", "w") as f:
-            if self.config.wave_spreadsheet_path:
-                f.write(json.dumps(remove_dupes_with_keys(
-                    self.staged_groups, ["id", "full_path"]), indent=4))
-            else:
-                f.write(json.dumps(remove_dupes(self.staged_groups), indent=4))
-        with open(f"{self.app_path}/data/staged_projects.json", "w") as f:
-            f.write(json.dumps(remove_dupes(self.staged_projects), indent=4))
-        with open(f"{self.app_path}/data/staged_users.json", "w") as f:
-            f.write(json.dumps([] if skip_users else remove_dupes(
-                self.staged_users), indent=4))
+        self.write_staged_groups_file()
+        self.write_staged_projects_file()
+        if skip_users:
+            write_json_to_file(f"{self.app_path}/data/staged_users.json", [])
+        else:
+            self.write_staged_users_file()
         self.log.info("Written metadata to stage files 'data/staged_*'")
+
+    def write_staged_groups_file(self):
+        """
+            Write staged groups to a JSON file
+        """
+        if self.config.wave_spreadsheet_path:
+            write_json_to_file(f"{self.app_path}/data/staged_groups.json", remove_dupes_with_keys(
+                    self.staged_groups, ["id", "full_path"]))
+        else:
+            write_json_to_file(f"{self.app_path}/data/staged_groups.json", remove_dupes(self.staged_groups))
+
+    def write_staged_projects_file(self):
+        """
+            Write staged projects to a JSON file
+        """
+        write_json_to_file(f"{self.app_path}/data/staged_projects.json", remove_dupes(self.staged_projects))
+
+    def write_staged_users_file(self):
+        """
+            Write staged users to a JSON file
+        """
+        write_json_to_file(f"{self.app_path}/data/staged_users.json", remove_dupes(self.staged_users))
 
     def append_member_to_members_list(
             self, members_list, member, dry_run=True):
