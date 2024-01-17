@@ -84,3 +84,32 @@ class PackagesApi(GitLabApiWrapper):
             :return: Response object containing a 204 (No Content) or 404 (not found) from DELETE /projects/:id/packages/:package_id/package_files/:package_file_id
         """
         return self.api.generate_delete_request(host, token, f"projects/{project}/packages/{package}/package_files/{package_file}")
+
+    def get_package_file_contents(self, host, token, project, package_name, package_version, file_name):
+        """
+        Get a single project package
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/packages.html#get-a-project-package
+
+            :param: project: (int) GitLab project ID
+            :param: package: (int) GitLab package ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :return: Response object containing the response to GET /projects/:id/packages/:package_id
+        """
+        return self.api.generate_get_request(host, token, f"projects/{project}/packages/generic/{package_name}/{package_version}/{file_name}")
+
+    def upload_package_file(self, host, token, project, package_name, package_version, file_name, data):
+        """
+        Upload a package file
+
+            :param host: (str) GitLab host URL
+            :param token: (str) Access token to GitLab instance
+            :param project: (int) GitLab project ID
+            :param package_name: (str) GitLab package name
+            :param package_version: (str) GitLab package version
+            :param file_name: (str) GitLab package file name
+            :param data: (Response) Response object containing the contents of the package file
+            :return: Response object containing the response to PUT /projects/:id/packages/generic/:package_name/:package_version/:file_name
+        """
+        return self.api.generate_put_request(host, token, f"/projects/{project}/generic/{package_name}/{package_version}/{file_name}", data=data)
