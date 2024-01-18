@@ -39,6 +39,21 @@ class PackagesClient(BaseClass):
         self.log.warning(
             f"Maven gRPC service is not running. Skipping packages migration for project {project_name}")
 
+        for package in self.packages.get_project_packages(self.config.source_host, self.config.source_token, src_id):
+            if package.get('package_type') == 'generic':
+                self.migrate_generic_packages(src_id, dest_id, package)
+
+    def migrate_generic_packages(self, src_id, dest_id, package):
+        file_names = self.packages.get_package_files(
+            self.config.source_host, self.config.source_token, src_id, package['name'])
+
+        for file_name in file_names:
+            file = self.packages.get_package_file_contents(
+                self.config.source_host, self.config.source_token, src_id, package['name'], package['version'], file_name)
+
+            self.packages.upload_package_file(
+                self.config.destination_host, self.config.destination_token, dest_id, package['name'], package['version'], file, file.content)
+
     def format_groupid(self, name):
         return '.'.join(name.split('/')[:-1])
 
