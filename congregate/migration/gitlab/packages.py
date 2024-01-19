@@ -39,20 +39,34 @@ class PackagesClient(BaseClass):
         self.log.warning(
             f"Maven gRPC service is not running. Skipping packages migration for project {project_name}")
 
+        results = []
         for package in self.packages.get_project_packages(self.config.source_host, self.config.source_token, src_id):
+            self.log.info(f"--------Migrating package {package} in project--------")
             if package.get('package_type') == 'generic':
+                self.log.info(f"--------PACKAGE {package['name']} iS GENERIC--------")
                 self.migrate_generic_packages(src_id, dest_id, package)
 
     def migrate_generic_packages(self, src_id, dest_id, package):
-        file_names = self.packages.get_package_files(
-            self.config.source_host, self.config.source_token, src_id, package['name'])
+        for package_file in self.packages.get_package_files(self.config.source_host, self.config.source_token, src_id,
+                                                            package.get('id')):
+            self.log.info(f"--------FILE NAME {package_file['file_name']} --------")
 
-        for file_name in file_names:
             file = self.packages.get_package_file_contents(
-                self.config.source_host, self.config.source_token, src_id, package['name'], package['version'], file_name)
+                self.config.source_host, self.config.source_token, src_id, package['name'], package['version'],
+                package_file['file_name'])
 
-            self.packages.upload_package_file(
-                self.config.destination_host, self.config.destination_token, dest_id, package['name'], package['version'], file, file.content)
+            self.log.info(
+                f"File ({package_file['file_name']}) in Package ({package['name']}) was successfully retrieved.")
+
+            response = self.packages.upload_package_file(
+                self.config.destination_host, self.config.destination_token, dest_id, package['name'],
+                package['version'], package_file['file_name'], file.content)
+
+            self.log.info(
+                f"UPLOAD TO dest_id: {dest_id} RESPONSE: {response}")
+
+            self.log.info(
+                f"File ({package_file['file_name']}) in Package ({package['name']}) was successfully migrated.")
 
     def format_groupid(self, name):
         return '.'.join(name.split('/')[:-1])
