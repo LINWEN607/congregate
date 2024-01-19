@@ -19,7 +19,7 @@ Navigate to the home page of Congregate and click the "list data" button.
 
 <img src="/img/list-screenshot.png"/>
 
-This skips a listing dry run like we have in the CLI and automatically pulls from the source and updates Mongo and the various metadata JSON files
+Note: This does not do a `DRY_RUN` like we have in the CLI. It automatically pulls from the source and updates Mongo and the various metadata JSON files
 
 ### Stage Data
 
