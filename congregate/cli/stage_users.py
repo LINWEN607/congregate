@@ -31,5 +31,5 @@ class UserStageCLI(BaseStageClass):
                 if (user == u["username"]) or (user == str(u["id"])) or (user == u["email"]):
                     self.staged_users.append(u)
                     self.log.info(
-                        "Staging user (%s) [%d/%d]" % (u["email"], len(self.staged_users), len(users)))
+                        f"Staging user ({u['email']}) [{len(self.staged_users)}/{len(users)}]")
         return remove_dupes(self.staged_users)
