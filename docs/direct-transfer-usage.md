@@ -43,7 +43,7 @@ If you want to check on the status of what is going on behind the scenes, you ca
 
 ## REST API
 
-### Triggering a migration via the REST API (dry-run)
+### Triggering a migration (dry-run)
 
 To trigger a migration via direct transfer in Congregate, you make a POST call to `/direct_transfer/import` with a payload matching the payload of our bulk import API. By default, this does a dry-run so no data is migrated to the destination, but we can see a list of entities expected to be migrated. For example:
 
