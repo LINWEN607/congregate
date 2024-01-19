@@ -12,6 +12,34 @@ class PackagesClient(BaseClass):
         self.packages = PackagesApi()
         super(PackagesClient, self).__init__()
 
+    def migrate_project_packages_desired(self, src_id, dest_id, project_name):
+        grpc_service_running =  is_rpc_service_running(f"{self.config.grpc_host}:{self.config.maven_port}")
+
+        results = []
+        try:
+            for package in self.packages.get_project_packages(self.config.source_host, self.config.source_token, src_id):
+                package_type = package.get('package_type')
+                if package_type == 'generic':
+                    self.migrate_generic_packages(src_id, dest_id, package)
+                elif package_type == 'maven':
+                    if grpc_service_running:
+                        self.migrate_maven_packages(
+                            src_id, dest_id, package, project_name, results)
+                    else:
+                        self.log.warning(
+                            f"Maven gRPC service is not running. Skipping package {package.get('name')} migration for project {project_name}")
+                else:
+                    self.log.info(
+                        f"{package.get('name')} is of type {package.get('package_type')}) and thus not supported at this time, skipping")
+        except RequestException as re:
+            self.log.error(
+                f"Failed to get all packages for project {project_name} (ID:{src_id}) due to a request exception")
+            self.log.debug(re)
+        except Exception as e:
+            self.log.error(
+                f"Failed to get all packages for project {project_name} (ID:{src_id}) due to an exception")
+            self.log.debug(e)
+
     def migrate_project_packages(self, src_id, dest_id, project_name):
         if is_rpc_service_running(f"{self.config.grpc_host}:{self.config.maven_port}"):
             self.log.info(
