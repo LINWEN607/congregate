@@ -112,4 +112,4 @@ class PackagesApi(GitLabApiWrapper):
             :param data: (Response) Response object containing the contents of the package file
             :return: Response object containing the response to PUT /projects/:id/packages/generic/:package_name/:package_version/:file_name
         """
-        return self.api.generate_put_request(host, token, f"/projects/{project}/generic/{package_name}/{package_version}/{file_name}", data=data)
+        return self.api.generate_put_request(host, token, f"projects/{project}/packages/generic/{package_name}/{package_version}/{file_name}", data=data)
