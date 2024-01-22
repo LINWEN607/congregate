@@ -46,6 +46,7 @@ class PackagesClient(BaseClass):
             response = self.packages.get_generic_package_file_contents(
                 self.config.source_host, self.config.source_token, src_id, package['name'], package['version'], package_file['file_name'])
             file = response.content
+
             response = self.packages.upload_generic_package_file(
                 self.config.destination_host, self.config.destination_token, dest_id, package['name'],
                 package['version'], package_file['file_name'], data=file)
