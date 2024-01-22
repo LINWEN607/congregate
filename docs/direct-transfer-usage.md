@@ -17,7 +17,7 @@ You can do the following actions in the UI when Direct Transfer is enabled in `c
 
 Navigate to the home page of Congregate and click the "list data" button. 
 
-<img src="/img/list-screenshot.png"/>
+<img src="../img/list-screenshot.png"/>
 
 Note: This does not do a `DRY_RUN` like we have in the CLI. It automatically pulls from the source and updates Mongo and the various metadata JSON files
 
@@ -27,13 +27,13 @@ Once listing is complete, you can now stage users, groups, and/or projects to mi
 You can navigate to the different staging pages from the left navigation bar or the staging card
 on the homepage:
 
-<img src="/img/stage-screenshot.png"/>
+<img src="../img/stage-screenshot.png"/>
 
 ### Migrate Data
 
 Now that you have data staged to migrate, you can move on to running a dry-run migration and then an actual migration. Migration commands are handled in the Migrate card on the home page:
 
-<img src="/img/migrate-screenshot.png"/>
+<img src="../img/migrate-screenshot.png"/>
 
 Clicking `migrate` will run a dry-run by default. You need to check the `commit` parameter to trigger an actual migration.
 
