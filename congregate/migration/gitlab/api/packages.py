@@ -58,7 +58,7 @@ class PackagesApi(GitLabApiWrapper):
 
     def get_generic_package_file_contents(self, host, token, project, package_name, package_version, file_name):
         """
-        Get a single project generic package
+        Get contents of a single file in a generic package
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/packages.html#get-a-project-package
 
