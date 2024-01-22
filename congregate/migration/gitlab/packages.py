@@ -1,5 +1,4 @@
 from pathlib import Path
-from grpc._channel import _InactiveRpcError
 from requests.exceptions import RequestException
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.api.packages import PackagesApi
@@ -12,19 +11,18 @@ class PackagesClient(BaseClass):
         self.packages = PackagesApi()
         super(PackagesClient, self).__init__()
 
-    def migrate_project_packages_desired(self, src_id, dest_id, project_name):
-        grpc_service_running =  is_rpc_service_running(f"{self.config.grpc_host}:{self.config.maven_port}")
+    def migrate_project_packages(self, src_id, dest_id, project_name):
+        grpc_service_running = is_rpc_service_running(f"{self.config.grpc_host}:{self.config.maven_port}")
 
         results = []
         try:
             for package in self.packages.get_project_packages(self.config.source_host, self.config.source_token, src_id):
                 package_type = package.get('package_type')
                 if package_type == 'generic':
-                    self.migrate_generic_packages(src_id, dest_id, package)
+                    self.migrate_generic_packages(src_id, dest_id, package, results)
                 elif package_type == 'maven':
                     if grpc_service_running:
-                        self.migrate_maven_packages(
-                            src_id, dest_id, package, project_name, results)
+                        self.migrate_maven_packages(src_id, dest_id, package, project_name, results)
                     else:
                         self.log.warning(
                             f"Maven gRPC service is not running. Skipping package {package.get('name')} migration for project {project_name}")
@@ -40,61 +38,26 @@ class PackagesClient(BaseClass):
                 f"Failed to get all packages for project {project_name} (ID:{src_id}) due to an exception")
             self.log.debug(e)
 
-    def migrate_project_packages(self, src_id, dest_id, project_name):
-        if is_rpc_service_running(f"{self.config.grpc_host}:{self.config.maven_port}"):
-            self.log.info(
-                f"Migrating project {project_name}(ID:{src_id}) packages")
-            results = []
-            try:
-                for package in self.packages.get_project_packages(self.config.source_host, self.config.source_token, src_id):
-                    if package.get('package_type') == 'maven':
-                        self.migrate_maven_packages(
-                            src_id, dest_id, package, project_name, results)
-                    else:
-                        self.log.info(
-                            f"{package.get('name')} is not a maven package (Package Type:{package.get('package_type')}) and thus not supported at this time, skipping")
-                        results.append(
-                            {'Migrated': False, 'Package': package.get('name')})
-            except RequestException as re:
-                self.log.error(
-                    f"Failed to get all packages for project {project_name} (ID:{src_id}) due to a request exception")
-                self.log.debug(re)
-            except _InactiveRpcError as ire:
-                self.log.error(
-                    f"Failed to get all packages for project {project_name} (ID:{src_id}) because congregate was unable to connect to Maven gRPC server")
-                self.log.debug(ire)
-            return results
-        self.log.warning(
-            f"Maven gRPC service is not running. Skipping packages migration for project {project_name}")
+    def migrate_generic_packages(self, src_id, dest_id, package, results):
+        artifact = self.format_artifact(package['name'], package['version'])
+        self.log.info(f"Attempting to download package: {artifact}")
+        migration_status = True
 
-        results = []
-        for package in self.packages.get_project_packages(self.config.source_host, self.config.source_token, src_id):
-            self.log.info(f"--------Migrating package {package} in project--------")
-            if package.get('package_type') == 'generic':
-                self.log.info(f"--------PACKAGE {package['name']} iS GENERIC--------")
-                self.migrate_generic_packages(src_id, dest_id, package)
-
-    def migrate_generic_packages(self, src_id, dest_id, package):
-        for package_file in self.packages.get_package_files(self.config.source_host, self.config.source_token, src_id,
-                                                            package.get('id')):
-            self.log.info(f"--------FILE NAME {package_file['file_name']} --------")
-
-            file = self.packages.get_package_file_contents(
-                self.config.source_host, self.config.source_token, src_id, package['name'], package['version'],
-                package_file['file_name'])
-
-            self.log.info(
-                f"File ({package_file['file_name']}) in Package ({package['name']}) was successfully retrieved.")
-
-            response = self.packages.upload_package_file(
+        for package_file in self.packages.get_package_files(self.config.source_host, self.config.source_token, src_id, package.get('id')):
+            response = self.packages.get_generic_package_file_contents(
+                self.config.source_host, self.config.source_token, src_id, package['name'], package['version'], package_file['file_name'])
+            file = response.content
+            response = self.packages.upload_generic_package_file(
                 self.config.destination_host, self.config.destination_token, dest_id, package['name'],
-                package['version'], package_file['file_name'], file.content)
+                package['version'], package_file['file_name'], data=file)
 
-            self.log.info(
-                f"UPLOAD TO dest_id: {dest_id} RESPONSE: {response}")
+            if response.status_code != 201:
+                self.log.info(f"Failed to migrate file {package_file['file_name']} in Package {package['name']}.")
+                migration_status = False
+            else:
+                self.log.info(f"Successfully migrated file {package_file['file_name']} in Package {package['name']}.")
 
-            self.log.info(
-                f"File ({package_file['file_name']}) in Package ({package['name']}) was successfully migrated.")
+        results.append({'Migrated': migration_status, 'Package': artifact})
 
     def format_groupid(self, name):
         return '.'.join(name.split('/')[:-1])
