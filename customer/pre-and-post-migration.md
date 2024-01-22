@@ -84,7 +84,7 @@
 - Review and adjust project level permissions, including Enable project-level shared runners (default: true) and AutoDevOps (default: true)
 - Register any local runners that will be used for CI jobs
 - Adjust group and project permissions, if applicable. Note: All groups and projects are set to private upon import (unless the group imports into a parent group and inherits its visibility), regardless of their setting in the source instance.
-- If migrating to SaaS, update any project, group, and system hooks that point to localhost or a private instance - GitLab.com will see them as invalid and fail to create them
+- If migrating to GitLab.com, update any project, group, and system hooks that point to localhost or a private instance - GitLab.com will see them as invalid and fail to create them
 - Update any CI jobs, CI/CD variables, and hooks that point to the source system url; for GL->GL migrations, relative paths used in CI jobs to point to other projects should be fine, but any absolute paths/full urls will need to be updated to point to the projects at the destination instance url
 - Verify dependency chains (build order) of projects
 - Secrets (tokens) that may be present in certain features, e.g. hooks, are not exposed in the API response and therefore not migrated. Those individual features have to be newly created

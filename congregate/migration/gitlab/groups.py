@@ -125,7 +125,7 @@ class GroupsClient(BaseClass):
     def delete_groups(self, dry_run=True, skip_projects=False):
         staged_groups = get_staged_groups()
         for sg in staged_groups:
-            # SaaS destination instances have a parent group
+            # GitLab.com destination instances have a parent group
             dest_full_path = get_full_path_with_parent_namespace(
                 sg["full_path"])
             self.log.info("Removing group {}".format(dest_full_path))

@@ -137,7 +137,7 @@ class ProjectsClient(BaseClass):
         host = self.config.destination_host
         token = self.config.destination_token
         for sp in tqdm(staged_projects, total=len(staged_projects), colour=self.TANUKI, desc=self.DESC, unit=self.UNIT):
-            # SaaS destination instances have a parent group
+            # GitLab.com destination instances have a parent group
             path_with_namespace, _ = get_stage_wave_paths(sp)
             self.log.info(
                 f"{get_dry_log(dry_run)}Removing project '{path_with_namespace}' on destination")
@@ -687,7 +687,7 @@ class ProjectsClient(BaseClass):
                     sp, host, token)
                 if dst_pid and mirror_path and username:
                     data = {
-                        # username:token is SaaS specific. Revoking the token
+                        # username:token is GitLab.com specific. Revoking the token
                         # breaks the mirroring
                         "url": f"{strip_scheme(host)}://{username}:{token}@{strip_netloc(host)}/{mirror_path}.git",
                         "enabled": not disabled,
