@@ -52,10 +52,10 @@ class PackagesClient(BaseClass):
                 package['version'], package_file['file_name'], data=file)
 
             if response.status_code != 201:
-                self.log.info(f"Failed to migrate file {package_file['file_name']} in Package {package['name']}.")
+                self.log.info(f"Failed to migrate file {package_file['file_name']} in package {package['name']}.")
                 migration_status = False
             else:
-                self.log.info(f"Successfully migrated file {package_file['file_name']} in Package {package['name']}.")
+                self.log.info(f"Successfully migrated file {package_file['file_name']} in package {package['name']}.")
 
         results.append({'Migrated': migration_status, 'Package': artifact})
 
