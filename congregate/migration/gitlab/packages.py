@@ -37,28 +37,6 @@ class PackagesClient(BaseClass):
                 f"Failed to get all packages for project {project_name} (ID:{src_id}) due to an exception")
             self.log.debug(e)
 
-    def migrate_generic_packages(self, src_id, dest_id, package, results):
-        artifact = self.format_artifact(package['name'], package['version'])
-        self.log.info(f"Attempting to download package: {artifact}")
-        migration_status = True
-
-        for package_file in self.packages.get_package_files(self.config.source_host, self.config.source_token, src_id, package.get('id')):
-            response = self.packages.get_generic_package_file_contents(
-                self.config.source_host, self.config.source_token, src_id, package['name'], package['version'], package_file['file_name'])
-            file = response.content
-
-            response = self.packages.upload_generic_package_file(
-                self.config.destination_host, self.config.destination_token, dest_id, package['name'],
-                package['version'], package_file['file_name'], data=file)
-
-            if response.status_code != 201:
-                self.log.info(f"Failed to migrate file {package_file['file_name']} in package {package['name']}")
-                migration_status = False
-            else:
-                self.log.info(f"Successfully migrated file {package_file['file_name']} in package {package['name']}")
-
-        results.append({'Migrated': migration_status, 'Package': artifact})
-
     def format_groupid(self, name):
         return '.'.join(name.split('/')[:-1])
 
@@ -85,6 +63,28 @@ class PackagesClient(BaseClass):
                 f"Failed to retrieve package files for {package.get('name')} {package.get('version')} ")
             self.log.error(re)
         return executable, pom_file, packaging
+
+    def migrate_generic_packages(self, src_id, dest_id, package, results):
+        artifact = self.format_artifact(package['name'], package['version'])
+        self.log.info(f"Attempting to download package: {artifact}")
+        migration_status = True
+
+        for package_file in self.packages.get_package_files(self.config.source_host, self.config.source_token, src_id, package.get('id')):
+            response = self.packages.get_generic_package_file_contents(
+                self.config.source_host, self.config.source_token, src_id, package['name'], package['version'], package_file['file_name'])
+            file = response.content
+
+            response = self.packages.upload_generic_package_file(
+                self.config.destination_host, self.config.destination_token, dest_id, package['name'],
+                package['version'], package_file['file_name'], data=file)
+
+            if response.status_code != 201:
+                self.log.info(f"Failed to migrate file {package_file['file_name']} in package {package['name']}")
+                migration_status = False
+            else:
+                self.log.info(f"Successfully migrated file {package_file['file_name']} in package {package['name']}")
+
+        results.append({'Migrated': migration_status, 'Package': artifact})
 
     def migrate_maven_packages(self, src_id, dest_id, package, project_name, results):
         executable, pom_file, packaging = self.get_maven_files_data(
