@@ -13,6 +13,8 @@ class PackagesClient(BaseClass):
 
     def migrate_project_packages(self, src_id, dest_id, project_name):
         grpc_service_running = is_rpc_service_running(f"{self.config.grpc_host}:{self.config.maven_port}")
+        if not grpc_service_running:
+            self.log.warning(f"Maven gRPC service is not running, skipping Maven packages")
 
         results = []
         try:
@@ -23,12 +25,9 @@ class PackagesClient(BaseClass):
                 elif package_type == 'maven':
                     if grpc_service_running:
                         self.migrate_maven_packages(src_id, dest_id, package, project_name, results)
-                    else:
-                        self.log.warning(
-                            f"Maven gRPC service is not running. Skipping package {package.get('name')} migration for project {project_name}")
                 else:
-                    self.log.info(
-                        f"{package.get('name')} is of type {package.get('package_type')}) and thus not supported at this time, skipping")
+                    self.log.warning(f"Skipping {package.get('name')}, type {package.get('package_type')} not supported")
+                    results.append({'Migrated': False, 'Package': package.get('name')})
         except RequestException as re:
             self.log.error(
                 f"Failed to get all packages for project {project_name} (ID:{src_id}) due to a request exception")
@@ -52,10 +51,10 @@ class PackagesClient(BaseClass):
                 package['version'], package_file['file_name'], data=file)
 
             if response.status_code != 201:
-                self.log.info(f"Failed to migrate file {package_file['file_name']} in package {package['name']}.")
+                self.log.info(f"Failed to migrate file {package_file['file_name']} in package {package['name']}")
                 migration_status = False
             else:
-                self.log.info(f"Successfully migrated file {package_file['file_name']} in package {package['name']}.")
+                self.log.info(f"Successfully migrated file {package_file['file_name']} in package {package['name']}")
 
         results.append({'Migrated': migration_status, 'Package': artifact})
 
