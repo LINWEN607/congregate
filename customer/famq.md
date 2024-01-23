@@ -168,7 +168,7 @@ By default, Congregate disables shared Runners on the project level, as well as 
 
 This is to prevent triggering any pipelines, either by pipeline schedules or post-import commits.
 
-On gitlab.com (SaaS) private Runners are preferred to shared ones.
+On GitLab.com, private Runners are preferred to shared ones.
 
 ## Are all project level features and configurations migrated?
 
