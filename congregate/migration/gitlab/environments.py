@@ -48,11 +48,11 @@ class EnvironmentsClient(DbOrHttpMixin, BaseGitLabClient):
             return True
         except TypeError as te:
             self.log.error(
-                f"Project {name} environments {resp} {te}")
+                f"Project '{name}' environments {resp} {te}")
             return False
         except RequestException as re:
             self.log.error(
-                f"Failed to migrate project {name} environments, with error:\n{re}")
+                f"Failed to migrate project '{name}' environments, with error:\n{re}")
             return False
 
     def generate_environment_data(self, environment):
@@ -61,11 +61,12 @@ class EnvironmentsClient(DbOrHttpMixin, BaseGitLabClient):
     def update_state(self, name, dest_id, env, resp):
         if resp.status_code != 201:
             self.log.error(
-                f"Failed to create project '{name} (ID: {dest_id}) environment:\n{resp} - {resp.text}")
+                f"Failed to create project '{name}' environment:\n{resp} - {resp.text}")
         elif env.get("state") in ["stopping", "stopped"]:
             resp_json = safe_json_response(resp) or {}
+            env_id = resp_json.get("id")
             update_resp = self.projects.stop_environment(
-                self.dest_host, self.dest_token, dest_id, resp_json.get("id"))
+                self.dest_host, self.dest_token, dest_id, env_id)
             if update_resp.status_code != 200:
                 self.log.error(
-                    f"Failed to stop project '{name}' (ID: {dest_id}) environment '{env.get('name')}'")
+                    f"Failed to stop project '{name}' environment '{env.get('name')}' (Env ID: {env_id})")

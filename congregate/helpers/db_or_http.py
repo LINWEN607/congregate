@@ -16,8 +16,8 @@ class DbOrHttpMixin():
                 {'$push': {key: data}},
                 upsert=True)
             mongo.close_connection()
-        else:
-            req_func(*params, data)
+            return None
+        return req_func(*params, data)
 
     def get_data(self, req_func, params, key, src_id, airgap=False, airgap_import=False, mongo_coll=default_collection):
         if airgap and airgap_import:
