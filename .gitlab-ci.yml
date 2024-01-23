@@ -350,7 +350,7 @@ test:end-to-end full:
     - poetry run pytest -s -m e2e_gl_setup congregate/tests/
     - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
   retry: 2
-  timeout: 25 minutes
+  timeout: 30 minutes
   cache:
     key: "$CI_COMMIT_SHA-full"
     paths:
@@ -365,7 +365,7 @@ test:end-to-end single group:
     - poetry run pytest -s -m e2e_gl_setup_2 congregate/tests/
     - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
   retry: 2
-  timeout: 25 minutes
+  timeout: 30 minutes
   cache:
     key: "$CI_COMMIT_SHA-sg"
     paths:

@@ -3,6 +3,7 @@ from requests.exceptions import RequestException
 from gitlab_ps_utils.misc_utils import remove_dupes_but_take_higher_access, strip_netloc, safe_json_response
 from gitlab_ps_utils.dict_utils import dig
 from congregate.helpers.base_class import BaseClass
+from congregate.helpers.utils import is_dot_com
 from congregate.migration.bitbucket.api.projects import ProjectsApi
 from congregate.migration.bitbucket.api.repos import ReposApi
 from congregate.migration.bitbucket.api.users import UsersApi
@@ -47,7 +48,7 @@ class BitBucketServer(BaseClass):
                 "username": user["slug"],
                 "name": user["displayName"],
                 "email": user["emailAddress"].lower(),
-                "state": "active" if user["active"] else "deactivated",
+                "state": "active" if user["active"] else ("blocked" if is_dot_com else "deactivated"),
                 # "is_admin": self.is_admin(user["slug"])
             }
         self.log.warning(
@@ -131,6 +132,7 @@ class BitBucketServer(BaseClass):
             "id": repo["id"],
             "path": repo["slug"],
             "name": repo["name"],
+            "archived": repo.get("archived", False),
             "namespace": {
                 "id": dig(repo, 'project', 'id'),
                 "path": repo_path,

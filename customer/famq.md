@@ -43,9 +43,9 @@ The basic mapping of terms looks like the following:
 
 We should have a more comprehensive table describing the differences between the greater development tools and the SCM/VCS they utilize. For example, *SVN* uses **trunk** while *Git* uses **master/main** and *AccuRev* and *ClearCase* use **streams** while *SVN*, *Git*, and *Mercurial* use **branches**.
 
-## Is migrating to gitlab.com (SaaS) different than to GitLab Self-Managed (On-Prem)?
+## Is migrating to Gitlab.com different than to GitLab Self-Managed (On-Prem)?
 
-Please see [Migrating from Self-Managed GitLab to SaaS](https://about.gitlab.com/handbook/customer-success/professional-services-engineering/engagement-mgmt/scoping-information/migrations/SM-to-SaaS/) for more details.
+Please see [Migrating from Self-Managed GitLab to GitLab.com](https://about.gitlab.com/handbook/customer-success/professional-services-engineering/engagement-mgmt/scoping-information/migrations/SM-to-GitLab-com/) for more details.
 
 ## <a name="q3"></a>How long should a user expect the blackout/code-freeze period for their project as it is migrated?
 
@@ -57,9 +57,9 @@ The (PS) engineer orchestrating the migration might be in a favorable timezone t
 
 Please see [here](#q2) for a more elaborate explanation.
 
-## Do projects created in a user/personal namespace get migrated to gitlab.com (SaaS)?
+## Do projects created in a user/personal namespace get migrated to GitLab.com?
 
-Generally speaking, **no**, we do **not** migrate user projects to SaaS.
+Generally speaking, **no**, we do **not** migrate user projects to GitLab.com.
 
 If user projects are required, we encourage people to [move them to a group](https://docs.gitlab.com/ee/tutorials/move_personal_project_to_group/) and possibly subgroups if they need to maintain privacy. [Converting their personal namespace into a group one](https://docs.gitlab.com/ee/tutorials/convert_personal_namespace_to_group/) is also an option.
 
@@ -136,11 +136,39 @@ This doesn't mean we shouldn't migrate them, since `blocked`, `deactivated` and 
 * removed by enforcing SSO
 * (Admin only) soft deleted from the instance
 
+## Do Git commit/tag mappings propagate during migration?
+
+A Git author’s `username` and `email` persist in Git data. Therefore regardless of how the Git repo is imported (GitHub, BBS, GitLab.com, SM, etc.) - the `username` and `email` will remain attached to the commits and tags. The difference comes in with how these are linked if a matching user is **not** found on the final GitLab destination.
+
+With one user (e.g. User1) having a user matching their `email` on GitLab and another user (e.g. User2) that doesn’t have a matching user.
+
+### Commits
+
+* User1's commits have a hyperlink to the GitLab user profile
+* User2's commits shows the original author’s `username` but does not have a hyperlink to the GitLab user profile. It has a generated avatar and does not assign it to the project’s creator.
+
+**NOTE:** The [Git docs on commits](https://git-scm.com/docs/git-commit#_commit_information) indicate which author data is stored along with every commit - this is saved as commit metadata in a Git repo.
+
+### Tags
+
+* User1's tags have a hyperlink to the GitLab user profile
+* User2's tags shows the `email` but does not have a hyperlink to the GitLab user profile. Same as for commits, it doesn’t assign to the project’s creator.
+
+More good news is that if the users are created after the import with matching emails, it will be displayed correctly.
+
 ## Are GitLab Runners migrated and configured as part of the migration?
 
 No, they are not part of the migration.
 
 Please see [here](#q1) for more details on the topic.
+
+## Are GitLab CI pipelines triggered after import?
+
+By default, Congregate disables shared Runners on the project level, as well as AutoDevOps.
+
+This is to prevent triggering any pipelines, either by pipeline schedules or post-import commits.
+
+On GitLab.com, private Runners are preferred to shared ones.
 
 ## Are all project level features and configurations migrated?
 
@@ -164,7 +192,7 @@ A dedicated migration VM is used to orchestrate the user, group and project data
 
 Additionally, on both the source and destination instance, an Admin user account and personal access token (PAT), with full `api` or equivalent scope, is needed to export/import or stream/clone the data over.
 
-When migrating to gitlab.com (SaaS) GitLab IT provisions the Admin account while GitLab Infra/PS provision the migration VM.
+When migrating to Gitlab.com  GitLab IT provisions the Admin account while GitLab Infra/PS provision the migration VM.
 
 Please see [here](#q4) and [here](#q5) for more details on this topic.
 

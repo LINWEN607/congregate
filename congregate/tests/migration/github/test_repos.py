@@ -9,7 +9,7 @@ with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     import mongomock
 from congregate.helpers.configuration_validator import ConfigurationValidator
-from congregate.helpers.mdbc import MongoConnector
+from congregate.helpers.congregate_mdbc import CongregateMongoConnector
 from congregate.tests.mockapi.github.repos import MockReposApi
 from congregate.tests.mockapi.github.headers import MockHeaders
 from congregate.migration.github.repos import ReposClient
@@ -31,7 +31,7 @@ class ReposTests(unittest.TestCase):
     @patch.object(UsersClient, "format_users")
     @patch.object(ReposClient, "list_ci_sources_jenkins")
     @patch.object(ReposClient, "list_ci_sources_teamcity")
-    @patch.object(MongoConnector, "close_connection")
+    @patch.object(CongregateMongoConnector, "close_connection")
     def test_format_user_repos(self,
                                mock_close_connection,
                                mock_ci_sources1,
@@ -83,7 +83,7 @@ class ReposTests(unittest.TestCase):
 
         mock_close_connection.return_value = None
 
-        mongo = MongoConnector(client=mongomock.MongoClient)
+        mongo = CongregateMongoConnector(client=mongomock.MongoClient)
         for repo in listed_repos:
             self.repos.handle_retrieving_repos(repo, mongo=mongo)
 
@@ -143,7 +143,7 @@ class ReposTests(unittest.TestCase):
     @patch.object(UsersClient, "format_users")
     @patch.object(ReposClient, "list_ci_sources_jenkins")
     @patch.object(ReposClient, "list_ci_sources_teamcity")
-    @patch.object(MongoConnector, "close_connection")
+    @patch.object(CongregateMongoConnector, "close_connection")
     def test_format_user_repos_with_error(self,
                                           mock_close_connection,
                                           mock_ci_sources1,
@@ -186,7 +186,7 @@ class ReposTests(unittest.TestCase):
 
         mock_close_connection.return_value = None
 
-        mongo = MongoConnector(client=mongomock.MongoClient)
+        mongo = CongregateMongoConnector(client=mongomock.MongoClient)
         for repo in listed_repos:
             self.repos.handle_retrieving_repos(repo, mongo=mongo)
 
@@ -249,7 +249,7 @@ class ReposTests(unittest.TestCase):
     @patch.object(UsersClient, "format_users")
     @patch.object(ReposClient, "list_ci_sources_jenkins")
     @patch.object(ReposClient, "list_ci_sources_teamcity")
-    @patch.object(MongoConnector, "close_connection")
+    @patch.object(CongregateMongoConnector, "close_connection")
     def test_format_org_repos(self,
                               mock_close_connection,
                               mock_ci_sources1,
@@ -332,7 +332,7 @@ class ReposTests(unittest.TestCase):
 
         mock_close_connection.return_value = None
 
-        mongo = MongoConnector(client=mongomock.MongoClient)
+        mongo = CongregateMongoConnector(client=mongomock.MongoClient)
         for repo in listed_repos:
             self.repos.handle_retrieving_repos(repo, mongo=mongo)
 
@@ -391,7 +391,7 @@ class ReposTests(unittest.TestCase):
     @patch.object(ReposApi, "get_all_repo_collaborators")
     @patch.object(ReposClient, "list_ci_sources_jenkins")
     @patch.object(ReposClient, "list_ci_sources_teamcity")
-    @patch.object(MongoConnector, "close_connection")
+    @patch.object(CongregateMongoConnector, "close_connection")
     def test_format_org_repos_no_members(self,
                                          mock_close_connection,
                                          mock_ci_sources1,
@@ -405,7 +405,7 @@ class ReposTests(unittest.TestCase):
         listed_repos = [self.mock_repos.get_listed_repos(
         )[2], self.mock_repos.get_listed_repos()[3]]
 
-        mongo = MongoConnector(client=mongomock.MongoClient)
+        mongo = CongregateMongoConnector(client=mongomock.MongoClient)
         for repo in listed_repos:
             self.repos.handle_retrieving_repos(repo, mongo=mongo)
 
@@ -479,7 +479,7 @@ class ReposTests(unittest.TestCase):
                 }
             ]
         }
-        mongo_mock = MongoConnector(client=mongomock.MongoClient)
+        mongo_mock = CongregateMongoConnector(client=mongomock.MongoClient)
         data = [
             {
                 "name": "demo-job",
@@ -523,7 +523,7 @@ class ReposTests(unittest.TestCase):
             ]
         }
 
-        mongo_mock = MongoConnector(client=mongomock.MongoClient)
+        mongo_mock = CongregateMongoConnector(client=mongomock.MongoClient)
         expected = []
         actual = self.repos.list_ci_sources_teamcity("website", mongo_mock)
 

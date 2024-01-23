@@ -1,3 +1,4 @@
+from io import StringIO
 import unittest
 from unittest import mock
 from pytest import mark, fixture
@@ -553,9 +554,10 @@ class ConfigurationValidationTests(unittest.TestCase):
 
     @responses.activate
     # pylint: enable=no-member
+    @mock.patch('sys.stdout', new_callable = StringIO)
     @mock.patch("getpass.getpass")
     @mock.patch.object(GitLabApi, "generate_v4_request_url")
-    def test_validate_dstn_token_not_admin(self, url, secret):
+    def test_validate_dstn_token_not_admin(self, url, secret, stdout):
         secret.return_value = "test"
         self.config.dstn_token_validated_in_session = False
         url_value = "https://gitlab.com/api/v4/user"
@@ -566,8 +568,10 @@ class ConfigurationValidationTests(unittest.TestCase):
         responses.add(responses.GET, url_value,
                       json=self.users.get_current_user(), status=200, content_type='text/json', match_querystring=True)
         # pylint: enable=no-member
-        self.assertRaises(ConfigurationException,
-                          self.config.validate_dstn_token, "test")
+        
+        self.config.validate_dstn_token("test")
+        expected = "Destination token is currently assigned to a standard user. Some API endpoints may not behave correctly\n"
+        self.assertEqual(stdout.getvalue(), expected)
 
     @responses.activate
     # pylint: enable=no-member

@@ -12,7 +12,7 @@ from congregate.helpers.migrate_utils import get_staged_projects, add_post_migra
 from congregate.helpers.utils import rotate_logs
 from congregate.migration.bitbucket.base import BitBucketServer
 from congregate.migration.bitbucket import constants
-from congregate.helpers.mdbc import MongoConnector
+from congregate.helpers.congregate_mdbc import CongregateMongoConnector
 
 
 class ReposClient(BitBucketServer):
@@ -63,7 +63,7 @@ class ReposClient(BitBucketServer):
 
             # mongo should be set to None unless this function is being used in a unit test
             if not mongo:
-                mongo = MongoConnector()
+                mongo = CongregateMongoConnector()
             mongo.insert_data(
                 f"projects-{strip_netloc(self.config.source_host)}",
                 self.format_repo(resp))
@@ -75,7 +75,7 @@ class ReposClient(BitBucketServer):
         if project := self.list_repo_parent_project(repo_slug, project_key):
             # mongo should be set to None unless this function is being used in a unit test
             if not mongo:
-                mongo = MongoConnector()
+                mongo = CongregateMongoConnector()
             mongo.insert_data(
                 f"groups-{strip_netloc(self.config.source_host)}",
                 self.format_project(project, mongo))

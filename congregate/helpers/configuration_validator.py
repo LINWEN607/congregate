@@ -147,7 +147,10 @@ class ConfigurationValidator(Config):
                 if group_resp["visibility"] == "public":
                     raise ConfigurationException(
                         "dstn_parent_group_path", msg=f"Public destination parent group: {group_full_path}. Please set visibility to 'internal' or 'private'")
-                return True
+            else:
+                raise ConfigurationException(
+                        "dstn_parent_group_path", msg=f"Destination group in config [{dstn_parent_group_path}] does not match group path from API response [{group_full_path}] Please correct configuration settings")
+            return True
         return True
 
     def validate_dstn_token(self, dstn_token):
@@ -156,11 +159,13 @@ class ConfigurationValidator(Config):
                 self.destination_host, dstn_token))
             error, user = is_error_message_present(user)
             # Admin token required when migrating from GitLab
-            is_admin = user.get(
-                "is_admin") if self.source_type == "gitlab" else True
-            if error or not user or not is_admin:
+            if error or not user:
                 raise ConfigurationException(
                     "destination_token", msg=f"Invalid user and/or token:\n{json_pretty(user)}")
+            is_admin = user.get(
+                "is_admin") if self.source_type == "gitlab" else True
+            if not is_admin:
+                print("Destination token is currently assigned to a standard user. Some API endpoints may not behave correctly")
             return True
         return True
 

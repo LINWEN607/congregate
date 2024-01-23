@@ -4,13 +4,16 @@ from flask_cors import CORS
 from congregate.helpers import celery_utils
 from congregate.cli.stage_projects import ProjectStageCLI
 from congregate.cli.stage_groups import GroupStageCLI
-from congregate.migration.gitlab.users import UsersClient
+from congregate.cli.stage_users import UserStageCLI
 from congregate.ui.stage import StageAPI
+from congregate.ui.list import list_functions
 from congregate.ui.models import data_retrieval
 from congregate.ui.logs import logger
 from congregate.ui.airgap import airgap_routes
 from congregate.ui.direct_transfer import direct_transfer_routes
+from congregate.ui.jobs import job_queue_routes
 from congregate.ui import config
+from congregate.ui.settings import settings
 
 app = Flask(__name__,
             static_folder = "../../dist/assets",
@@ -38,9 +41,12 @@ def register_api(app, api, client, name):
 
 register_api(app, StageAPI, ProjectStageCLI, 'projects')
 register_api(app, StageAPI, GroupStageCLI, 'groups')
-register_api(app, StageAPI, UsersClient, 'users')
+register_api(app, StageAPI, UserStageCLI, 'users')
 app.register_blueprint(data_retrieval, url_prefix='/api/data')
 app.register_blueprint(logger)
+app.register_blueprint(settings, url_prefix='/api')
+app.register_blueprint(list_functions, url_prefix='/api')
+app.register_blueprint(job_queue_routes, url_prefix='/api/jobs')
 if config.airgap:
     app.register_blueprint(airgap_routes, url_prefix='/api/airgap')
 if config.direct_transfer:

@@ -1,6 +1,8 @@
 import os
 import sys
 
+from celery import shared_task
+
 from gitlab_ps_utils.misc_utils import strip_netloc
 from gitlab_ps_utils.string_utils import deobfuscate
 
@@ -22,7 +24,7 @@ from congregate.migration.github.users import UsersClient as GitHubUsers
 from congregate.migration.jenkins.base import JenkinsClient as JenkinsData
 from congregate.migration.teamcity.base import TeamcityClient as TeamcityData
 
-from congregate.helpers.mdbc import MongoConnector
+from congregate.helpers.congregate_mdbc import CongregateMongoConnector
 
 
 class ListClient(BaseClass):
@@ -62,8 +64,9 @@ class ListClient(BaseClass):
         if not self.skip_users:
             users = UsersClient()
             users.retrieve_user_info(host, token, processes=self.processes)
-            mongo.dump_collection_to_file(
-                u, f"{self.app_path}/data/users.json")
+            if not self.config.direct_transfer:
+                mongo.dump_collection_to_file(
+                    u, f"{self.app_path}/data/users.json")
 
         # Lists all groups and group projects
         if not self.skip_groups:
@@ -71,8 +74,9 @@ class ListClient(BaseClass):
             groups.skip_group_members = self.skip_group_members
             groups.skip_project_members = self.skip_project_members
             groups.retrieve_group_info(host, token, processes=self.processes)
-            mongo.dump_collection_to_file(
-                g, f"{self.app_path}/data/groups.json")
+            if not self.config.direct_transfer:
+                mongo.dump_collection_to_file(
+                    g, f"{self.app_path}/data/groups.json")
 
         # Listing groups on gitlab.com will also list their projects
         # Listing on-prem includes personal projects
@@ -83,7 +87,7 @@ class ListClient(BaseClass):
                 host, token, processes=self.processes)
 
         # When to dump listed projects
-        if not self.skip_projects:
+        if not self.skip_projects and not self.config.direct_transfer:
             mongo.dump_collection_to_file(
                 p, f"{self.app_path}/data/projects.json")
 
@@ -164,7 +168,7 @@ class ListClient(BaseClass):
         mongo.close_connection()
 
     def list_jenkins_data(self):
-        mongo = MongoConnector()
+        mongo = CongregateMongoConnector()
         for i, single_jenkins_ci_source in enumerate(
                 self.config.list_ci_source_config("jenkins_ci_source")):
             collection_name = f"jenkins-{single_jenkins_ci_source.get('jenkins_ci_src_hostname').split('//')[-1]}"
@@ -175,7 +179,7 @@ class ListClient(BaseClass):
                 collection_name, f"{self.app_path}/data/jenkins-{i}.json")
 
     def list_teamcity_data(self):
-        mongo = MongoConnector()
+        mongo = CongregateMongoConnector()
         for i, single_teamcity_ci_source in enumerate(
                 self.config.list_ci_source_config("teamcity_ci_source")):
             collection_name = f"teamcity-{single_teamcity_ci_source.get('tc_ci_src_hostname').split('//')[-1]}"
@@ -238,7 +242,7 @@ class ListClient(BaseClass):
                     f.write("[]")
 
     def mongo_init(self, subset=False):
-        mongo = MongoConnector()
+        mongo = CongregateMongoConnector()
         src_hostname = strip_netloc(self.config.source_host)
         p = f"projects-{src_hostname}"
         g = f"groups-{src_hostname}"
@@ -252,3 +256,13 @@ class ListClient(BaseClass):
             if not self.skip_users:
                 mongo.drop_collection(u)
         return mongo, p, g, u
+
+
+@shared_task
+def list_data(partial=False, skip_users=False, skip_groups=False, skip_group_members=False,
+              skip_projects=False, skip_project_members=False, skip_ci=False, 
+              src_instances=False, subset=False):
+    client = ListClient(partial=partial, skip_users=skip_users, skip_groups=skip_groups, skip_group_members=skip_group_members,
+              skip_projects=skip_projects, skip_project_members=skip_project_members, skip_ci=skip_ci, 
+              src_instances=src_instances, subset=subset)
+    return client.list_data()

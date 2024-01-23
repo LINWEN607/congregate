@@ -9,7 +9,7 @@ with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     import mongomock
 
-from congregate.helpers.mdbc import MongoConnector
+from congregate.helpers.congregate_mdbc import CongregateMongoConnector
 from congregate.tests.mockapi.github.users import MockUsersApi
 from congregate.migration.github.users import UsersClient
 from congregate.migration.github.api.users import UsersApi
@@ -26,7 +26,7 @@ class mock_github_browser():
 class UsersTests(unittest.TestCase):
     def setUp(self):
         self.mock_users = MockUsersApi()
-        self.mongo_mock = MongoConnector(client=mongomock.MongoClient)
+        self.mongo_mock = CongregateMongoConnector(client=mongomock.MongoClient)
         self.users = self.mock_user_client()
 
     def tearDown(self):
@@ -39,7 +39,7 @@ class UsersTests(unittest.TestCase):
     @patch("io.TextIOBase")
     @patch('builtins.open')
     @patch.object(UsersApi, "get_user")
-    @patch.object(MongoConnector, "close_connection")
+    @patch.object(CongregateMongoConnector, "close_connection")
     @responses.activate
     def test_retrieve_user_info(self,
                                 close_connection,
@@ -68,7 +68,7 @@ class UsersTests(unittest.TestCase):
 
         close_connection.return_value = None
 
-        mongo = MongoConnector(client=mongomock.MongoClient)
+        mongo = CongregateMongoConnector(client=mongomock.MongoClient)
         scrape = GitHubWebPageScrape()
         # pylint: disable=no-member
         responses.add(responses.GET, f"http://{host}", body=scrape.auth_token(
@@ -137,7 +137,7 @@ class UsersTests(unittest.TestCase):
         type(mock_user3).status_code = PropertyMock(return_value=200)
         mock_user3.json.return_value = self.mock_users.get_user()[2]
         mock_single_user.side_effect = [mock_user1, mock_user2, mock_user3]
-        mongo = MongoConnector(client=mongomock.MongoClient)
+        mongo = CongregateMongoConnector(client=mongomock.MongoClient)
         actual_users = self.users.format_users([
             {"login": "ghost", "permissions": 40},
             {"login": "github-enterprise", "permissions": 30},
@@ -208,7 +208,7 @@ class UsersTests(unittest.TestCase):
         type(mock_user3).status_code = PropertyMock(return_value=200)
         mock_user3.json.return_value = self.mock_users.get_user()[2]
         mock_single_user.side_effect = [mock_user1, mock_user2, mock_user3]
-        mongo = MongoConnector(client=mongomock.MongoClient)
+        mongo = CongregateMongoConnector(client=mongomock.MongoClient)
         actual_users = self.users.format_users([
             {"login": "ghost", "permissions": 40},
             {"login": "github-enterprise", "permissions": 30},
@@ -259,19 +259,19 @@ class UsersTests(unittest.TestCase):
         expected = "jdoe@gitlab.com"
         u = self.mock_users.get_user()[3]
         u["email"] = None
-        mongo = MongoConnector(client=mongomock.MongoClient)
+        mongo = CongregateMongoConnector(client=mongomock.MongoClient)
         actual = self.users.get_email_address(u, browser, mongo)
         self.assertEqual(expected, actual)
 
     def test_get_email_address(self):
         expected = "jdoe@gitlab.com"
-        mongo = MongoConnector(client=mongomock.MongoClient)
+        mongo = CongregateMongoConnector(client=mongomock.MongoClient)
         actual = self.users.get_email_address(
             self.mock_users.get_user()[3], mock_github_browser(), mongo)
         self.assertEqual(expected, actual)
 
     def mock_user_client(self):
         with patch("congregate.helpers.mdbc.MongoConnector") as mongo_mock:
-            mongo_mock.return_value = MongoConnector(
+            mongo_mock.return_value = CongregateMongoConnector(
                 client=mongomock.MongoClient)
             return UsersClient("http://github.example.com", "123", None, None)

@@ -48,7 +48,8 @@ class MigrateClient(BaseClass):
         skip_project_import=False,
         subgroups_only=False,
         scm_source=None,
-        group_structure=False
+        group_structure=False,
+        retain_contributors=False
     ):
         self.users = UsersClient()
         self.users_api = UsersApi()
@@ -76,6 +77,7 @@ class MigrateClient(BaseClass):
         self.subgroups_only = subgroups_only
         self.scm_source = scm_source
         self.group_structure = group_structure
+        self.retain_contributors = retain_contributors
 
     # keep for overriden function but reuse functionality from the various migrate_from_* functions
     def migrate(self):

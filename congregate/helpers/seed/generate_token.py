@@ -118,6 +118,8 @@ class token_generator():
         data.update(self.scopes)
         data.update(csrf)
         r = requests.post(self.__get_pat_route(), data=data, cookies=cookies)
+        if r.status_code == 404:
+            r = requests.post(self.__get_old_pat_route(), data=data, cookies=cookies)
         self.log.debug(
             f"Status code for {self.__get_pat_route()}: {r.status_code}")
         if r.status_code != 200:
@@ -179,6 +181,9 @@ class token_generator():
         return urljoin(self.endpoint, "/users/password")
 
     def __get_pat_route(self):
+        return urljoin(self.endpoint, "/-/user_settings/personal_access_tokens")
+    
+    def __get_old_pat_route(self):
         return urljoin(self.endpoint, "/-/profile/personal_access_tokens")
 
 

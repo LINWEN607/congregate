@@ -5,7 +5,7 @@ from gitlab_ps_utils.json_utils import json_pretty
 from gitlab_ps_utils.dict_utils import dig
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.mdbc import MongoConnector
+from congregate.helpers.congregate_mdbc import CongregateMongoConnector
 from congregate.migration.github.api.repos import ReposApi
 from congregate.migration.github.users import UsersClient
 from congregate.migration.github.api.users import UsersApi
@@ -66,7 +66,7 @@ class ReposClient(BaseClass):
 
     def handle_retrieving_repos(self, repo, mongo=None):
         if not mongo:
-            mongo = MongoConnector()
+            mongo = CongregateMongoConnector()
         data = self.format_repo(repo, mongo)
         mongo.insert_data(f"projects-{self.host}", data)
         mongo.close_connection()
@@ -424,7 +424,7 @@ class ReposClient(BaseClass):
         return user_emails_dict.values()
 
     def handle_list_of_reviewers(self, owner, repo, user_emails_dict, pull):
-        mongo = MongoConnector()
+        mongo = CongregateMongoConnector()
         if reviewers := safe_json_response(
             self.repos_api.list_reviewers_for_a_pull_request(
                 owner, repo, pull["number"])):

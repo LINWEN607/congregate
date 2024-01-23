@@ -13,7 +13,7 @@ from congregate.migration.gitlab.users import UsersApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.projects import ProjectsClient
-from congregate.helpers.mdbc import MongoConnector
+from congregate.helpers.congregate_mdbc import CongregateMongoConnector
 # mongomock is using deprecated logic as of Python 3.3
 # This warning suppression is used so tests can pass
 with warnings.catch_warnings():
@@ -37,7 +37,7 @@ class ProjectsTests(unittest.TestCase):
     @patch.object(GroupsApi, "get_all_group_projects")
     @patch('congregate.helpers.conf.Config.src_parent_group_path', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.src_parent_id', new_callable=PropertyMock)
-    @patch.object(MongoConnector, "close_connection")
+    @patch.object(CongregateMongoConnector, "close_connection")
     def test_retrieve_project_info_src_parent_group(self, mock_close, mock_src_parent_id, mock_src_parent_group_path, mock_get_all_group_projects, mock_get_members, mock_open, mock_file):
         mock_src_parent_id.return_value = 42
         mock_src_parent_group_path.return_value = "mock_src_parent_group_path"
@@ -46,7 +46,7 @@ class ProjectsTests(unittest.TestCase):
         mock_open.return_value = mock_file
         mock_close.return_value = None
 
-        mongo = MongoConnector(client=mongomock.MongoClient)
+        mongo = CongregateMongoConnector(client=mongomock.MongoClient)
         for project in self.groups_api.get_all_group_projects("https://gitlab.example.com", "token", 1):
             self.projects.handle_retrieving_project(
                 "https://gitlab.example.com", "token", project, mongo=mongo)
@@ -64,7 +64,7 @@ class ProjectsTests(unittest.TestCase):
     @patch.object(ProjectsApi, "get_members")
     @patch.object(ProjectsApi, "get_all_projects")
     @patch('congregate.helpers.conf.Config.src_parent_group_path', new_callable=PropertyMock)
-    @patch.object(MongoConnector, "close_connection")
+    @patch.object(CongregateMongoConnector, "close_connection")
     def test_retrieve_project_info(self, mock_close, mock_src_parent_group_path, mock_get_all_projects, mock_get_members, mock_open, mock_file):
         mock_src_parent_group_path.return_value = None
         mock_get_all_projects.return_value = self.mock_projects.get_all_projects()
@@ -72,7 +72,7 @@ class ProjectsTests(unittest.TestCase):
         mock_open.return_value = mock_file
         mock_close.return_value = None
 
-        mongo = MongoConnector(client=mongomock.MongoClient)
+        mongo = CongregateMongoConnector(client=mongomock.MongoClient)
         for project in self.projects_api.get_all_projects("https://gitlab.example.com", "token"):
             self.projects.handle_retrieving_project(
                 "https://gitlab.example.com", "token", project, mongo=mongo)
@@ -89,14 +89,14 @@ class ProjectsTests(unittest.TestCase):
     @patch('builtins.open')
     @patch.object(ProjectsApi, "get_all_projects")
     @patch('congregate.helpers.conf.Config.src_parent_group_path', new_callable=PropertyMock)
-    @patch.object(MongoConnector, "close_connection")
+    @patch.object(CongregateMongoConnector, "close_connection")
     def test_retrieve_project_info_error_message(self, mock_close, mock_src_parent_group_path, mock_get_all_projects, mock_open, mock_file):
         mock_src_parent_group_path.return_value = None
         mock_get_all_projects.return_value = [{"message": "some error"}]
         mock_open.return_value = mock_file
         mock_close.return_value = None
 
-        mongo = MongoConnector(client=mongomock.MongoClient)
+        mongo = CongregateMongoConnector(client=mongomock.MongoClient)
         for project in self.projects_api.get_all_projects("https://gitlab.example.com", "token"):
             self.projects.handle_retrieving_project(
                 "https://gitlab.example.com", "token", project, mongo=mongo)

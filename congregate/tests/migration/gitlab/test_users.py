@@ -17,7 +17,7 @@ from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.users import UsersClient
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.keys import KeysClient
-from congregate.helpers.mdbc import MongoConnector
+from congregate.helpers.congregate_mdbc import CongregateMongoConnector
 from congregate.migration.meta.api_models.users import UserPayload
 # mongomock is using deprecated logic as of Python 3.3
 # This warning suppression is used so tests can pass
@@ -889,7 +889,7 @@ class UsersTests(unittest.TestCase):
            new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.group_sso_provider',
            new_callable=PropertyMock)
-    @patch.object(MongoConnector, "close_connection")
+    @patch.object(CongregateMongoConnector, "close_connection")
     def test_retrieve_user_info(self, close_connection, mock_sso, mock_limit, mock_src_host, mock_dest_host):
         mock_sso.side_effect = ["", "", ""]
         mock_limit.side_effect = [None, None, None]
@@ -953,7 +953,7 @@ class UsersTests(unittest.TestCase):
                 "extra_shared_runners_minutes_limit": None
             }
         ]
-        mongo = MongoConnector(client=mongomock.MongoClient)
+        mongo = CongregateMongoConnector(client=mongomock.MongoClient)
         for user in self.mock_users.get_test_source_users():
             self.users.handle_retrieving_users(user, mongo=mongo)
         actual_users = [d for d, _ in mongo.stream_collection(
@@ -972,7 +972,7 @@ class UsersTests(unittest.TestCase):
            new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.group_sso_provider',
            new_callable=PropertyMock)
-    @patch.object(MongoConnector, "close_connection")
+    @patch.object(CongregateMongoConnector, "close_connection")
     def test_retrieve_user_info_src_parent_group_sso(self, close_connection, mock_sso, mock_limit, mock_src_host, mock_dest_host):
         mock_sso.side_effect = ["mock_sso", "mock_sso", "mock_sso"]
         mock_limit.side_effect = [100, 100, 100]
@@ -1041,7 +1041,7 @@ class UsersTests(unittest.TestCase):
                 "extra_shared_runners_minutes_limit": None
             }
         ]
-        mongo = MongoConnector(client=mongomock.MongoClient)
+        mongo = CongregateMongoConnector(client=mongomock.MongoClient)
         for user in mock_users:
             self.users.handle_retrieving_users(user, mongo=mongo)
         actual_users = [d for d, _ in mongo.stream_collection(

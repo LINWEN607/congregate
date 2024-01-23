@@ -1270,3 +1270,9 @@ class ProjectsApi(GitLabApiWrapper):
         if not message:
             message = f"Creating project access token with payload {str(data)}"
         return self.api.generate_post_request(host, token, f"projects/{pid}/access_tokens", json.dumps(data), description=message)
+
+    def get_project_repository_commits(self, pid, host, token):
+        return self.api.list_all(host, token, f"projects/{pid}/repository/commits")
+    
+    def get_project_repository_commit_comments(self, pid, sha, host, token):
+        return self.api.list_all(host, token, f"projects/{pid}/repository/commits/{sha}/comments")

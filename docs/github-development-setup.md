@@ -57,7 +57,7 @@ GitHub currently supports 2 web service APIs:
 - GraphQL (v4)
 - REST (v3)
 
-Both require an OAuth token with the right scopes for authentication. Althought REST also allows authentication via username and password it is not encouraged and will be deprecated. See [here](https://docs.github.com/en/enterprise/2.21/user/rest/overview/other-authentication-methods) for more details.
+Both require an OAuth token with the right scopes for authentication. Although REST also allows authentication via username and password it is not encouraged and will be deprecated. See [here](https://docs.github.com/en/enterprise/2.21/user/rest/overview/other-authentication-methods) for more details.
 
 ### GraphQL API overview
 

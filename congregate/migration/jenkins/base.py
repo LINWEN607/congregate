@@ -2,7 +2,7 @@ from congregate.migration.meta.base_ext_ci import BaseExternalCiClient
 from congregate.migration.jenkins.api.base import JenkinsApi
 from gitlab_ps_utils.misc_utils import strip_netloc
 from gitlab_ps_utils.string_utils import convert_to_underscores
-from congregate.helpers.mdbc import MongoConnector
+from congregate.helpers.congregate_mdbc import CongregateMongoConnector
 
 
 class JenkinsClient(BaseExternalCiClient):
@@ -21,7 +21,7 @@ class JenkinsClient(BaseExternalCiClient):
 
     def handle_retrieving_jenkins_jobs(self, job, mongo=None):
         if mongo is None:
-            mongo = MongoConnector()
+            mongo = CongregateMongoConnector()
         job_path = self.jenkins_api.strip_url(job["url"]).rstrip('/')
         scm_url_list = self.jenkins_api.get_scm(job_path)
         jenkins_host = strip_netloc(self.jenkins_api.host)

@@ -1,6 +1,6 @@
-<!-- 
+<!--
     Copy the contents of this runbook into an issue when running through a migration wave.
-    Post the link to the issue on the Slack channel dedicated to this migration. 
+    Post the link to the issue on the Slack channel dedicated to this migration.
 -->
 
 # <customer name> Migration Wave <insert-number-here>
@@ -9,7 +9,7 @@ This runbook covers the process of migrating a wave of **groups and projects** f
 
 ## Migration Blackout Period
 
-<!-- 
+<!--
     Specify the date and time of this migration wave. For example
 
     3:00PM 2020-09-07 - 3:00AM 2020-09-07
@@ -25,7 +25,7 @@ This runbook covers the process of migrating a wave of **groups and projects** f
 ## Points of contact
 
 <!-- PLEASE REMOVE BLOCK AFTER POPULATING TO AVOID TAGGING PEOPLE THAT SHOULD NOT BE INVOLVED
-    Provide the gitlab handles for the various people involved in this migration wave and their specific role in the migration. 
+    Provide the gitlab handles for the various people involved in this migration wave and their specific role in the migration.
 
     You must provide the following roles:
     - PSE conducting the migration
@@ -129,7 +129,7 @@ Copy the following data and add subsequent columns for single project migration
   * **NOTE:** The command assumes you have no groups or projects staged
 * [ ] Confirm everything looks correct and move on to the next step in the runbook
   * Specifically, review the API requests and make sure the paths look correct.
-  * If anything looks wrong in the dry run, make a note of it in the issue and reach out to @gitlab-org/professional-services-automation/tools/migration for review. Do not proceed with the migration if the dry run data looks incorrect. If this is incorrect, the data we send will be incorrect.
+  * If anything looks wrong in the dry run, make a note of it in the issue and reach out to `@gitlab-org/professional-services-automation/tools/migration` for review. Do not proceed with the migration if the dry run data looks incorrect. If this is incorrect, the data we send will be incorrect.
 * [ ] Copy `data/results/dry_run_user_migration.json` to `/opt/congregate/data/waves/user_wave/` and attach to this issue
 * [ ] Notify in the internal Slack channel dedicated to this migration you have completed dry run for the user wave
 
@@ -167,7 +167,7 @@ Copy the following data and add subsequent columns for single project migration
 * [ ] Run the following command: `nohup ./congregate.sh migrate --skip-users > data/waves/wave_<insert_wave_number>/wave_<insert_wave_number>_dry_run.log 2>&1 &`
 * [ ] Confirm everything looks correct and move on to the next step in the runbook
   * Specifically, review the API requests and make sure the paths look correct. For example, make sure any parent IDs or namespaces are matching the parent ID and parent namespaces we have specified in the congregate config.
-  * If anything looks wrong in the dry run, make a note of it in the issue and reach out to @gitlab-org/professional-services-automation/tools/migration for review. Do not proceed with the migration if the dry run data looks incorrect. If this is incorrect, the data we send will be incorrect.
+  * If anything looks wrong in the dry run, make a note of it in the issue and reach out to `@gitlab-org/professional-services-automation/tools/migration` for review. Do not proceed with the migration if the dry run data looks incorrect. If this is incorrect, the data we send will be incorrect.
 * [ ] Copy `data/results/dry_run_*_migration.json` to `/opt/congregate/data/waves/wave_<insert_wave_number>/` and attach to this issue
 * [ ] Notify in the internal Slack channel dedicated to this migration you have completed dry run for the wave
 

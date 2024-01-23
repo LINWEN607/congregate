@@ -36,10 +36,11 @@ from congregate.migration.gitlab.clusters import ClustersClient
 from congregate.migration.gitlab.environments import EnvironmentsClient
 from congregate.migration.gitlab.branches import BranchesClient
 from congregate.migration.gitlab.packages import PackagesClient
-from congregate.helpers.mdbc import MongoConnector, mongo_connection
+from congregate.helpers.congregate_mdbc import CongregateMongoConnector, mongo_connection
 from congregate.migration.meta.api_models.single_project_features import SingleProjectFeatures
 from congregate.migration.meta.api_models.project_details import ProjectDetails
 from congregate.migration.meta.api_models.bulk_import_entity_status import BulkImportEntityStatus
+from congregate.migration.gitlab.contributor_retention import ContributorRetentionClient
 
 
 class GitLabMigrateClient(MigrateClient):
@@ -61,7 +62,8 @@ class GitLabMigrateClient(MigrateClient):
                  subgroups_only=False,
                  scm_source=None,
                  group_structure=False,
-                 reg_dry_run=False):
+                 reg_dry_run=False,
+                 retain_contributors=False):
         self.ie = ImportExportClient()
         self.variables = VariablesClient()
         self.users = UsersClient()
@@ -99,7 +101,8 @@ class GitLabMigrateClient(MigrateClient):
                          skip_project_import,
                          subgroups_only,
                          scm_source,
-                         group_structure)
+                         group_structure,
+                         retain_contributors)
 
     def migrate(self):
         # Users
@@ -482,10 +485,19 @@ class GitLabMigrateClient(MigrateClient):
             filename: False
         }
         try:
+            c_retention = None
+            if self.retain_contributors:
+                self.log.info(f"{dry_log}Contributor Retention is enabled. Adding all project contributors as project members")
+                c_retention = ContributorRetentionClient(pid, None, project['path_with_namespace'], dry_run=self.dry_run)
+                c_retention.build_map()
+                c_retention.add_contributors_to_project()
             self.log.info(
                 f"{dry_log}Exporting project {project['path_with_namespace']} (ID: {pid}) as {filename}")
             result[filename] = ImportExportClient(src_host=src_host, src_token=src_token).export_project(
                 project, dry_run=self.dry_run)
+            if self.retain_contributors:
+                self.log.info(f"{dry_log}Contributor Retention is enabled. Project export is complete Removing all project contributors from members")
+                c_retention.remove_contributors_from_project(source=True)
             if self.config.airgap:
                 exported_features = self.export_single_project_features(
                     project, src_host, src_token)
@@ -650,6 +662,13 @@ class GitLabMigrateClient(MigrateClient):
         if self.config.remapping_file_path:
             self.projects.migrate_gitlab_variable_replace_ci_yml(dst_id)
 
+        c_retention = None
+        if self.retain_contributors:
+            self.log.info(f"Contributor Retention is enabled. Project {project['path_with_namespace']} has been imported so removing all project contributors as project members")
+            c_retention = ContributorRetentionClient(src_id, dst_id, project['path_with_namespace'], dry_run=self.dry_run)
+            c_retention.build_map()
+            c_retention.remove_contributors_from_project()
+
         self.remove_import_user(dst_id, host=dest_host, token=dest_token)
         if self.config.airgap:
             delete_project_features(src_id)
@@ -667,7 +686,7 @@ class GitLabMigrateClient(MigrateClient):
             jobs_enabled = project.get("jobs_enabled", False)
             results = {}
 
-            mongo = MongoConnector()
+            mongo = CongregateMongoConnector()
             mongo.create_collection_with_unique_index('project_features', 'id')
             mongo.db['project_features'].insert_one(SingleProjectFeatures(
                 id=src_id,
@@ -716,7 +735,7 @@ def import_task(file_path: str, group: dict, host: str, token: str):
                                             group_path=group['full_path'], filename=export_filename)
 
 
-@shared_task
+@shared_task(name='post-migration-task')
 @mongo_connection
 def post_migration_task(entity, dest_host, dest_token, mongo=None, dry_run=True):
     # In the event a direct transfer entity import fails, the entity parameter could be None
@@ -735,7 +754,7 @@ def post_migration_task(entity, dest_host, dest_token, mongo=None, dry_run=True)
         if entity.entity_type == "group":
             group_col = f"groups-{misc_utils.strip_netloc(client.config.source_host)}"
             source_group = mongo.safe_find_one(group_col, {
-                'path_with_namespace': entity.source_full_path
+                'full_path': entity.source_full_path
             })
             return client.migrate_single_group_features(
                 source_group['id'], entity.namespace_id, entity.destination_full_path)

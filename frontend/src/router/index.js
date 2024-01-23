@@ -4,6 +4,7 @@ import Home from '../views/Home.vue'
 import Projects from '../views/Projects.vue'
 import Groups from '../views/Groups.vue'
 import Users from '../views/Users.vue'
+import Settings from '../views/Settings.vue'
 
 Vue.use(VueRouter)
 
@@ -27,6 +28,11 @@ const routes = [
     path: '/users',
     name: 'Users',
     component: Users
+  },
+  {
+    path: '/settings',
+    name: 'Settings',
+    component: Settings
   }
 ]
 

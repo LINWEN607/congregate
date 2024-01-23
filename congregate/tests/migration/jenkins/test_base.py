@@ -10,7 +10,7 @@ with warnings.catch_warnings():
 from congregate.tests.mockapi.jenkins.parameters import ParametersApi
 from congregate.tests.mockapi.jenkins.jobs import JenkinsJobsApi
 from congregate.migration.jenkins.base import JenkinsClient
-from congregate.helpers.mdbc import MongoConnector
+from congregate.helpers.congregate_mdbc import CongregateMongoConnector
 
 
 class JenkinsBaseTests(unittest.TestCase):
@@ -66,7 +66,7 @@ class JenkinsBaseTests(unittest.TestCase):
 
     # Mark as integration test.
     @patch('congregate.helpers.conf.Config.jenkins_ci_source_type', new_callable=PropertyMock)
-    @patch.object(MongoConnector, "close_connection")
+    @patch.object(CongregateMongoConnector, "close_connection")
     @mark.jenkins_it
     def test_retrieve_jobs_with_scm_info(self, close_connection, source_type):
         token = 'password'
@@ -77,7 +77,7 @@ class JenkinsBaseTests(unittest.TestCase):
         expected = params.get_jobs_with_scm_info()
         client = JenkinsClient(host, username, token)
         close_connection.return_value = None
-        mongo = MongoConnector(client=mongomock.MongoClient)
+        mongo = CongregateMongoConnector(client=mongomock.MongoClient)
         for job in client.jenkins_api.list_all_jobs():
             client.handle_retrieving_jenkins_jobs(job, mongo=mongo)
         actual = [d for d, _ in mongo.stream_collection(

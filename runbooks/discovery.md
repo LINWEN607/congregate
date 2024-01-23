@@ -1,12 +1,12 @@
 # Consolidated Discovery Notes
 
-The Ultimate Goal of this document is to have its contents converted into a roadmap markdown file with an index of questions unique to each source and destination. For example when performing a migration from Bitbucket to Gitlab.com you would review the questions/notes for Source -> Bitbucket and Destination -> Gitlab.com/SaaS. All notes and contributions are welcome (it is the GitLab way). Any miscellaneous or unsorted notes can be placed in the section Unsorted Notes. Please indicate any source/destination that contributions apply to.
+The Ultimate Goal of this document is to have its contents converted into a roadmap markdown file with an index of questions unique to each source and destination. For example when performing a migration from Bitbucket to Gitlab.com you would review the questions/notes for Source -> Bitbucket and Destination -> Gitlab.com. All notes and contributions are welcome (it is the GitLab way). Any miscellaneous or unsorted notes can be placed in the section Unsorted Notes. Please indicate any source/destination that contributions apply to.
 
 ## Sources
 
 ## Destinations
 
-### Gitlab.com / SaaS
+### Gitlab.com
 
 #### Migration Host
 
@@ -26,7 +26,7 @@ The Ultimate Goal of this document is to have its contents converted into a road
 
 * Do users on the source system have their public email set?
   * Reason: It is required for attribution
-* Explain/reiterate that the highest permissions for SaaS is group owner. They will not be "administrators"
+* Explain/reiterate that the highest permissions for GitLab.com is group owner. They will not be "administrators"
   * We are moving towards [Enterprise Users](https://gitlab.com/groups/gitlab-org/-/epics/4786)
 * Number of users and projects involved in each wave
   * Usually no constraints on number of users. A few thousand users can be migrated at once. Congregate checks if active users from the source instance exist in the destination instance. If the user does not exist on the destination, then the new users will be created.
@@ -44,7 +44,7 @@ The Ultimate Goal of this document is to have its contents converted into a road
 
 #### Runners
 
-* Will you be using SaaS shared runners?
+* Will you be using GitLab.com shared runners?
   * Port requirements for connection to on-premise systems: [https://docs.gitlab.com/ee/user/gitlab_com/#ip-range](https://docs.gitlab.com/ee/user/gitlab_com/#ip-range)
 * Will you be bringing your own runners?
   * You will need to re-register them on your own
@@ -58,7 +58,7 @@ The Ultimate Goal of this document is to have its contents converted into a road
 ##### Container Registry
 
 * Are you using the container registry on the source?
-* Do you intend to use container registry on SaaS?
+* Do you intend to use container registry on GitLab.com?
 * We support container registry migration, but registry size can severely impact migration times. Please clean out the container registry as much as possible before migration
 
 ##### Package Registry
@@ -69,7 +69,7 @@ The Ultimate Goal of this document is to have its contents converted into a road
 
 * Are emails changing across systems?
 * Is SSO configured on the destination system?
-  * (SaaS) If you want to Enforce SSO-only authentication after the migration we can migrate users, groups, and projects per usual. Contribution mapping will not be deleted, but the users have to login before enforcing it or they will get kicked out automatically and lose their membership mapping. If this happens, these users will have to be manually added back and be remapped. This is not as bad as losing contribution mapping, but should still be avoided.
+  * (GitLab.com) If you want to Enforce SSO-only authentication after the migration we can migrate users, groups, and projects per usual. Contribution mapping will not be deleted, but the users have to login before enforcing it or they will get kicked out automatically and lose their membership mapping. If this happens, these users will have to be manually added back and be remapped. This is not as bad as losing contribution mapping, but should still be avoided.
 * Will you be using Group SAML ?
   * [https://docs.gitlab.com/ee/user/group/saml_sso/](https://docs.gitlab.com/ee/user/group/saml_sso/)
 * Will you be using SCIM? [https://docs.gitlab.com/ee/user/group/saml_sso/scim_setup.html](https://docs.gitlab.com/ee/user/group/saml_sso/scim_setup.html)
@@ -97,7 +97,7 @@ The Ultimate Goal of this document is to have its contents converted into a road
 * Will you be restricting access by domain? - [https://docs.gitlab.com/ee/user/group/#restrict-group-access-by-domain](https://docs.gitlab.com/ee/user/group/#restrict-group-access-by-domain)
 * Are you Enabling Two Factor authentication? -
   * [https://docs.gitlab.com/ee/user/profile/account/two_factor_authentication.html](https://docs.gitlab.com/ee/user/profile/account/two_factor_authentication.html)
-* When moving to SaaS users are no longer admins
+* When moving to GitLab.com users are no longer admins
 * Discuss the permission inheritance
   * Project Security settings
   * Review Owner, Maintainer and Developer roles and what each is allowed to do.
@@ -132,7 +132,7 @@ Cross-project dependencies:
 
 ### GitLab CI/CD Architecture Diagram:
 
-* Delivered by GitLab Solutions Architect (SA). Broad deliverable. Doesn’t fit into SaaS other than runner information
+* Delivered by GitLab Solutions Architect (SA). Broad deliverable. Doesn’t fit into GitLab.com other than runner information
 
 ### Single Sign-On Configuration Plan
 
@@ -146,7 +146,7 @@ Cross-project dependencies:
 ## General Migration Constraints
 
 * Migrations are typically capped at 200 projects per wave
-* When migrating to SaaS, projects with git repo sizes greater than 5GB will be excluded from the automated Migration. This is due to API limitations on Gitlab.com
+* When migrating to GitLab.com, projects with git repo sizes greater than 5GB will be excluded from the automated Migration. This is due to API limitations on Gitlab.com
 * GitLab instances must be up to date or lagging the current version by no more than 1 month
 * Manual verification before and after migration grow with scale
 

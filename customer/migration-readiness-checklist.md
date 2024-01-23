@@ -14,7 +14,7 @@ Welcome to a GitLab Professional Services Migration Engagement. This document is
 ## Migration Planning Team - Access
 
 - GitLab PS will need system admin access to the source system with admin access tokens.
-- GitLab PS will need system admin access (self managed) or group admin access (SaaS) on the destination GitLab system.[^1]
+- GitLab PS will need system admin access (self managed) or group admin access (GitLab.com) on the destination GitLab system.[^1]
 [^1]: Migrations to gitlab.com will require GL provisioned VM and (Admin) User Account. The customer might need to add this user to their group.
 
 ## Migration Planning Team - Communication

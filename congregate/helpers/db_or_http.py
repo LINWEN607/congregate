@@ -1,4 +1,4 @@
-from congregate.helpers.mdbc import MongoConnector
+from congregate.helpers.congregate_mdbc import CongregateMongoConnector
 
 
 class DbOrHttpMixin():
@@ -10,7 +10,7 @@ class DbOrHttpMixin():
 
     def send_data(self, req_func, params, key, src_id, data, airgap=False, airgap_export=False, mongo_coll=default_collection):
         if airgap and airgap_export:
-            mongo = MongoConnector()
+            mongo = CongregateMongoConnector()
             mongo.db[mongo_coll].update_one(
                 {'id': src_id},
                 {'$push': {key: data}},
@@ -21,7 +21,7 @@ class DbOrHttpMixin():
 
     def get_data(self, req_func, params, key, src_id, airgap=False, airgap_import=False, mongo_coll=default_collection):
         if airgap and airgap_import:
-            mongo = MongoConnector()
+            mongo = CongregateMongoConnector()
             record = mongo.safe_find_one(mongo_coll, {
                 'id': src_id
             })
