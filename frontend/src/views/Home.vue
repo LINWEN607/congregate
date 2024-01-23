@@ -18,17 +18,37 @@
             v-bind:data="stagedUsers"
         /></li>
     </ul>
+    <h2>Actions</h2>
+    <ListCard/>
+    <ActionCard title="Stage Data">
+      Select different pieces of data to migrate to the destination
+      <ul id="stage-list">
+        <li><router-link to="/projects">Projects</router-link></li>
+        <li><router-link to="/groups">Groups</router-link></li>
+        <li><router-link to="/users">Users</router-link></li>
+      </ul>
+    </ActionCard>
+    <MigrateCard/>
+    <DryRun/>
   </div>
 </template>
 
 <script>
 import axios from 'axios'
 import SummaryTable from '@/components/SummaryTable.vue'
+import ActionCard from '@/components/ActionCard.vue'
+import ListCard from '@/components/ListCard.vue'
+import MigrateCard from '@/components/MigrateCard.vue'
+import DryRun from '@/components/DryRun.vue'
 
 export default {
   name: 'Home',
   components: {
-    SummaryTable
+    SummaryTable,
+    ActionCard,
+    ListCard,
+    MigrateCard,
+    DryRun
   },
   data () {
     return {
@@ -44,16 +64,25 @@ export default {
     }
   },
   mounted: function () {
-    axios.get(`${import.meta.env.VITE_API_ROOT}/api/data/summary`).then(response => {
-      this.projectSummary = response.data['Total Staged Projects']
-      this.groupSummary = response.data['Total Staged Groups']
-      this.userSummary = response.data['Total Staged Users']
-      this.stagedProjects = response.data['Staged Projects']
-      this.stagedGroups = response.data['Staged Groups']
-      this.stagedUsers = response.data['Staged Users']
+    this.getSummary()
+    this.$emitter.on('update-stage', () => {
+      this.getSummary()
     })
   },
+  beforeDestroy: function () {
+    this.$emitter.off('update-stage')
+  },
   methods: {
+    getSummary: function() {
+      axios.get(`${import.meta.env.VITE_API_ROOT}/api/data/summary`).then(response => {
+        this.projectSummary = response.data['Total Staged Projects']
+        this.groupSummary = response.data['Total Staged Groups']
+        this.userSummary = response.data['Total Staged Users']
+        this.stagedProjects = response.data['Staged Projects']
+        this.stagedGroups = response.data['Staged Groups']
+        this.stagedUsers = response.data['Staged Users']
+      })
+    },
     getStagedProjects: function () {
       return this.stagedProjects
     },
@@ -93,9 +122,22 @@ export default {
     padding: 1em;
     background: #ccc;
     border-top: 1px solid #000;
+    border-left: 1px solid #000;
+    border-right: 1px solid #000;
+  }
+  li:last-child {
+    border-bottom: 1px solid #000;
   }
 }
-h2 {
+
+#actions-list {
   text-align: left;
 }
+
+#stage-list {
+  list-style-type: none;
+  margin: 0;
+  padding-left: 0;
+}
+
 </style>

@@ -10,6 +10,15 @@ class CeleryMongoConnector(MongoConnector):
     def __init__(self, client=None):
         super().__init__(db='jobs', client=client)
 
+    def find_tasks_by_status(self, status):
+        return self.safe_find('celery_taskmeta', query={'status': status})
+
+    def find_tasks_by_name(self, name, status='STARTED'):
+        return self.safe_find('celery_taskmeta', query={
+            'task': name,
+            'status': status
+        })
+    
 def mongo_connection(func):
     '''
         Decorator function to open and close a MongoDB connection

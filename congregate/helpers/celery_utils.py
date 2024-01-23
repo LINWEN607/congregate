@@ -24,7 +24,12 @@ def generate_celery_config():
     return CeleryConfig(
         broker_url=f"redis://:password@{c.redis_host}:{c.redis_port}/0",
         result_backend=f"mongodb://{c.mongo_host}:{c.mongo_port}/jobs",
-        task_ignore_results=True
+        task_ignore_results=True,
+        task_track_started=True,
+        result_extended=False,
+        override_backends={
+            "mongodb": "congregate.helpers.extended_mongo_backend:ExtendedMongoBackend"
+        }
     ).to_dict()
 
 def get_task_status(id):
@@ -36,15 +41,19 @@ def find_arg_prop(res: AsyncResult, prop_key: str):
 
         This does not dig into a nested dictionary
     '''
-    for arg in res.args:
-        if isinstance(arg, dict):
-            return arg.get(prop_key)
+    if res.args:
+        for arg in res.args:
+            if isinstance(arg, dict):
+                return arg.get(prop_key)
 
 @dataclass
 class CeleryConfig():
     broker_url: str
     result_backend: str
     task_ignore_results: bool
+    task_track_started: bool
+    result_extended: bool
+    override_backends : dict
 
     def to_dict(self):
         return asdict(self)

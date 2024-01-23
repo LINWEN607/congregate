@@ -33,14 +33,14 @@ Below, we present some of the ways in which data can be moved from SCM systems t
 
 - Only for GitLab -> GitLab [under certain conditions](https://docs.gitlab.com/ee/administration/geo/#requirements-for-running-geo)
 - Self-managed generally, but being investigated for SM->GitLab Dedicated
-- Does not work for SaaS (as source or destination)
+- Does not work for GitLab.com (as source or destination)
 - Can be difficult to set up, particularly when attaching to existing, long-running instances
 - Wait time to replicate
 
 ## [Omnibus Backup/Restore](https://docs.gitlab.com/ee/administration/backup_restore/)
 
 - Most "complete" method. Backup of the instance and data
-- Not for SaaS (either side)
+- Not for GitLab.com (either side)
 - Lacking feature parity between this and Chart version
 - Currently will not backup remote object storage data
 - [Restore prerequisites](https://docs.gitlab.com/ee/administration/backup_restore/restore_gitlab.html)
@@ -48,5 +48,5 @@ Below, we present some of the ways in which data can be moved from SCM systems t
 ## [Chart Backup/Restore (K8s/Cloud-native Hybrid)](https://docs.gitlab.com/charts/backup-restore/)
 
 - Also most "complete"
-- Not for SaaS (either side)
+- Not for GitLab.com (either side)
 - Can have constraints based on the limitations of the toolbox pod on K8s

@@ -71,7 +71,7 @@ class IssuesApi(GitLabApiWrapper):
         message = f"Creating PM sign off issue: {title} at: {endpoint}"
         return self.api.generate_post_request(host, token, endpoint, json.dumps(data), description=message)
 
-    def get_all_project_issue_notes(self, host, token, pid, iid):
+    def get_all_project_issue_notes(self, pid, iid, host, token):
         """
         Gets a list of all notes for a single issue
 

@@ -246,7 +246,7 @@ Copy the following data and add subsequent rows for single group migration
    3. `aws s3 ls s3://<bucket_name>` to verify if you can list your bucket
    4. `aws s3 cp <the project.tar.gz> s3://<bucket_name>` to upload the project package to S3 bucket
 
-2. Follow [Import the Project from AWS S3](https://docs.gitlab.com/ee/api/project_import_export.html#import-a-file-from-aws-s3) to import the project from S3 to SaaS
+2. Follow [Import the Project from AWS S3](https://docs.gitlab.com/ee/api/project_import_export.html#import-a-file-from-aws-s3) to import the project from S3 to GitLab.com
 
 #### Workarounds for Large Repositories
 

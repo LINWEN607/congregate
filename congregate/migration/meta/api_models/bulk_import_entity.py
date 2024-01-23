@@ -7,5 +7,6 @@ class BulkImportEntity:
     source_full_path: str
     destination_slug: str
     destination_namespace: str
-    destination_name: Optional[str]
+    destination_name: Optional[str] = None
     migrate_projects: Optional[bool] = True
+    

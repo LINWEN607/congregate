@@ -13,6 +13,12 @@ from congregate.helpers.seed.generator import SeedDataGenerator
 class MigrationEndToEndTestSetup(unittest.TestCase):
     def setUp(self):
         self.t = token_generator()
+        print("Generating Source Token")
+        self.src_token = self.t.generate_token("source_token", url=os.getenv(
+            "GITLAB_SRC"), username="root", pword="5iveL!fe")  # source token
+        print("Generating Destination Token")
+        self.dest_token = self.t.generate_token("destination_token", url=os.getenv(
+            "GITLAB_DEST"), username="root", pword="5iveL!fe")  # Destination access token
         self.generate_single_group_config_with_tokens()
         self.s = SeedDataGenerator()
 
@@ -20,12 +26,12 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
         self.s.generate_seed_data(dry_run=False)
 
     def generate_single_group_config_with_tokens(self):
-        print("Generating Destination Token")
-        destination_token = self.t.generate_token("destination_token", url=os.getenv(
-            "GITLAB_DEST"), username="root", pword="5iveL!fe")  # Destination access token
-        print("Generating Source Token")
-        source_token = self.t.generate_token("source_token", url=os.getenv(
-            "GITLAB_SRC"), username="root", pword="5iveL!fe")  # source token
+        # print("Generating Destination Token")
+        # destination_token = self.t.generate_token("destination_token", url=os.getenv(
+        #     "GITLAB_DEST"), username="root", pword="5iveL!fe")  # Destination access token
+        # print("Generating Source Token")
+        # source_token = self.t.generate_token("source_token", url=os.getenv(
+        #     "GITLAB_SRC"), username="root", pword="5iveL!fe")  # source token
         print("Prepping config data")
         values = [
             os.getenv("GITLAB_DEST"),  # Destination hostname
@@ -44,7 +50,7 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
             # src_access_token
             # src_tier
             "yes",  # source parent group
-            "2",   # source parent group ID
+            "8",   # source parent group ID
             # "source_group_full_path",   # source parent group path
             "yes",  # migrating registries
             # source_token
@@ -71,8 +77,8 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
             # processes
         ]
         tokens = [
-            destination_token,
-            source_token
+            self.dest_token,
+            self.src_token
         ]
 
         g = input_generator(values)

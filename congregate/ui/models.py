@@ -14,11 +14,6 @@ def get_data(file_name, sort_by=None):
 
     return data
 
-
-# def get_config():
-#     config = ConfigurationValidator()
-#     return config.as_obj()
-
 @data_retrieval.route("/summary")
 def get_counts():
     total_projects = len(get_data("projects"))
@@ -35,7 +30,6 @@ def get_counts():
         "Total Staged Users": f"{len(staged_users)}/{total_users}",
         "Staged Users": staged_users,
     })
-
 
 @data_retrieval.route("/<name>")
 def load_stage_data(name):

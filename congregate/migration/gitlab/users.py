@@ -4,7 +4,7 @@ from requests import Response
 from requests.exceptions import RequestException
 from pandas import DataFrame, Series, set_option
 from dacite import from_dict
-
+from celery import shared_task
 from gitlab_ps_utils.misc_utils import get_dry_log, get_timedelta, is_error_message_present, \
     safe_json_response, strip_netloc
 from gitlab_ps_utils.json_utils import json_pretty, read_json_file_into_object, write_json_to_file
@@ -12,7 +12,7 @@ from gitlab_ps_utils.dict_utils import rewrite_list_into_dict, rewrite_json_list
 from gitlab_ps_utils.list_utils import remove_dupes
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.congregate_mdbc import CongregateMongoConnector
+from congregate.helpers.congregate_mdbc import CongregateMongoConnector, mongo_connection
 from congregate.helpers.migrate_utils import get_staged_users, find_user_by_email_comparison_without_id, is_gl_version_older_than
 from congregate.helpers.utils import is_dot_com
 from congregate.migration.gitlab import constants
@@ -570,17 +570,21 @@ class UsersClient(BaseClass):
                     self.users_api.get_user(user["id"], host, token)))
         else:
             users = self.users_api.get_all_users(host, token)
-
-        self.multi.start_multi_process_stream(
-            self.handle_retrieving_users,
-            users,
-            processes=processes)
+        if self.config.direct_transfer:
+            for user in users:
+                handle_retrieving_users_task.delay(user)
+        else:
+            self.multi.start_multi_process_stream(
+                self.handle_retrieving_users,
+                users,
+                processes=processes)
 
     def handle_retrieving_users(self, user, mongo=None):
         # mongo should be set to None unless this function is being used in a
         # unit test
         if not mongo:
             mongo = CongregateMongoConnector()
+
         user["email"] = user["email"].lower()
         projects_limit = self.config.projects_limit
         if projects_limit:
@@ -832,3 +836,26 @@ class UsersClient(BaseClass):
         if not isinstance(resp, Response) or resp.status_code != 201:
             self.log.error(
                 f"Failed to add email '{email}' to source user '{username}' (ID: {uid}):\n{resp} - {resp.text}")
+
+
+@shared_task(name='retrieve-user')
+@mongo_connection
+def handle_retrieving_users_task(user, mongo=None):
+    # mongo should be set to None unless this function is being used in a
+    # unit test
+    user_client = UsersClient()
+    user["email"] = user["email"].lower()
+    projects_limit = user_client.config.projects_limit
+    if projects_limit:
+        user["projects_limit"] = projects_limit
+
+    for key in constants.USER_KEYS_TO_IGNORE:
+        user.pop(key, None)
+    # SSO causes issues with the avatar URL due to the authentication
+    if user_client.config.group_sso_provider:
+        user.pop("avatar_url", None)
+    # Avoid propagating field when creating users on gitlab.com with no config value set
+    if is_dot_com(user_client.config.destination_host) and not projects_limit:
+        user.pop("projects_limit", None)
+    mongo.insert_data(
+        f"users-{strip_netloc(user_client.config.source_host)}", user)

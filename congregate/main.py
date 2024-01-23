@@ -10,9 +10,10 @@ Usage:
     congregate generate-reporting
     congregate stage-projects <projects>... [--skip-users] [--commit] [--scm-source=hostname]
     congregate stage-groups <groups>... [--skip-users] [--commit] [--scm-source=hostname]
+    congregate stage-users <users>... [--commit]
     congregate stage-wave <wave> [--commit] [--scm-source=hostname]
     congregate create-stage-wave-csv [--commit]
-    congregate migrate [--processes=<n>] [--reporting] [--skip-users] [--remove-members] [--stream-groups] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostname] [--commit] [--reg-dry-run] [--group-structure]
+    congregate migrate [--processes=<n>] [--reporting] [--skip-users] [--remove-members] [--stream-groups] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostname] [--commit] [--reg-dry-run] [--group-structure] [--retain-contributors]
     congregate rollback [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
     congregate ui
     congregate do-all [--commit]
@@ -99,6 +100,7 @@ Arguments:
     only-post-migration-info                Skips migrating all content except for post-migration information. Use when import is handled outside of congregate
     subgroups-only                          Expects that only sub-groups are staged and that their parent groups already exist on destination
     reg-dry-run                             If registry migration is configured, instead of doing the actual migration, write the tags to the logs for use in the brute force migration. Can also be useful when renaming targets
+    retain-contributors                     Searches a project for all contributors to a project and adds them as members before exporting the project. Only works in GitLab file-based migrations
     group-structure                         Let the GitHub and BitBucket Server importers create the missing sub-group layers.
     access-level                            Update parent group level user permissions (None/Minimal/Guest/Reporter/Developer/Maintainer/Owner).
     current-level                           Current destination group/project members access level.
@@ -143,6 +145,7 @@ Commands:
                                                 all project and group members to {CONGREGATE_PATH}/data/staged_users.json,
                                                 All groups can be staged with '.' or 'all'.
                                                 Individual ones can be staged as a space delimited list of integers (group IDs).
+    stage-users                             Stage individual users {CONGREGATE_PATH}/data/staged_users.json
     stage-wave                              Stage wave of projects based on migration wave spreadsheet. This only takes a single wave for input.
                                                 Add '--skip-group-import' to avoid creating groups.
                                                 Add '--group-structure' to allow the GitHub and BitBucket Server importers to create the missing sub-group layers.
@@ -280,6 +283,7 @@ def main():
         MEMBERSHIP = arguments["--membership"]
         SUBGROUPS_ONLY = arguments["--subgroups-only"]
         DEST = arguments["--dest"]
+        RETAIN_CONTRIBUTORS = arguments["--retain-contributors"]
 
         if SCM_SOURCE:
             SCM_SOURCE = strip_netloc(SCM_SOURCE)
@@ -323,6 +327,7 @@ def main():
             from congregate.cli.list_source import ListClient
             from congregate.cli.stage_projects import ProjectStageCLI
             from congregate.cli.stage_groups import GroupStageCLI
+            from congregate.cli.stage_users import UserStageCLI
             from congregate.cli.stage_wave import WaveStageCLI
             from congregate.cli.stage_wave_csv_generator import WaveStageCSVGeneratorCLI
             from congregate.helpers.seed.generator import SeedDataGenerator
@@ -383,6 +388,10 @@ def main():
                 gcli.stage_data(arguments['<groups>'],
                                 dry_run=DRY_RUN, skip_users=SKIP_USERS, scm_source=SCM_SOURCE)
 
+            if arguments["stage-users"]:
+                ucli = UserStageCLI()
+                ucli.stage_data(arguments['<users>'], dry_run=DRY_RUN)
+
             if arguments["stage-wave"]:
                 wcli = WaveStageCLI()
                 wcli.stage_data(
@@ -416,7 +425,8 @@ def main():
                     subgroups_only=SUBGROUPS_ONLY,
                     scm_source=SCM_SOURCE,
                     reg_dry_run=arguments["--reg-dry-run"],
-                    group_structure=arguments["--group-structure"]
+                    group_structure=arguments["--group-structure"],
+                    retain_contributors=arguments["--retain-contributors"]
                 )
                 migrate.migrate()
 

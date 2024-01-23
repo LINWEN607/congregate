@@ -1,6 +1,6 @@
 <template>
   <div class="users">
-    Users
+    <h2>Stage Users</h2>
     <div class="table">
         <vue-good-table
             ref="users-table"

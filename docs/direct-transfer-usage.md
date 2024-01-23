@@ -1,6 +1,49 @@
 # Migrating data via Direct Transfer
 
-## Triggering a migration (dry-run)
+## Congregate UI
+
+Once you have Congregate configured to use Direct Transfer and all the necessary services are running,
+you can now navigate to port 8000 to access the Congregate UI.
+
+You can do the following actions in the UI when Direct Transfer is enabled in `congregate.conf`:
+
+- List data
+- Stage data
+- Run a dry run migration
+- Run a full migration
+- Review non-sensitive information in the `congregate.conf` file
+
+### List Data
+
+Navigate to the home page of Congregate and click the "list data" button. 
+
+<img src="../img/list-screenshot.png"/>
+
+Note: This does not do a `DRY_RUN` like we have in the CLI. It automatically pulls from the source and updates Mongo and the various metadata JSON files
+
+### Stage Data
+
+Once listing is complete, you can now stage users, groups, and/or projects to migrate.
+You can navigate to the different staging pages from the left navigation bar or the staging card
+on the homepage:
+
+<img src="../img/stage-screenshot.png"/>
+
+### Migrate Data
+
+Now that you have data staged to migrate, you can move on to running a dry-run migration and then an actual migration. Migration commands are handled in the Migrate card on the home page:
+
+<img src="../img/migrate-screenshot.png"/>
+
+Clicking `migrate` will run a dry-run by default. You need to check the `commit` parameter to trigger an actual migration.
+
+### Optional - Monitoring Tasks
+
+If you want to check on the status of what is going on behind the scenes, you can navigate to the `Task Queue` on the left sidebar or go directly to the task queue dashboard which is deployed to port `5555` in the container.
+
+## REST API
+
+### Triggering a migration (dry-run)
 
 To trigger a migration via direct transfer in Congregate, you make a POST call to `/direct_transfer/import` with a payload matching the payload of our bulk import API. By default, this does a dry-run so no data is migrated to the destination, but we can see a list of entities expected to be migrated. For example:
 
@@ -42,7 +85,7 @@ You should see a response like:
 }
 ```
 
-## Triggering a migration (actual run)
+### Triggering a migration (actual run)
 
 If the dry-run response looks correct, you can add the `commit` parameter to the request. To trigger a migration via direct transfer in Congregate, you make a POST call to `/direct_transfer/import?commit=true` with a payload matching the payload of our bulk import API. For example:
 

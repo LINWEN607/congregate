@@ -21,7 +21,7 @@ This runbook covers the process of preparing and cleaning up after a migration f
 
 ### GitLab
 
-* [ ] For to-SaaS migrations, verify with the Account/Sales team that all licensing is setup for the `namespace` on `gitlab.com`, make sure the customer's `namespace` is set as `private`.
+* [ ] For GitLab.com migrations, verify with the Account/Sales team that all licensing is setup for the `namespace` on `gitlab.com`, make sure the customer's `namespace` is set as `private`.
 * [ ] Setup the migration VM that will host the Professional Services (PS) migration tool’s (Congregate) Docker container.
   * It should have minimal port and IP access. See [VM Requirements](#vm) for more detail.
   * **NOTE:** If required the VM might be created, by the customer, within their environment. Make sure this approach is covered in the SoW.
@@ -139,15 +139,15 @@ This runbook covers the process of preparing and cleaning up after a migration f
 
 `Congregate` is run from a migration host jumpbox. Where that box is hosted depends on a few factors:
 
-* As migrations currently require an admin API token, the VM cannot be hosted inside of a customer space if the migration involves SaaS. The VM has to be hosted:
+* As migrations currently require an admin API token, the VM cannot be hosted inside of a customer space if the migration involves GitLab.com. The VM has to be hosted:
   * In GitLab GCP infrastructure provisioned using the below process -OR- in another GitLab-controlled web space
     * This may require work on the customer side to setup access (VPN, firewall, WireGuard, etc) if their source system is not internet-facing
-* If the migration does *not* involve SaaS, it can be hosted in any space that has access to the source and destination system.
+* If the migration does *not* involve GitLab.com, it can be hosted in any space that has access to the source and destination system.
   * Generally, inside the more "walled" system
-* Special Case: Multi-Hop to/from SaaS
+* Special Case: Multi-Hop to/from GitLab.com
   * If the customer will not/can not open ports or provide a VPN connection, we can do the following:
-    * Migrate (using Congregate) to an internet-exposed interim instance in a cloud space using an admin token from the source system (say SaaS) and an admin token for the interim instance
-    * Remove the admin token from the source system (say SaaS)
+    * Migrate (using Congregate) to an internet-exposed interim instance in a cloud space using an admin token from the source system (say GitLab.com) and an admin token for the interim instance
+    * Remove the admin token from the source system (say GitLab.com)
     * Customer can now migrate from the interim to their internal instance by pulling the Congregate container to a machine inside their wall, using an admin token for their target system, and an admin token from the interim instance
 
 ### Requisitioning a Migration VM (GitLab GCP Hosted)
