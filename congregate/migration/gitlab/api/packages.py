@@ -105,6 +105,8 @@ class PackagesApi(GitLabApiWrapper):
         """
         Upload a generic package file
 
+        GitLab API Doc: https://docs.gitlab.com/ee/user/packages/generic_packages/index.html#publish-a-package-file
+
             :param host: (str) GitLab host URL
             :param token: (str) Access token to GitLab instance
             :param project: (int) GitLab project ID
