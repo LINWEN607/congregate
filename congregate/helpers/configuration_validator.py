@@ -191,9 +191,15 @@ class ConfigurationValidator(Config):
                 "source_token", msg=f"{msg}{json_pretty(user)}")
 
     def validate_src_token_github(self, user, msg, token):
+        gh_dot_com = is_github_dot_com(self.source_host)
+
+        if "github.com" in self.source_host and not gh_dot_com:
+            raise ConfigurationException(
+                "src_hostname", msg=f"{msg}GitHub.com source requires 'https://api.github.com' as the 'src_hostname' in 'data/congregate.conf'")
+
         user = safe_json_response(requests.get(
-            f"{self.source_host.rstrip('/')}/user" if is_github_dot_com(
-                self.source_host) else f"{self.source_host}/api/v3/user",
+            f"{self.source_host.rstrip('/')}/user" if gh_dot_com
+            else f"{self.source_host}/api/v3/user",
             params={},
             headers={
                 "Accept": "application/vnd.github.v3+json",
@@ -203,7 +209,7 @@ class ConfigurationValidator(Config):
             timeout=self.GET_TIMEOUT))
         is_error, user = is_error_message_present(user)
         if not user or is_error or (not user.get(
-                "site_admin") and not is_github_dot_com(self.source_host)):
+                "site_admin") and not gh_dot_com):
             raise ConfigurationException(
                 "source_token", msg=f"{msg}{json_pretty(user)}")
 
