@@ -107,7 +107,8 @@ class ProjectsClient(BaseClass):
                     if r.status_code == 201:
                         self.log.info(
                             f"Shared project '{path}' with group '{dst_full_path}'")
-                    else:
+                    # 409 being already shared
+                    elif r.status_code not in [201, 409]:
                         self.log.error(
                             f"Failed to share project '{path}' with group '{dst_full_path}', using payload\n{data} due to:\n{r} - {r.text}")
                 else:
