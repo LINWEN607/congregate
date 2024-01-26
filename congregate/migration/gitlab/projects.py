@@ -72,7 +72,7 @@ class ProjectsClient(BaseClass):
                     host,
                     token,
                     processes=processes)
-            
+
     def handle_retrieving_project(self, host, token, project, mongo=None):
         if not mongo:
             mongo = CongregateMongoConnector()
@@ -112,7 +112,7 @@ class ProjectsClient(BaseClass):
                             f"Failed to share project '{path}' with group '{dst_full_path}', using payload\n{data} due to:\n{r} - {r.text}")
                 else:
                     self.log.error(
-                        f"Failed to find group shared group '{dst_full_path}' on destination using new ID {new_gid}")
+                        f"Failed to find project '{path}' shared group '{dst_full_path}' on destination using new ID {new_gid}")
             return True
         except RequestException as re:
             self.log.error(
@@ -1016,6 +1016,7 @@ class ProjectsClient(BaseClass):
                            "message": "error", "exception": str(ex)}
         finally:
             return return_dict or {"id": import_id, "path": dst_path_with_namespace, "message": "success", "exception": None}
+
 
 @shared_task(name='retrieve-projects')
 @mongo_connection

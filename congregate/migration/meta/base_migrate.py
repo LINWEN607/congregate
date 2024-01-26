@@ -144,11 +144,13 @@ class MigrateClient(BaseClass):
                 for nu in new_users:
                     formatted_users[nu["email"]] = nu
                 new_users.append(mig_utils.get_results(new_users))
-                self.log.info(f"### {dry_log}User creation results ###\n{json_utils.json_pretty(new_users)}")
+                self.log.info(
+                    f"### {dry_log}User creation results ###\n{json_utils.json_pretty(new_users)}")
                 mig_utils.write_results_to_file(
                     formatted_users, result_type="user", log=self.log)
                 if self.dry_run and not self.only_post_migration_info:
-                    self.log.info(f"{dry_log}Outputting various USER migration data to 'dry_run_user_migration.json'")
+                    self.log.info(
+                        f"{dry_log}Outputting various USER migration data to 'dry_run_user_migration.json'")
                     mig_utils.migration_dry_run("user", list(self.multi.start_multi_process(
                         self.users.generate_user_data, staged_users, self.processes)))
             else:
@@ -208,10 +210,11 @@ class MigrateClient(BaseClass):
             self.log.error(
                 f"Failed to create user {user_data}, with error:\n{e}")
         except Exception as e:
-            self.log.error(f"Could not get response text/JSON for {user}. Error was {e}")
+            self.log.error(
+                f"Could not get response text/JSON for {user}. Error was {e}")
             self.log.error(print_exc(e))
         return new_user
-    
+
     def gl_user_creation(self, new_user, old_user, email, user):
         if new_user:
             found_user = new_user if new_user.get(
@@ -232,7 +235,7 @@ class MigrateClient(BaseClass):
                 "email": email,
                 "id": None
             }
-        
+
     def bb_user_creation(self, new_user, old_user, email, user):
         if new_user:
             found_user = new_user if new_user.get(
@@ -251,7 +254,6 @@ class MigrateClient(BaseClass):
                 "email": email,
                 "id": None
             }
-
 
     def disable_shared_ci(self, path, pid):
         # Disable Auto DevOps
@@ -330,7 +332,8 @@ class MigrateClient(BaseClass):
             pcli.stage_data(ids, self.dry_run)
 
     def remove_import_user(self, dst_id, gl_type="project", host=None, token=None):
-        import_uid = self.config.import_user_id if not (host and token) else self.get_import_user(host, token)
+        import_uid = self.config.import_user_id if not (
+            host and token) else self.get_import_user(host, token)
         host = self.config.destination_host if not host else host
         token = self.config.destination_token if not token else token
         self.log.info(
@@ -342,7 +345,7 @@ class MigrateClient(BaseClass):
             else:
                 resp = self.projects_api.remove_member(
                     dst_id, import_uid, host, token)
-            if not isinstance(resp, Response) or resp.status_code != 204:
+            if not isinstance(resp, Response) or resp.status_code not in [204, 404]:
                 self.log.error(
                     f"Failed to remove import user (ID: {import_uid}) from {gl_type} (ID: {dst_id}):\n{resp}")
         except RequestException as re:
