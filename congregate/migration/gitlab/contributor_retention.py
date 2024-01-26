@@ -1,15 +1,14 @@
 import json
 from gitlab_ps_utils.dict_utils import dig, rewrite_list_into_dict
 from gitlab_ps_utils.api import GitLabApi
-from gitlab_ps_utils.misc_utils import safe_json_response
+from gitlab_ps_utils.misc_utils import safe_json_response, get_dry_log
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.users import UsersClient
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.groups import GroupsApi
-from congregate.migration.gitlab.api.issues import IssuesApi
-from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
 from congregate.migration.meta.api_models.new_member import NewMember
 from congregate.helpers.migrate_utils import find_user_by_email_comparison_without_id
+
 
 class ContributorRetentionClient(BaseClass):
     GROUP_ELEMENTS = ['epics']
@@ -31,7 +30,7 @@ class ContributorRetentionClient(BaseClass):
     def build_map(self):
         for element in self.PROJECT_ELEMENTS:
             self.retrieve_contributors(element)
-    
+
     def retrieve_contributors(self, element):
         hasNextPage = True
         cursor = ""
@@ -39,16 +38,19 @@ class ContributorRetentionClient(BaseClass):
         while hasNextPage:
             query = self.generate_contributors_query(element, cursor)
             if data := safe_json_response(
-                self.api.generate_post_request(self.config.source_host, self.config.source_token, None, json.dumps(query), graphql_query=True)):
-                count += len(dig(data, 'data', 'project', element, 'nodes', default=[]))
+                    self.api.generate_post_request(self.config.source_host, self.config.source_token, None, json.dumps(query), graphql_query=True)):
+                count += len(dig(data, 'data', 'project',
+                             element, 'nodes', default=[]))
                 self.log.info(f"Retrieved {count} {element}")
                 for node in dig(data, 'data', 'project', element, 'nodes', default=[]):
                     author = dig(node, 'author')
                     self.add_contributor_to_map(author)
                     for commenter in dig(node, 'commenters', 'nodes', default=[]):
                         self.add_contributor_to_map(commenter)
-                cursor = dig(data, 'data', 'project', element, 'pageInfo', 'endCursor')
-                hasNextPage = dig(data, 'data', 'project', element,'pageInfo', 'hasNextPage', default=False)
+                cursor = dig(data, 'data', 'project',
+                             element, 'pageInfo', 'endCursor')
+                hasNextPage = dig(data, 'data', 'project', element,
+                                  'pageInfo', 'hasNextPage', default=False)
             else:
                 self.log.error("Request failed")
 
@@ -61,7 +63,8 @@ class ContributorRetentionClient(BaseClass):
             if author.get('publicEmail'):
                 author_email = author['publicEmail']
             else:
-                author_email = self.users.users_api.get_user_email(author['id'], self.config.source_host, self.config.source_token)
+                author_email = self.users.users_api.get_user_email(
+                    author['id'], self.config.source_host, self.config.source_token)
             author['email'] = author_email
             self.contributor_map[author_email] = author
 
@@ -71,19 +74,21 @@ class ContributorRetentionClient(BaseClass):
         '''
         for contributor, data in self.contributor_map.items():
             new_member_payload = NewMember(user_id=data['id'], access_level=10)
-            if self.dry_run:
-                self.log.info(f"DRY_RUN: Adding contributor {contributor} to project {self.full_path}")
-            else:
-                self.log.info(f"Adding contributor {contributor} to project {self.full_path}")
-                self.projects.add_member(self.src_id, self.config.source_host, self.config.source_token, new_member_payload.to_dict())
-    
+            self.log.info(
+                f"{get_dry_log(self.dry_run)}Adding contributor '{contributor}' to project '{self.full_path}'")
+            if not self.dry_run:
+                self.projects.add_member(
+                    self.src_id, self.config.source_host, self.config.source_token, new_member_payload.to_dict())
+
     def add_contributors_to_group(self):
         '''
             Add contributors from contributor map to source group
         '''
         for contributor in self.contributor_map.items():
-            new_member_payload = NewMember(user_id=contributor['id'], access_level=10)
-            self.groups.add_member_to_group(self.src_id, self.config.source_host, self.config.source_token, new_member_payload.to_dict())
+            new_member_payload = NewMember(
+                user_id=contributor['id'], access_level=10)
+            self.groups.add_member_to_group(
+                self.src_id, self.config.source_host, self.config.source_token, new_member_payload.to_dict())
 
     def remove_contributors_from_project(self, source=False):
         '''
@@ -101,22 +106,22 @@ class ContributorRetentionClient(BaseClass):
             if source:
                 user = data
             else:
-                user = find_user_by_email_comparison_without_id(data.get('email'))
-            if self.dry_run:
-                self.log.info(f"DRY_RUN: Removing contributor {contributor} from project {self.full_path}")
-            else:
-                self.log.info(f"Removing contributor {contributor} from project {self.full_path}")
+                user = find_user_by_email_comparison_without_id(
+                    data.get('email'))
+            self.log.info(
+                f"{get_dry_log(self.dry_run)}Removing contributor '{contributor}' from project '{self.full_path}'")
+            if user and not self.dry_run:
                 self.projects.remove_member(pid, user['id'], host, token)
-    
+
     def get_members(self, asset_type):
         if asset_type == 'project':
             return rewrite_list_into_dict(list(self.projects.get_members(self.src_id, self.config.source_host, self.config.source_token)), "email")
-        elif asset_type == 'group':
+        if asset_type == 'group':
             return rewrite_list_into_dict(list(self.groups.get_all_group_members(self.src_id, self.config.source_host, self.config.source_token)), "email")
-        
+
     def generate_contributors_query(self, element, cursor):
         return {
-                "query": """
+            "query": """
                     query {
                         project(fullPath: "%s"){
                         %s(after: "%s") {
@@ -142,6 +147,4 @@ class ContributorRetentionClient(BaseClass):
                         }
                     }
                 """ % (self.full_path, element, cursor)
-            }
-
-    
+        }
