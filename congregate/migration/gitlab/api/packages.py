@@ -68,7 +68,7 @@ class PackagesApi(GitLabApiWrapper):
             :param package_name: (str) GitLab package name
             :param package_version: (str) GitLab package version
             :param file_name: (str) GitLab package file name
-            :return: Response object containing the response to GET /projects/:id/packages/:package_id
+            :return: Response object containing the response to GET /projects/:id/packages/:package_id/:file_name
         """
         return self.api.generate_get_request(host, token, f"projects/{project}/packages/generic/{package_name}/{package_version}/{file_name}")
 
