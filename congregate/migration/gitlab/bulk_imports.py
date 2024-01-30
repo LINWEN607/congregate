@@ -114,7 +114,9 @@ class BulkImportsClient(BaseGitLabClient):
         entities = []
         for data in staged_data:
             if entity_type == 'group':
-                entities.append(self.build_group_entity(data, skip_projects=skip_projects))
+                # Skip subgroups since they will be included in the top level group payload
+                if len(data['full_path'].split("/")) == 1:
+                    entities.append(self.build_group_entity(data, skip_projects=skip_projects))
             elif entity_type == 'project':
                 entities.append(self.build_project_entity(data))
         return BulkImportPayload(configuration=config, entities=entities)
