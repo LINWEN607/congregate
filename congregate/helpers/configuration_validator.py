@@ -9,7 +9,7 @@ from congregate.helpers.conf import Config
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.instance import InstanceApi
-from congregate.helpers.utils import is_github_dot_com
+from congregate.helpers.utils import is_github_dot_com, is_dot_com
 
 
 class ConfigurationValidator(Config):
@@ -186,7 +186,9 @@ class ConfigurationValidator(Config):
         user = safe_json_response(
             self.users.get_current_user(self.source_host, token))
         is_error, user = is_error_message_present(user)
-        if not user or is_error or not user.get("is_admin"):
+        if not user.get("is_admin"):
+            print("Source token is currently assigned to a standard user. Some API endpoints may not behave correctly")
+        if not user or is_error:
             raise ConfigurationException(
                 "source_token", msg=f"{msg}{json_pretty(user)}")
 
@@ -271,34 +273,46 @@ class ConfigurationValidator(Config):
         return True
 
     def validate_direct_transfer_enabled(self):
-        instance_api = InstanceApi()
-        src_settings = safe_json_response(
-            instance_api.get_application_settings(self.source_host, self.source_token))
-        src_bulk_import, src_max_download = self.__get_bulk_import_settings(
-            src_settings)
-        dest_settings = safe_json_response(instance_api.get_application_settings(
-            self.destination_host, self.destination_token))
-        dest_bulk_import, dest_max_download = (False, 0)
-        if dest_settings:
-            dest_bulk_import, dest_max_download = self.__get_bulk_import_settings(
-                dest_settings)
-            if src_bulk_import and dest_bulk_import:
-                if src_max_download == dest_max_download:
-                    return True
-                else:
-                    print(
-                        f"Warning: bulk_import_max_download_file_size does not match on source (max {src_max_download}) and destination (max {dest_max_download}). Update settings if possible. See docs: See docs: https://docs.gitlab.com/ee/api/settings.html#change-application-settings")
-            else:
-                raise ConfigurationException(
-                    'direct_transfer', f"Direct transfer is not enabled on both sources. Source: ({src_bulk_import}) Destination: ({dest_bulk_import}). Update settings if possible. See docs: https://docs.gitlab.com/ee/api/settings.html#change-application-settings"
-                )
-        else:
+        src_gitlab_dot_com = is_dot_com(self.source_host)
+        dest_gitlab_dot_com = is_dot_com(self.destination_host)
+        src_bulk_import, src_max_download = self.__get_dt_configuration(self.source_host, self.source_token, src_gitlab_dot_com)
+        dest_bulk_import, dest_max_download = self.__get_dt_configuration(self.destination_host, self.destination_token, dest_gitlab_dot_com)
+        if src_bulk_import is None:
+            print("Warning: Cannot confirm bulk import is enabled on source. This could be due to using a regular user personal access token. See docs: https://docs.gitlab.com/ee/api/settings.html#get-current-application-settings")
+        if dest_bulk_import is None:
             print("Warning: Cannot confirm bulk import is enabled on destination. This could be due to using a regular user personal access token. See docs: https://docs.gitlab.com/ee/api/settings.html#get-current-application-settings")
-        if src_bulk_import:
-            return True
-        raise ConfigurationException(
-            'direct_transfer', f"Direct transfer is not enabled on the source instance. Please enable it in the admin settings. See docs: https://docs.gitlab.com/ee/administration/settings/import_and_export_settings.html#enable-migration-of-groups-and-projects-by-direct-transfer"
-        )
+        if src_bulk_import and dest_bulk_import:
+            if src_max_download == dest_max_download:
+                return True
+            else:
+                print(
+                    f"Warning: bulk_import_max_download_file_size does not match on source (max {src_max_download}) and destination (max {dest_max_download}). Update settings if possible. See docs: See docs: https://docs.gitlab.com/ee/api/settings.html#change-application-settings")
+        elif dest_bulk_import is False:
+            # Assuming admin privileges and can officially confirm direct transfer is disabled
+            raise ConfigurationException(
+                'direct_transfer', f"Direct transfer is not enabled on the destination instance. Please enable it in the admin settings. See docs: https://docs.gitlab.com/ee/administration/settings/import_and_export_settings.html#enable-migration-of-groups-and-projects-by-direct-transfer"
+            )
+        elif src_bulk_import is False:
+            raise ConfigurationException(
+                'direct_transfer', f"Direct transfer is not enabled on the source instance. Please enable it in the admin settings. See docs: https://docs.gitlab.com/ee/administration/settings/import_and_export_settings.html#enable-migration-of-groups-and-projects-by-direct-transfer"
+            )
+        return True
+    
+    def __get_dt_configuration(self, host, token, dot_com):
+        if not dot_com:
+            instance_api = InstanceApi()
+            settings = safe_json_response(instance_api.get_application_settings(
+                host, token))
+            if settings:
+                # Return actual settings from the API
+                return self.__get_bulk_import_settings(
+                    settings)
+            else:
+                # Return an empty tuple since we can't get a valid response
+                return (None, None)
+        else:
+            # Return default values
+            return True, 5120
 
     def __get_bulk_import_settings(self, settings):
         return (settings.get("bulk_import_enabled", False),
