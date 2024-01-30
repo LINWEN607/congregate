@@ -296,6 +296,10 @@ class ConfigurationValidator(Config):
             raise ConfigurationException(
                 'direct_transfer', f"Direct transfer is not enabled on the source instance. Please enable it in the admin settings. See docs: https://docs.gitlab.com/ee/administration/settings/import_and_export_settings.html#enable-migration-of-groups-and-projects-by-direct-transfer"
             )
+        elif not (src_bulk_import or dest_bulk_import):
+            raise ConfigurationException(
+                'direct_transfer', f"Cannot confirm if bulk import is enabled on either source or destination. This is likely due to using standard user access tokens on both self-managed instances. Please use an admin token for at least the source instance"
+            )
         return True
     
     def __get_dt_configuration(self, host, token, dot_com):

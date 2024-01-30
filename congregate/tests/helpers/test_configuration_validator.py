@@ -787,6 +787,36 @@ class ConfigurationValidationTests(unittest.TestCase):
         app_settings.side_effect = [src_setting_resp, dstn_setting_resp]
 
         self.assertTrue(self.config.direct_transfer)
+    
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.src_token_validated_in_session')
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_token_validated_in_session')
+    @mock.patch.object(GitLabApi, "generate_v4_request_url")
+    @mock.patch.object(InstanceApi, "get_application_settings")
+    def test_direct_transfer_unknown_src_dest(self, app_settings, url, src_token, dstn_token):
+        # Mock validate src and dstn tokens
+        src_token.return_value = True
+        dstn_token.return_value = True
+        url_value = "htts://gitlab.com/api/v4/application_settings"
+        url.return_value = url_value
+
+        # Set direct_transfer to true to trigger validation
+        self.config.as_obj().set("APP", "direct_transfer", "true")
+
+        # Set up mock src settings API call, this time mocking bulk import is disabled on src
+        src_setting_resp = mock.MagicMock()
+        type(src_setting_resp).status_code = mock.PropertyMock(return_value=403)
+        src_setting_resp.json.return_value = None
+        
+        # Set up mock dstn settings API call
+        dstn_setting_resp = mock.MagicMock()
+        type(dstn_setting_resp).status_code = mock.PropertyMock(return_value=403)
+        dstn_setting_resp.json.return_value = None
+
+        # Add mock objects to get_application_settings side effects
+        app_settings.side_effect = [src_setting_resp, dstn_setting_resp]
+
+        self.assertRaises(ConfigurationException,
+                          self.config.validate_direct_transfer_enabled)
 
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.src_token_validated_in_session')
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_token_validated_in_session')
