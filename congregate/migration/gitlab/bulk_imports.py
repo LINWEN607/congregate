@@ -117,6 +117,8 @@ class BulkImportsClient(BaseGitLabClient):
                 # Skip subgroups since they will be included in the top level group payload
                 if len(data['full_path'].split("/")) == 1:
                     entities.append(self.build_group_entity(data, skip_projects=skip_projects))
+                else:
+                    self.log.warn(f"Skipping subgroup {data['full_path']} due to already being included in its parent group")
             elif entity_type == 'project':
                 entities.append(self.build_project_entity(data))
         return BulkImportPayload(configuration=config, entities=entities)
