@@ -36,6 +36,7 @@ class PackagesClient(BaseClass):
             self.log.error(
                 f"Failed to get all packages for project {project_name} (ID:{src_id}) due to an exception")
             self.log.debug(e)
+        return results
 
     def format_groupid(self, name):
         return '.'.join(name.split('/')[:-1])
