@@ -89,6 +89,7 @@ src_access_token = *****
 
 ### Consider below changes when the source is a GitHub server, rest all other configuration remains same
 # src_type = GitHub
+### Use https://api.github.com as src_hostname for github.com
 # src_hostname = some_external_source
 # src_access_token = *****
 ### src_password is only used by the GitHubBrowser class. Use an access token for any API requests.
