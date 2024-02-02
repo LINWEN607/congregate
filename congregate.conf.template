@@ -204,8 +204,8 @@ export_import_timeout = 3600
 
 ### Optional configuration if you are using a spreadsheet to keep track of migration waves
 
-### Specify an absolute path to the spreadsheet. Supports excel, openoffice, and csv spreadsheet formats
-# wave_spreadsheet_path = /absolute/path/to/waves.xls
+### Specify an absolute path to the spreadsheet. Supports Excel, OpenOffice, and CSV spreadsheet formats
+# wave_spreadsheet_path = /absolute/path/to/waves.csv
 
 ### Specify the column names for congregate to use from the spreadsheet. These names will be required to the right of the colon in the next configuration item.
 # wave_spreadsheet_columns = Migration wave, Date of execution, Repo URL, Group Path, Override

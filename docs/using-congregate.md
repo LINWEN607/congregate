@@ -106,7 +106,7 @@ This process is very similar to stage-projects, but you need to search for group
 
 ### `stage-wave`
 
-For larger migrations, customers often want to define waves of migration in a spreadsheet that congregate can read in to stage many different groups and projects at once without having to do the initial investigation for project and group ids. To set this up we need to add a few lines to the `data/congregate.conf` that look like the ones from [the template](/congregate.conf.template#L170). This configuration  template refers to the [waves.csv](/templates/waves.csv) file. A more verbose description on how this configuration works is in the [configuration section](#Wave-definition-spreadsheet-ingestion) below.
+For larger migrations, customers often want to define waves of migration in a spreadsheet that congregate can read in to stage many different groups and projects at once without having to do the initial investigation for project and group ids. To set this up we need to add a few lines to the `data/congregate.conf` that look like the ones from [the template](/congregate.conf.template#L170). This configuration  template refers to the [*stage-wave-template.csv*](/templates/stage-wave-template.csv) file. A more verbose description on how this configuration works is in the [configuration section](#wave-definition-spreadsheet-ingestion) below.
 
 Once we have this in place, you can run `./congregate.sh stage-wave <WaveName> --commit` to stage all projects and groups defined by the spreadsheet.
 
@@ -218,9 +218,24 @@ Once we have the issues automatically being created on `./congregate.sh migrate 
 
 ### Wave definition spreadsheet ingestion
 
-> This feature was developed for GitHub imports and may not work with other source systems.
+The data in the [*stage-wave-template.csv*](/templates/stage-wave-template.csv) represents the Repo/Project URLs that are in scope for a wave of migration. The required fields are:
 
-The data in the [waves spreadsheet](/templates/waves.csv) represents the Repo/Project URLs that are in scope for a wave of migration. The required fields are `Wave Name`, `SCM URL` (can be repo or Org). Option arguments are `Group Path` if your customer wants to migrate the Orgs and Repos to locations in a nested Group Sub-group tree in the destination gitlab instance.
+#### Mandatory columns
+
+* `Wave name` - Name of a migration wave
+* `Source URL` - Full URL to the source repository
+* `Parent Path` - Destination GitLab group `full_path` e.g. *parent/group/path*
+* `Override` - Binary value
+  * Empty (``) - Migrate only the source repository to the destination *Parent Path*
+  * Non-empty (any string value, e.g. "yes", "x", etc.) - Migrate the entire source repository structure (e.g. *parent/sub_parent/repository*) to the destination *Parent Path*
+
+#### Optional columns (suggestions)
+
+* `Wave date` - To keep multiple waves in a single `.csv` file and keep track of dates when they should be migrated
+* `Approval` - To keep track whether teams approve and are ready to migrate
+* etc.
+
+#### Reporting
 
 If the [migration reporting](#migration-reporting) feature is configured, there are two additional fields that are optional that will facilitate creating "sign-off" issues and assign them to application owners. The two fields are `Application ID` and `Application Owner Email`. These column names are mapped in the config file to the variable names that congregate expects.
 
