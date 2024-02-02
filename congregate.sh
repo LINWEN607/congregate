@@ -16,11 +16,11 @@ function rm_pid() {
 
 function is_running() {
     check="$(ps aux | grep -v grep | grep $(cat /tmp/congregate.pid))"
-        if [[ ! -z "$check" ]]; then
-            return 0
-        else
-            return 1
-        fi
+    if [[ ! -z "$check" ]]; then
+        return 0
+    else
+        return 1
+    fi
 }
 
 function do_it() {
@@ -35,7 +35,7 @@ function do_it() {
 }
 
 if [ ! -f "/tmp/congregate.pid" ]; then
-    echo $$ > /tmp/congregate.pid
+    echo $$ >/tmp/congregate.pid
     if [[ -z ${CONGREGATE_PATH+x} ]]; then
         echo "CONGREGATE_PATH not set. Defaulting to current directory: ($(pwd))"
         do_it $@
@@ -51,7 +51,7 @@ else
     else
         echo "Congregate was listed as running using pid '$(cat /tmp/congregate.pid)', but no such process exists."
         echo "Will delete the pid file, and retry."
-        echo $$ > /tmp/congregate.pid
+        echo $$ >/tmp/congregate.pid
         do_it $@
     fi
 fi

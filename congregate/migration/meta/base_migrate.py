@@ -219,10 +219,13 @@ class MigrateClient(BaseClass):
             new_user["id"] = found_user.get(
                 "id") if found_user else None
             if found_user:
-                # Migrate SSH keys
-                self.keys.migrate_user_ssh_keys(old_user, new_user)
-                # Migrate GPG keys
-                self.keys.migrate_user_gpg_keys(old_user, new_user)
+                if not self.config.skip_keys_migration:
+                    # Migrate SSH keys
+                    self.keys.migrate_user_ssh_keys(old_user, new_user)
+                    # Migrate GPG keys
+                    self.keys.migrate_user_gpg_keys(old_user, new_user)
+                else:
+                    self.log.warning(f"SKIP: Not migrating SSH & GPG keys for user: {email}")
         else:
             user_data = self.users.generate_user_data(user)
             self.log.warning(
@@ -241,7 +244,10 @@ class MigrateClient(BaseClass):
                 "id") if found_user else None
             if found_user:
                 # Migrate SSH keys
-                self.bbkeys.migrate_bb_user_ssh_keys(old_user, new_user)
+                if not self.config.skip_keys_migration:
+                    self.bbkeys.migrate_bb_user_ssh_keys(old_user, new_user)
+                else:
+                    self.log.warning(f"SKIP: Not migrating SSH keys for user: {email}")
         else:
             user_data = self.users.generate_user_data(user)
             self.log.warning(
