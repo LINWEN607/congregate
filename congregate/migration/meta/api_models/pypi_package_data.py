@@ -4,14 +4,13 @@ from requests_toolbelt.multipart.encoder import MultipartEncoder
 
 @dataclass
 class PyPiPackageData:
-    filename: str
-    file: BytesIO
+    content: BytesIO
     package_name: str
     version: str
 
     def to_multipart_data(self):
         return MultipartEncoder(fields={
-            "file": (self.filename, self.file),
+            "content": self.content,
             "name": self.package_name,
             "version": self.version
         })

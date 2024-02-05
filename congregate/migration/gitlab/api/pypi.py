@@ -31,7 +31,7 @@ class PyPiPackagesApi(GitLabApiWrapper):
             :param file_identifier: (str) The PyPI package file's name
             :return: Response object containing the response to GET projects/:id/-/packages/pypi/files/:sha256/:file_identifier
         """
-        return self.api.generate_get_request(host, token, f"projects/{pid}/-/packages/pypi/files/{sha}/{file_identifier}")
+        return self.api.generate_get_request(host, token, f"projects/{pid}/packages/pypi/files/{sha}/{file_identifier}")
     
     def upload_pypi_package(self, host, token, pid, package_data: PyPiPackageData):
         """
@@ -43,7 +43,7 @@ class PyPiPackagesApi(GitLabApiWrapper):
             :param token: (str) Access token to GitLab instance
             :param pid: (int) GitLab project ID
             :param package_data: (PyPiPackageData) Package data object
-            :return: Response object containing the response to PUT projects/:id/packages/pypi
+            :return: Response object containing the response to POST projects/:id/packages/pypi
         """
-        return self.api.generate_put_request(host, token, f"projects/{pid}/packages/pypi", data=package_data.to_multipart_data())
+        return self.api.generate_post_request(host, token, f"projects/{pid}/packages/pypi", data=package_data.to_multipart_data())
     

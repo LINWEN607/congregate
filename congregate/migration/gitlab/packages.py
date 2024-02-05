@@ -154,8 +154,7 @@ class PackagesClient(BaseClass):
 
             response = self.pypi_packages.upload_pypi_package(
                 self.config.destination_host, self.config.destination_token, dest_id, PyPiPackageData(
-                    filename=file_name,
-                    file=file_content,
+                    content=file_content,
                     package_name=package_name,
                     version=version
                 ))
