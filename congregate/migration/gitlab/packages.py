@@ -2,13 +2,16 @@ from pathlib import Path
 from requests.exceptions import RequestException
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.api.packages import PackagesApi
+from congregate.migration.gitlab.api.pypi import PyPiPackagesApi
 from congregate.migration.maven.maven_client import get_package, deploy_package
+from congregate.migration.meta.api_models.pypi_package_data import PyPiPackageData
 from congregate.helpers.grpc_utils import is_rpc_service_running
 
 
 class PackagesClient(BaseClass):
     def __init__(self):
         self.packages = PackagesApi()
+        self.pypi_packages = PyPiPackagesApi()
         super(PackagesClient, self).__init__()
 
     def migrate_project_packages(self, src_id, dest_id, project_name):
@@ -25,6 +28,8 @@ class PackagesClient(BaseClass):
                 elif package_type == 'maven':
                     if grpc_service_running:
                         self.migrate_maven_packages(src_id, dest_id, package, project_name, results)
+                elif package_type == 'pypi':
+                    self.migrate_pypi_packages(src_id, dest_id, package, results)
                 else:
                     self.log.warning(f"Skipping {package.get('name')}, type {package.get('package_type')} not supported")
                     results.append({'Migrated': False, 'Package': package.get('name')})
@@ -131,3 +136,32 @@ class PackagesClient(BaseClass):
         else:
             self.log.info(
                 f"Unable to find usable data (executable or pom file is missing) \n {package}")
+
+    def migrate_pypi_packages(self, src_id, dest_id, package, results):
+        version = package['version']
+        artifact = self.format_artifact(package['name'], version)
+        
+        self.log.info(f"Attempting to download package: {artifact}")
+        migration_status = True
+
+        for package_file in self.packages.get_package_files(self.config.source_host, self.config.source_token, src_id, package.get('id')):
+            sha = package_file['file_sha256']
+            file_name = package_file['file_name']
+            response = self.pypi_packages.download_pypi_project_package(
+                self.config.source_host, self.config.source_token, src_id, sha, file_name)
+            file_content = response.content
+
+            response = self.pypi_packages.upload_pypi_package(
+                self.config.destination_host, self.config.destination_token, dest_id, PyPiPackageData(
+                    filename=file_name,
+                    file=file_content,
+                    version=version
+                ))
+
+            if response.status_code != 201:
+                self.log.info(f"Failed to migrate file {package_file['file_name']} in package {package['name']}")
+                migration_status = False
+            else:
+                self.log.info(f"Successfully migrated file {package_file['file_name']} in package {package['name']}")
+
+        results.append({'Migrated': migration_status, 'Package': artifact})
