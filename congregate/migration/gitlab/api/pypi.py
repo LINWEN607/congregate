@@ -45,5 +45,10 @@ class PyPiPackagesApi(GitLabApiWrapper):
             :param package_data: (PyPiPackageData) Package data object
             :return: Response object containing the response to POST projects/:id/packages/pypi
         """
-        return self.api.generate_post_request(host, token, f"projects/{pid}/packages/pypi", data=package_data.to_multipart_data())
+        data = package_data.to_multipart_data()
+        headers = {
+            'Private-Token': token,
+            'Content-Type': data.content_type
+        }
+        return self.api.generate_post_request(host, token, f"projects/{pid}/packages/pypi", data=data, headers=headers)
     
