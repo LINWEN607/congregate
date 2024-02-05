@@ -139,7 +139,8 @@ class PackagesClient(BaseClass):
 
     def migrate_pypi_packages(self, src_id, dest_id, package, results):
         version = package['version']
-        artifact = self.format_artifact(package['name'], version)
+        package_name = package['name']
+        artifact = self.format_artifact(package_name, version)
         
         self.log.info(f"Attempting to download package: {artifact}")
         migration_status = True
@@ -155,6 +156,7 @@ class PackagesClient(BaseClass):
                 self.config.destination_host, self.config.destination_token, dest_id, PyPiPackageData(
                     filename=file_name,
                     file=file_content,
+                    package_name=package_name,
                     version=version
                 ))
 
