@@ -1,6 +1,7 @@
 import os
 import glob
 import errno
+import mimetypes
 from shutil import copy
 from datetime import datetime
 from urllib.parse import urlparse
@@ -73,3 +74,12 @@ def stitch_json_results(result_type="project", steps=0, order="tail"):
 def is_valid_url(url):
     parsed = urlparse(url)
     return all([parsed.scheme, parsed.netloc])
+
+def guess_file_type(filename):
+    """
+        Guess file type based on file path/url
+    """
+    guess = mimetypes.guess_type(filename)
+    if guess[0] and guess[1]:
+        return f"{guess[0].split('/')[0]}/{guess[1]}"
+    return guess[0]
