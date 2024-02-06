@@ -28,6 +28,11 @@ class ConfigurationValidationTests(unittest.TestCase):
         self.bbs_users = BBSUsers()
         self.config = ConfigurationValidator(
             path="congregate/tests/cli/data/test_not_ext_src_parent_group_path_no_mirror_name_aws_default.conf")
+        
+    @fixture(autouse=True)
+    def capsys(self, capsys):
+        """Capsys hook into this class"""
+        self.capsys = capsys
 
     @fixture(autouse=True)
     def reset_validation(self):
@@ -318,6 +323,7 @@ class ConfigurationValidationTests(unittest.TestCase):
         # pylint: enable=no-member
         self.assertRaises(ConfigurationException,
                           self.config.validate_src_token, "test")
+        
 
     @responses.activate
     # pylint: enable=no-member
@@ -500,8 +506,11 @@ class ConfigurationValidationTests(unittest.TestCase):
         responses.add(responses.GET, url_value,
                       json=self.users.get_current_user(), status=200, content_type='text/json', match_querystring=True)
         # pylint: enable=no-member
-        self.assertRaises(ConfigurationException,
-                          self.config.validate_src_token, "test")
+        self.config.validate_src_token('test')
+
+        # Capture warning stdout
+        out, _ = self.capsys.readouterr()
+        self.assertEqual(out, "Source token is currently assigned to a standard user. Some API endpoints may not behave correctly\n")
 
     @responses.activate
     # pylint: enable=no-member
@@ -749,5 +758,88 @@ class ConfigurationValidationTests(unittest.TestCase):
         type(dstn_setting_resp).status_code = mock.PropertyMock(return_value=403)
         dstn_setting_resp.json.return_value = None
         app_settings.side_effect = [src_setting_resp, dstn_setting_resp]
+
+        self.assertTrue(self.config.direct_transfer)
+
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.src_token_validated_in_session')
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_token_validated_in_session')
+    @mock.patch.object(GitLabApi, "generate_v4_request_url")
+    @mock.patch.object(InstanceApi, "get_application_settings")
+    def test_direct_transfer_unknown_src_settings(self, app_settings, url, src_token, dstn_token):
+        # Mock validate src and dstn tokens
+        src_token.return_value = True
+        dstn_token.return_value = True
+        url_value = "htts://gitlab.com/api/v4/application_settings"
+        url.return_value = url_value
+
+        # Set direct_transfer to true to trigger validation
+        self.config.as_obj().set("APP", "direct_transfer", "true")
+
+        # Set up mock src settings API call
+        src_setting_resp = mock.MagicMock()
+        type(src_setting_resp).status_code = mock.PropertyMock(return_value=403)
+        src_setting_resp.json.return_value = None
+
+        # Set up empty dstn settings API call
+        dstn_setting_resp = mock.MagicMock()
+        type(dstn_setting_resp).status_code = mock.PropertyMock(return_value=200)
+        dstn_setting_resp.json.return_value = self.gl_settings.application_settings()
+        app_settings.side_effect = [src_setting_resp, dstn_setting_resp]
+
+        self.assertTrue(self.config.direct_transfer)
+    
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.src_token_validated_in_session')
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_token_validated_in_session')
+    @mock.patch.object(GitLabApi, "generate_v4_request_url")
+    @mock.patch.object(InstanceApi, "get_application_settings")
+    def test_direct_transfer_unknown_src_dest(self, app_settings, url, src_token, dstn_token):
+        # Mock validate src and dstn tokens
+        src_token.return_value = True
+        dstn_token.return_value = True
+        url_value = "htts://gitlab.com/api/v4/application_settings"
+        url.return_value = url_value
+
+        # Set direct_transfer to true to trigger validation
+        self.config.as_obj().set("APP", "direct_transfer", "true")
+
+        # Set up mock src settings API call, this time mocking bulk import is disabled on src
+        src_setting_resp = mock.MagicMock()
+        type(src_setting_resp).status_code = mock.PropertyMock(return_value=403)
+        src_setting_resp.json.return_value = None
+        
+        # Set up mock dstn settings API call
+        dstn_setting_resp = mock.MagicMock()
+        type(dstn_setting_resp).status_code = mock.PropertyMock(return_value=403)
+        dstn_setting_resp.json.return_value = None
+
+        # Add mock objects to get_application_settings side effects
+        app_settings.side_effect = [src_setting_resp, dstn_setting_resp]
+
+        self.assertRaises(ConfigurationException,
+                          self.config.validate_direct_transfer_enabled)
+
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.src_token_validated_in_session')
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_token_validated_in_session')
+    @mock.patch.object(ConfigurationValidator, 'destination_host', new_callable=mock.PropertyMock)
+    @mock.patch.object(GitLabApi, "generate_v4_request_url")
+    @mock.patch.object(InstanceApi, "get_application_settings")
+    def test_direct_transfer_gitlab_dot_com(self, app_settings, url, dest_host, src_token, dstn_token):
+        # Mock validate src and dstn tokens
+        dest_host.return_value = 'https://gitlab.com'
+        src_token.return_value = True
+        dstn_token.return_value = True
+        url_value = "htts://gitlab.com/api/v4/application_settings"
+        url.return_value = url_value
+
+        # Set direct_transfer to true to trigger validation
+        self.config.as_obj().set("APP", "direct_transfer", "true")
+
+        # Set up mock src settings API call
+        src_setting_resp = mock.MagicMock()
+        type(src_setting_resp).status_code = mock.PropertyMock(return_value=200)
+        src_setting_resp.json.return_value = self.gl_settings.application_settings()
+
+        # Add mock objects to get_application_settings side effects
+        app_settings.side_effect = [src_setting_resp]
 
         self.assertTrue(self.config.direct_transfer)

@@ -8,9 +8,9 @@ import os
 import sys
 from time import time
 from traceback import print_exc
+from importlib import import_module
 from requests import Response
 from requests.exceptions import RequestException
-from importlib import import_module
 
 from gitlab_ps_utils import json_utils, misc_utils, string_utils
 
@@ -228,7 +228,8 @@ class MigrateClient(BaseClass):
                     # Migrate GPG keys
                     self.keys.migrate_user_gpg_keys(old_user, new_user)
                 else:
-                    self.log.warning(f"SKIP: Not migrating SSH & GPG keys for user: {email}")
+                    self.log.warning(
+                        f"SKIP: Not migrating SSH & GPG keys for user: {email}")
         else:
             user_data = self.users.generate_user_data(user)
             self.log.warning(
@@ -250,7 +251,31 @@ class MigrateClient(BaseClass):
                 if not self.config.skip_keys_migration:
                     self.bbkeys.migrate_bb_user_ssh_keys(old_user, new_user)
                 else:
-                    self.log.warning(f"SKIP: Not migrating SSH keys for user: {email}")
+                    self.log.warning(
+                        f"SKIP: Not migrating SSH keys for user: {email}")
+        else:
+            user_data = self.users.generate_user_data(user)
+            self.log.warning(
+                f"Could not create user. User may exist with a different primary email. Check previous logs warnings. Userdata follows:\n{user_data}")
+            # Return the "original" new_user setting
+            return {
+                "email": email,
+                "id": None
+            }
+
+    def bb_user_creation(self, new_user, old_user, email, user):
+        if new_user:
+            found_user = new_user if new_user.get(
+                "id") is not None else mig_utils.find_user_by_email_comparison_without_id(email)
+            new_user["id"] = found_user.get(
+                "id") if found_user else None
+            if found_user:
+                # Migrate SSH keys
+                if not self.config.skip_keys_migration:
+                    self.bbkeys.migrate_bb_user_ssh_keys(old_user, new_user)
+                else:
+                    self.log.warning(
+                        f"SKIP: Not migrating SSH keys for user: {email}")
         else:
             user_data = self.users.generate_user_data(user)
             self.log.warning(
