@@ -409,15 +409,36 @@ class SeedDataGenerator(BaseClass):
                     self.config.source_host, self.config.source_token, pid, data=d)
 
     def generate_dummy_environment(self, pid, dry_run=True):
-        data = {
+        data_prod = {
             "name": "production",
-            "external_url": "http://production-%s.site" % uuid4()
+            "external_url": f"http://production-{uuid4()}.site",
+            "tier": "production"
+        }
+        data_test = {
+            "name": "testing",
+            "external_url": f"http://testing-{uuid4()}.site",
+            "tier": "testing"
         }
         self.log.info(
-            "{0}Creating project {1} environment ({2})".format(get_dry_log(dry_run), pid, data))
+            f"{get_dry_log(dry_run)}Creating project {pid} environments")
         if not dry_run:
-            return self.projects.projects_api.create_environment(
-                self.config.source_host, self.config.source_token, pid, data)
+            host = self.config.source_host
+            token = self.config.source_token
+            # Create available environment
+            self.log.info(
+                f"Creating project {pid} 'available' environment ({data_prod})")
+            self.projects.projects_api.create_environment(
+                host, token, pid, data_prod)
+            # Create stopped environment
+            self.log.info(
+                f"Creating project {pid} 'stopped' environment ({data_test})")
+            resp = self.projects.projects_api.create_environment(
+                host, token, pid, data_test)
+            if resp.status_code == 201:
+                resp_json = safe_json_response(resp) or {}
+                env_id = resp_json.get("id")
+                self.projects.projects_api.stop_environment(
+                    host, token, pid, env_id, {"force": True})
 
     def generate_dummy_project_hooks(self, pid, dry_run=True):
         for d in self.HOOKS_DATA:
@@ -442,7 +463,7 @@ class SeedDataGenerator(BaseClass):
             if not dry_run:
                 self.projects_api.create_project_variable(
                     pid, self.config.source_host, self.config.source_token, d)
-                
+
     def generate_dummy_project_pipeline_variables(self, pid, dry_run=True):
         schedule = self.projects_api.create_new_project_pipeline_schedule(
             self.config.source_host, self.config.source_token, pid, self.PIPELINE_SCHEDULE_DATA)
@@ -572,4 +593,5 @@ class SeedDataGenerator(BaseClass):
                 'gitlab_project'
             ]
         }
-        self.settings_api.set_application_settings(self.config.destination_host, self.config.destination_token, settings)
+        self.settings_api.set_application_settings(
+            self.config.destination_host, self.config.destination_token, settings)

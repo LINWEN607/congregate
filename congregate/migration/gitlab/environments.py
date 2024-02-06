@@ -66,7 +66,7 @@ class EnvironmentsClient(DbOrHttpMixin, BaseGitLabClient):
             resp_json = safe_json_response(resp) or {}
             env_id = resp_json.get("id")
             update_resp = self.projects.stop_environment(
-                self.dest_host, self.dest_token, dest_id, env_id)
+                self.dest_host, self.dest_token, dest_id, env_id, {"force": True})
             if update_resp.status_code != 200:
                 self.log.error(
                     f"Failed to stop project '{name}' environment '{env.get('name')}' (Env ID: {env_id})")

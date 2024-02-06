@@ -1044,20 +1044,6 @@ class ProjectsApi(GitLabApiWrapper):
         """
         return self.api.generate_get_request(host, token, f"projects/{pid}/environments/{eid}")
 
-    def get_all_project_environments(self, pid, host, token):
-        """
-        Get all project environments
-
-        GitLab API Doc: https://docs.gitlab.com/ee/api/environments.html
-
-            :param: pid: (int) GitLab project ID
-            :param: host: (str) GitLab host URL
-            :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /projects/:pid/environments
-
-        """
-        return self.api.list_all(host, token, f"projects/{pid}/environments")
-
     def get_all_project_wikis(self, pid, host, token):
         """
         Get all project wikis
@@ -1072,11 +1058,25 @@ class ProjectsApi(GitLabApiWrapper):
         """
         return self.api.list_all(host, token, f"projects/{pid}/wikis")
 
+    def get_all_project_environments(self, pid, host, token):
+        """
+        Get all project environments
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/environments.html#list-environments
+
+            :param: pid: (int) GitLab project ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /projects/:pid/environments
+
+        """
+        return self.api.list_all(host, token, f"projects/{pid}/environments")
+
     def create_environment(self, host, token, pid, data, message=None):
         """
         Creates a new environment
 
-        GitLab API Doc: https://docs.gitlab.com/ee/api/environments.html
+        GitLab API Doc: https://docs.gitlab.com/ee/api/environments.html#create-a-new-environment
 
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
@@ -1089,7 +1089,7 @@ class ProjectsApi(GitLabApiWrapper):
             message = f"Creating new environment for project {pid} with payload {str(data)}"
         return self.api.generate_post_request(host, token, f"projects/{pid}/environments", json.dumps(data), description=message)
 
-    def stop_environment(self, host, token, pid, eid, message=None):
+    def stop_environment(self, host, token, pid, eid, data, message=None):
         """
         It returns 200 if the environment was successfully stopped, and 404 if the environment does not exist.
 
@@ -1104,21 +1104,7 @@ class ProjectsApi(GitLabApiWrapper):
         """
         if not message:
             message = f"Stopping environment {eid} for project {pid}"
-        return self.api.generate_post_request(host, token, f"projects/{pid}/environments/{eid}/stop", {}, description=message)
-
-    def delete_environment(self, pid, eid, host, token):
-        """
-        Delete a project environment
-
-        GitLab API Doc: https://docs.gitlab.com/ee/api/environments.html#delete-an-environment
-
-            :param: pid: (int) GitLab project ID
-            :param: eid: (int) GitLab project environment ID
-            :param: host: (str) GitLab host URL
-            :param: token: (str) Access token to GitLab instance
-            :return: Response object containing a 204 (No Content) or 404 (Group not found) from DELETE /projects/:pid/environments/:eid
-        """
-        return self.api.generate_delete_request(host, token, f"projects/{pid}/environments/{eid}")
+        return self.api.generate_post_request(host, token, f"projects/{pid}/environments/{eid}/stop", json.dumps(data), description=message)
 
     def get_project_statistics(self, project_full_path, host, token):
         query = {
@@ -1273,6 +1259,6 @@ class ProjectsApi(GitLabApiWrapper):
 
     def get_project_repository_commits(self, pid, host, token):
         return self.api.list_all(host, token, f"projects/{pid}/repository/commits")
-    
+
     def get_project_repository_commit_comments(self, pid, sha, host, token):
         return self.api.list_all(host, token, f"projects/{pid}/repository/commits/{sha}/comments")
