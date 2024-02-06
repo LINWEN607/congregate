@@ -35,7 +35,7 @@ congregate validate-config
 supervisorctl start all
 ```
 
-## Example configuration for direct transfer migrations
+## Example configuration for direct transfer migrations (when using the supplied docker-compose.yml file)
 
 ```bash
 [SOURCE]
@@ -49,8 +49,8 @@ dstn_access_token = <base64-encoded-token>
 import_user_id = <id-corresponding-to-the-owner-of-the-token>
 
 [APP]
-mongo_host = localhost
-redis_host = localhost
+mongo_host = mongo
+redis_host = redis
 direct_transfer = true
 ```
 
