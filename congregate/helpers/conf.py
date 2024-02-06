@@ -319,6 +319,14 @@ class Config(BaseConfig):
         :return: The set config value or True as default.
         """
         return self.prop_bool("USER", "force_rand_pwd", default=True)
+    
+    @property
+    def skip_keys_migration(self):
+        """
+        Skip migrating user (SSH and GPG) keys. Defaults to False
+        :return: The set config value or True as default.
+        """
+        return self.prop_bool("USER", "skip_keys_migration", default=False)
 
 # APP
     @property
