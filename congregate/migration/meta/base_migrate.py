@@ -263,33 +263,10 @@ class MigrateClient(BaseClass):
                 "id": None
             }
 
-    def bb_user_creation(self, new_user, old_user, email, user):
-        if new_user:
-            found_user = new_user if new_user.get(
-                "id") is not None else mig_utils.find_user_by_email_comparison_without_id(email)
-            new_user["id"] = found_user.get(
-                "id") if found_user else None
-            if found_user:
-                # Migrate SSH keys
-                if not self.config.skip_keys_migration:
-                    self.bbkeys.migrate_bb_user_ssh_keys(old_user, new_user)
-                else:
-                    self.log.warning(
-                        f"SKIP: Not migrating SSH keys for user: {email}")
-        else:
-            user_data = self.users.generate_user_data(user)
-            self.log.warning(
-                f"Could not create user. User may exist with a different primary email. Check previous logs warnings. Userdata follows:\n{user_data}")
-            # Return the "original" new_user setting
-            return {
-                "email": email,
-                "id": None
-            }
-
     def disable_shared_ci(self, path, pid):
         # Disable Auto DevOps
         self.log.info(
-            f"Disabling Auto DevOps on imported project {path} (ID: {pid})")
+            f"Disabling Auto DevOps on imported project '{path}' (ID: {pid})")
         data = {"auto_devops_enabled": False}
         # Disable shared runners
         if not self.config.shared_runners_enabled:
@@ -303,21 +280,20 @@ class MigrateClient(BaseClass):
 
         # Remove groups and projects OR only empty groups
         if not self.skip_groups:
-            self.log.info("{0}Removing staged groups{1} on destination".format(
-                dry_log, "" if self.skip_projects else " and projects"))
+            self.log.info(
+                f"{dry_log}Removing staged groups{'' if self.skip_projects else ' and projects'} on destination")
             self.groups.delete_groups(
                 dry_run=self.dry_run, skip_projects=self.skip_projects)
 
         # Remove only projects
         if not self.skip_projects:
             self.log.info(
-                "{}Removing staged projects on destination".format(dry_log))
+                f"{dry_log}Removing staged projects on destination")
             self.projects.delete_projects(dry_run=self.dry_run)
 
         if not self.skip_users:
-            self.log.info("{0}Removing staged users on destination (hard_delete={1})".format(
-                dry_log,
-                self.hard_delete))
+            self.log.info(
+                f"{dry_log}Removing staged users on destination (hard_delete={self.hard_delete})")
             self.users.delete_users(
                 dry_run=self.dry_run, hard_delete=self.hard_delete)
 
