@@ -9,7 +9,7 @@ source_repo=$1
 destination_repo=$2
 
 # If you haven't pre-staged, uncomment this line
-docker pull $source_repo
+# docker pull $source_repo
 
 # Re-tag to the new version and push
 docker tag $source_repo $destination_repo
