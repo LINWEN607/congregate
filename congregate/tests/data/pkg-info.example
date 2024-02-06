@@ -1,0 +1,55 @@
+Metadata-Version: 2.1
+Name: sample_package
+Version: 0.1.0
+Summary: A sample Python Project
+Home-page: https://gitlab.com/
+License: MIT
+Author: John Doe
+Author-email: jdoe@example.com
+Requires-Python: >=3.8.0
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Requires-Dist: PyYAML (>=6.0,<7.0)
+Requires-Dist: dacite (>=1.8.1,<2.0.0)
+Requires-Dist: gitlab-ps-utils (>=0.5.0,<0.6.0)
+Requires-Dist: pydantic (>=1.8.2,<2.0.0)
+Requires-Dist: requests (>=2.26.0,<3.0.0)
+Requires-Dist: xlsxwriter (>=3.1.2,<4.0.0)
+Description-Content-Type: text/markdown
+
+# Example Python Package
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam ac tortor erat. 
+Nam blandit cursus eros malesuada faucibus. 
+Nunc a nisi felis. Curabitur tempus odio malesuada metus accumsan, id blandit orci gravida. 
+
+Duis auctor, libero at tempus egestas, elit erat porttitor nulla, ac placerat orci eros non arcu. 
+Aliquam in maximus nisi, eu ornare erat. Ut rutrum, nunc eget mattis semper, massa justo iaculis leo, vel viverra enim arcu vitae dolor. 
+Cras et velit nec orci cursus ornare ac id nibh. 
+
+Ut blandit mauris et consequat luctus. 
+Curabitur leo velit, ullamcorper fringilla tempor eu, imperdiet sit amet leo. 
+Interdum et malesuada fames ac ante ipsum primis in faucibus. 
+Sed imperdiet ex et magna elementum, sit amet viverra tortor vulputate. 
+Mauris in orci et urna fringilla vulputate in vitae nulla. 
+Nunc vel libero pulvinar, tempor urna et, hendrerit nibh.
+
+## Heading
+
+- Nunc consectetur dolor vitae est lacinia, in vulputate ipsum fringilla
+- Sed accumsan feugiat dui id varius. Aenean imperdiet feugiat neque eget vulputate
+- Duis non tortor tristique, tempor dui nec, ornare massa
+- Suspendisse hendrerit tortor sit amet risus euismod aliquet
+- Maecenas et nisl quis felis accumsan tempus. Vestibulum sed porta lectus, non ultricies nisi
+- Donec ultricies tempor quam, vitae consectetur purus interdum et
+- Nullam id lacinia augue, vitae viverra nibh. Donec egestas felis et hendrerit ornare
+- Quisque pellentesque, nulla sed congue cursus, nibh ligula gravida mi, sed elementum tortor nisl sit amet nisi
+- Pellentesque sodales ultrices porta. Morbi et metus consequat, ultricies mi nec, porta diam
+- Sed sit amet ligula nec velit varius malesuada eu et ex
+- Aenean accumsan lacus a ipsum tristique eleifend
+
