@@ -5,7 +5,8 @@ from congregate.migration.gitlab.api.packages import PackagesApi
 from congregate.migration.gitlab.api.pypi import PyPiPackagesApi
 from congregate.migration.maven.maven_client import get_package, deploy_package
 from congregate.helpers.grpc_utils import is_rpc_service_running
-from congregate.helpers.package_utils import generate_pypi_package_payload
+from congregate.helpers.package_utils import generate_pypi_package_payload, extract_pypi_package_metadata, get_pypi_pkg_info
+from congregate.migration.meta.api_models.pypi_package import PyPiPackage
 
 
 class PackagesClient(BaseClass):
@@ -144,7 +145,9 @@ class PackagesClient(BaseClass):
         
         self.log.info(f"Attempting to download package: {artifact}")
         migration_status = True
-
+        
+        metadata = {}
+        files = []
         for package_file in self.packages.get_package_files(self.config.source_host, self.config.source_token, src_id, package.get('id')):
             sha = package_file['file_sha256']
             file_name = package_file['file_name']
@@ -153,7 +156,18 @@ class PackagesClient(BaseClass):
                 self.config.source_host, self.config.source_token, src_id, sha, file_name)
             file_content = response.content
 
-            package_data = generate_pypi_package_payload(file_name, file_content, package_name, version)
+            files.append(PyPiPackage(
+                content=file_content,
+                file_name=file_name,
+                sha256_digest=sha,
+                md5_digest=package_file['file_md50']
+            ))
+
+            if Path(file_name).suffix == '.tar.gz':
+                metadata = extract_pypi_package_metadata(get_pypi_pkg_info(file_content))
+
+        for package in files:
+            package_data = generate_pypi_package_payload(package, metadata)
 
             response = self.pypi_packages.upload_pypi_package(
                 self.config.destination_host, self.config.destination_token, dest_id, package_data)
