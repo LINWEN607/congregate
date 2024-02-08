@@ -22,7 +22,7 @@ class PyPiPackageData:
 
     def __post_init__(self):
         if type(self.content) is tuple:
-            self.content = MultiPartContent(*self.content)
+            self.content = MultiPartContent(*astuple(self.content))
 
     def to_multipart_data(self):
         as_dict = strip_none(asdict(self))
