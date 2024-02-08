@@ -1,4 +1,5 @@
 import tarfile
+from io import BytesIO
 from dacite import from_dict
 from congregate.helpers.utils import guess_file_type
 from congregate.migration.meta.api_models.pypi_package_data import PyPiPackageData
@@ -16,7 +17,7 @@ def extract_pypi_package_metadata(pkg_info):
     if s := pkg_info.split("\n\n"):
         metadata = s[0]
         # Join the description string back together
-        description = "\n\n".join(s[1:])
+        metadata_dict['description'] = "\n\n".join(s[1:])
 
         for line in metadata.split("\n"):
             # Split the metadata fields to convert into a dictionary
@@ -29,12 +30,13 @@ def extract_pypi_package_metadata(pkg_info):
                 # Update the key to lowercase camelcase
                 metadata_dict[k.replace("-", "_").lower()] = v
 
-    return metadata_dict, description
+    return metadata_dict
 
 def get_pypi_pkg_info(content):
-    with tarfile.open(fileobj=content, mode='r:gz') as ar:
-        if pkg_info := ar.getmember('PKG-INFO'):
-            return ar.extractfile(pkg_info).read()
+    with tarfile.open(fileobj=BytesIO(content), mode='r:gz') as tar:
+        for member in tar:
+            if 'PKG-INFO' in member.name:
+                return tar.extractfile(member.name).read()
         
 def generate_pypi_package_payload(file_name, file_content, package_name, version) -> PyPiPackageData:
     file_type = guess_file_type(file_name)
@@ -42,7 +44,7 @@ def generate_pypi_package_payload(file_name, file_content, package_name, version
         pkg_info = get_pypi_pkg_info(file_content)
         metadata = extract_pypi_package_metadata(pkg_info)
         return from_dict(data_class=PyPiPackageData, data={
-            'content': MultiPartContent(file_name, file_content, file_type),
+            'content': MultiPartContent(file_name, BytesIO(file_content), file_type),
             **metadata
         })
     return PyPiPackageData(
