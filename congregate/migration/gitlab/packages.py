@@ -160,10 +160,10 @@ class PackagesClient(BaseClass):
                 content=file_content,
                 file_name=file_name,
                 sha256_digest=sha,
-                md5_digest=package_file['file_md50']
+                md5_digest=package_file['file_md5']
             ))
 
-            if Path(file_name).suffix == '.tar.gz':
+            if file_name.endswith('.tar.gz'):
                 metadata = extract_pypi_package_metadata(get_pypi_pkg_info(file_content))
 
         for package in files:
@@ -173,10 +173,10 @@ class PackagesClient(BaseClass):
                 self.config.destination_host, self.config.destination_token, dest_id, package_data)
 
             if response.status_code != 201:
-                self.log.info(f"Failed to migrate file {package_file['file_name']} in package {package['name']}")
+                self.log.info(f"Failed to migrate file {package_file['file_name']} in package {package.file_name}")
                 migration_status = False
             else:
-                self.log.info(f"Successfully migrated file {package_file['file_name']} in package {package['name']}")
+                self.log.info(f"Successfully migrated file {package_file['file_name']} in package {package.file_name}")
 
         results.append({'Migrated': migration_status, 'Package': artifact})
     

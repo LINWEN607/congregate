@@ -36,7 +36,7 @@ def get_pypi_pkg_info(content):
     with tarfile.open(fileobj=BytesIO(content), mode='r:gz') as tar:
         for member in tar:
             if 'PKG-INFO' in member.name:
-                return tar.extractfile(member.name).read()
+                return (tar.extractfile(member.name).read()).decode('UTF-8')
         
 def generate_pypi_package_payload(package: PyPiPackage, pkg_info) -> PyPiPackageData:
     file_type = guess_file_type(package.file_name)
