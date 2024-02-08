@@ -4,8 +4,8 @@ from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.api.packages import PackagesApi
 from congregate.migration.gitlab.api.pypi import PyPiPackagesApi
 from congregate.migration.maven.maven_client import get_package, deploy_package
-from congregate.migration.meta.api_models.pypi_package_data import PyPiPackageData
 from congregate.helpers.grpc_utils import is_rpc_service_running
+from congregate.helpers.package_utils import generate_pypi_package_payload
 
 
 class PackagesClient(BaseClass):
@@ -148,17 +148,15 @@ class PackagesClient(BaseClass):
         for package_file in self.packages.get_package_files(self.config.source_host, self.config.source_token, src_id, package.get('id')):
             sha = package_file['file_sha256']
             file_name = package_file['file_name']
+            
             response = self.pypi_packages.download_pypi_project_package(
                 self.config.source_host, self.config.source_token, src_id, sha, file_name)
             file_content = response.content
 
+            package_data = generate_pypi_package_payload(file_name, file_content, package_name, version)
+
             response = self.pypi_packages.upload_pypi_package(
-                self.config.destination_host, self.config.destination_token, dest_id, PyPiPackageData(
-                    content=file_content,
-                    file_name=file_name,
-                    package_name=package_name,
-                    version=version
-                ))
+                self.config.destination_host, self.config.destination_token, dest_id, package_data)
 
             if response.status_code != 201:
                 self.log.info(f"Failed to migrate file {package_file['file_name']} in package {package['name']}")

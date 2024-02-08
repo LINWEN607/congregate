@@ -1,3 +1,9 @@
+import tarfile
+from dacite import from_dict
+from congregate.helpers.utils import guess_file_type
+from congregate.migration.meta.api_models.pypi_package_data import PyPiPackageData
+from congregate.migration.meta.api_models.multipart_content import MultiPartContent
+
 def extract_pypi_package_metadata(pkg_info):
     """
         Converts data from PKG-INFO file into a dictionary of metadata
@@ -24,3 +30,23 @@ def extract_pypi_package_metadata(pkg_info):
                 metadata_dict[k.replace("-", "_").lower()] = v
 
     return metadata_dict, description
+
+def get_pypi_pkg_info(content):
+    with tarfile.open(fileobj=content, mode='r:gz') as ar:
+        if pkg_info := ar.getmember('PKG-INFO'):
+            return ar.extractfile(pkg_info).read()
+        
+def generate_pypi_package_payload(file_name, file_content, package_name, version) -> PyPiPackageData:
+    file_type = guess_file_type(file_name)
+    if 'tar.gz' in file_name:
+        pkg_info = get_pypi_pkg_info(file_content)
+        metadata = extract_pypi_package_metadata(pkg_info)
+        return from_dict(data_class=PyPiPackageData, data={
+            'content': MultiPartContent(file_name, file_content, file_type),
+            **metadata
+        })
+    return PyPiPackageData(
+            content=(file_name, file_content, file_type),
+            name=package_name,
+            version=version
+        )

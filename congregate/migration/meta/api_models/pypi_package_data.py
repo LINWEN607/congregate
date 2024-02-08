@@ -21,7 +21,8 @@ class PyPiPackageData:
     keywords: Optional[str] = ""
 
     def __post_init__(self):
-        self.content = MultiPartContent(*self.content)
+        if type(self.content) is tuple:
+            self.content = MultiPartContent(*self.content)
 
     def to_multipart_data(self):
         as_dict = strip_none(asdict(self))
