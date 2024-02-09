@@ -6,7 +6,6 @@ from congregate.helpers.package_utils import *
 @mark.unit_test
 class PackageUtilsTests(unittest.TestCase):
     def test_pkg_info(self):
-        self.maxDiff = None
         with open("congregate/tests/data/pkg-info.example", 'r') as f:
             pkg_info = f.read()
         
@@ -59,3 +58,8 @@ Nunc vel libero pulvinar, tempor urna et, hendrerit nibh.
         actual_metadata = extract_pypi_package_metadata(pkg_info)
 
         self.assertDictEqual(actual_metadata, expected_metadata)
+
+    def test_empty_pkg_info(self):
+        actual_metadata = extract_pypi_package_metadata("")
+
+        self.assertDictEqual(actual_metadata, {})
