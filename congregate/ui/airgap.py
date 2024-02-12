@@ -43,8 +43,6 @@ def trigger_import():
             'error': 'No file in request'
         }), 400
     file = request.files['file']
-    print(file.filename)
-    print(allowed_file(file.filename))
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
         upload_path = os.path.join(
@@ -62,5 +60,4 @@ def trigger_import():
 
 
 def allowed_file(filename):
-    return '.' in filename and \
-           ''.join(Path(filename).suffixes) in ALLOWED_EXTENSIONS
+    return ''.join(Path(filename).suffixes).endswith(ALLOWED_EXTENSIONS)
