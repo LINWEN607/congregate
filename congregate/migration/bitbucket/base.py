@@ -71,11 +71,12 @@ class BitBucketServer(BaseClass):
             "id": project["id"],
             "path": project["key"],
             "full_path": project["key"],
-            "visibility": "public" if project["public"] else "private",
+            # Always possible and safer than using 'public'
+            "visibility": "private",
             "description": project.get("description", ""),
             "members": self.add_project_users([], project["key"]),
             "groups": self.project_groups,
-            "projects": self.add_project_repos([], project["key"], mongo)
+            "projects": [] if self.subset else self.add_project_repos([], project["key"], mongo)
         }
 
     def add_project_users(self, users, project_key):
@@ -109,11 +110,9 @@ class BitBucketServer(BaseClass):
             for repo in self.projects_api.get_all_project_repos(project_key):
                 # Save all project repos ID references as part of group metadata
                 repos.append(repo.get("id"))
-                # List BB Server project repos
-                if self.subset:
-                    mongo.insert_data(
-                        f"projects-{strip_netloc(self.config.source_host)}",
-                        self.format_repo(repo))
+                mongo.insert_data(
+                    f"projects-{strip_netloc(self.config.source_host)}",
+                    self.format_repo(repo))
             # Remove duplicate entries
             return list(set(repos))
         except RequestException as re:
