@@ -37,10 +37,12 @@ class ProjectsTests(unittest.TestCase):
         mock_ext_user_token.return_value = "username:password"
         mock_resp = MagicMock()
         type(mock_resp).status_code = PropertyMock(return_value=200)
-        mock_resp.json.return_value = {"displayId": "main"}
-        mock_get_default_branch.return_value = mock_resp
+        mock_resp.json.side_effect = [
+            {"displayId": "main"}, {"displayId": "main"}, {"displayId": "main"}, {"displayId": "main"}]
+        mock_get_default_branch.side_effect = [
+            mock_resp, mock_resp, mock_resp, mock_resp]
 
-        mock_add_repo_users.side_effect = [[], []]
+        mock_add_repo_users.side_effect = [[], [], [], []]
         mock_get_all_project_repos.side_effect = [
             self.mock_projects.get_all_project_repos(), self.mock_projects.get_all_project_repos()]
         mock_get_all_project_users.side_effect = [
@@ -48,27 +50,27 @@ class ProjectsTests(unittest.TestCase):
         mock_get_all_projects.return_value = self.mock_projects.get_all_projects()
         expected_members = [
             {
+                "id": 3,
                 "username": "user2",
                 "name": "user2",
-                "access_level": 20,
-                "id": 3,
                 "email": "user2@example.com",
                 "state": "active",
+                "access_level": 20
             },
             {
+                "id": 1,
                 "username": "user1",
                 "name": "user1",
-                "access_level": 20,
-                "id": 1,
                 "email": "user1@example.com",
                 "state": "active",
+                "access_level": 20
             }
         ]
         expected_projects = [
             {
+                "name": "test-group",
                 "id": 1,
                 "path": "TGP",
-                "name": "test-group",
                 "full_path": "TGP",
                 "visibility": "private",
                 "description": "test",
@@ -77,9 +79,9 @@ class ProjectsTests(unittest.TestCase):
                 "projects": [3, 6]
             },
             {
+                "name": "another-test-group",
                 "id": 2,
                 "path": "ATP",
-                "name": "another-test-group",
                 "full_path": "ATP",
                 "visibility": "private",
                 "description": "test",
@@ -100,10 +102,10 @@ class ProjectsTests(unittest.TestCase):
 
         actual_projects = [d for d, _ in mongo.stream_collection(
             "groups-bitbucket.company.com")]
+        print(actual_projects)
 
         for i, _ in enumerate(expected_projects):
-            self.assertEqual(
-                actual_projects[i].items(), expected_projects[i].items())
+            self.assertDictEqual(_, actual_projects[i])
 
     @patch.object(CongregateMongoConnector, "close_connection")
     @patch.object(ProjectsApi, "get_all_project_groups")
@@ -120,10 +122,11 @@ class ProjectsTests(unittest.TestCase):
         mock_ext_user_token.return_value = "username:password"
         mock_resp = MagicMock()
         type(mock_resp).status_code = PropertyMock(return_value=204)
-        mock_resp.json.return_value = None
-        mock_get_default_branch.return_value = mock_resp
+        mock_resp.json.side_effect = [None, None, None, None]
+        mock_get_default_branch.side_effect = [
+            mock_resp, mock_resp, mock_resp, mock_resp]
 
-        mock_add_repo_users.side_effect = [[], []]
+        mock_add_repo_users.side_effect = [[], [], [], []]
         mock_get_all_project_repos.side_effect = [
             self.mock_projects.get_all_project_repos(), self.mock_projects.get_all_project_repos()]
         mock_get_all_project_users.side_effect = [
@@ -149,8 +152,7 @@ class ProjectsTests(unittest.TestCase):
                         "name": "user2",
                         "email": "user2@example.com",
                         "state": "active",
-                        "access_level": 30,
-                        "index": 0
+                        "access_level": 30
                     },
                     {
                         "id": 1,
@@ -158,8 +160,7 @@ class ProjectsTests(unittest.TestCase):
                         "name": "John Doe",
                         "email": "sysadmin@yourcompany.com",
                         "state": "active",
-                        "access_level": 30,
-                        "index": 1
+                        "access_level": 30
                     },
                     {
                         "id": 2,
@@ -240,7 +241,7 @@ class ProjectsTests(unittest.TestCase):
 
         actual_projects = [d for d, _ in mongo.stream_collection(
             "groups-bitbucket.company.com")]
+        print(actual_projects)
 
         for i, _ in enumerate(expected_projects):
-            self.assertEqual(
-                actual_projects[i].items(), expected_projects[i].items())
+            self.assertDictEqual(_, actual_projects[i])
