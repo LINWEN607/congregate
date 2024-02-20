@@ -3,16 +3,19 @@ from requests.exceptions import RequestException
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.api.packages import PackagesApi
 from congregate.migration.gitlab.api.pypi import PyPiPackagesApi
+from congregate.migration.gitlab.api.npm import NpmPackagesApi
 from congregate.migration.maven.maven_client import get_package, deploy_package
 from congregate.helpers.grpc_utils import is_rpc_service_running
-from congregate.helpers.package_utils import generate_pypi_package_payload, extract_pypi_package_metadata, get_pypi_pkg_info
+from congregate.helpers.package_utils import generate_pypi_package_payload, generate_npm_package_payload, extract_pypi_package_metadata, extract_npm_package_metadata, get_pypi_pkg_info, get_npm_pkg_json
 from congregate.migration.meta.api_models.pypi_package import PyPiPackage
+from congregate.migration.meta.api_models.npm_package import NpmPackage
 
 
 class PackagesClient(BaseClass):
     def __init__(self):
         self.packages = PackagesApi()
         self.pypi_packages = PyPiPackagesApi()
+        self.npm_packages = NpmPackagesApi()
         super(PackagesClient, self).__init__()
 
     def migrate_project_packages(self, src_id, dest_id, project_name):
@@ -31,6 +34,8 @@ class PackagesClient(BaseClass):
                         self.migrate_maven_packages(src_id, dest_id, package, project_name, results)
                 elif package_type == 'pypi':
                     self.migrate_pypi_packages(src_id, dest_id, package, results)
+                elif package_type == 'npm':
+                    self.migrate_npm_packages(src_id, dest_id, package, results)
                 else:
                     self.log.warning(f"Skipping {package.get('name')}, type {package.get('package_type')} not supported")
                     results.append({'Migrated': False, 'Package': package.get('name')})
@@ -40,7 +45,7 @@ class PackagesClient(BaseClass):
             self.log.debug(re)
         except Exception as e:
             self.log.error(
-                f"Failed to get all packages for project {project_name} (ID:{src_id}) due to an exception")
+                f"Failed to get all packages for project {project_name} (ID:{src_id}) due to an exception {e}")
             self.log.debug(e)
         return results
 
@@ -180,3 +185,53 @@ class PackagesClient(BaseClass):
 
         results.append({'Migrated': migration_status, 'Package': artifact})
     
+    def migrate_npm_packages(self, src_id, dest_id, package, results):
+        """
+        Migrates a npm package from source project to destination project.
+
+        Parameters:
+        - src_id: Identifier or path for the source project.
+        - dest_id: Identifier or path for the destination project.
+        - package: The package name to migrate.
+        - results: A dictionary to store the results of the migration.
+
+        This method updates the `package.json` of both projects and records the migration status.
+        """
+        version = package['version']
+        package_name = package['name']
+        artifact = self.format_artifact(package_name, version)
+        
+        self.log.info(f"Attempting to download npm package: {artifact}")
+        migration_status = True
+        
+        metadata = {}
+        files = []
+        for package_file in self.packages.get_package_files(self.config.source_host, self.config.source_token, src_id, package.get('id')):
+            file_name = package_file['file_name']
+            
+            response = self.npm_packages.download_npm_project_package(
+                self.config.source_host, self.config.source_token, src_id, package_name, file_name)
+            file_content = response.content
+
+            files.append(NpmPackage(
+                content=file_content,
+                file_name=file_name,
+                md5_digest=package_file['file_md5']
+            ))
+
+            if file_name.endswith('.tgz'):
+                metadata = extract_npm_package_metadata(get_npm_pkg_json(file_content))
+
+        for package in files:
+            package_data = generate_npm_package_payload(package, metadata)
+
+            response = self.npm_packages.upload_npm_package(
+                self.config.destination_host, self.config.destination_token, dest_id, package_data)
+
+            if response.status_code != 201:
+                self.log.info(f"Failed to migrate file {package_file['file_name']} in package {package.file_name}")
+                migration_status = False
+            else:
+                self.log.info(f"Successfully migrated file {package_file['file_name']} in package {package.file_name}")
+
+        results.append({'Migrated': migration_status, 'Package': artifact})
