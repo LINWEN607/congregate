@@ -22,4 +22,6 @@ class NpmPackageData:
 
     def __post_init__(self):
         if type(self.content) is tuple:
+            # pylint: disable=not-an-iterable
             self.content = MultiPartContent(*self.content)
+            # pylint: enable=not-an-iterable

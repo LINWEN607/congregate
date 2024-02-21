@@ -46,9 +46,8 @@ class NpmPackagesApi(GitLabApiWrapper):
             :return: Response object containing the response to PUT projects/:id/packages/npm/:package_name
         """
         headers = {
-            'Authorization': f'Bearer {token}',
+            'Private-Token': token,
             'Content-Type': 'application/json'
         }
         
         return self.api.generate_put_request(host, token, f"projects/{pid}/packages/npm/{package_data.name}", data=json_data, headers=headers)
-    
