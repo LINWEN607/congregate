@@ -6,7 +6,7 @@ from congregate.migration.gitlab.api.pypi import PyPiPackagesApi
 from congregate.migration.gitlab.api.npm import NpmPackagesApi
 from congregate.migration.maven.maven_client import get_package, deploy_package
 from congregate.helpers.grpc_utils import is_rpc_service_running
-from congregate.helpers.package_utils import generate_pypi_package_payload, generate_npm_package_payload, extract_pypi_package_metadata, extract_npm_package_metadata, get_pypi_pkg_info, get_npm_pkg_json
+from congregate.helpers.package_utils import generate_pypi_package_payload, generate_npm_package_payload, extract_pypi_package_metadata, extract_npm_package_metadata, get_pkg_data, generate_npm_json_data, generate_custom_npm_tarball_url
 from congregate.migration.meta.api_models.pypi_package import PyPiPackage
 from congregate.migration.meta.api_models.npm_package import NpmPackage
 
@@ -169,7 +169,7 @@ class PackagesClient(BaseClass):
             ))
 
             if file_name.endswith('.tar.gz'):
-                metadata = extract_pypi_package_metadata(get_pypi_pkg_info(file_content))
+                metadata = extract_pypi_package_metadata(get_pkg_data(file_content, 'PKG-INFO'))
 
         for package in files:
             package_data = generate_pypi_package_payload(package, metadata)
@@ -209,26 +209,43 @@ class PackagesClient(BaseClass):
         for package_file in self.packages.get_package_files(self.config.source_host, self.config.source_token, src_id, package.get('id')):
             file_name = package_file['file_name']
             
+            # Downloading the binary content file of the package
             response = self.npm_packages.download_npm_project_package(
                 self.config.source_host, self.config.source_token, src_id, package_name, file_name)
             file_content = response.content
 
-            files.append(NpmPackage(
+            # Download the package metadata (dists and versions)
+            response = self.npm_packages.download_npm_package_metadata(
+                self.config.source_host, self.config.source_token, src_id, package_name)
+            package_metadata_bytes = response.content
+
+            # Generate the tarball url for registry setup on the destination instance
+            custom_tarball_url = generate_custom_npm_tarball_url(self.config.destination_host, dest_id, package_name, file_name)
+
+            # Get the package dataclass
+            package = NpmPackage(
                 content=file_content,
                 file_name=file_name,
                 md5_digest=package_file['file_md5']
-            ))
+            )
 
+            # If the package is a tarball, extract the metadata that will be later used to build the json data to upload on the destination instance
             if file_name.endswith('.tgz'):
-                metadata = extract_npm_package_metadata(get_npm_pkg_json(file_content))
-
-        for package in files:
+                metadata = extract_npm_package_metadata(get_pkg_data(file_content, 'package.json'))
+    
             package_data = generate_npm_package_payload(package, metadata)
 
-            response = self.npm_packages.upload_npm_package(
-                self.config.destination_host, self.config.destination_token, dest_id, package_data)
+            # The json data that will be sent over the network and dropped in the package registry of the destination instance
+            json_data = generate_npm_json_data(package_metadata_bytes, package_data, file_name, file_content, custom_tarball_url)
 
-            if response.status_code != 201:
+            # Uploading the data to the destination instance
+            response = self.npm_packages.upload_npm_package(
+                self.config.destination_host, self.config.destination_token, dest_id, json_data, package_data)
+
+            # Handling response code
+            if response.status_code == 403:
+                self.log.info(f"Package {package.file_name} already exists in the destination instance. Skipping")
+            elif response.status_code != 200:
                 self.log.info(f"Failed to migrate file {package_file['file_name']} in package {package.file_name}")
                 migration_status = False
             else:

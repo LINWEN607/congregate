@@ -1,4 +1,4 @@
-import tarfile, json
+import tarfile, json, base64
 from io import BytesIO
 from dacite import from_dict
 from congregate import log
@@ -53,32 +53,13 @@ def extract_npm_package_metadata(pkg_json):
         log.error(f"Error parsing JSON content: {e}")
         return ""
 
-def get_pypi_pkg_info(content):
+def get_pkg_data(content, filename):
     try:
         with tarfile.open(fileobj=BytesIO(content), mode='r:gz') as tar:
             for member in tar:
-                if 'PKG-INFO' in member.name:
+                if filename in member.name:
                     return (tar.extractfile(member.name).read()).decode('UTF-8')
     except tarfile.TarError as e:
-        log.error(f"Error processing tarball: {e}")
-        return ""
-    
-def get_npm_pkg_json(content):
-    """
-    Extracts the package.json file from a .tgz file and returns its content as a string.
-
-    Parameters:
-    - content: The path to the .tgz file.
-
-    Returns:
-    The content of package.json as a string. If package.json is not found or an error occurs, returns an empty String.
-    """    
-    try:
-        with tarfile.open(fileobj=BytesIO(content), mode='r:gz') as tgz:
-            for member in tgz:
-                if 'package.json' in member.name:
-                    return (tgz.extractfile(member.name).read()).decode('UTF-8')
-    except Exception as e:
         log.error(f"Error processing tarball: {e}")
         return ""
         
@@ -99,3 +80,39 @@ def generate_npm_package_payload(package: NpmPackage, pkg_json) -> NpmPackageDat
         **pkg_json
     })
     return package_payload
+
+def generate_npm_json_data(package_metadata_bytes, package_data, tarball_name, tarball_content, custom_tarball_url):
+    # Base64 encode the tarball content
+    encoded_content = base64.b64encode(tarball_content).decode('utf-8')
+
+    # Decode the byte string to get the metadata as a dictionary
+    package_metadata = json.loads(package_metadata_bytes.decode('utf-8'))
+
+    # Build the JSON structure to put in the PUT request
+    package_json_dict = {
+        "_attachments": {
+            tarball_name: {
+                "content_type": "application/octet-stream",
+                "data": encoded_content,
+                "length": len(encoded_content)
+            }
+        },
+        "_id": package_data.name,
+        "description": package_data.description,
+        "dist-tags": package_metadata['dist-tags'],
+        "name": package_data.name,
+        "readme": package_data.description,
+        "versions": {}
+    }
+
+    # Process versions to replace tarball URL
+    for version, details in package_metadata['versions'].items():
+        details['dist']['tarball'] = custom_tarball_url
+        package_json_dict['versions'][version] = details
+
+    package_json = json.dumps(package_json_dict)
+
+    return package_json
+
+def generate_custom_npm_tarball_url(host, pid, package_name, file_name):
+    return f"{host}/api/v4/projects/{pid}/packages/npm/{package_name}/-/{file_name}"
