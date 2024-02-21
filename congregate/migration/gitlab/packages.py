@@ -45,7 +45,7 @@ class PackagesClient(BaseClass):
             self.log.debug(re)
         except Exception as e:
             self.log.error(
-                f"Failed to get all packages for project {project_name} (ID:{src_id}) due to an exception {e}")
+                f"Failed to get all packages for project {project_name} (ID:{src_id}) due to an exception")
             self.log.debug(e)
         return results
 
