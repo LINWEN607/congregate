@@ -456,7 +456,7 @@ class ProjectsClient(BaseClass):
             if yml_file_response is None or (
                     yml_file_response is not None and yml_file_response.status_code != 200):
                 self.log.warning(
-                    f"No {f} file available for project_id {project_id} branch {src_branch}"
+                    f"No '{f}' file available for project_id {project_id} branch '{src_branch}'"
                 )
                 continue
 
@@ -466,12 +466,12 @@ class ProjectsClient(BaseClass):
                 )
                 if not yml_file or yml_file.strip() == "":
                     self.log.warning(
-                        f"Empty {f} file found for project_id {project_id} branch {src_branch}"
+                        f"Empty '{f}' file found for project_id {project_id} branch '{src_branch}'"
                     )
                     continue
             elif yml_file_response.status_code == 404:
                 self.log.warning(
-                    f"No {f} file available for project_id {project_id} branch {src_branch}"
+                    f"No '{f}' file available for project_id {project_id} branch '{src_branch}'"
                 )
                 continue
 
@@ -484,26 +484,27 @@ class ProjectsClient(BaseClass):
 
                 if not repl_data:
                     self.log.warning(
-                        f"No replacement data configured for file {f} in project_id {project_id} branch {src_branch}"
+                        f"No replacement data configured for file '{f}' in project_id {project_id} branch '{src_branch}'"
                     )
                     continue
                 pattern = repl_data[0]
                 replace_with = repl_data[1]
 
                 # Perform the substitution
-                self.log.info(f"Subbing {pattern} with {replace_with} in {f}")
+                self.log.info(
+                    f"Subbing '{pattern}' with '{replace_with}' in file '{f}'")
                 subs = do_yml_sub(yml_file, pattern, replace_with)
 
                 # If nothing changed, skip it all
                 if subs[1] == 0:
                     self.log.info(
-                        f"Found no instances of {pattern} in project_id {project_id} branch {src_branch}"
+                        f"Found no instances of '{pattern}' in project_id {project_id} branch '{src_branch}'"
                     )
                     continue
 
                 #  Log info
                 self.log.info(
-                    f"Replaced {subs[1]} instances of {pattern} with {replace_with} on project_id {project_id}"
+                    f"Replaced {subs[1]} instances of '{pattern}' with '{replace_with}' on project_id {project_id}"
                 )
                 create_branch = True
                 # Make the next pass of the file be with the current subbed
@@ -526,7 +527,7 @@ class ProjectsClient(BaseClass):
                 n = datetime.datetime.now()
                 branch_name = f"ci-rewrite-{n.year}{n.month}{n.day}{n.hour}{n.minute}{n.second}"
                 self.log.info(
-                    f"Creating branch {branch_name} in project {project_id} from {src_branch}")
+                    f"Creating branch '{branch_name}' in project {project_id} from '{src_branch}'")
                 branch_data = {
                     "branch": branch_name,
                     "ref": src_branch
@@ -540,7 +541,7 @@ class ProjectsClient(BaseClass):
                 if not branch_create_resp or (
                         branch_create_resp and branch_create_resp.status_code != 201):
                     self.log.error(
-                        f"Could not create branch for regex replace:\nproject: {project_id}\nbranch data: {branch_data}")
+                        f"Could not create branch `{branch_name}' for regex replace:\nproject: {project_id}\nbranch data: {branch_data}")
                 else:
                     create_branch = False
 
@@ -550,7 +551,7 @@ class ProjectsClient(BaseClass):
                     "branch": f"{branch_name}",
                     "content": f"{new_yml_64}",
                     "encoding": "base64",
-                    "commit_message": f"Commit for migration regex replace replacing file {f}"
+                    "commit_message": f"Commit for migration regex replace replacing file '{f}'"
                 }
                 put_resp = self.project_repository_api.put_single_repo_file(
                     self.config.destination_host,
