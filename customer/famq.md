@@ -231,7 +231,7 @@ No, Congregate does not migrate from package management tools today. We typicall
 
 ## What are the connection requirements needed to perform a migration?
 
-For all types of migration, the destination GitLab instance and the Congregate VM must be able to connect to the source instance (for all supported source types, i.e., GitLab, GitHub, Bitbucket) via ports 443 and 80.
+For all types of migration, the destination GitLab instance and the Congregate Migration VM must be able to connect to the source instance (for all supported source types, i.e., GitLab, GitHub, Bitbucket) via ports 443.  Additionally, if docker container registries are to be migrated, whatever port the source container registry runs on will need to be accessed.
 
 In the case of migration to GitLab.com, the connection origin of destination GitLab instance will be within the [GitLab.com IP Range](https://docs.gitlab.com/ee/user/gitlab_com/#ip-range). Congregate VM is hosted within the [IP Range of Runners](https://docs.gitlab.com/ee/user/gitlab_com/#ip-range). The exact IP of Congregate VM will be shared by GitLab Professional Services as needed to open the necessary firewall ports. Customers should allow traffic from both Congregate VM and GitLab.com IP range via port 443 to source instance.
 
