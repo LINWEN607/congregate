@@ -235,7 +235,7 @@ Following the [project import/export compatibility guide](https://docs.gitlab.co
 
 >Imports from a newer version of GitLab are not supported. The Importing GitLab version must be greater than or equal to the Exporting GitLab version.
 
-## What connection requirements do I need to perform migration?
+## What are the connection requirements needed to perform a migration?
 
 For all types of migration, the destination GitLab instance and the Congregate VM must be able to connect to the source instance (for all supported source types, i.e., GitLab, GitHub, Bitbucket) via ports 443 and 80.
 
