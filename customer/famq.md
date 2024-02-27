@@ -229,17 +229,17 @@ No, Congregate does not migrate from package management tools today. We typicall
 
 [To import certain types of packages](https://docs.gitlab.com/ee/user/packages/package_registry/#to-import-packages) one may also use the GitLab built open-source CLI tool, [Packages Importer](https://gitlab.com/gitlab-org/ci-cd/package-stage/pkgs_importer), to copy Packages between two or more Package registries.
 
-## Does the source instance need to be updated to latest in order to migrate?
-
-Following the [project import/export compatibility guide](https://docs.gitlab.com/ee/user/project/settings/import_export.html#compatibility) it should be at most 2 minor versions behind the destination instance version, while not surpassing it.
-
->Imports from a newer version of GitLab are not supported. The Importing GitLab version must be greater than or equal to the Exporting GitLab version.
-
 ## What are the connection requirements needed to perform a migration?
 
 For all types of migration, the destination GitLab instance and the Congregate VM must be able to connect to the source instance (for all supported source types, i.e., GitLab, GitHub, Bitbucket) via ports 443 and 80.
 
 In the case of migration to GitLab.com, the connection origin of destination GitLab instance will be within the [GitLab.com IP Range](https://docs.gitlab.com/ee/user/gitlab_com/#ip-range). Congregate VM is hosted within the [IP Range of Runners](https://docs.gitlab.com/ee/user/gitlab_com/#ip-range). The exact IP of Congregate VM will be shared by GitLab Professional Services as needed to open the necessary firewall ports. Customers should allow traffic from both Congregate VM and GitLab.com IP range via port 443 to source instance.
+
+## Does the source instance need to be updated to latest in order to migrate?
+
+Following the [project import/export compatibility guide](https://docs.gitlab.com/ee/user/project/settings/import_export.html#compatibility) it should be at most 2 minor versions behind the destination instance version, while not surpassing it.
+
+>Imports from a newer version of GitLab are not supported. The Importing GitLab version must be greater than or equal to the Exporting GitLab version.
 
 ### Compatibility
 
