@@ -283,7 +283,6 @@ def main():
         MEMBERSHIP = arguments["--membership"]
         SUBGROUPS_ONLY = arguments["--subgroups-only"]
         DEST = arguments["--dest"]
-        RETAIN_CONTRIBUTORS = arguments["--retain-contributors"]
 
         if SCM_SOURCE:
             SCM_SOURCE = strip_netloc(SCM_SOURCE)
