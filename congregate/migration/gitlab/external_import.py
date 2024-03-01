@@ -6,7 +6,7 @@ from gitlab_ps_utils.dict_utils import dig
 from gitlab_ps_utils.json_utils import json_pretty
 
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.migrate_utils import migration_dry_run
+from congregate.helpers.migrate_utils import migration_dry_run, sanitize_project_path
 from congregate.helpers.utils import is_dot_com, is_github_dot_com
 from congregate.migration.gitlab.api.external_import import ImportApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
@@ -37,11 +37,12 @@ class ImportClient(BaseClass):
             "personal_access_token": self.config.source_token,
             "bitbucket_server_project": bbs_project_key,
             "bitbucket_server_repo": bbs_repo,
-            "target_namespace": tn
+            "target_namespace": tn,
+            "new_name": sanitize_project_path(bbs_repo, pwn)
         }
 
         if self.config.lower_case_project_path:
-            data["new_name"] = bbs_repo.lower()
+            data["new_name"] = data["new_name"].lower()
 
         if not dry_run:
             try:
@@ -74,16 +75,18 @@ class ImportClient(BaseClass):
             :param token: (str) GitHub personal access token
             :return: (dict) Successful or failed result data
         """
+        _, gh_repo = self.get_project_repo_from_full_path(
+            project.get("path_with_namespace"))
+
         data = {
             "personal_access_token": token,
             "repo_id": project.get("id"),
-            "target_namespace": tn
+            "target_namespace": tn,
+            "new_name": sanitize_project_path(gh_repo, dst_pwn)
         }
 
-        _, gh_repo = self.get_project_repo_from_full_path(
-            project.get("path_with_namespace"))
         if self.config.lower_case_project_path:
-            data["new_name"] = gh_repo.lower()
+            data["new_name"] = data["new_name"].lower()
 
         # TODO: This condition needs to be moved to the __init__ function of this class
         # and properly handle non standard GitLab versions like RCs
@@ -153,7 +156,7 @@ class ImportClient(BaseClass):
                         success = True
                         break
                     repository = dig(project_statistics, 'data',
-                                'project', 'repository')
+                                     'project', 'repository')
                     if imported and repository.get("empty") is True:
                         self.log.info(
                             f"Repository is empty for {full_path}. Import is complete")
