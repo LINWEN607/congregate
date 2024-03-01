@@ -50,4 +50,4 @@ class NpmPackagesApi(GitLabApiWrapper):
             'Content-Type': 'application/json'
         }
         
-        return self.api.generate_put_request(host, token, f"projects/{pid}/packages/npm/{package_data.name}", data=json_data, headers=headers)
+        return self.api.generate_put_request(host, token, f"projects/{pid}/packages/npm/{quote_plus(package_data.name)}", data=json_data, headers=headers)
