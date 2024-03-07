@@ -77,9 +77,9 @@ class ImportExportClient(BaseGitLabClient):
                 sleep(self.COOL_OFF_MINUTES * 60)
                 response = self.trigger_export_and_get_response(
                     src_id, is_project)
-            if response.status_code == 202:
+            if response.status_code in [200, 201, 202]:
                 status = self.get_export_status(src_id, is_project)
-                if status.status_code == 200:
+                if status.status_code in [200, 201, 202]:
                     status_json = safe_json_response(status)
                     state = status_json.get("export_status")
                     if state in ["finished", "regeneration_in_progress"]:
