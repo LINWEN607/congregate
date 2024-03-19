@@ -3,26 +3,25 @@ from requests.exceptions import RequestException
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.api.packages import PackagesApi
 from congregate.migration.gitlab.api.pypi import PyPiPackagesApi
+from congregate.migration.gitlab.api.maven import MavenPackagesApi
 from congregate.migration.gitlab.api.npm import NpmPackagesApi
 from congregate.migration.maven.maven_client import get_package, deploy_package
 from congregate.helpers.grpc_utils import is_rpc_service_running
 from congregate.helpers.package_utils import generate_pypi_package_payload, generate_npm_package_payload, extract_pypi_package_metadata, extract_npm_package_metadata, get_pkg_data, generate_npm_json_data, generate_custom_npm_tarball_url
 from congregate.migration.meta.api_models.pypi_package import PyPiPackage
 from congregate.migration.meta.api_models.npm_package import NpmPackage
+from congregate.migration.meta.api_models.maven_package import MavenPackage
 
 
 class PackagesClient(BaseClass):
     def __init__(self):
         self.packages = PackagesApi()
         self.pypi_packages = PyPiPackagesApi()
+        self.maven_packages = MavenPackagesApi()
         self.npm_packages = NpmPackagesApi()
         super(PackagesClient, self).__init__()
 
     def migrate_project_packages(self, src_id, dest_id, project_name):
-        grpc_service_running = is_rpc_service_running(f"{self.config.grpc_host}:{self.config.maven_port}")
-        if not grpc_service_running:
-            self.log.warning(f"Maven gRPC service is not running, skipping Maven packages")
-
         results = []
         try:
             for package in self.packages.get_project_packages(self.config.source_host, self.config.source_token, src_id):
@@ -30,8 +29,7 @@ class PackagesClient(BaseClass):
                 if package_type == 'generic':
                     self.migrate_generic_packages(src_id, dest_id, package, results)
                 elif package_type == 'maven':
-                    if grpc_service_running:
-                        self.migrate_maven_packages(src_id, dest_id, package, project_name, results)
+                    self.migrate_maven_packages(src_id, dest_id, package, project_name, results)
                 elif package_type == 'pypi':
                     self.migrate_pypi_packages(src_id, dest_id, package, results)
                 elif package_type == 'npm':
@@ -58,23 +56,38 @@ class PackagesClient(BaseClass):
     def format_artifact(self, name, version):
         return f"{self.format_groupid(name)}:{self.format_artifactid(name)}:{version}"
 
-    def get_maven_files_data(self, src_id, package):
-        executable = None
-        pom_file = None
-        packaging = None
+    def get_maven_files_data(self, src_id, package, project_name, path):
+        files = []
+        found_executable = False
+        found_pom = False
+        
         try:
             for package_file in self.packages.get_package_files(self.config.source_host, self.config.source_token, src_id, package.get('id')):
-                if Path(package_file.get('file_name')).suffix.lower() == '.pom':
-                    pom_file = package_file['file_name']
-                if Path(package_file.get('file_name')).suffix.lower() in ['.jar', '.war', '.ear']:
-                    packaging = (Path(package_file.get('file_name')).suffix).strip(
-                        '.').upper()
-                    executable = package_file['file_name']
+                file_name = package_file.get('file_name')
+                file_suffix = Path(file_name).suffix.lower()
+
+                supported_extensions = ['.pom', '.jar', '.war', '.ear']
+
+                if file_suffix in supported_extensions:
+                    if file_suffix == '.pom':
+                        found_pom = True
+                    if file_suffix in ['.jar', '.war', '.ear']:
+                        found_executable = True
+                    
+                    self.log.info(f"Attempting to download maven package: ({file_name}) from project: ({project_name})")
+
+                    response = self.maven_packages.download_maven_project_package(self.config.source_host, self.config.source_token, src_id, path, file_name)
+                    file_content = response.content
+
+                    files.append(MavenPackage(
+                        content=file_content,
+                        file_name=file_name
+                    ))
         except RequestException as re:
             self.log.error(
                 f"Failed to retrieve package files for {package.get('name')} {package.get('version')} ")
             self.log.error(re)
-        return executable, pom_file, packaging
+        return files, found_executable, found_pom
 
     def migrate_generic_packages(self, src_id, dest_id, package, results):
         artifact = self.format_artifact(package['name'], package['version'])
@@ -99,91 +112,44 @@ class PackagesClient(BaseClass):
         results.append({'Migrated': migration_status, 'Package': artifact})
 
     def migrate_maven_packages(self, src_id, dest_id, package, project_name, results):
-        executable, pom_file, packaging = self.get_maven_files_data(
-            src_id, package)
-        if executable and pom_file:
-            artifact = self.format_artifact(
-                package['name'], package['version'])
-            self.log.info(
-                f"Attempting to download package: ({artifact}) from project: ({project_name})")
-            get_package_result = get_package(
-                projectName=project_name,
-                artifact=artifact,
-                remoteRepositories=f"gitlab-src::::{self.config.source_host}/api/v4/projects/{src_id}/packages/maven"
-            )
-            if get_package_result[0] == 0:
-                self.log.info(
-                    f"Package ({artifact}) was successfully downloaded. Moving on to deploying package")
-                deploy_package_result = deploy_package(
-                    projectName=project_name,
-                    groupId=self.format_groupid(package['name']),
-                    artifactId=self.format_artifactid(package['name']),
-                    version=package['version'],
-                    packaging=packaging,
-                    file=f"/opt/project_repositories/{project_name}/{package['name']}/{package['version']}/{executable.lower()}",
-                    pomFile=f"/opt/project_repositories/{project_name}/{package['name']}/{package['version']}/{pom_file}",
-                    repositoryId="gitlab-dest",
-                    url=f"{self.config.destination_host}/api/v4/projects/{dest_id}/packages/maven"
-                )
-                if deploy_package_result[0] == 0:
-                    self.log.info(
-                        f"Package ({artifact}) was successfully deployed")
-                    results.append({'Migrated': True, 'Package': artifact})
+        """
+        Migrates a maven package from source project to destination project.
 
-                else:
-                    self.log.error(
-                        f"Package ({artifact}) was not successfully deployed")
-                    results.append({'Migrated': False, 'Package': artifact})
-                    self.log.error(deploy_package_result[1])
-            else:
-                self.log.error(
-                    f"Package ({artifact}) wasn't downloaded. Here is the stack trace \n {get_package_result[1]}")
-                results.append({'Migrated': False, 'Package': artifact})
-        else:
-            self.log.info(
-                f"Unable to find usable data (executable or pom file is missing) \n {package}")
-                
-    def migrate_maven_packages_v2(self, src_id, dest_id, package, project_name, results):
-        executable, pom_file, packaging = self.get_maven_files_data(
-            src_id, package)
-        if executable and pom_file:
-            artifact = self.format_artifact(
-                package['name'], package['version'])
-            self.log.info(
-                f"Attempting to download package: ({artifact}) from project: ({project_name})")
-            get_package_result = get_package(
-                projectName=project_name,
-                artifact=artifact,
-                remoteRepositories=f"gitlab-src::::{self.config.source_host}/api/v4/projects/{src_id}/packages/maven"
-            )
-            if get_package_result[0] == 0:
-                self.log.info(
-                    f"Package ({artifact}) was successfully downloaded. Moving on to deploying package")
-                deploy_package_result = deploy_package(
-                    projectName=project_name,
-                    groupId=self.format_groupid(package['name']),
-                    artifactId=self.format_artifactid(package['name']),
-                    version=package['version'],
-                    packaging=packaging,
-                    file=f"/opt/project_repositories/{project_name}/{package['name']}/{package['version']}/{executable.lower()}",
-                    pomFile=f"/opt/project_repositories/{project_name}/{package['name']}/{package['version']}/{pom_file}",
-                    repositoryId="gitlab-dest",
-                    url=f"{self.config.destination_host}/api/v4/projects/{dest_id}/packages/maven"
-                )
-                if deploy_package_result[0] == 0:
-                    self.log.info(
-                        f"Package ({artifact}) was successfully deployed")
-                    results.append({'Migrated': True, 'Package': artifact})
+        Parameters:
+        - src_id: Identifier or path for the source project.
+        - dest_id: Identifier or path for the destination project.
+        - package: The package name to migrate.
+        - results: A dictionary to store the results of the migration.
+        """
 
+        # Format properly the group, artifactId and version of the package to migrate
+        groupId=self.format_groupid(package['name']).replace("(", "").replace(")", "").replace("'", "").replace(",", "").replace(".", "/")
+        artifactId=self.format_artifactid(package['name']).replace("(", "").replace(")", "").replace("'", "").replace(",", "")
+        version=package['version']
+        path = f"{groupId}/{artifactId}/{version}"
+
+        # Get the maven files included inside the package to migrate - This is the downloading process
+        files, found_executable, found_pom = self.get_maven_files_data(src_id, package, project_name, path)
+        migration_status = True
+
+        # If we find both the pom and jar file, we can proceed to the migration
+        if found_executable and found_pom:
+            for file in files:
+                # Check if the file doesn't exist in the destination instance yet as we don't want any duplicate
+                response = self.maven_packages.download_maven_project_package(self.config.destination_host, self.config.destination_token, dest_id, path, file.file_name)
+                if response.status_code == 200:
+                    self.log.info(f"File {file.file_name} already exists in the destination instance. Skipping")
                 else:
-                    self.log.error(
-                        f"Package ({artifact}) was not successfully deployed")
-                    results.append({'Migrated': False, 'Package': artifact})
-                    self.log.error(deploy_package_result[1])
-            else:
-                self.log.error(
-                    f"Package ({artifact}) wasn't downloaded. Here is the stack trace \n {get_package_result[1]}")
-                results.append({'Migrated': False, 'Package': artifact})
+                    # Proceed to uploading the file, since it's not yet present in the destination instance for this specific package
+                    response = self.maven_packages.upload_maven_package(
+                        self.config.destination_host, self.config.destination_token, dest_id, path, file.content, file.file_name)
+                    if response.status_code != 200:
+                        self.log.info(f"Failed to migrate file {file.file_name} in package {package['name']}")
+                        migration_status = False
+                    else:
+                        self.log.info(f"Successfully migrated file {file.file_name} in package {package['name']}")
+
+            results.append({'Migrated': migration_status, 'Package': package['name']})
         else:
             self.log.info(
                 f"Unable to find usable data (executable or pom file is missing) \n {package}")
@@ -250,7 +216,6 @@ class PackagesClient(BaseClass):
         migration_status = True
         
         metadata = {}
-        files = []
         for package_file in self.packages.get_package_files(self.config.source_host, self.config.source_token, src_id, package.get('id')):
             file_name = package_file['file_name']
             

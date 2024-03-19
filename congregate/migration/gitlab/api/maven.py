@@ -48,7 +48,7 @@ class MavenPackagesApi(GitLabApiWrapper):
         """
         return self.api.generate_get_request(host, token, f"groups/{pid}/-/packages/maven/{path}/{file_name}")
     
-    def upload_maven_package(self, host, token, pid, path, files, file_name):
+    def upload_maven_package(self, host, token, pid, path, file, file_name):
         """
         Upload a Maven package file
 
@@ -63,7 +63,7 @@ class MavenPackagesApi(GitLabApiWrapper):
         """
         headers = {
             'Private-Token': token,
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/octet-stream'
         }
         
-        return self.api.generate_put_request(host, token, f"projects/{pid}/packages/maven/{path}/{file_name}", files=files, headers=headers)
+        return self.api.generate_put_request(host, token, f"projects/{pid}/packages/maven/{path}/{file_name}", data=file, headers=headers)
