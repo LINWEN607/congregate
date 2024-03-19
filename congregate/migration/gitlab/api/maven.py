@@ -1,6 +1,5 @@
 from urllib.parse import quote_plus
 from congregate.migration.gitlab.api.base_api import GitLabApiWrapper
-from congregate.migration.meta.api_models.npm_package_data import NpmPackageData
 
 class MavenPackagesApi(GitLabApiWrapper):
     
