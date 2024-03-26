@@ -174,6 +174,11 @@ By default they are inherited by the import user account.
 
 Please see [here](#q4) how to prevent this behavior.
 
+## During a user migration, how are passwords set?
+By default when Congregate creates a user it forces a random pwd and no email is sent.
+Because he user is created by an Admin with `skip_verification=true` in the api call the user does not have to log in for teh account to remain valid
+Congregate can be configured so that users will receive an email to reset the password. In the `congreate.conf` set `reset_pwd = True` and `force_rand_pwd = False`  
+
 ## <a name="q4"></a>Do user memberships and contributions propagate during migration?
 
 Yes, if an Admin user does the import, and on both source and destination the user:
