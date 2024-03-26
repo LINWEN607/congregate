@@ -71,8 +71,7 @@ class BitBucketServer(BaseClass):
             "id": project["id"],
             "path": project["key"],
             "full_path": project["key"],
-            # Always possible and safer than using 'public'
-            "visibility": "private",
+            "visibility": "public" if not is_dot_com(self.config.destination_host) and project["public"] else "private",
             "description": project.get("description", ""),
             "members": self.add_project_users([], project["key"]),
             "groups": self.project_groups,
