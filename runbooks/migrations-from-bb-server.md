@@ -104,6 +104,7 @@ Copy the following data and add subsequent columns for single project migration
   * [ ] Confirm you can reach the UI of the instance
   * [ ] Confirm you can reach the API through cURL or a REST client
 * [ ] Run `congregate list` at the beginning of the migration blackout period
+  * **NOTE:** Discuss the [permission mapping](/customer/famq.md#how-do-bitbucket-user-permissions-and-roles-map-to-gitlab) with customer to see if it requires adjustment
 * [ ] Stage ALL users
   * **NOTE:** Make sure no groups and projects are staged
   * Determine (with customer) whether user ID 1 is a regular user that should be migrated

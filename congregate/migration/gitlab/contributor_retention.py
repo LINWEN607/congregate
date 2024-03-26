@@ -103,11 +103,15 @@ class ContributorRetentionClient(BaseClass):
             token = self.config.destination_token
             pid = self.dest_id
         for contributor, data in self.contributor_map.items():
-            if source:
+            if data and source:
                 user = data
-            else:
+            elif data:
                 user = find_user_by_email_comparison_without_id(
                     data.get('email'))
+            else:
+                self.log.warning(
+                    f"Missing contributor '{contributor}' mapping data '{data}'")
+                continue
             self.log.info(
                 f"{get_dry_log(self.dry_run)}Removing contributor '{contributor}' from project '{self.full_path}'")
             if user and not self.dry_run:
