@@ -1,3 +1,8 @@
+# DEPRECATION NOTICE:
+# This Docker Compose file is deprecated and no longer supported.
+# For more details on the deprecation, please visit https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/blob/master/docker/maven/README.md?ref_type=heads.
+
+
 version: "3"
 
 services:

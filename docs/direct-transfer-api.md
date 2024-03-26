@@ -9,9 +9,9 @@ This documentation covers setting up a Congregate instance to use Direct Transfe
 - A VM with a container runtime (docker, podman, rancher, etc) and docker-compose installed
 - Access to the [congregate container registry](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/container_registry/2394823)
 - Ability to download MongoDB and Redis images from a container registry
-- Direct transfer and GitLab export/import [enabled in the admin settings](https://docs.gitlab.com/ee/administration/settings/import_and_export_settings.html#configure-allowed-import-sources) on the source and destination instances
+- Direct transfer [enabled in the admin settings](https://docs.gitlab.com/ee/administration/settings/import_and_export_settings.html#configure-allowed-import-sources) on the source and destination instances
 
-## Setting up the Congregate nodes
+## Setting up the Congregate node
 
 - Set up a VM with your container runtime of choice and docker-compose on the source and destination network
 - On each VM, pull down [this docker-compose.yml](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/blob/master/docker/release/docker-compose.yml) file. This file will spin up a Congregate, MongoDB, and Redis container.

@@ -43,6 +43,14 @@ The basic mapping of terms looks like the following:
 
 We should have a more comprehensive table describing the differences between the greater development tools and the SCM/VCS they utilize. For example, *SVN* uses **trunk** while *Git* uses **master/main** and *AccuRev* and *ClearCase* use **streams** while *SVN*, *Git*, and *Mercurial* use **branches**.
 
+## How do BitBucket user permissions and roles map to GitLab?
+
+These are hard-coded in the [*constants.py*](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/blob/master/congregate/migration/bitbucket/constants.py) file.
+
+Sometimes, e.g. for customers with an Ultimate license, it might be worth adjusting the mapping. E.g. *Reporter -> Guest* (or lower) to save on license seats (on either [*gitlab.com*](https://docs.gitlab.com/ee/subscriptions/gitlab_com/#free-guest-users) or [*self-managed*](https://docs.gitlab.com/ee/subscriptions/self_managed/#free-guest-users)).
+
+**NOTE:** The **Guest** role might be too strict, e.g. **not** allow access to **private** projects. See [**Notes**](https://docs.gitlab.com/ee/user/permissions.html#project-members-permissions).
+
 ## Is migrating to Gitlab.com different than to GitLab Self-Managed (On-Prem)?
 
 Please see [Migrating from Self-Managed GitLab to GitLab.com](https://about.gitlab.com/handbook/customer-success/professional-services-engineering/engagement-mgmt/scoping-information/migrations/SM-to-GitLab-com/) for more details.
@@ -64,6 +72,66 @@ Generally speaking, **no**, we do **not** migrate user projects to GitLab.com.
 If user projects are required, we encourage people to [move them to a group](https://docs.gitlab.com/ee/tutorials/move_personal_project_to_group/) and possibly subgroups if they need to maintain privacy. [Converting their personal namespace into a group one](https://docs.gitlab.com/ee/tutorials/convert_personal_namespace_to_group/) is also an option.
 
 If needed, users can manually migrate their personal project(s) using either the [UI-based file exports](https://docs.gitlab.com/ee/user/project/settings/import_export.html) or the [Direct Transfer API](https://docs.gitlab.com/ee/api/bulk_imports.html).
+
+## Restructuring repositories - before, during or after migration?
+
+When migrating to a new instance the question of restructuring often comes up.
+
+Remapping hard-coded URLs and IDs are one of the largest tasks. Some of them can be automated, after migration, by using the Congregate `url-rewrite-only` command which accepts an input list of files to parse and patterns to map.
+
+It's generally advised to restructure before migrating i.e. on the source SCM instance. There are several benefits.
+
+### Before
+
+#### Pros
+
+* Performed on a familiar environment (source instance)
+* Less confusion than during or after migration
+* Opportunity for cleanup, mainly of:
+  * [Git repository size](https://docs.gitlab.com/ee/administration/settings/account_and_limit_settings.html#repository-size-limit), which may present a blocker for a migration to gitlab.com, e.g.
+    * 5Gb default import limit (gitlab.com instance level configuration)
+    * 10Gb [import from S3](https://docs.gitlab.com/ee/api/project_import_export.html#import-a-file-from-aws-s3) limit
+  * (GL ➡️ GL) Package Registry
+  * (GL ➡️ GL) Container Registry
+* Simplifies the migration schedule and planning
+
+#### Cons
+
+* (GL ➡️ GL) Transferring [groups](https://docs.gitlab.com/ee/user/group/manage.html#transfer-a-group) and/or [projects](https://docs.gitlab.com/ee/user/project/settings/migrate_projects.html) around may be cumbersome if they have registries. In those cases one would have to:
+
+  1. Back up the registries
+  2. Completely remove them from the projects (where they essentially "live", **not** groups)
+  3. After restructuring, upload them back or recreate via CI pipelines
+* Delays the migration schedule and planning, unless performed as a prerequisite to the GitLab PS engagement
+
+### During
+
+>Applies to all supported migration source SCMs
+
+Restructure during migration by using the Congregate [*stage-wave*](/templates/stage-wave-template.csv) feature and template.
+
+#### Pros
+
+* (GL ➡️ GL) Avoids having to backup and restore registries as Congregate migrates them directly to their new target namespace
+* Avoids transferring projects before or after the migration
+* Allows migrating source groups to new group structures
+* Does **not** delay the migration schedule and planning
+
+#### Cons
+
+* (GL ➡️ GL) Does **not** automatically create new group structures
+* Requires manual editing of the json files
+* High engineering overhead
+
+### After
+
+#### Pros
+
+* Does **not** delay and simplifies the migration schedule and planning
+
+#### Cons
+
+* Same as [**Before**](#before), except the delays
 
 ## <a name="q1"></a>What typically needs to be "fixed" in a migrated project?
 
@@ -228,6 +296,12 @@ Additionally:
 No, Congregate does not migrate from package management tools today. We typically suggest customers establish pipeline jobs in GitLab after source code migration to publish these containers/packages to the GitLab registry as desired. For customers who are interested in maintaining audit history, we suggest keeping the legacy package/container registry tool around with a reduced license spend until the audit window expires.
 
 [To import certain types of packages](https://docs.gitlab.com/ee/user/packages/package_registry/#to-import-packages) one may also use the GitLab built open-source CLI tool, [Packages Importer](https://gitlab.com/gitlab-org/ci-cd/package-stage/pkgs_importer), to copy Packages between two or more Package registries.
+
+## What are the connection requirements needed to perform a migration?
+
+For all types of migration, the destination GitLab instance and the Congregate Migration VM must be able to connect to the source instance (for all supported source types, i.e., GitLab, GitHub, Bitbucket) via ports 443.  Additionally, if docker container registries are to be migrated, whatever port the source container registry runs on will need to be accessed.
+
+For example, when migrating to GitLab.com, the destination IP range that will require access to the source is known, and can be found in [GitLab.com IP Range](https://docs.gitlab.com/ee/user/gitlab_com/#ip-range) and the Congregate Migration VM will be part of the [GitLab Runner Fleet](https://docs.gitlab.com/ee/user/gitlab_com/#ip-range). The exact IP of Congregate Migration VM will be shared by GitLab Professional Services when acquired.  Customers should allow traffic from both Congregate Migration VM and GitLab.com IP range via port 443 to source instance.
 
 ## Does the source instance need to be updated to latest in order to migrate?
 

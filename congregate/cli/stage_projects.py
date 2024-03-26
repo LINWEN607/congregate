@@ -73,17 +73,17 @@ class ProjectStageCLI(BaseStageClass):
                     projects_to_stage) == len(projects):
                 for p in projects:
                     self.log.info(
-                        f"{get_dry_log(dry_run)}Staging project {p['path_with_namespace']} (ID: {p['id']})")
+                        f"{get_dry_log(dry_run)}Staging project '{p['path_with_namespace']}' (ID: {p['id']})")
                     self.staged_projects.append(self.get_project_metadata(p))
 
                 for g in groups:
                     self.log.info(
-                        f"{get_dry_log(dry_run)}Staging group {g['full_path']} (ID: {g['id']})")
+                        f"{get_dry_log(dry_run)}Staging group '{g['full_path']}' (ID: {g['id']})")
                     self.staged_groups.append(self.format_group(g))
 
                 for u in users:
                     self.log.info(
-                        f"{get_dry_log(dry_run)}Staging user {u['username']} (ID: {u['id']})")
+                        f"{get_dry_log(dry_run)}Staging user '{u['email']}' (ID: {u['id']})")
                     self.staged_users.append(u)
             # CLI range input
             elif re.search(r"\d+-\d+", projects_to_stage[0]) is not None:

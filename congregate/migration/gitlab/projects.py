@@ -117,7 +117,7 @@ class ProjectsClient(BaseClass):
             return True
         except RequestException as re:
             self.log.error(
-                f"Failed to POST shared group {dst_full_path} to project {path}, with error:\n{re}")
+                f"Failed to POST shared group '{dst_full_path}' to project '{path}', with error:\n{re}")
             return False
 
     def find_project_by_path(self, host, token, dst_path_with_namespace):

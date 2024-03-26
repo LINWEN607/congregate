@@ -10,10 +10,10 @@ BBS_REPO_PERM_MAP = {
 
 BBS_PROJECT_PERM_MAP = {
     "PROJECT_ADMIN": 50,    # Owner
+    "REPO_CREATE": 40,      # Maintainer
     "PROJECT_WRITE": 30,    # Developer
     "PROJECT_READ": 20      # Reporter
 }
-
 
 GL_PROJECT_PERM_MAP = {
     50: "REPO_ADMIN",   # Owner (as of 14.9)
@@ -23,6 +23,7 @@ GL_PROJECT_PERM_MAP = {
 
 GL_GROUP_PERM_MAP = {
     50: "PROJECT_ADMIN",    # Owner
+    40: "REPO_CREATE",      # Maintainer
     30: "PROJECT_WRITE",    # Developer
     20: "PROJECT_READ"      # Reporter
 }
