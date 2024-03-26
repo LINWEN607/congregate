@@ -13,9 +13,12 @@ Welcome to a GitLab Professional Services Migration Engagement. This document is
 
 ## Migration Planning Team - Access
 
-- GitLab PS will need system admin access to the source system with admin access tokens.
+- Ensure https (443) access is allowed from the destination and migration VM to the source system of the migration to ensure GitLab can effectively use its automated data migration tooling.
+  - For direct transfer migrations to gitlab.com, it is required that the IP ranges specified [here](https://docs.gitlab.com/ee/user/gitlab_com/#ip-range) as well as the hostnames specified [here](https://docs.gitlab.com/ee/user/gitlab_com/#hostname-list) must be accessible. GitLab migration automation will be removed when the engagement completes.
+- GitLab PS will need system admin access to the source system with an admin-level Personal Access Token with `api` scope. This provides the read/write privileges needed for running Congregate.
 - GitLab PS will need system admin access (self managed) or group admin access (GitLab.com) on the destination GitLab system.[^1]
 [^1]: Migrations to gitlab.com will require GL provisioned VM and (Admin) User Account. The customer might need to add this user to their group.
+
 
 ## Migration Planning Team - Communication
 
