@@ -71,12 +71,16 @@ class BitBucketServer(BaseClass):
             "id": project["id"],
             "path": project["key"],
             "full_path": project["key"],
-            "visibility": "public" if not is_dot_com(self.config.destination_host) and project["public"] else "private",
+            "visibility": self.determine_visibility(project["public"]),
             "description": project.get("description", ""),
             "members": self.add_project_users([], project["key"]),
             "groups": self.project_groups,
             "projects": [] if self.subset else self.add_project_repos([], project["key"], mongo)
         }
+
+    def determine_visibility(self, is_public):
+        # Only allow 'public' for migrations to GL self-managed
+        return "public" if not is_dot_com(self.config.destination_host) and is_public else "private"
 
     def add_project_users(self, users, project_key):
         for user in self.projects_api.get_all_project_users(project_key):

@@ -29,12 +29,14 @@ class ProjectsTests(unittest.TestCase):
     @patch.object(ProjectsApi, "get_all_projects")
     @patch.object(BitBucketServer, "add_repo_users")
     @patch.object(ReposApi, "get_repo_default_branch")
+    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.source_host', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.source_token', new_callable=PropertyMock)
-    def test_retrieve_project_info(self, mock_ext_user_token, mock_ext_src_url, mock_get_default_branch, mock_add_repo_users,
+    def test_retrieve_project_info(self, mock_user_token, mock_src_host, mock_dest_url, mock_get_default_branch, mock_add_repo_users,
                                    mock_get_all_projects, mock_get_all_project_repos, mock_get_all_project_users, mock_close_connection):
-        mock_ext_src_url.return_value = "http://bitbucket.company.com"
-        mock_ext_user_token.return_value = "username:password"
+        mock_dest_url.side_effect = ["http://gitlab.com", "http://gitlab.com"]
+        mock_src_host.return_value = "http://bitbucket.company.com"
+        mock_user_token.return_value = "username:password"
         mock_resp = MagicMock()
         type(mock_resp).status_code = PropertyMock(return_value=200)
         mock_resp.json.side_effect = [
@@ -105,7 +107,8 @@ class ProjectsTests(unittest.TestCase):
         print(actual_projects)
 
         for i, _ in enumerate(expected_projects):
-            self.assertDictEqual(_, actual_projects[i])
+            self.assertEqual(
+                actual_projects[i].items(), expected_projects[i].items())
 
     @patch.object(CongregateMongoConnector, "close_connection")
     @patch.object(ProjectsApi, "get_all_project_groups")
@@ -114,12 +117,15 @@ class ProjectsTests(unittest.TestCase):
     @patch.object(ProjectsApi, "get_all_projects")
     @patch.object(BitBucketServer, "add_repo_users")
     @patch.object(ReposApi, "get_repo_default_branch")
+    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.source_host', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.source_token', new_callable=PropertyMock)
-    def test_retrieve_project_info_with_groups(self, mock_ext_user_token, mock_ext_src_url, mock_get_default_branch, mock_add_repo_users,
+    def test_retrieve_project_info_with_groups(self, mock_user_token, mock_src_host, mock_dest_host, mock_get_default_branch, mock_add_repo_users,
                                                mock_get_all_projects, mock_get_all_project_repos, mock_get_all_project_users, mock_get_all_project_groups, mock_close_connection):
-        mock_ext_src_url.return_value = "http://bitbucket.company.com"
-        mock_ext_user_token.return_value = "username:password"
+        mock_dest_host.side_effect = [
+            "http://gitlab.example.com", "http://gitlab.example.com"]
+        mock_src_host.return_value = "http://bitbucket.company.com"
+        mock_user_token.return_value = "username:password"
         mock_resp = MagicMock()
         type(mock_resp).status_code = PropertyMock(return_value=204)
         mock_resp.json.side_effect = [None, None, None, None]
@@ -152,7 +158,8 @@ class ProjectsTests(unittest.TestCase):
                         "name": "user2",
                         "email": "user2@example.com",
                         "state": "active",
-                        "access_level": 30
+                        "access_level": 30,
+                        "index": 0
                     },
                     {
                         "id": 1,
@@ -160,7 +167,8 @@ class ProjectsTests(unittest.TestCase):
                         "name": "John Doe",
                         "email": "sysadmin@yourcompany.com",
                         "state": "active",
-                        "access_level": 30
+                        "access_level": 30,
+                        "index": 1
                     },
                     {
                         "id": 2,
@@ -244,4 +252,5 @@ class ProjectsTests(unittest.TestCase):
         print(actual_projects)
 
         for i, _ in enumerate(expected_projects):
-            self.assertDictEqual(_, actual_projects[i])
+            self.assertEqual(
+                actual_projects[i].items(), expected_projects[i].items())
