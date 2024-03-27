@@ -174,6 +174,23 @@ By default they are inherited by the import user account.
 
 Please see [here](#q4) how to prevent this behavior.
 
+## During a user migration, how are passwords set?
+
+By default, when Congregate creates a user account on destination it:
+
+* Forces a random pwd (`force_rand_pwd = True`)
+* Does **not** send a reset pwd email (`reset_pwd = False`)
+
+Because the user is created and confirmed (by passing `skip_verification=true`) using an Admin token, they do **not** have to login to verify their email.
+
+**NOTE:** For migrations to gitlab.com logging in **is** required to [manually link SAML to their existing GitLab account](https://docs.gitlab.com/ee/user/group/saml_sso/troubleshooting.html#message-there-is-already-a-gitlab-account-associated-with-this-email-address-sign-in-with-your-existing-credentials-to-connect-your-organizations-account). Otherwise, [SSO enforcement](https://docs.gitlab.com/ee/user/group/saml_sso/#sso-enforcement) prevents user membership and contribution mapping during group/project import.
+One **can** configure Congregate so that users **do** receive an email to reset their pwd. To do so configure the following under the `data/congregate.conf` **[USER]** section:
+
+* `reset_pwd = True`
+* `force_rand_pwd = False`
+
+**NOTE:** Not every combination of values is possible. See the [*User creation API endpoint*](https://docs.gitlab.com/ee/api/users.html#user-creation) for details.
+
 ## <a name="q4"></a>Do user memberships and contributions propagate during migration?
 
 Yes, if an Admin user does the import, and on both source and destination the user:
@@ -182,7 +199,7 @@ Yes, if an Admin user does the import, and on both source and destination the us
 * account exists and (primary) email is confirmed
 * primary email is publicly exposed (via API)
 * primary email is matching
-* (SSO enforced only) has their SAML account linked
+* ([SSO enforced](https://docs.gitlab.com/ee/user/group/saml_sso/#sso-enforcement) only) has their [SAML account linked](https://docs.gitlab.com/ee/user/group/saml_sso/troubleshooting.html#message-there-is-already-a-gitlab-account-associated-with-this-email-address-sign-in-with-your-existing-credentials-to-connect-your-organizations-account)
 
 Otherwise the (Admin) import user will permanently inherit group and project contributions of those users.
 
@@ -201,8 +218,8 @@ Users might be deliberately missing because on the source instance they are:
 This doesn't mean we shouldn't migrate them, since `blocked`, `deactivated` and `banned` users do NOT consume a license seat. As long as the mapping prerequisites are met upon [group](https://docs.gitlab.com/ee/user/group/import/index.html#preparation) and [project](https://docs.gitlab.com/ee/user/project/settings/import_export.html#map-users-for-import) import we can still preserve their memberships and contributions. It's then a matter of administration whether the accounts are:
 
 * manually removed from the list of group/project members
-* removed by enforcing SSO
-* (Admin only) soft deleted from the instance
+* removed by [SSO enforcement](https://docs.gitlab.com/ee/user/group/saml_sso/#sso-enforcement)
+* (Admin only) soft deleted (w/o contributions) from the instance
 
 ## Do Git commit/tag mappings propagate during migration?
 
