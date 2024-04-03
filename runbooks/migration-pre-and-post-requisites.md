@@ -47,17 +47,17 @@ This runbook covers the process of preparing and cleaning up after a migration f
 
     **NOTE:** Mentions may change over time
   * (Optional) Post issue in Slack's [**#it_help**](https://gitlab.slack.com/archives/CK4EQH50E) channel
-* (gitlab.com) To avoid provisioning the (Admin) export/import user in an external identity provider, spoof the SAML identity. `PUT` the following json body to `https://<hostname>/api/v4/users/<id>` to modify the Admin user:
+* (gitlab.com) To avoid SAML provisioning the import Admin user in the external (customer) identity provider, spoof/mock the customer gitlab.com SAML identity for the Admin account. [Modify the Admin account attributes via the Users API](https://docs.gitlab.com/ee/api/users.html#user-modification) and `PUT` the following json body to `https://<hostname>/api/v4/users/<id>`:
 
     ```json
     {
-      "provider": "group_saml",
-      "extern_uid": "<random_uid>",
-      "group_id_for_saml": <parent_group_id>
+      "extern_uid": "<random-uid>",
+      "group_id_for_saml": <top-level-parent-group-id>,
+      "provider": "group_saml"
     }
     ```
 
-    **NOTE:** The group needs to have SAML configured.
+    **NOTE:** The gitlab.com top-level parent group needs to have [SAML configured](https://docs.gitlab.com/ee/user/group/saml_sso/#configure-gitlab).
 
 * [ ] (gitlab.com) Verify that 2FA is setup on the admin user.
 
