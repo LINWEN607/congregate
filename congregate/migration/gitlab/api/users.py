@@ -208,7 +208,7 @@ class UsersApi(GitLabApiWrapper):
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing the response to GET /users/:uid_or_username/keys
         """
-        return self.api.generate_get_request(host, token, f"users/{uid}/keys")
+        return self.api.list_all(host, token, f"users/{uid}/keys")
 
     def create_user_ssh_key(self, host, token, uid, data, message=None):
         """
@@ -237,7 +237,7 @@ class UsersApi(GitLabApiWrapper):
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing the response to GET /users/:uid/gpg_keys
         """
-        return self.api.generate_get_request(host, token, f"users/{uid}/gpg_keys")
+        return self.api.list_all(host, token, f"users/{uid}/gpg_keys")
 
     def create_user_gpg_key(self, host, token, uid, data, message=None):
         """
