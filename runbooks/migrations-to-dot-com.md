@@ -189,8 +189,9 @@ Copy the following data and add subsequent rows for single group migration
 * [ ] If container registries are migrated make sure to set `/var/run/docker.sock` permissions for `ps-user` by running `sudo chmod 666 /var/run/docker.sock`.
 * [ ] Notify in the internal Slack channel dedicated to this migration you are starting the migration wave
 * [ ] Notify the customer in the customer-facing Slack channel you are starting the migration wave
-* [ ] Run the following command `nohup ./congregate.sh migrate --skip-users --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log 2>&1 &`
+* [ ] Run the following command `nohup ./congregate.sh migrate --skip-users --retain-contributors --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log 2>&1 &`
   * [ ] If only sub-groups are staged make sure to add `--subgroups-only`
+  * [ ] Adding `--retain-contributors` for the users who contributed to a project in the past but are no longer members of the project
 * [ ] Monitor the wave periodically by running `tail -f data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log`
 * [ ] Copy the following files to `/opt/congregate/data/waves/wave_<insert_wave_number>/` and attach to this issue:
   * `data/logs/congregate.log`
