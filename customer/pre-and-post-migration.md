@@ -38,10 +38,10 @@
 - Users should be aware that all of their Gitlab projects are in the process of being migrated to Gitlab.com
 - Specific teams of users should know the tentative dates of when their specific projects are to be migrated
 
-#### Scheduling and constraints
+#### Scheduling and Constraints
 
-- Migration waves are comprised of about 200 projects and the total time for a migration takes about 8 hours to complete based on the size of the projects involved in the particular wave
-- A migration wave is scheduled with a customer at least 5 days in advance in order to give the PSE time to ensure that no other customer migrations to GitLab.com will take place during the migration window
+- Migration waves are comprised of about 300-500 projects and the total time for a migration takes about 8 hours to complete based on the size of the projects involved in the particular wave
+- The PSE should be given enough time to ensure that no other customer migrations to GitLab.com will take place during the migration window.
 
 ### App Teams
 

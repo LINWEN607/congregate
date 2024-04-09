@@ -343,7 +343,8 @@ When it comes to how old can the GitLab source instance be we come to the follow
 * **13.3** - Most export and major project import bugs resolved
 * **13.7** - Several project and group export/import bugs resolved
 * **14.0**
-  * `JSON` format no longer supported for project and group exports, but still supported on import
+  * `JSON` format no longer supported for project and group exports or imports
+    * `project_export_as_ndjson` and `group_export_ndjson` feature flags need to be enabled by default to convert the project/group export into the supported NDJSON format
   * Group epics labels associations preserved during export/import
   * The `public_email` field is used, instead of `email`, for [group](https://docs.gitlab.com/ee/user/group/import/index.html#preparation) and [project](https://docs.gitlab.com/ee/user/project/settings/import_export.html#map-users-for-import) export/import
   * On import it is backwards compatible i.e. accepting the `email` field if exported
