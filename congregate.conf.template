@@ -190,7 +190,7 @@ export_import_timeout = 3600
 
 ### Optional configuration if you are using a spreadsheet to keep track of migration waves
 
-### Specify an absolute path to the spreadsheet. Supports Excel, OpenOffice, and CSV spreadsheet formats
+### Specify an absolute path to the spreadsheet. Supports Excel, OpenOffice, and CSV spreadsheet formats. Ensure the file is owned by ps-user and that the path has the right permissions. 
 # wave_spreadsheet_path = /opt/congregate/data/waves.csv # Default absolute path for Congregate container
 
 ### Specify the column names for congregate to use from the spreadsheet. These names will be required to the right of the colon in the next configuration item.
