@@ -23,7 +23,10 @@ class BulkImportsClient(BaseGitLabClient):
             import_response = self.bulk_import.start_new_bulk_import(self.dest_host, self.dest_token, payload.to_dict())
             total_entity_count = 0
             for entity in payload.entities:
-                total_entity_count += self.calculate_entity_count(entity.source_full_path)
+                if entity.source_type == 'group_entity':
+                    total_entity_count += self.calculate_entity_count(entity.source_full_path)
+                else:
+                    total_entity_count += 1
             if import_response.status_code in [200, 201, 202]:
                 import_response = import_response.json()
                 self.log.info(f"Successfully triggered bulk import request with response: {import_response}")
@@ -41,7 +44,7 @@ class BulkImportsClient(BaseGitLabClient):
                     drd = self.get_all_group_paths(entity)
                     dry_run_data.append(drd.to_dict())
                 elif entity.source_type == 'project_entity':
-                    drd = DryRunData(projects=[entity.source_full_path])
+                    drd = DryRunData(entity=entity)
                     dry_run_data.append(drd.to_dict())
             return (None, dry_run_data, None)
 
@@ -148,8 +151,9 @@ class BulkImportsClient(BaseGitLabClient):
             source_type=f"project_entity",
             source_full_path=project_data['path_with_namespace'],
             destination_slug=project_data['path'],
-            destination_namespace=get_project_dest_namespace(project_data),
-            destination_name=project_data['name'],
+            destination_namespace=get_project_dest_namespace(project_data, group_path=self.config.dstn_parent_group_path),
+            # destination_name=project_data['name'],
+            migrate_projects=None
         )
 
 @shared_task(name='watch-import-status')

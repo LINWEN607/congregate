@@ -106,10 +106,10 @@ def get_project_dest_namespace(p, mirror=False, group_path=None):
     p_namespace = dig(p, 'namespace', 'full_path') if isinstance(
         p.get("namespace"), dict) else p.get("namespace")
 
-    if not is_user_project(p) and b.config.dstn_parent_id and not mirror:
-        return f"{b.config.dstn_parent_group_path}/{p_namespace}"
     if not is_user_project(p) and group_path and not mirror:
         return group_path
+    if not is_user_project(p) and b.config.dstn_parent_id and not mirror:
+        return f"{b.config.dstn_parent_group_path}/{p_namespace}"
     return p_namespace
 
 
