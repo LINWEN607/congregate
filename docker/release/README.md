@@ -29,21 +29,20 @@ that you can use to break up different components into distinct services.
 ### Congregate, mongo, and maven
 
 - Follow the instructions above with these additional steps
-    - Set `SRC_ACCESS_TOKEN` to the source instance access token and
+  - Set `SRC_ACCESS_TOKEN` to the source instance access token and
      `DEST_ACCESS_TOKEN` to the destination instance access token. Both in plain text
-    - Configure in your *congregate.conf* file
+  - Configure in your *congregate.conf* file
 
     ```ini
     [APP]
     maven_port = 50050
     ```
 
-    - If you are running into an issue where congregate cannot communicate with
-      the maven gRPC server, try configuring the following in your *congregate.conf* file 
+  - If you are running into an issue where congregate cannot communicate with
+    the maven gRPC server, try configuring the following in your *congregate.conf* file
 
     ```ini
     [APP]
     maven_port = 50050
     grpc_host = <docker_host_local_ip> # E.g. 192.168.0.5
     ```
-

@@ -79,11 +79,13 @@ Copy the following data and add subsequent rows for single group migration
 
 ### Pre-migration checklist
 
-* [ ] PSE conducting the migration has acquired a GitLab source and destination instance personal access token with admin privileges (top right icon in GitLab -> Settings -> Access Tokens)
-* [ ] PSE has configured Congregate to migrate between two GitLab instances
-  * [ ] Inspect and validate configured values in `data/congregate.conf`
-* [ ] Run `./congregate.sh clean-database --commit` to drop any previous collection(s) of users, groups and projects
-  * [ ] If you are migrating from scratch add `--keys` argument to drop collection(s) of deploy keys as well
+* PSE conducting the migration:
+  * [ ] Acquires a GitLab source and destination instance personal access token with Admin privileges (top right icon in GitLab -> Settings -> Access Tokens)
+  * [ ] [Configures Congregate](/docs/full_setup.md) to migrate between two GitLab instances
+    * [ ] Inspects and validates configured values in `data/congregate.conf`
+      * **Tip:** Run `./congregate.sh validate-config`
+  * [ ] (optional) Runs `./congregate.sh clean-database --commit` to drop any previous collection(s) of users, groups and projects
+    * [ ] If you are migrating from scratch add `--keys` argument to drop collection(s) of deploy keys as well
 
 ### User migration
 
@@ -147,7 +149,9 @@ Copy the following data and add subsequent rows for single group migration
 
 #### Prepare groups and projects
 
-* [ ] If container registries are migrated make sure to set `/var/run/docker.sock` permissions for `ps-user` by running `sudo chmod 666 /var/run/docker.sock`.
+* [ ] Confirm [group](https://docs.gitlab.com/ee/user/project/settings/import_export.html#enable-export-for-a-group) and [project](https://docs.gitlab.com/ee/administration/settings/import_and_export_settings.html#enable-project-export) exports are enabled on the source GitLab instance
+* [ ] Confirm file exports are [enabled as an import source](https://docs.gitlab.com/ee/user/project/settings/import_export.html#configure-file-exports-as-an-import-source) on the destination GitLab instance
+* [ ] If container registries are migrated make sure to set `/var/run/docker.sock` permissions for the `ps-user` in the Congregate Docker container by running `sudo chmod 666 /var/run/docker.sock`.
 * [ ] Review migration schedule (see customer migration schedule)
 * [ ] Check the status of the destination instance
   * [ ] Confirm you can reach the UI of the instance
@@ -187,6 +191,7 @@ Copy the following data and add subsequent rows for single group migration
 * [ ] Notify the customer in the customer-facing Slack channel you are starting the migration wave
 * [ ] Run the following command `nohup ./congregate.sh migrate --skip-users --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log 2>&1 &`
   * [ ] If only sub-groups are staged make sure to add `--subgroups-only`
+  * [ ] Add `--retain-contributors` to map the users who contributed to a project in the past but are no longer members of the project
 * [ ] Monitor the wave periodically by running `tail -f data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log`
 * [ ] Copy the following files to `/opt/congregate/data/waves/wave_<insert_wave_number>/` and attach to this issue:
   * `data/logs/congregate.log`

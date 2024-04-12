@@ -23,10 +23,10 @@ This runbook covers the process of preparing and cleaning up after a migration f
 
 * [ ] For GitLab.com migrations, verify with the Account/Sales team that all licensing is setup for the `namespace` on `gitlab.com`, make sure the customer's `namespace` is set as `private`.
   * Relevant Process Links:
-    - https://about.gitlab.com/handbook/sales/field-operations/sales-operations/deal-desk/#co-terming
-    - https://about.gitlab.com/handbook/sales/field-operations/order-processing/#post-sale-information
-    - https://handbook.gitlab.com/handbook/support/license-and-renewals/workflows/
-    - https://handbook.gitlab.com/handbook/support/license-and-renewals/workflows/saas/associate_subscription_and_namespace/#customer-self-serve-associating-the-subscription-and-namespace
+    * https://about.gitlab.com/handbook/sales/field-operations/sales-operations/deal-desk/#co-terming
+    * https://about.gitlab.com/handbook/sales/field-operations/order-processing/#post-sale-information
+    * https://handbook.gitlab.com/handbook/support/license-and-renewals/workflows/
+    * https://handbook.gitlab.com/handbook/support/license-and-renewals/workflows/saas/associate_subscription_and_namespace/#customer-self-serve-associating-the-subscription-and-namespace
 * [ ] Setup the migration VM that will host the Professional Services (PS) migration tool’s (Congregate) Docker container.
   * It should have minimal port and IP access. See [VM Requirements](#vm) for more detail.
   * **NOTE:** If required the VM might be created, by the customer, within their environment. Make sure this approach is covered in the SoW.

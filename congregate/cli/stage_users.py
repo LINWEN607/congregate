@@ -32,7 +32,7 @@ class UserStageCLI(BaseStageClass):
                     users_to_stage) == len(users):
                 for u in users:
                     self.log.info(
-                        f"Staging user '{u['email']}' (ID: {u['id']})")
+                        f"Staging user '{u['email']}' (ID: {u['id']}) [{len(self.staged_users)}/{len(users)}]")
                     self.staged_users.append(u)
             else:
                 for user in filter(None, users_to_stage):
@@ -40,7 +40,7 @@ class UserStageCLI(BaseStageClass):
                         if (user == u["username"]) or (user == str(u["id"])) or (user == u["email"]):
                             self.staged_users.append(u)
                             self.log.info(
-                                f"Staging user '{u['email']}' [{len(self.staged_users)}/{len(users)}]")
+                                f"Staging user '{u['email']}' (ID: {u['id']}) [{len(self.staged_users)}/{len(users)}]")
         else:
             self.log.info("Staging empty user list")
             return self.staged_users

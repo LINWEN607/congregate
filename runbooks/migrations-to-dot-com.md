@@ -81,12 +81,14 @@ Copy the following data and add subsequent rows for single group migration
 
 ### Pre-migration checklist
 
-* [ ] PSE conducting the migration has acquired a GitLab source instance personal access token with admin privileges (top right icon in GitLab -> Settings -> Access Tokens)
-* [ ] PSE conducting the migration has acquired an admin token for gitlab.com
-* [ ] PSE has configured Congregate to migrate from a GitLab instance to gitlab.com
-  * [ ] Inspect and validate configured values in `data/congregate.conf`
-* [ ] Run `./congregate.sh clean-database --commit` to drop any previous collection(s) of users, groups and projects
-  * [ ] If you are migrating from scratch add `--keys` argument to drop collection(s) of deploy keys as well
+* PSE conducting the migration:
+  * [ ] Acquires a GitLab source instance personal access token with admin privileges (top right icon in GitLab -> Settings -> Access Tokens)
+  * [ ] Acquires an Admin token for gitlab.com
+  * [ ] [Configures Congregate](/docs/full_setup.md) to migrate from a GitLab instance to gitlab.com
+    * [ ] Inspects and validates configured values in `data/congregate.conf`
+      * **Tip:** Run `./congregate.sh validate-config`
+  * [ ] (optional) Runs `./congregate.sh clean-database --commit` to drop any previous collection(s) of users, groups and projects
+    * [ ] If you are migrating from scratch add `--keys` argument to drop collection(s) of deploy keys as well
 
 ### User migration
 
@@ -96,6 +98,7 @@ Copy the following data and add subsequent rows for single group migration
 
 * [ ] Review migration schedule (see customer migration schedule)
 * [ ] Login to the migration VM using `ssh -L 8000:localhost:8000 <vm_alias_ip_or_hostname>` to expose UI port `8000` outside of the docker container
+  * Run `./congregate.sh ui` from the container to start the Congregate UI
 * [ ] Check the status of **gitlab.com** (https://status.gitlab.com/)
   * [ ] Confirm you can reach the UI of the instance
   * [ ] Confirm you can reach the API through cURL or a REST client
@@ -150,6 +153,10 @@ Copy the following data and add subsequent rows for single group migration
 
 #### Prepare groups and projects
 
+* [ ] Confirm [group](https://docs.gitlab.com/ee/user/project/settings/import_export.html#enable-export-for-a-group) and [project](https://docs.gitlab.com/ee/administration/settings/import_and_export_settings.html#enable-project-export) exports are enabled on the source GitLab instance
+* [ ] Confirm file exports are [enabled as an import source](https://docs.gitlab.com/ee/user/project/settings/import_export.html#configure-file-exports-as-an-import-source) on the destination GitLab instance
+  * **NOTE:** Enabled by default on gitlab.com
+* [ ] If container registries are migrated make sure to set `/var/run/docker.sock` permissions for the `ps-user` in the Congregate Docker container by running `sudo chmod 666 /var/run/docker.sock`.
 * [ ] Review migration schedule (see customer migration schedule)
 * [ ] Confirm all users have logged in and linked their SAML accounts (if applicable)
   * [ ] Disable top-level group SSO enforcement to allow membership and contribution mapping for users that do not have their SAML account linked
@@ -189,9 +196,9 @@ Copy the following data and add subsequent rows for single group migration
 * [ ] If container registries are migrated make sure to set `/var/run/docker.sock` permissions for `ps-user` by running `sudo chmod 666 /var/run/docker.sock`.
 * [ ] Notify in the internal Slack channel dedicated to this migration you are starting the migration wave
 * [ ] Notify the customer in the customer-facing Slack channel you are starting the migration wave
-* [ ] Run the following command `nohup ./congregate.sh migrate --skip-users --retain-contributors --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log 2>&1 &`
+* [ ] Run the following command `nohup ./congregate.sh migrate --skip-users --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log 2>&1 &`
   * [ ] If only sub-groups are staged make sure to add `--subgroups-only`
-  * [ ] Adding `--retain-contributors` for the users who contributed to a project in the past but are no longer members of the project
+  * [ ] Add `--retain-contributors` to map the users who contributed to a project in the past but are no longer members of the project
 * [ ] Monitor the wave periodically by running `tail -f data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log`
 * [ ] Copy the following files to `/opt/congregate/data/waves/wave_<insert_wave_number>/` and attach to this issue:
   * `data/logs/congregate.log`

@@ -55,6 +55,15 @@ Sometimes, e.g. for customers with an Ultimate license, it might be worth adjust
 
 Please see [Migrating from Self-Managed GitLab to GitLab.com](https://about.gitlab.com/handbook/customer-success/professional-services-engineering/engagement-mgmt/scoping-information/migrations/SM-to-GitLab-com/) for more details.
 
+## What are the main differences between GitLab Self-Managed (On-Prem) and GitLab.com?
+
+Assuming the version of the 2 GitLab instances (on-prem and .com) are the same, there are several aspects of GitLab.com that make it unique. Among others:
+
+* [Authentication and authorization](https://docs.gitlab.com/ee/administration/auth/index.html#saas-vs-self-managed-comparison)
+* [Instance settings](https://docs.gitlab.com/ee/user/gitlab_com/)
+* [Specific Support Policies](https://about.gitlab.com/support/gitlab-com-policies/)
+* [Backups](https://handbook.gitlab.com/handbook/engineering/infrastructure/faq/)
+
 ## <a name="q3"></a>How long should a user expect the blackout/code-freeze period for their project as it is migrated?
 
 That depends on the migration wave size and start time.
@@ -265,9 +274,11 @@ Please consult the relevant [Congregate](https://gitlab.com/gitlab-org/professio
 
 Make sure the GitLab source instance application users are aware of the migration (code freeze):
 
-* As an Admin, broadcast a message to all users from the instance level, at least a week prior to the migration
+* As an Admin, [broadcast a message](https://docs.gitlab.com/ee/administration/broadcast_messages.html#add-a-broadcast-message) to all users from the instance level, at least a week prior to the migration
+  * **NOTE:** This can also be a role and/or path targeted message
 * To discourage application activity during migration you may [restrict users from logging into GitLab](https://docs.gitlab.com/omnibus/maintenance/#restrict-users-from-logging-into-gitlab)
-* As of GitLab 13.9 it's also possible to [enable maintenance mode](https://docs.gitlab.com/ee/administration/maintenance_mode/index.html#enable-maintenance-mode) during the migration, which allows most external actions that do not change internal state
+* As of GitLab 13.9 it's also possible to [enable maintenance mode](https://docs.gitlab.com/ee/administration/maintenance_mode/index.html#enable-maintenance-mode) which allows most external actions that do not change internal state
+  * **NOTE:** Maintenance mode prevents all POST/PUT/DELETE requests, including group/project exports and archiving projects
 
 Please see [here](#q3) for more details on the topic.
 

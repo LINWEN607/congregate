@@ -88,7 +88,7 @@ Using the `root` user account create a Personal Access Token or PAT (preferably 
 In Gitlab, from the user profile's *Settings -> Access Tokens* enter a name and check `api` from *Scopes*. *Note: This may change once more granular rights are introduced for PATs as described [here](https://gitlab.com/groups/gitlab-org/-/epics/637).*
 Make sure to safely store the tokens before configuring.
 
-> if you are configuring `data/congregate.conf` without using `congregate configure` make sure to base64 encode the tokens by using the `congregate obfuscate` utility. It will prompt you to paste the token in and output the encoded token. 
+> if you are configuring `data/congregate.conf` without using `congregate configure` make sure to base64 encode the tokens by using the `congregate obfuscate` utility. It will prompt you to paste the token in and output the encoded token.
 
 As part of project migrations, Congregate extends the Project export/import API by migrating registries (docker images).
 Make sure to enable the **Container Registry** on both instances as you will need the hostnames during configuration.
@@ -97,7 +97,13 @@ Apart from the `/etc/gitlab/gitlab.rb` file you may lookup the hostname on an em
 Run the following commands to configure Congregate and retrieve info from the source instance:
 
 ```bash
-congregate configure
+congregate init
+```
+
+Modify the configuration file (`/opt/congregate/data/congregate.conf`) using [`congregate.conf.template`](congregate.conf.template) as a guide.
+
+```bash
+congregate validate-config   # DEPRECATED command: 'congregate configure'
 congregate list
 ```
 
