@@ -2,6 +2,8 @@ from dataclasses import dataclass, asdict
 from flask import Flask
 from celery import Celery, Task
 from celery.result import AsyncResult
+from celery.signals import worker_process_shutdown
+from redis import Redis
 from congregate.helpers.configuration_validator import ConfigurationValidator
 
 def celery_init_app(app: Flask) -> Celery:
@@ -32,6 +34,14 @@ def generate_celery_config():
         }
     ).to_dict()
 
+@worker_process_shutdown.connect
+def cleanup_queue():
+    c = ConfigurationValidator()
+    r = Redis(host=c.redis_host, port=c.redis_port, password='password')
+    print("Flushing redis cache")
+    r.flushall()
+    r = None
+    
 def get_task_status(id):
     return AsyncResult(id)
 
