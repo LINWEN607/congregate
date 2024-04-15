@@ -36,6 +36,9 @@ def generate_celery_config():
 
 @worker_process_shutdown.connect
 def cleanup_queue():
+    '''
+        Flushes the redis cache when Celery shuts down
+    '''
     c = ConfigurationValidator()
     r = Redis(host=c.redis_host, port=c.redis_port, password='password')
     print("Flushing redis cache")
