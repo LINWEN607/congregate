@@ -1,58 +1,15 @@
-<!--
-    Copy the contents of this runbook into an issue when running through a migration wave.
-    Post the link to the issue on the Slack channel dedicated to this migration.
--->
+# Migration Wave
 
-# <customer name> Migration Wave <insert-number-here>
-
-This runbook covers the process of migrating a wave of **groups and projects** from a source GitLab instance to **gitlab.com**.
-
-**NOTE**: This issue **must** be created [5 days in advance](https://about.gitlab.com/handbook/support/workflows/importing_projects.html#import-scheduled) of executing the migration wave.
-
-## Migration Blackout Period
-
-<!--
-    Specify the date and time of this migration wave. For example
-
-    3:00PM 2020-09-07 - 3:00AM 2020-09-08
--->
-📅
+This runbook covers the process of migrating a wave of **groups and projects** from a source GitHub.com instance to **GitLab.com**.
 
 ## Slack channel for communication
 
-<!--
-    Provide the name and link of the Slack channel dedicated to communicating the status and events of the migration
--->
+* Customer shared channel
+* For GitLab PSE, there is an internal dedicated channel for discussion and alerts
 
 ## Points of contact
 
-<!-- PLEASE REMOVE BLOCK AFTER POPULATING TO AVOID TAGGING PEOPLE THAT SHOULD NOT BE INVOLVED
-    Provide the gitlab handles for the various people involved in this migration wave and their specific role in the migration.
-
-    You must provide the following roles:
-    - PSE conducting the migration
-    - SIRT group assigning an on-call Security engineer during the migration period
-    - Infra managers group assigning an SRE during the migration period
-    - Support managers group assigning a Support engineer during the migration period
-
-    Optional roles to provide:
-    - Backup PSE if the migration period spans several hours
-    - .com Support Engineer with rails console access for their awareness
-    - PS manager for their awareness
-
-    For example:
-
-    ### GitLab
-
-    * @<username>: PSE conducting the migration
-    * (gitlab.com) @gitlab-com/gl-security/security-operations/sirt: SIRT engineers responding to gitlab.com alerts e.g. Admin user impersonations
-    * (gitlab.com) @gitlab-com/gl-infra/managers: Infra managers that are aware of the migration and assigning an SRE during the migration period
-    * (gitlab.com) @gitlab-com/support/managers: Support managers that are aware of the migration and assigning a Support engineer during the migration period
-
-    ### <Customer>
-
-    * @<username>: Customer point of contact
--->
+* Get list of main point of contact from Customer during the Migration window
 
 ## Groups to migrate
 
@@ -62,78 +19,84 @@ This runbook covers the process of migrating a wave of **groups and projects** f
 * :heavy_minus_sign: = in progress (optional)
 * :white_check_mark: = finished
 
-<!--
-Copy the following data and add subsequent rows for wave migration or migration of nested groups and personal projects
-
-| Completed | Group Name / User Username | Total Projects   | Size            |
-| --------- | -------------------------- | ---------------- | --------------- |
-| :x:       | [name / username]          | [total-projects] | [size]          |
-| **Total** | [total-number]             | [sum-of-column]  | [sum-of-column] |
-
-Copy the following data and add subsequent rows for single group migration
-
-| Completed | Project Path | Repo Size   |
-| --------- | ------------ | ----------- |
-| :x:       | [name]       | [repo-size] |
--->
-
 ## Professional Services Steps to Complete Migration Wave
 
 ### Pre-migration checklist
 
-PSE conducting the migration:
-
-* [ ] Acquires a GitLab source instance personal access token with admin privileges (top right icon _Your user Avatar -\> Edit Profile -\> Access Tokens_)
-* [ ] Acquires an Admin token for Gitlab.com by raising an _Issue_ in [Access request](https://gitlab.com/gitlab-com/team-member-epics/access-requests) and choose the template _Access Change Request_
-* [ ] Configures Congregate to migrate from a GitLab instance to gitlab.com
-  * [ ] Inspects and validates configured values in `data/congregate.conf`
-    * **Tip:** Run `./congregate.sh validate-config`  to ensure Congregate is configured properly
-* [ ] (optional) Runs `./congregate.sh clean-database --commit` to drop any previous collection(s) of users, groups and projects
-  * [ ] If you are migrating from scratch add `--keys` argument to drop collection(s) of deploy keys as well
+* PSE conducting the migration:
+  * [ ] Acquires a Github Org personal access token with owner privileges. [Reference link](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens)
+    * [ ] Steps:
+      * [ ] In the upper-right corner of any page, click your profile photo, then click **Settings**.
+      * [ ] In the left sidebar, click **Developer settings**.
+      * [ ] In the left sidebar, under **Personal access tokens**, click **Fine-grained tokens**.
+      * [ ] Click **Generate new token**.
+        * Under **Token name**, enter a name for the token.
+        * Under **Expiration**, select an expiration for the token.
+        * Optionally, under **Description**, add a note to describe the purpose of the token.
+  * [ ] Acquires an Admin token for Gitlab.com by raising an _Issue_ in [Access request](https://gitlab.com/gitlab-com/team-member-epics/access-requests) and choose the template _Access Change Request_
+  * [ ] Configures Congregate to migrate from a GitHub.com to GitLab.com
+    * [ ] Inspects and validates configured values in `data/congregate.conf`
+      * **Tip:** Run `congregate validate-config` to ensure Congregate is configured properly
+  * [ ] (optional) Runs `congregate clean-database --commit` to drop any previous collection(s) of users, groups and projects
+    * [ ] If you are migrating from scratch add `--keys` argument to drop collection(s) of deploy keys as well
 
 ### User migration
 
-<details>
-<summary>Instructions for user migration collapsed by default.</summary>
+Instructions for user migration collapsed by default.
 
 #### Prepare users
 
 * [ ] Review migration schedule (see customer migration schedule)
+* [ ] Review [GitHub pre-requisites](https://docs.gitlab.com/ee/user/project/import/github.html#prerequisites) before performing migration
+  * [ ] To import projects from GitHub, you must enable the [GitHub import source](https://docs.gitlab.com/ee/administration/settings/import_and_export_settings.html#configure-allowed-import-sources). **NOTE**: GitHub import source is enabled by default on GitLab.com
+  * [ ] **Accounts for user contribution mapping**
+
+    For user contribution mapping between GitHub and GitLab to work:
+    * Each GitHub author and assignee in the repository must have a [public-facing email address](https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-personal-account-on-github/managing-email-preferences/setting-your-commit-email-address).
+    * The GitHub user’s email address must match their GitLab email address.
+    * If a user’s email address in GitHub is set as their secondary email address in GitLab, they must confirm it.
+  * [ ] GitHub Enterprise does not require a public email address, so you might have to add it to existing accounts.
 * [ ] When provisioning users via SAML (Just-in-Time) or SCIM [domain verification](https://docs.gitlab.com/ee/user/enterprise_user/#1-add-a-custom-domain-for-the-matching-email-domain) is recommended to avoid [user account auto-deletion on gitlab.com after 3 days](https://gitlab.com/gitlab-org/gitlab/-/issues/352514)
   * [ ] **NOTE:** Product is considering to [exclude SCIM provisioned users](https://gitlab.com/gitlab-org/gitlab/-/issues/423322). SAML Just-in-Time provisioned users still need to confirm/verify their email
 * [ ] When migrating/creating users via Congregate, using the admin token, they are automatically confirmed/verified. However, they still have to link their GitLab and SAML accounts
   * To link them they have to follow [this troubleshooting scenario](https://docs.gitlab.com/ee/user/group/saml_sso/troubleshooting.html#message-there-is-already-a-gitlab-account-associated-with-this-email-address-sign-in-with-your-existing-credentials-to-connect-your-organizations-account) to reset their pwd and login to gitlab.com for the 1st time
 * [ ] Login to the migration VM using `ssh -L 8000:localhost:8000 <vm_alias_ip_or_hostname>` to expose UI port `8000` outside of the docker container
-  * Run `./congregate.sh ui` from the container to start the Congregate UI
+  * Run `congregate ui` from the container to start the Congregate UI
 * [ ] Check the status of **gitlab.com** (https://status.gitlab.com/)
   * [ ] Confirm you can reach the UI of the instance
   * [ ] Confirm you can reach the API through cURL or a REST client
   * [ ] Confirm the import (Admin) user has a spoofed SAML link in _Profile -\> Account -\> Service sign-in_
     * It has to be spoofed as we do not want the customer provisioning a gitlab.com Admin account
-    * See GitLab migration prerequisites for details
+    * See [GitLab migration prerequisites](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/blob/master/runbooks/migration-pre-and-post-requisites.md) for more details
 * [ ] Create a directory called "waves" in `/opt/congregate/data` in the container if it doesn't already exist
 * [ ] Create a directory called `user_wave` in `/opt/congregate/data/waves` if it doesn't already exist
-* [ ] Run `nohup ./congregate.sh list > data/waves/listing.log 2>&1 &` at the beginning of the migration blackout period
+* [ ] Run `nohup congregate list > data/waves/listing.log 2>&1 &` at the beginning of the migration blackout period
 * [ ] Stage ALL users
   * **NOTE:** Make sure no groups and projects are staged
   * Determine (with customer) whether user ID 1 is a regular user that should be migrated
 * [ ] Copy `data/staged_users.json` to `/opt/congregate/data/waves/user_wave`
-* [ ] Lookup whether the staged users (emails) already exist on the destination by running `./congregate.sh search-for-staged-users`
+* [ ] Lookup whether the staged users (emails) already exist on the destination by running `congregate search-for-staged-users` **NOTE**: The public profile email on source (GH) should match any (primary or secondary) verified/confirmed user email on destination
   * This will output a list of user metadata, based on `email`, along with other stats
   * Add argument `--table` to command to save this output to `data/user_stats.csv`
+  * `public_email` field is not retrieved from GitHub source and therefore the `Source 'public_email' NOT set or NOT matching primary` column is either empty or might return wrong results in `user_stats.csv`
 * [ ] Determine with customer how to configure:
-  * `group_sso_provider` and `group_sso_provider_pattern`, if they are using SSO
-  * `keep_inactive_users` (`False` by default),
-  * `reset_pwd` (`True` by default),
-  * `force_rand_pwd` (`False` by default)
+  * [ ] `group_sso_provider` and `group_sso_provider_pattern`, if they are using SSO
+  * [ ] `keep_inactive_users` (`False` by default),
+    * `reset_pwd` (`True` by default),
+    * `force_rand_pwd` (`False` by default)
 * [ ] By default inactive users are skipped during user migration. To be sure they are removed from staged users, groups and projects run the following command:
-  * [ ] Dry run: `./congregate.sh remove-inactive-users`
-  * [ ] Live: `./congregate.sh remove-inactive-users --commit`
+  * [ ] Dry run: `congregate remove-inactive-users`
+  * [ ] Live: `congregate remove-inactive-users --commit`
 * [ ] Notify in the internal Slack channel dedicated to this migration you have completed preparation for the user wave
+
+<details>
+<summary>
 
 #### Dry run users
 
-* [ ] Run the following command: `nohup ./congregate.sh migrate > data/waves/user_wave/user_wave_dry_run.log 2>&1 &`
+</summary>
+
+* [ ] Run the following command: `nohup congregate migrate > data/waves/user_wave/user_wave_dry_run.log 2>&1 &`
   * **NOTE:** The command assumes you have no groups or projects staged
 * [ ] Confirm everything looks correct and move on to the next step in the runbook
   * Specifically, review the API requests and make sure the paths look correct.
@@ -141,11 +104,13 @@ PSE conducting the migration:
 * [ ] Copy `data/results/dry_run_user_migration.json` to `/opt/congregate/data/waves/user_wave/` and attach to this issue
 * [ ] Notify in the internal Slack channel dedicated to this migration you have completed dry run for the user wave
 
+#### 
+
 #### Migrate users
 
 * [ ] Notify in the internal Slack channel dedicated to this migration you are starting the user migration wave
 * [ ] Notify the customer in the customer-facing Slack channel you are starting the user migration wave
-* [ ] Run the following command `nohup ./congregate.sh migrate --commit > data/waves/user_wave/user_wave.log 2>&1 &`
+* [ ] Run the following command `nohup congregate migrate --commit > data/waves/user_wave/user_wave.log 2>&1 &`
 * [ ] Monitor the wave periodically by running `tail -f data/waves/user_wave/user_wave.log`
 * [ ] Copy the following files to `/opt/congregate/data/waves/user_wave/` and attach to this issue:
   * `data/logs/congregate.log`
@@ -159,10 +124,81 @@ PSE conducting the migration:
 
 #### Prepare groups and projects
 
-* [ ] Confirm [group](https://docs.gitlab.com/ee/user/project/settings/import_export.html#enable-export-for-a-group) and [project](https://docs.gitlab.com/ee/administration/settings/import_and_export_settings.html#enable-project-export) exports are enabled on the source GitLab instance
-* [ ] Confirm file exports are [enabled as an import source](https://docs.gitlab.com/ee/user/project/settings/import_export.html#configure-file-exports-as-an-import-source) on the destination GitLab instance
-  * **NOTE:** Enabled by default on gitlab.com
-* [ ] If container registries are migrated make sure to set `/var/run/docker.sock` permissions for the `ps-user` in the Congregate Docker container by running `sudo chmod 666 /var/run/docker.sock`.
+For GitHub.com to GitLab.com, there are two ways to migrate
+
+1. Only Projects(Repositories in GitHub)
+2. Groups(Organisations/Teams in GitHub) and Projects(Repositories in GitHub)
+
+### Option 1: Only Projects(Repositories in GitHub)
+
+We perform wave migration for projects migration.
+
+* [ ] **Migration Wave File:** Customer provides this migration wave.csv file defining what project goes to what group on the destination
+  * This file lists out every github project on the customer’s instance and includes an unpopulated wave# and wave date column for each project. This also includes to what group will the project need to be migrated on GitLab.com
+  * The customer is responsible for choosing which projects are apart of each wave
+  * Once a wave is set, the PSE will import this information into the migration tool
+  * Example of wave.csv: Wave name, Wave date, Source Url, Parent Path, Override
+
+    <table>
+    <tr>
+    <td>
+
+    **Wave name**
+    </td>
+    <td>
+
+    **Wave date**
+    </td>
+    <td>
+
+    **Source Url**
+    </td>
+    <td>
+
+    **Parent Path**
+    </td>
+    <td>
+
+    **Override**
+    </td>
+    </tr>
+    <tr>
+    <td>
+
+    _Wave_1_
+    </td>
+    <td>
+
+    _2049-01-01_
+    </td>
+    <td>
+
+    _GitHub project url_
+    </td>
+    <td>
+
+    _GitLab group url_
+    </td>
+    <td>
+
+    _x_
+    </td>
+    </tr>
+    <tr>
+    <td>wave_1</td>
+    <td>
+
+    _2049-01-01_
+    </td>
+    <td>
+
+    https://github.example.net/parent_1/project_1
+    </td>
+    <td>parent_group/nested</td>
+    <td>x</td>
+    </tr>
+    </table>
+
 * [ ] Review migration schedule (see customer migration schedule)
 * [ ] Confirm all users have logged in and linked their SAML accounts (if applicable)
   * [ ] Disable top-level group SSO enforcement to allow membership and contribution mapping for users that do not have their SAML account linked
@@ -172,39 +208,35 @@ PSE conducting the migration:
   * [ ] Confirm you can reach the API through cURL or a REST client
 * [ ] Create a directory called "waves" in `/opt/congregate/data` in the container if it doesn't already exist
 * [ ] Create a directory called `wave_<insert_wave_number>` in `/opt/congregate/data/waves` if it doesn't already exist
-* [ ] Run `nohup ./congregate.sh list > data/waves/listing.log 2>&1 &` at the beginning of the migration blackout period
-* [ ] Stage groups or projects based on the wave schedule in the UI
-  * [ ] If staging by group make sure to stage all sub-groups as well
+* [ ] Run `nohup congregate list > data/waves/listing.log 2>&1 &` at the beginning of the migration blackout period
+* [ ] Stage projects based on the wave schedule using either UI or Command line:
+  * [ ] UI
+  * [ ] Command line:
+    * [ ] `congregate stage-wave <wave name>` For example as per above table: `congregate stage-wave wave_1`
+    * [ ] `nohup congregate stage-wave <wave name> --commit > data/waves/wave_<insert_wave_number>/wave_<insert_wave_number>_stage.log 2>&1 &`
+    * [ ] tail above log file to know more
 * [ ] Copy all staged data to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
 * [ ] Make sure the group(s) you are migrating to have shared runners enabled
   * This is to avoid a group import bug : GitLab issue 276930 (Not linked to avoid mention)
   * Originally avoided by fixing another bug : GitLab issue 290291 (Not linked to avoid mention)
 * [ ] If `Restrict membership by email domain` is configured for the top-level group (_Settings -\> General -\> Permissions, LFS, 2FA_) make sure to add the Admin user's `gitlab.com` email domain
   * This is to avoid group and project import failures
-* [ ] (as of **14.0**) Set `public_email` field for all staged users on source by running `./congregate.sh set-staged-users-public-email`
-  * Skip running command if source version is **\< 14.0** and destination version is **\>= 14.0**
 * [ ] Notify in the internal Slack channel dedicated to this migration you have completed preparation for the wave
 
-**NOTE:** Projects and groups (except top-level group) are by (instance) default deleted after 7 days. In the meantime their name and path changes and the projects are archived. To immediately delete them one (Owner) has to delete them again. Adding `permanently_remove` immediately removes them via API.
+#### Dry run projects
 
-#### Dry run groups and projects
-
-* [ ] Run the following command: `nohup ./congregate.sh migrate --skip-users > data/waves/wave_<insert_wave_number>/wave_<insert_wave_number>_dry_run.log 2>&1 &`
-  * [ ] If only sub-groups are staged make sure to add `--subgroups-only`
+* [ ] Run the following command: `nohup congregate migrate --skip-users --skip-groups > data/waves/wave_<insert_wave_number>/wave_<insert_wave_number>_dry_run.log 2>&1 &`
 * [ ] Confirm everything looks correct and move on to the next step in the runbook
-  * Specifically, review the API requests and make sure the paths look correct. For example, make sure any parent IDs or namespaces are matching the parent ID and parent namespaces we have specified in the congregate config.
+  * Specifically, review the API requests and make sure the paths look correct. For example, make sure any parent IDs, target namespace or other namespaces are matching the parent ID and parent namespaces we have specified in the congregate config.
   * If anything looks wrong in the dry run, make a note of it in the issue and reach out to `@gitlab-org/professional-services-automation/tools/migration` for review. Do not proceed with the migration if the dry run data looks incorrect. If this is incorrect, the data we send will be incorrect.
 * [ ] Copy `data/results/dry_run_*_migration.json` to `/opt/congregate/data/waves/wave_<insert_wave_number>/` and attach to this issue
 * [ ] Notify in the internal Slack channel dedicated to this migration you have completed dry run for the wave
 
-#### Migrate groups and projects
+#### Migrate projects
 
-* [ ] If container registries are migrated make sure to set `/var/run/docker.sock` permissions for `ps-user` by running `sudo chmod 666 /var/run/docker.sock`.
 * [ ] Notify in the internal Slack channel dedicated to this migration you are starting the migration wave
 * [ ] Notify the customer in the customer-facing Slack channel you are starting the migration wave
-* [ ] Run the following command `nohup ./congregate.sh migrate --skip-users --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log 2>&1 &`
-  * [ ] If only sub-groups are staged make sure to add `--subgroups-only`
-  * [ ] Add `--retain-contributors` to map the users who contributed to a project in the past but are no longer members of the project
+* [ ] Run the following command `nohup congregate migrate --skip-users --skip-groups --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log 2>&1 &`
 * [ ] Monitor the wave periodically by running `tail -f data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log`
 * [ ] Copy the following files to `/opt/congregate/data/waves/wave_<insert_wave_number>/` and attach to this issue:
   * `data/logs/congregate.log`
@@ -214,7 +246,7 @@ PSE conducting the migration:
   * `data/logs/import_failed_relations.json`
   * `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log`congregate/data/waves/wave\_/\`
 * [ ] Inspect `data/logs/import_failed_relations.json` for any project import failed relations (missing feature info)
-  * In case of missing MRs, Piplines, etc. that are critical to the customer and business:
+  * In case of missing MRs, Pipelines, etc. that are critical to the customer and business:
     * [ ] Stage and rollback projects with critical failed relations
       * **NOTE:** `--skip-users` and `--skip-groups`
     * [ ] Repeat [migration](#migrate-group-and-projects)
@@ -245,35 +277,129 @@ PSE conducting the migration:
       * `json.exception.class`
       * `json.extra.relation_name`
 
-### Migrate over 5 GB Large Projects
+### Option 2: Groups(Organizations/Teams in GitHub) and Projects(Repositories in GitHub)
 
-<details>
-<summary>Instructions for migrating large projects.</summary>
+We perform wave migration for Groups & Projects migration. In this option, Congregate creates the group(mentioned under _Parent Path_ column in wave.csv) if it is missing in the destination.
 
-#### Import the Project from AWS S3 for Large Projects
+* [ ] **Migration Wave File:** Customer provides this migration wave.csv file defining what project goes to what group on the destination
+  * This file lists out every github project on the customer’s instance and includes an unpopulated wave# and wave date column for each project. This also includes to what group will the project need to be migrated on GitLab.com
+  * The customer is responsible for choosing which projects are apart of each wave
+  * Once a wave is set, the PSE will import this information into the migration tool
+  * Example of wave.csv: Wave name, Wave date, Source Url, Parent Path, Override
 
-**NOTE**: If the project size is bigger than 5 GB, less than 10 GB. We can import the project from AWS S3 through API.
+    <table>
+    <tr>
+    <td>
 
-1. Steps to install AWS CLI and connect to AWS S3
-   1. [Install the AWS CLI](https://docs.aws.amazon.com/cli/v1/userguide/cli-chap-install.html)
-   2. `aws configure` to [configure the AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html)
-   3. `aws s3 ls s3://<bucket_name>` to verify if you can list your bucket
-   4. `aws s3 cp <the project.tar.gz> s3://<bucket_name>` to upload the project package to S3 bucket
-2. Follow [Import the Project from AWS S3](https://docs.gitlab.com/ee/api/project_import_export.html#import-a-file-from-aws-s3) to import the project from S3 to GitLab.com
+    **Wave name**
+    </td>
+    <td>
 
-#### Workarounds for Large Repositories
+    **Wave date**
+    </td>
+    <td>
 
-Maximum import size limitations can prevent an import from being successful. If changing the import limits is not possible, you can try one of the workarounds listed here.
+    **Source Url**
+    </td>
+    <td>
 
-[Workaround Option 1](https://docs.gitlab.com/ee/user/project/settings/import_export_troubleshooting.html#workaround-option-1)
+    **Parent Path**
+    </td>
+    <td>
 
-[Workaround Option 2](https://docs.gitlab.com/ee/user/project/settings/import_export_troubleshooting.html#workaround-option-2)
+    **Override**
+    </td>
+    </tr>
+    <tr>
+    <td>
 
-#### Manually Execute Export Projects
+    _Wave_1_
+    </td>
+    <td>
 
-You can [manually execute the export project](https://docs.gitlab.com/ee/user/project/settings/import_export_troubleshooting.html#manually-execute-export-steps) excluded unneeded exporters for example LFS objects to reduce the project size, and import LFS objects separately as the post migration. Excluding uploads can also help, e.g. in case of MRs exceeding the [Evaluate threshold](https://gitlab.com/gitlab-org/professional-services-automation/tools/utilities/evaluate#project-data) and having many file uploads and/or non-optimal object storage configuration on source.
+    _2049-01-01_
+    </td>
+    <td>
 
-</details>
+    _GitHub project url_
+    </td>
+    <td>
+
+    _GitLab group url_
+    </td>
+    <td>
+
+    _yes_
+    </td>
+    </tr>
+    <tr>
+    <td>wave_1</td>
+    <td>
+
+    _2049-01-01_
+    </td>
+    <td>
+
+    https://github.example.net/parent_1/project_1
+    </td>
+    <td>parent_group/nested</td>
+    <td>yes</td>
+    </tr>
+    </table>
+
+* [ ] Review migration schedule (see customer migration schedule)
+* [ ] Confirm all users have logged in and linked their SAML accounts (if applicable)
+  * [ ] Disable top-level group SSO enforcement to allow membership and contribution mapping for users that do not have their SAML account linked
+  * [ ] See Customer migration prerequisites for details
+* [ ] Check the status of **gitlab.com** (https://status.gitlab.com/)
+  * [ ] Confirm you can reach the UI of the instance
+  * [ ] Confirm you can reach the API through cURL or a REST client
+* [ ] Create a directory called "waves" in `/opt/congregate/data` in the container if it doesn't already exist
+* [ ] Create a directory called `wave_<insert_wave_number>` in `/opt/congregate/data/waves` if it doesn't already exist
+* [ ] Run `nohup congregate list > data/waves/listing.log 2>&1 &` at the beginning of the migration blackout period
+* [ ] Stage groups and projects based on the wave schedule in either UI or Command line
+  * [ ] UI
+  * [ ] Command line:
+    * [ ] `congregate stage-wave <wave name>` For example as per above table: `congregate stage-wave wave_1`
+    * [ ] `nohup congregate stage-wave <wave name> --commit > data/waves/wave_<insert_wave_number>/wave_<insert_wave_number>_stage.log 2>&1 &`
+    * [ ] tail above log file to know more
+* [ ] Copy all staged data to `/opt/congregate/data/waves/wave_<insert_wave_number>/`
+* [ ] Make sure the group(s) you are migrating to have shared runners enabled
+  * This is to avoid a group import bug : GitLab issue 276930 (Not linked to avoid mention)
+  * Originally avoided by fixing another bug : GitLab issue 290291 (Not linked to avoid mention)
+* [ ] If `Restrict membership by email domain` is configured for the top-level group (_Settings -\> General -\> Permissions, LFS, 2FA_) make sure to add the Admin user's `gitlab.com` email domain
+  * This is to avoid group and project import failures
+* [ ] Notify in the internal Slack channel dedicated to this migration you have completed preparation for the wave
+
+#### Dry run Groups & Projects
+
+* [ ] Run the following command: `nohup congregate migrate --skip-users --group-structure > data/waves/wave_<insert_wave_number>/wave_<insert_wave_number>_dry_run.log 2>&1 &`
+* [ ] Confirm everything looks correct and move on to the next step in the runbook
+  * Specifically, review the API requests and make sure the paths look correct. For example, make sure any parent IDs, target namespace or other namespaces are matching the parent ID and parent namespaces we have specified in the congregate config.
+  * If anything looks wrong in the dry run, make a note of it in the issue and reach out to `@gitlab-org/professional-services-automation/tools/migration` for review. Do not proceed with the migration if the dry run data looks incorrect. If this is incorrect, the data we send will be incorrect.
+* [ ] Copy `data/results/dry_run_*_migration.json` to `/opt/congregate/data/waves/wave_<insert_wave_number>/` and attach to this issue
+* [ ] Notify in the internal Slack channel dedicated to this migration you have completed dry run for the wave
+
+#### Migrate Groups and Projects
+
+* [ ] Notify in the internal Slack channel dedicated to this migration you are starting the migration wave
+* [ ] Notify the customer in the customer-facing Slack channel you are starting the migration wave
+* [ ] Run the following command `nohup congregate migrate --skip-users --group-structure --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log 2>&1 &`
+* [ ] Monitor the wave periodically by running `tail -f data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log`
+* [ ] Copy the following files to `/opt/congregate/data/waves/wave_<insert_wave_number>/` and attach to this issue:
+  * `data/logs/congregate.log`
+  * `data/logs/audit.log`
+  * `data/results/group_migration_results.json`
+  * `data/results/project_migration_results.json`
+  * `data/logs/import_failed_relations.json`
+  * `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log` congregate/data/waves/wave\_/\`
+* [ ] Inspect `data/logs/import_failed_relations.json` for any project import failed relations (missing feature info)
+  * In case of missing MRs, Pipelines, etc. that are critical to the customer and business:
+    * [ ] Stage and rollback projects with critical failed relations
+      * **NOTE:** `--skip-users` and `--skip-groups`
+    * [ ] Repeat [migration](#migrate-group-and-projects)
+    * [ ] Once complete, and in case of consistently missing info, discuss and request verbal or written sign-off from customer
+      * [ ] Otherwise [rollback](#rollback) the entire wave and reschedule
 
 ### Post Migration of Failed Groups and Projects
 
@@ -306,111 +432,7 @@ For each migration attempt check if any project or group imports failed or have 
   * `data/logs/import_failed_relations.json`
   * `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log`
 
-#### SRE Support Import of Failed Groups and Projects
-
-If a project or group import continues to fail (2 retries max), you'll need to create an infrastructure issue to get the project imported.
-
-* Preparation
-  * [ ] Before coming to the conclusion that an infra issue is needed to import the project, examine the contents of the project on the source.
-  * [ ] Take note of any environments, CI/CD variables, merge request approvers, and container registries and see if any of those are present. If they are, you will need to run another command to get that data to the destination.
-  * [ ] Upload the project export file to google drive and get a shareable link.
-* Create an import issue **per project**
-  * [ ] Create a new issue in the [infrastructure](https://gitlab.com/gitlab-com/gl-infra/infrastructure/-/issues) project using the [Project import](https://gitlab.com/gitlab-com/gl-infra/infrastructure/-/blob/master/.gitlab/issue_templates/Project%20Import.md) template.
-  * [ ] Walk through the steps on the template to provide all necessary information
-  * [ ] When providing a list of user emails, you can extract the project export tar.gz and run the following command to get a list of emails (make sure you have `jq` installed):
-    * [ ] JSON: `cat project.json | jq -r '.project_members' | jq -r '.[] | .user | .email'`
-    * [ ] NDJON: `cat tree/project/project_members.ndjson | jq -r '.user | .email'`
-  * [ ] All predefined issue settings are at the bottom (e.g. labels, assignees, etc.) so go ahead and submit the issue.
-  * [ ] (**optional**) Reach out to the Infra managers on Slack in #infrastructure-lounge by mentioning the issue.
-  * [ ] Make sure to check off all checkboxes listed under Support in the import issue. We are Support in this instance.
-  * [ ] Once the assignee confirms the import has started, promptly delete the project from google drive.
-* Post Import. **The assignee will let you know when the import is complete.**
-* If any projects imported by the assignee require any post-migration data to be migrated:
-  * [ ] Confirm those projects are staged
-  * [ ] Run `nohup ./congregate.sh migrate --skip-users --only-post-migration-info --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>_post_migration.log 2>&1 &` to migrate any post-migration data
-    * [ ] If only sub-groups are staged make sure to add `--subgroups-only`
-    * [ ] **NOTE:** `--only-post-migration-info` will implicitly skip group and project exports, but not imports and user creation
-
-#### Alternative project export/import methods
-
-* Export
-  * [Via Rake task](https://docs.gitlab.com/ee/administration/raketasks/project_import_export.html#export-using-a-rake-task)
-  * [Via Rails console](https://docs.gitlab.com/ee/user/project/settings/import_export_troubleshooting.html#manually-execute-export-steps)
-* [Project import options](https://docs.gitlab.com/ee/development/import_project.html#importing-the-project)
-  * [Via Rake task](https://docs.gitlab.com/ee/development/import_project.html#importing-via-a-rake-task)
-  * [Via Rails console](https://docs.gitlab.com/ee/development/import_project.html#importing-via-the-rails-console)
-* [Import/export Rake tasks](https://docs.gitlab.com/ee/administration/raketasks/project_import_export.html#importexport-rake-tasks)
-
-##### Trim or remove project CI pipelines
-
-###### On migration VM
-
-* Export project
-* Unpack file
-  * `tar -xzvf <archive_name>.tar.gz -C <target_directory>`
-* Trim lines or completely remove `<archive_folder>/tree/project/ci_pipelines.ndjson`
-* Pack back ONLY folder content
-  * `tar -czvf <archive_name>.tar.gz -C <archive_name> .`
-* Import project
-
-###### Rails console on source
-
-```bash
-sudo gitlab-rails console
-```
-
-```ruby
-# Assign project and user
-[ gprd ] production> p=Project.find_by_full_path('<full_path>')
-=> #<Project id:<PID> <full_path>
-[ gprd ] production> u=User.find_by(username: '<admin_or_owner_username>')
-=> #<User id:UID @<admin_or_owner_username>>
-
-# Find out delete error
-[ gprd ] production> p.delete_error
-=> "PG::QueryCanceled: ERROR:  canceling statement due to statement timeout\n"
-
-# Trim CI pipelines
-[ gprd ] production> p.ci_pipelines.find_each(start: <oldest_pipeline_id>, finish: <latest_pipeline_id>, batch_size: <no_of_pipelines_to_remove_per_batch>, &:destroy)
-=> nil
-[ gprd ] production> p.ci_pipelines.count
-=> <no_of_pipelines_left>
-
-# Remove all pipelines
-[ gprd ] production> p.ci_pipelines.find_each(batch_size: <no_of_pipelines_to_remove_per_batch>, &:destroy)
-=> nil
-[ gprd ] production> p.ci_pipelines.count
-=> 0
-
-# (WARNING) Completely remove the project
-[ gprd ] production> ProjectDestroyWorker.new.perform(p.id, u.id, {})
-=> true
-```
-
-#### Fallback if no container registry migrate
-
-In the event container registries fail to migrate, there is a bash script built in to the container you can use as a backup.
-
-The script is located at `<path_to_congregate>/dev/bin/manually_move_images.sh` (in the case of the container `/opt/congregate/dev/bin/manually_move_images.sh`)
-
-The script usage is in the script, but here is a quick example of using the script:
-
-```bash
-sudo -E /opt/congregate/dev/bin/manually_move_images.sh registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate registry.dest-gitlab.io/path/to/dest/registry/repo
-```
-
-This will migrate all containers from a single registry repository to another registry repository.
-
-If you need to move several registry repositories, you can follow the usage of another script in `/dev/bin` called `docker_brute_force.py`. In that script, you prepopulate all source and destination registry repositories in a list of tuples. It's hacky, but still faster than manually pulling and pushing all docker containers.
-
-* Optional checklist
-  * [ ] Confirm container registries failed to migrate and make a comment in this issue describing the failure
-  * [ ] (Optional) Prep `docker_brute_force.py` to migrate several registry repositories
-  * [ ] Execute the docker migration through one of the following commands:
-    * `nohup sudo ./dev/bin/manually_move_images.sh <source-repo> <destination-repo> > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>_manual_docker_migration.log 2>&1 &`
-    * `nohup sudo ./dev/bin/docker_brute_force.py > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>_manual_docker_migration.log 2>&1 &`
-  * [ ] Monitor the logs as it runs
-  * [ ] Once it finishes, attach the logs to this issue
+#### 
 
 ### Post Migration of Failed User, Group and Project Info
 
@@ -424,8 +446,6 @@ If you need to move several registry repositories, you can follow the usage of a
 
 ### Post Migration
 
-* [ ] Revert back on source the exposed users' `public_email` field by running `./congregate.sh set-staged-users-public-email --hide`
-  * Make sure all the affected users are staged first
 * [ ] If you had to run multiple `congregate migrate` attempts to bring over failed users, groups, or projects, you can run `congregate migrate --only-post-migration-info` to create a unified results file without the need to run `stitch-results`
 * [ ] Once you have a complete results file, run the diff report `congregate --generate-diff --staged`
 * [ ] Notify in the internal Slack channel dedicated to this migration you are running the diff report
