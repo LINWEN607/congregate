@@ -21,7 +21,11 @@
 ##! or connecting to third party services.
 ##! In those instances, we endeavour to provide an example configuration.
 ##! Token and password values must be obfuscated. You can run `./congregate.sh obfuscate` to mask them.
-###! **Configuration settings below are for Destination host**
+
+################################################################################
+## Destination Host Configuration [DESTINATION]
+################################################################################
+
 [DESTINATION]
 ### General configuration for GitLab server
 dstn_hostname = hostname
@@ -68,7 +72,11 @@ import_user_id = 0
 # lower_case_group_path = False
 # lower_case_project_path = False
 # users_to_ignore = []
-###! **Configuration settings below are for Source host**
+
+################################################################################
+## Source Host Configuration [SOURCE]
+################################################################################
+
 [SOURCE]
 ### General configuration for GitLab server
 ### This configuration is considered when the source is a GitLab server
@@ -138,7 +146,11 @@ src_access_token = *****
 ###! **HIDDEN PROPERTIES**
 ### Full .txt file path. List of URLs (per line), used with --subset list command argument, to list a custom subset of BitBucket projects or repos.
 # list_subset_input_path =
-###! **Configuration settings below are for EXPORT**
+
+################################################################################
+## Export Configuration [EXPORT]
+################################################################################
+
 [EXPORT]
 ### When exporting groups/projects to your local filesystem (default) the following fields are required:
 location = filesystem
@@ -156,7 +168,11 @@ filesystem_path = /absolute_path
 ###! **HIDDEN PROPERTIES**
 ### Used only by disabled migration mode "filesystem-aws"
 # allow_presigned_url = False
-###! **Configuration settings below are for USER**
+
+################################################################################
+## User Configuration [USER]
+################################################################################
+
 [USER]
 ### Consider below configuration if you need to keep inactive users,
 ### whether or not you should send the reset password link on user creation
@@ -172,7 +188,10 @@ filesystem_path = /absolute_path
 # projects_limit =
 # skip_keys_migration = False
 
-###! **Configuration settings below are for APP**
+################################################################################
+## Application Configuration [APP]
+################################################################################
+
 [APP]
 ### The frequency (in seconds) of checking a group or project export or import status.
 ### We can adjust it (10 by default) depending whether we are migrating during peak hours or not.
@@ -190,14 +209,14 @@ export_import_timeout = 3600
 
 ### Optional configuration if you are using a spreadsheet to keep track of migration waves
 
-### Specify an absolute path to the spreadsheet. Supports Excel, OpenOffice, and CSV spreadsheet formats. Ensure the file is owned by ps-user and that the path has the right permissions. 
+### Specify an absolute path to the spreadsheet. Supports Excel, OpenOffice, and CSV spreadsheet formats. Ensure the file is owned by ps-user and that the path has the right permissions.
 # Default absolute path for Congregate container
 # wave_spreadsheet_path = /opt/congregate/data/waves.csv
 
 ### Specify the column names for congregate to use from the spreadsheet. These names will be required to the right of the colon in the next configuration item.
 # wave_spreadsheet_columns = Migration wave, Date of execution, Repo URL, Group Path, Override
 
-### Provide a mapping of the current "expected" values to the actual columns in the spreadsheet. The keys are the "expected" and CANNOT CHANGE and the values are the column names from wave_spreadsheet_columns 
+### Provide a mapping of the current "expected" values to the actual columns in the spreadsheet. The keys are the "expected" and CANNOT CHANGE and the values are the column names from wave_spreadsheet_columns
 ### Make sure the dictionary mappings are written either in a single line, e.g.
 # wave_spreadsheet_column_mapping = {"Wave name": "Migration wave", "Wave date": "Date of execution", "Source Url": "Repo URL", "Parent Path": "Group Path", "Override": "Override"}
 
