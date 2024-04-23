@@ -10,7 +10,6 @@ include:
   - template: Jobs/SAST.latest.gitlab-ci.yml
   - template: Jobs/Secret-Detection.gitlab-ci.yml
   - template: Jobs/Container-Scanning.gitlab-ci.yml
-  - template: Jobs/License-Scanning.gitlab-ci.yml
   - template: Jobs/Dependency-Scanning.latest.gitlab-ci.yml
   - template: Code-Quality.gitlab-ci.yml
   - local: ci/vault.yml
