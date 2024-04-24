@@ -487,8 +487,10 @@ class GitLabMigrateClient(MigrateClient):
         try:
             c_retention = None
             if self.retain_contributors:
-                self.log.info(f"{dry_log}Contributor Retention is enabled. Adding all project contributors as project members")
-                c_retention = ContributorRetentionClient(pid, None, project['path_with_namespace'], dry_run=self.dry_run)
+                self.log.info(
+                    f"{dry_log}Contributor Retention is enabled. Adding all project contributors as project members")
+                c_retention = ContributorRetentionClient(
+                    pid, None, project['path_with_namespace'], dry_run=self.dry_run)
                 c_retention.build_map()
                 c_retention.add_contributors_to_project()
             self.log.info(
@@ -496,7 +498,8 @@ class GitLabMigrateClient(MigrateClient):
             result[filename] = ImportExportClient(src_host=src_host, src_token=src_token).export_project(
                 project, dry_run=self.dry_run)
             if self.retain_contributors:
-                self.log.info(f"{dry_log}Contributor Retention is enabled. Project export is complete Removing all project contributors from members")
+                self.log.info(
+                    f"{dry_log}Contributor Retention is enabled. Project export is complete Removing all project contributors from members")
                 c_retention.remove_contributors_from_project(source=True)
             if self.config.airgap:
                 exported_features = self.export_single_project_features(
@@ -566,7 +569,7 @@ class GitLabMigrateClient(MigrateClient):
                         f"Migrating additional source project '{path}' (ID: {src_id}) GitLab features")
                     result[dst_pwn] = self.migrate_single_project_features(
                         project, import_id, dest_host=dst_host, dest_token=dst_token)
-            else:
+            elif not self.dry_run:
                 self.log.warning(
                     f"Skipping import. Target namespace {tn} does not exist for project '{path}'")
         except (RequestException, KeyError, OverflowError) as oe:
@@ -664,8 +667,10 @@ class GitLabMigrateClient(MigrateClient):
 
         c_retention = None
         if self.retain_contributors:
-            self.log.info(f"Contributor Retention is enabled. Project {project['path_with_namespace']} has been imported so removing all project contributors as project members")
-            c_retention = ContributorRetentionClient(src_id, dst_id, project['path_with_namespace'], dry_run=self.dry_run)
+            self.log.info(
+                f"Contributor Retention is enabled. Project {project['path_with_namespace']} has been imported so removing all project contributors as project members")
+            c_retention = ContributorRetentionClient(
+                src_id, dst_id, project['path_with_namespace'], dry_run=self.dry_run)
             c_retention.build_map()
             c_retention.remove_contributors_from_project()
 

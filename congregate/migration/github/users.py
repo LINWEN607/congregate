@@ -80,7 +80,7 @@ class UsersClient(BaseClass):
             "name": single_user["name"] or single_user["login"],
             "email": self.get_email_address(single_user, github_browser, mongo),
             "avatar_url": single_user.get("avatar_url", ""),
-            "state": "blocked" if single_user.get("suspended_at", None) else "active",
+            "state": "blocked" if single_user.get("suspended_at") else "active",
             "is_admin": single_user["site_admin"]
         }
 
