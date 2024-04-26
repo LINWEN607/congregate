@@ -35,7 +35,7 @@ def generate_celery_config():
     ).to_dict()
 
 @worker_process_shutdown.connect
-def cleanup_queue():
+def cleanup_queue(**kwargs):
     '''
         Flushes the redis cache when Celery shuts down
     '''
