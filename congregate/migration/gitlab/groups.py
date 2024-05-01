@@ -71,7 +71,7 @@ class GroupsClient(BaseClass):
 
         if self.config.direct_transfer:
             for group in self.groups_api.get_all_groups(
-                host, token):
+                    host, token):
                 traverse_groups_task.delay(host, token, group)
         else:
             if self.config.src_parent_group_path:
@@ -83,7 +83,7 @@ class GroupsClient(BaseClass):
             else:
                 self.multi.start_multi_process_stream_with_args(self.traverse_groups, self.groups_api.get_all_groups(
                     host, token), host, token, processes=processes)
-            
+
     def append_groups(self, groups):
         with open(f"{self.app_path}/data/groups.json", "r") as f:
             group_file = json.load(f)
@@ -212,7 +212,7 @@ class GroupsClient(BaseClass):
         group = self.find_group_by_path(
             host, token, full_name_with_parent_namespace)
         if group is not None:
-            return group.get("id", None)
+            return group.get("id")
         return None
 
     def search_for_group_pr_namespace_by_full_name_with_parent_namespace(
@@ -269,6 +269,7 @@ class GroupsClient(BaseClass):
                     "destination_namespace": namespace})
         return entities, result
 
+
 @shared_task(name='traverse-groups')
 @mongo_connection
 def traverse_groups_task(host, token, group, mongo=None):
@@ -304,7 +305,8 @@ def traverse_groups_task(host, token, group, mongo=None):
         # Traverse subgroups
         for subgroup in gc.groups_api.get_all_subgroups(
                 gid, host, token):
-            gc.log.debug(f"Traversing into subgroup {subgroup.get('full_path')}")
+            gc.log.debug(
+                f"Traversing into subgroup {subgroup.get('full_path')}")
             traverse_groups_task.delay(
                 host, token, subgroup)
         mongo.insert_data(f"groups-{strip_netloc(host)}", group)

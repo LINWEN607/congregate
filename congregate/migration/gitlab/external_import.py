@@ -82,7 +82,14 @@ class ImportClient(BaseClass):
             "personal_access_token": token,
             "repo_id": project.get("id"),
             "target_namespace": tn,
-            "new_name": sanitize_project_path(gh_repo, dst_pwn)
+            "new_name": sanitize_project_path(gh_repo, dst_pwn),
+            # TODO: make configurable; use default values for now
+            "optional_stages": {
+                "single_endpoint_notes_import": False,
+                "attachments_import": False,
+                "collaborators_import": False
+            },
+            "timeout_strategy": "pessimistic"
         }
 
         if self.config.lower_case_project_path:
