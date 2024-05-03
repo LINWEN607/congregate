@@ -44,10 +44,12 @@ export default {
     ...mapStores(useSystemStore)
   },
   mounted: function() {
-    this.getJobsByStatus()
     axios.get(`${import.meta.env.VITE_API_ROOT}/api/settings`).then(response => {
       this.systemStore.updateSettings(response.data)
       this.$emitter.emit('settings-updated')
+    })
+    this.$emitter.on('check-jobs', () => {
+      this.getJobsByStatus()
     })
   },
   methods: {

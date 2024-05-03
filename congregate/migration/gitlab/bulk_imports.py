@@ -1,11 +1,12 @@
 from time import sleep
 from dacite import from_dict
-from celery import shared_task
+from celery import shared_task, chain
 from gitlab_ps_utils.misc_utils import safe_json_response
 from congregate.helpers.migrate_utils import get_project_dest_namespace
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.base_gitlab_client import BaseGitLabClient
 from congregate.migration.gitlab.api.bulk_imports import BulkImportApi
+from congregate.migration.gitlab.migrate import post_migration_task
 from congregate.migration.meta.api_models.bulk_import import BulkImportPayload
 from congregate.migration.meta.api_models.bulk_import_entity import BulkImportEntity
 from congregate.migration.meta.api_models.bulk_import_configuration import BulkImportconfiguration
@@ -155,6 +156,38 @@ class BulkImportsClient(BaseGitLabClient):
             # destination_name=project_data['name'],
             migrate_projects=None
         )
+
+@shared_task(bind=True, name='trigger-bulk-import-task')
+def kick_off_bulk_import(self, payload, dry_run=True):
+    payload = from_dict(data_class=BulkImportPayload, data=payload)
+    dt_client = BulkImportsClient(payload.configuration.url, payload.configuration.access_token)
+    dt_id, dt_entities, errors = dt_client.trigger_bulk_import(payload, dry_run=dry_run)
+    if dt_id and dt_entities:
+        # Kick off overall watch job
+        watch_status = watch_import_status.delay(dt_client.config.destination_host, dt_client.config.destination_token, dt_id)
+        entity_ids = []
+        for entity in dt_entities:
+            # Chain together watching the status of a specific entity
+            # and then once that job completes, trigger post migration tasks
+            res = chain(
+                watch_import_entity_status.s(dt_client.config.destination_host, dt_client.config.destination_token, entity), 
+                post_migration_task.s(dt_client.config.destination_host, dt_client.config.destination_token, dry_run=dry_run)
+            ).apply_async(queue='celery')
+            entity_ids.append(res.id)
+        return {
+            'status': 'triggered direct transfer jobs',
+            'overall_status_id': watch_status.id,
+            'entity_ids': entity_ids 
+        }
+    if dt_entities and (not dt_id):
+        return {
+            'status': 'dry run successful',
+            'dry_run_data': dt_entities
+        }
+    return {
+        'status': 'failed to trigger migration',
+        'errors': errors
+    }
 
 @shared_task(name='watch-import-status')
 def watch_import_status(dest_host: str, dest_token: str, id: int):

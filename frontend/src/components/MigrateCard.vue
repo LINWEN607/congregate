@@ -95,7 +95,7 @@ export default {
   mounted: function () {
     this.$emitter.on('migration-in-progress', () => {
       this.systemStore.updateMigrationInProgress(true)
-      this.updateStatusTable()
+      this.pollMigrationStatus()
     })
   },
   beforeDestroy: function() {
@@ -126,25 +126,54 @@ export default {
         }
         axios.post(migrateEndpoint).then(response => {
           if (!params.hasOwnProperty('commit')) {
-            this.$emitter.emit('show-dry-run', response.data)
-            this.systemStore.updateMigrationInProgress(false)
+            this.pollDryRunStatus(response.data.task_id)
           } else {
             this.dryRun = false
-            this.pollMigrationStatus()
+            this.pollInitialRequest(response.data.task_id)
           }
         })
       } else {
         // trigger file-based or other SCM import request
       }
     },
-    updateStatusTable: function() {
-      return axios.get(`${import.meta.env.VITE_API_ROOT}/api/direct_transfer/migration-status`).then(response => {
+    updateStatusTable: function(endpoint) {
+      return axios.get(`${import.meta.env.VITE_API_ROOT}/api/direct_transfer/${endpoint}`).then(response => {
+        if (response.data.length > 1) {
+          this.dryRun = false
+        }
         this.statusData = response.data
         return response
       })
     },
+    pollDryRunStatus: async function(id) {
+      let pollStatus = () => this.updateStatusTable(`import-status/${id}`)
+      let validate = result => result.data.status == 'STARTED'
+      let response = await poll(pollStatus, validate, 2500)
+      if (response.data.result != null) {
+        this.$emitter.emit('show-dry-run', response.data.result)
+        this.systemStore.updateMigrationInProgress(false)
+        this.dryRun = true
+      } else {
+        this.updateStatusTable('migration-status')
+      }
+      this.systemStore.updateMigrationInProgress(false)
+    },
+    pollInitialRequest: async function(id) {
+      let pollStatus = () => this.updateStatusTable(`import-status/${id}`)
+      let validate = result => result.data.status == 'STARTED'
+      let response = await poll(pollStatus, validate, 2500)
+      if (response.data.result != null && !response.data.result.hasOwnProperty('errors')) {
+        this.pollMigrationStatus()
+      } else if (response.data.result.hasOwnProperty('errors')) {
+        this.systemStore.updateMigrationInProgress(false)
+        this.$emitter.emit('alert', {
+          'message': `Failed to trigger migration. Refer to task ${id} in the Task Queue`,
+          'messageType': 'error'
+        })
+      }
+    },
     pollMigrationStatus: async function() {
-      let pollStatus = () => this.updateStatusTable()
+      let pollStatus = () => this.updateStatusTable('migration-status')
       let validate = result => result.data.length != 0
       let response = await poll(pollStatus, validate, 5000)
       if (response.data.length == 0) {
@@ -154,7 +183,7 @@ export default {
         })
         this.dryRun = true
       } else {
-        this.updateStatusTable()
+        this.updateStatusTable('migration-status')
       }
       this.systemStore.updateMigrationInProgress(false)
     },

@@ -68,6 +68,7 @@ export default {
     this.$emitter.on('update-stage', () => {
       this.getSummary()
     })
+    this.$emitter.emit('check-jobs')
   },
   beforeDestroy: function () {
     this.$emitter.off('update-stage')

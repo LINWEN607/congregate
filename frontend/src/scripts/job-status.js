@@ -10,7 +10,8 @@ export const listJobs = [
 export const migrateJobs = [
     'watch-import-status',
     'watch-import-entity-status',
-    'post-migration-task'
+    'post-migration-task',
+    'trigger-bulk-import-task'
 ]
 
 // This function is used to see if any of the values in a list are present
