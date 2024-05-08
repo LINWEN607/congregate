@@ -163,6 +163,9 @@ PSE conducting the migration:
 * [ ] Confirm file exports are [enabled as an import source](https://docs.gitlab.com/ee/user/project/settings/import_export.html#configure-file-exports-as-an-import-source) on the destination GitLab instance
   * **NOTE:** Enabled by default on gitlab.com
 * [ ] If container registries are migrated make sure to set `/var/run/docker.sock` permissions for the `ps-user` in the Congregate Docker container by running `sudo chmod 666 /var/run/docker.sock`.
+* [ ] Confirm number and list of source projects with at least 1 job artifact > 1Gb ([gitlab.com instance level limit](https://docs.gitlab.com/ee/user/gitlab_com/#gitlab-cicd)) by running (PSQL) DB query:
+  * `select distinct p.id, p.name from ci_job_artifacts a inner join projects p on p.id=a.project_id where a.size > 1000000000;`
+  * These projects will either need to decrease their artifact size (to < 1Gb) or publish/share the generated files as (generic) [packages](https://docs.gitlab.com/ee/user/packages/package_registry/index.html) instead
 * [ ] Review migration schedule (see customer migration schedule)
 * [ ] Confirm all users have logged in and linked their SAML accounts (if applicable)
   * [ ] Disable top-level group SSO enforcement to allow membership and contribution mapping for users that do not have their SAML account linked
@@ -396,9 +399,9 @@ ProjectDestroyWorker.new.perform(p.id, u.id, {})
 => true
 ```
 
-#### Fallback if no container registry migrate
+#### Fallback if container registries fail to migrate
 
-In the event container registries fail to migrate, there is a bash script built in to the container you can use as a backup.
+In the event container registries fail to migrate, e.g. due to size and/or network restrictions, there is a bash script built into the container you can use as a backup.
 
 The script is located at `<path_to_congregate>/dev/bin/manually_move_images.sh` (in the case of the container `/opt/congregate/dev/bin/manually_move_images.sh`)
 
@@ -410,7 +413,7 @@ sudo -E /opt/congregate/dev/bin/manually_move_images.sh registry.gitlab.com/gitl
 
 This will migrate all containers from a single registry repository to another registry repository.
 
-If you need to move several registry repositories, you can follow the usage of another script in `/dev/bin` called `docker_brute_force.py`. In that script, you prepopulate all source and destination registry repositories in a list of tuples. It's hacky, but still faster than manually pulling and pushing all docker containers.
+If you need to move several registry repositories, you can follow the usage of another script in `/dev/bin` called `docker_brute_force.py`. In that script, you pre-populate all source and destination registry repositories in a list of tuples. It's hacky, but still faster than manually pulling and pushing all docker containers.
 
 * Optional checklist
   * [ ] Confirm container registries failed to migrate and make a comment in this issue describing the failure
@@ -420,6 +423,16 @@ If you need to move several registry repositories, you can follow the usage of a
     * `nohup sudo ./dev/bin/docker_brute_force.py > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>_attempt<insert-attempt>_manual_docker_migration.log 2>&1 &`
   * [ ] Monitor the logs as it runs
   * [ ] Once it finishes, attach the logs to this issue
+
+##### Migrate container registries per project
+
+If registry migration is configured, instead of doing the actual migration, write the tags to the logs for use in the previously mentioned brute force migration. Can also be useful when renaming targets. To migrate all container registries per project:
+
+1. Add the `--reg-dry-run` argument to the `migrate` command and run it
+1. Confirm tuple files are newly generated in `<path_to_congregate>/data/reg_tuples` for each project with container registries
+1. Update the `./<src-project-id>_repos.tpls` line in file `<path_to_congregate>/dev/bin/docker_brute_force_for_tpls.py` to match the source project ID for which you want to migrate container registries
+1. Run `sudo -E python <path_to_congregate>/dev/bin/docker_brute_force_for_tpls.py`
+1. Repeat steps 3-4 for each project that has a newly generated file in `<path_to_congregate>/data/reg_tuples`
 
 ### Post Migration of Failed User, Group and Project Info
 
