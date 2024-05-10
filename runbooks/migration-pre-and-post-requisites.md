@@ -164,9 +164,12 @@ This runbook covers the process of preparing and cleaning up after a migration f
     * Comment on the IPs listing order eg: `# pse1, pse2, pse3`
   * Please comment in the module listing the customer name or SOW link. This helps with tracking for de-provisioning, later. Eg: `# This VM is for customer: ABC Inc`
   * Set the following variables in the `modules` section:
+    * `disk_size` - adjust it for optimal storage of [GitLab file-based group/project exports](https://docs.gitlab.com/ee/user/project/settings/import_export.html) and (docker) pulling of GitLab project container registries
+    * `zone` - adjust it to be closer to the customer environment i.e. source instance
+      * **NOTE:** Make sure to use the full GCP zone name, e.g. `us-west2-b`
     * `gl_customer_name = "name of customer"` Eg: `gl_customer_name = "acme"`
     * `gl_owner_email_handle = "email name of lead PSE"` Eg: `gl_owner_email_handle = "gmiller"`
-    * **Note:** these items have the following restrictions: `The value can only contain lowercase letters, numeric characters, underscores and dashes. The value can be at most 63 characters long. International characters are allowed.`
+    * **NOTE:** these items have the following restrictions: `The value can only contain lowercase letters, numeric characters, underscores and dashes. The value can be at most 63 characters long. International characters are allowed.`
   * Assign yourself and comment `/assign_reviewer @<see-in-project-readme>`
 * [ ] Once the MR is approved and merged retrieve the IP from the `apply` stage and job
 
