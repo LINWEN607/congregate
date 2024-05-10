@@ -257,6 +257,7 @@ check ldap compose yaml:
         - docker/test/*
     - if: "$CI_PIPELINE_SOURCE != 'schedule'"
       changes:
+        - ci/vault.yml
         - congregate/**/*
         - docker/test/*
         - congregate.sh
@@ -292,6 +293,7 @@ check ldap compose yaml:
     - if: "$CI_PIPELINE_SOURCE != 'schedule'"
       changes:
         - .gitlab-ci.yml
+        - ci/vault.yml
         - congregate/helpers/**/*
         - congregate/migration/diff/*
         - congregate/migration/gitlab/**/*

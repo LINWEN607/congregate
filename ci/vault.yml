@@ -1,4 +1,13 @@
+.jwt_v2:
+  variables:
+    VAULT_AUTH_PATH: jwt
+    VAULT_AUTH_ROLE: congregate-read
+  id_tokens:
+    VAULT_ID_TOKEN:
+      aud: $VAULT_SERVER_URL
+
 .aws-creds:
+  extends: .jwt_v2
   secrets:
     AWS_ACCESS_KEY_ID:
       vault: ci/AWS_ACCESS_KEY_ID@congregate
@@ -12,17 +21,15 @@
     KEY_NAME:
       vault: ci/KEY_NAME@congregate
       file: false
-    
+
 .azure-creds:
+  extends: .jwt_v2
   secrets:
     AZURE_GHE_VM_CREATOR_SERVICE_PRINCIPAL_APP_ID:
       vault: ci/AZURE_GHE_VM_CREATOR_SERVICE_PRINCIPAL_APP_ID@congregate
       file: false
     AZURE_GHE_VM_CREATOR_SERVICE_PRINCIPAL_PASSWORD:
       vault: ci/AZURE_GHE_VM_CREATOR_SERVICE_PRINCIPAL_PASSWORD@congregate
-      file: false
-    AZURE_GHE_VM_CREATOR_SERVICE_PRINCIPAL_APP_ID:
-      vault: ci/AZURE_GHE_VM_CREATOR_SERVICE_PRINCIPAL_APP_ID@congregate
       file: false
     AZURE_GHE_VM_CREATOR_SERVICE_PRINCIPAL_TENANT_ID:
       vault: ci/AZURE_GHE_VM_CREATOR_SERVICE_PRINCIPAL_TENANT_ID@congregate
@@ -47,6 +54,7 @@
       file: false
 
 .ghe-creds:
+  extends: .jwt_v2
   secrets:
     GHE_SOURCE_PASSWORD:
       vault: ci/GHE_SOURCE_PASSWORD@congregate
@@ -62,6 +70,7 @@
       file: false
 
 .bbs-creds:
+  extends: .jwt_v2
   secrets:
     BITBUCKET_LICENSE:
       vault: ci/BITBUCKET_LICENSE@congregate
@@ -74,6 +83,7 @@
       file: false
 
 .dotcom-creds:
+  extends: .jwt_v2
   secrets:
     MIGRATION_TEMPLATE_TOKEN:
       vault: ci/MIGRATION_TEMPLATE_TOKEN@congregate
@@ -83,6 +93,7 @@
       file: false
 
 .release-creds:
+  extends: .jwt_v2
   secrets:
     PUSH_URL:
       vault: ci/PUSH_URL@congregate
@@ -92,13 +103,14 @@
       file: false
 
 .gitlab-api-creds:
+  extends: .jwt_v2
   secrets:
     ACCESS_TOKEN:
       vault: ci/ACCESS_TOKEN@congregate
       file: false
 
 .gitlab-license:
+  extends: .jwt_v2
   secrets:
     GITLAB_LICENSE:
       vault: ci/GITLAB_LICENSE@congregate
-
