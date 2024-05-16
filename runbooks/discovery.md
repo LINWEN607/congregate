@@ -63,7 +63,11 @@ The Ultimate Goal of this document is to have its contents converted into a road
 
 ##### Package Registry
 
-* We support GitLab to GitLab Maven Package Registry migration at this time. Other package types are pending.
+* We support migrating the following package types from the GitLab package registry:
+  * Generic
+  * Maven
+  * NPM
+  * PyPi
 
 #### SSO/SCIM/SAML
 

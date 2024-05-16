@@ -19,7 +19,6 @@ variables:
   TEST_IMAGE_NAME: "$CI_REGISTRY_IMAGE/test-3.8:latest"
   BB_SERVER_SEED_IMAGE_NAME: "$CI_REGISTRY_IMAGE/bitbucket-seed:latest"
   JENKINS_SEED_IMAGE_NAME: "$CI_REGISTRY_IMAGE/jenkins-seed:latest"
-  MAVEN_GRPC_IMAGE_NAME: "$CI_REGISTRY_IMAGE/maven-server:latest"
   SAST_EXCLUDED_ANALYZERS: "brakeman,flawfinder,gosec,kubesec,mobsf,phpcs-security-audit,pmd-apex,security-code-scan,sobelow,spotbugs"
   SECURE_LOG_LEVEL: debug
   CONGREGATE_PATH: $CI_PROJECT_DIR
@@ -200,23 +199,6 @@ build jenkins seed image:
         - docker/jenkins/entrypoint.sh
         - docker/jenkins/jenkins.py
         - docker/jenkins/setup_and_seed.py
-
-build maven server image:
-  extends:
-    - .use-docker-in-docker
-    - .docker-login
-  stage: build
-  script:
-    - cp docker/maven/Dockerfile ./
-    - DOCKER_BUILDKIT=1 docker build -t $MAVEN_GRPC_IMAGE_NAME .
-    - docker push "$MAVEN_GRPC_IMAGE_NAME"
-  rules:
-    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
-      changes:
-        - docker/maven/Dockerfile
-        - docker/maven/*.xml
-        - docker/maven/*.py
-        - congregate/migration/maven/*.py
 
 check ldap compose yaml:
   extends:

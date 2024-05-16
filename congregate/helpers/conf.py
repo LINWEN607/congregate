@@ -441,23 +441,6 @@ class Config(BaseConfig):
         return self.prop("APP", "redis_port", default=6379)
 
     @property
-    def grpc_host(self):
-        """
-        The explicit host for connecting to a gRPC service. Defaults to localhost
-
-        In an all docker environment, localhost should be sufficient, but you may
-        need to set this to the local IP of the docker host
-        """
-        return self.prop("APP", "grpc_host", default="localhost")
-
-    @property
-    def maven_port(self):
-        """
-        The explicit port for the maven gRPC connection. Defaults to 50051
-        """
-        return self.prop_int("APP", "maven_port", default=50051)
-
-    @property
     def processes(self):
         """
         Number of parallel process to run for specific commands like list, migrate, etc.
