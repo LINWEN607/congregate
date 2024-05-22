@@ -39,6 +39,12 @@ nav:
       - Writing tests: writing-tests.md
       - Roadmap: roadmap.md
       - API Docs: reference/
+  - General Migration Preparation: 
+      - Migration Readiness Checklist: migration-readiness-checklist.md
+      - Migration Wave Considerations: migration-wave-considerations.md
+      - Pre and Post Migration: pre-and-post-migration.md
+      - Frequently Asked Migration Questions: famq.md
+      - Migration Change Management: customer-migration-change-management.md
   - Contribute to Congregate: contributing.md
   - Congregate Wiki: https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/wikis/home
 
