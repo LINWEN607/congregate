@@ -1,0 +1,46 @@
+version: '3'
+
+services:
+    congregate:
+        image: registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/cdk:3.8
+        container_name: congregate_dev
+        hostname: congregate
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
+            - $CONGREGATE_PATH:/opt/congregate
+            - $CONGREGATE_DATA:/opt/congregate/data
+        ports:
+            - 8000:8000
+            - 5555:5555
+        networks:
+          default:
+            aliases:
+              - congregate
+        entrypoint: /bin/bash -c "cd /opt/congregate && poetry install && tail -f /dev/null"
+
+    mongo:
+        image: mongo:4.4.16
+        container_name: congregate_mongo
+        restart: always
+        ports:
+            - "27017:27017"
+        hostname: 'mongo'
+        networks:
+            default:
+                aliases: 
+                    - mongo
+    
+    redis:
+        image: redis:6.2-alpine
+        container_name: redis
+        hostname: 'redis'
+        restart: always
+        volumes:
+            - ./cache:/data
+        ports:
+            - 6379:6379
+        command: redis-server --save 20 1 --loglevel warning --requirepass password
+        networks:
+          default:
+            aliases:
+              - redis

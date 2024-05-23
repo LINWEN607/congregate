@@ -17,6 +17,7 @@ include:
 variables:
   DOCKER_VERSION: "20.10.22"
   TEST_IMAGE_NAME: "$CI_REGISTRY_IMAGE/test-3.8:latest"
+  CDK_IMAGE_NAME: "$CI_REGISTRY_IMAGE/cdk:3.8"
   BB_SERVER_SEED_IMAGE_NAME: "$CI_REGISTRY_IMAGE/bitbucket-seed:latest"
   JENKINS_SEED_IMAGE_NAME: "$CI_REGISTRY_IMAGE/jenkins-seed:latest"
   SAST_EXCLUDED_ANALYZERS: "brakeman,flawfinder,gosec,kubesec,mobsf,phpcs-security-audit,pmd-apex,security-code-scan,sobelow,spotbugs"
@@ -138,7 +139,7 @@ version check:
   rules:
     - if: "$CI_COMMIT_TAG"
 
-build:
+build test image:
   extends:
     - .use-docker-in-docker
     - .docker-login
@@ -154,6 +155,26 @@ build:
         - docker/test/*
       variables:
         TEST_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHORT_SHA-test-3.8
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
+      changes:
+        - docker/test/*
+
+build cdk image:
+  extends:
+    - .use-docker-in-docker
+    - .docker-login
+  stage: build
+  script:
+    - echo "SOURCE IS $CI_PIPELINE_SOURCE"
+    - cp ./docker/dev/cdk.Dockerfile ./Dockerfile
+    - docker build --tag "$CDK_IMAGE_NAME" .
+    - docker push "$CDK_IMAGE_NAME"
+  rules:
+    - if: "$CI_PIPELINE_SOURCE == 'merge_request_event'"
+      changes:
+        - docker/dev/*
+      variables:
+        CDK_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHORT_SHA-cdk-3.8
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
       changes:
         - docker/test/*

@@ -15,6 +15,8 @@ congregate/docs/source/*.rst
 congregate/docs/source/static_docs/*.html
 congregate/docs/source/*.html
 !congregate/docs/source/index.rst
+docker/dev/cdk/cache
+docker/dev/cdk/.env
 js-packages
 .venv
 .pytest_cache

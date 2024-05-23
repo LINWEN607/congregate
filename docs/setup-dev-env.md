@@ -1,3 +1,8 @@
+# Table of Contents
+
+- [Setup a local development environment](#setup-a-local-development-environment)
+- [Using Congregate Development Toolkit](#using-congregate-development-toolkit)
+
 # Setup a local development environment
 
 ## Dependencies
@@ -120,3 +125,49 @@ If you are using VS Code as your IDE please enable `autopep8` with the following
 * *Python > Formatting: Autopep8 Args* - Add item `--max-line-length=79` (this length and setting applies to any other IDE you may be using)
 * *Python > Formatting: Autopep8 Path* - `autopep8`
 * *Python > Formatting: Provider* - `autopep8`
+
+
+
+# Using Congregate Development Toolkit
+
+## Prerequisites
+
+Before you begin, ensure you have the following installed on your local machine:
+
+- Docker: [Install Docker](https://docs.docker.com/get-docker/)
+- Docker Compose: [Install Docker Compose](https://docs.docker.com/compose/install/)
+
+## installation
+
+1. Open a Terminal and Navigate to the `docker/dev/cdk` directory of congregate and create a `.env` file. Inside the file insert the following content (change the values of the environment variables depending on your folder structure):
+
+```bash
+   CONGREGATE_DATA=/path/to/congregate/data
+   CONGREGATE_PATH=/path/to/congregate/root/folder
+```
+
+2. Make sure the congregate.conf file uses the following configuration. You need to make sure you use service names (mongo and redis, respectively) as hostnames. This is allowing containers to communicate with each other by their service names.
+
+```bash
+### Mongo DB configuration
+mongo_host = mongo
+
+### Redis configuration
+redis_host = redis
+```
+
+3. Start the docker compose file
+
+```bash
+   docker-compose up
+```
+
+4. Get inside the container, optionally, copy congregate script to a bin directory and start using congregate
+
+```bash
+   docker exec -it congregate_dev bash
+   cd /opt/congregate
+   cp congregate.sh /usr/local/bin/congregate
+   congregate help
+   congregate init
+```
