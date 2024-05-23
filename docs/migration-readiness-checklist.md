@@ -1,0 +1,1 @@
+../customer/migration-readiness-checklist.md
