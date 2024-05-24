@@ -33,4 +33,4 @@ NOTE: Features not listed in the matrix should be presumed to be not yet support
 
 ## BitBucket Cloud
 
-Congregate does not currently support importing from BitBucket Cloud due to a lack of an import API for BB cloud
+Congregate currently does not support [importing from BB Cloud](https://docs.gitlab.com/ee/user/project/import/bitbucket.html). With the [API endpoint](https://docs.gitlab.com/ee/api/import.html#import-repository-from-bitbucket-cloud) introduced in 17.0 this is now possible to automate.

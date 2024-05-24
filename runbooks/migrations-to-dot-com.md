@@ -272,9 +272,9 @@ Maximum import size limitations can prevent an import from being successful. If 
 
 [Workaround Option 2](https://docs.gitlab.com/ee/user/project/settings/import_export_troubleshooting.html#workaround-option-2)
 
-#### Manually Execute Export Projects
+#### Manually Execute Project Export
 
-You can [manually execute the export project](https://docs.gitlab.com/ee/user/project/settings/import_export_troubleshooting.html#manually-execute-export-steps) excluded unneeded exporters for example LFS objects to reduce the project size, and import LFS objects separately as the post migration. Excluding uploads can also help, e.g. in case of MRs exceeding the [Evaluate threshold](https://gitlab.com/gitlab-org/professional-services-automation/tools/utilities/evaluate#project-data) and having many file uploads and/or non-optimal object storage configuration on source.
+You can [manually execute the project export](https://docs.gitlab.com/ee/user/project/settings/import_export_troubleshooting.html#manually-execute-export-steps) excluding unneeded exporters, for example LFS objects, to reduce the project size, and import LFS objects separately during the post migration step. Excluding uploads can also help, e.g. in the case of MRs exceeding the [Evaluate threshold](https://gitlab.com/gitlab-org/professional-services-automation/tools/utilities/evaluate#project-data), having many file uploads, and/or non-optimal object storage configuration on source.
 
 </details>
 
