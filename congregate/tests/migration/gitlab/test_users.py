@@ -767,7 +767,7 @@ class UsersTests(unittest.TestCase):
     @patch.object(GroupsApi, "search_for_group")
     def test_is_username_group_path_not_found(
             self, group_api, dest_token, dest_host):
-        group_api.return_value = [{"path": "xyz"}]
+        group_api.return_value = [{"full_path": "subgroup/xyz"}]
         dest_host.return_value = "https://gitlabdestination.com"
         dest_token.return_value = "token"
         response = self.users.is_username_group_name(
@@ -781,7 +781,7 @@ class UsersTests(unittest.TestCase):
     @patch.object(GroupsApi, "search_for_group")
     def test_is_username_group_path_found(
             self, group_api, dest_token, dest_host):
-        group_api.return_value = [{"path": "abc"}]
+        group_api.return_value = [{"full_path": "abc"}]
         dest_host.return_value = "https://gitlabdestination.com"
         dest_token.return_value = "token"
         response = self.users.is_username_group_name(
@@ -795,7 +795,7 @@ class UsersTests(unittest.TestCase):
     @patch.object(GroupsApi, "search_for_group")
     def test_is_username_group_path_found_ignore_case(
             self, group_api, dest_token, dest_host):
-        group_api.return_value = [{"path": "ABC"}]
+        group_api.return_value = [{"full_path": "ABC"}]
         dest_host.return_value = "https://gitlabdestination.com"
         dest_token.return_value = "token"
         response = self.users.is_username_group_name(

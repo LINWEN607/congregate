@@ -84,7 +84,7 @@ class UsersClient(BaseClass):
                 if is_error:
                     self.log.warning(
                         f"Is '{username}' a group namespace lookup failed for group:\n{resp}")
-                elif resp.get("path") and str(resp["path"]).lower() == username.lower():
+                elif resp.get("full_path") and str(resp["full_path"]).lower() == username.lower():
                     # We found a match, so user=group namespace
                     return True
             return False
