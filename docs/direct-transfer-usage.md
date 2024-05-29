@@ -1,4 +1,4 @@
-# Migrating data via Direct Transfer
+# Migrating data via Direct Transfer - Usage
 
 ## Congregate UI
 
