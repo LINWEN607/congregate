@@ -255,6 +255,16 @@ Certain GitLab features are migrated but not adapted to the destination instance
   * [ ] (gitlab.com) Update direct group and project membership to allow specific user and group MR approval rules in projects
 * [ ] Update instance and group level (custom) project templates
 * [ ] Update and/or create any features that are not migrated (based on migration features matrix)
+  * To list the merge request dependencies on source, which you may need to manually migrate, run the following in the Rails console:
+
+    ```bash
+    sudo gitlab-rails console
+    MergeRequest.joins(:blocking_merge_requests)   # should give all the MRs that are blocking other MRs
+    MergeRequest.joins(:blocked_merge_requests)   # should give all the MRs that are blocked
+    ```
+
+  * Example entry: `#<MergeRequest id:6385 <project-path-with-namespace>!1>`
+    * **NOTE:** the instance-level MR `id` (6385) will be different on destination, but the project-level MR `iid` (1) will be the same
 * [ ] Update project environment states on destination as they are not propagated via API (all are `active`)
 
 </details>
