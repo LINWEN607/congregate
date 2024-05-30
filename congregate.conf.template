@@ -205,6 +205,7 @@ export_import_timeout = 3600
 
 ### Presents the Slack Incoming Webhooks URL for sending alerts (logs) to a dedicated GitLab internal private channel.
 ### Optionally used during customer migrations, mainly to gitlab.com, but also an option for migrations to self-managed.
+### For GitLab PS it can be found in the Professional Services 1Password Vault under _GitLab ps_migration_alerting Slack webhook_
 # slack_url = https://slack.url
 
 ### Optional configuration if you are using a spreadsheet to keep track of migration waves
