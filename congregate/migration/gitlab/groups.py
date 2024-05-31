@@ -71,11 +71,8 @@ class GroupsClient(BaseClass):
 
         if self.config.direct_transfer:
             if self.config.src_parent_group_path:
-                for group in self.groups_api.get_all_subgroups(
-                        self.config.src_parent_id, host, token):
-                    traverse_groups_task.delay(host, token, group)
-                traverse_groups_task.delay(host, token, self.groups_api.get_group(
-                    self.config.src_parent_id, host, token))
+                traverse_groups_task.delay(host, token, safe_json_response(self.groups_api.get_group(
+                    self.config.src_parent_id, host, token)))
             else:
                 for group in self.groups_api.get_all_groups(
                         host, token):
