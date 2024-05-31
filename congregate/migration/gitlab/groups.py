@@ -70,9 +70,16 @@ class GroupsClient(BaseClass):
         prefix = location if location != "source" else ""
 
         if self.config.direct_transfer:
-            for group in self.groups_api.get_all_groups(
-                    host, token):
-                traverse_groups_task.delay(host, token, group)
+            if self.config.src_parent_group_path:
+                for group in self.groups_api.get_all_subgroups(
+                        self.config.src_parent_id, host, token):
+                    traverse_groups_task.delay(host, token, group)
+                traverse_groups_task.delay(host, token, self.groups_api.get_group(
+                    self.config.src_parent_id, host, token))
+            else:
+                for group in self.groups_api.get_all_groups(
+                        host, token):
+                    traverse_groups_task.delay(host, token, group)
         else:
             if self.config.src_parent_group_path:
                 self.multi.start_multi_process_stream_with_args(self.traverse_groups,
