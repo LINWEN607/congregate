@@ -87,8 +87,10 @@ class GitLabMigrateClient(MigrateClient):
         self.clusters = ClustersClient()
         self.environments = EnvironmentsClient()
         self.branches = BranchesClient()
-        self.project_feature_flags_client = ProjectFeatureFlagClient(DRY_RUN=False)
-        self.project_feature_flags_users_lists_client = ProjectFeatureFlagsUserListsClient(DRY_RUN=False)
+        self.project_feature_flags_client = ProjectFeatureFlagClient(
+            DRY_RUN=False)
+        self.project_feature_flags_users_lists_client = ProjectFeatureFlagsUserListsClient(
+            DRY_RUN=False)
         super().__init__(dry_run,
                          processes,
                          only_post_migration_info,
@@ -636,7 +638,7 @@ class GitLabMigrateClient(MigrateClient):
             # Container Registries
             if self.config.source_registry and self.config.destination_registry:
                 results["container_registry"] = self.registries.migrate_registries(
-                    src_id, dst_id, src_path)
+                    project, dst_id)
 
             # Package Registries
             results["package_registry"] = self.packages.migrate_project_packages(
@@ -651,13 +653,16 @@ class GitLabMigrateClient(MigrateClient):
                                                   "Certificate-based clusters are still supported"):
                 results["clusters"] = self.clusters.migrate_project_clusters(
                     src_id, dst_id, src_path, jobs_enabled)
-                
+
             # Project Feature Flag Users Lists
-            project_feature_flags_users_lists = self.project_feature_flags_users_lists_client.migrate_project_feature_flags_user_lists_for_project(src_id,dst_id)
-            results["project_feature_flags_users_lists"] = project_feature_flags_users_lists.get('completed')
-            
+            project_feature_flags_users_lists = self.project_feature_flags_users_lists_client.migrate_project_feature_flags_user_lists_for_project(
+                src_id, dst_id)
+            results["project_feature_flags_users_lists"] = project_feature_flags_users_lists.get(
+                'completed')
+
             # Project Feature Flags
-            results["project_feature_flags"] = self.project_feature_flags_client.migrate_project_feature_flags_for_project(src_id, dst_id, project_feature_flags_users_lists.get('user_lists_conversion_list'))
+            results["project_feature_flags"] = self.project_feature_flags_client.migrate_project_feature_flags_for_project(
+                src_id, dst_id, project_feature_flags_users_lists.get('user_lists_conversion_list'))
 
         if self.config.source_tier not in ["core", "free"]:
             # Push Rules - handled by GitLab Importer as of 13.6

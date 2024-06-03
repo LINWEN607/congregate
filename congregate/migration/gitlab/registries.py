@@ -5,6 +5,7 @@ from gitlab_ps_utils.misc_utils import is_error_message_present, safe_json_respo
 from docker import from_env
 from docker.errors import APIError, TLSParameterError, NotFound
 from congregate.helpers.base_class import BaseClass
+from congregate.helpers.migrate_utils import get_target_project_path
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 
@@ -29,11 +30,13 @@ class RegistryClient(BaseClass):
         return project.get("container_registry_enabled",
                            False) if project else False
 
-    def migrate_registries(self, old_id, new_id, name):
+    def migrate_registries(self, project, new_id):
+        old_id = project.get("id")
+        name = project.get("path_with_namespace")
         try:
             reg = self.are_enabled(new_id, old_id)
             if reg[0] and reg[1]:
-                return self.migrate(old_id, name)
+                return self.migrate(project, old_id, name)
             self.log.warning(
                 f"Container registry is disabled for project {name} on {'source' if not reg[0] else 'destination' if not reg[1] else 'source and destination'} instance")
         except Exception as e:
@@ -41,7 +44,7 @@ class RegistryClient(BaseClass):
                 f"Failed to migrate container registries for project {name}, with error:\n{e}")
             return False
 
-    def migrate(self, old_id, name):
+    def migrate(self, project, old_id, name):
         try:
             # Login to source registry
             src_client = self.__login_to_registry(
@@ -73,7 +76,7 @@ class RegistryClient(BaseClass):
                 tags_response = self.projects_api.get_all_project_registry_repositories_tags(
                     old_id, repo["id"], self.config.source_host, self.config.source_token)
                 tags = iter(tags_response)
-                self.__walk_tags(tags, repo, src_client,
+                self.__walk_tags(project, tags, repo, src_client,
                                  dest_client, name, old_id)
             return True
         except TypeError as te:
@@ -92,7 +95,7 @@ class RegistryClient(BaseClass):
                 f"Failed to migrate container registries for project {name}, with error:\n{re}")
             return False
 
-    def __walk_tags(self, tags, repo, src_client, dest_client, name, old_id):
+    def __walk_tags(self, project, tags, repo, src_client, dest_client, name, old_id):
         """
         :param tags: list of tags as returned by the GitLab API
         :param repo: the repository we are currently working on for a project
@@ -153,8 +156,7 @@ class RegistryClient(BaseClass):
                 continue
 
             # Retag for the new destination
-            new_reg = self.generate_destination_registry_url(
-                repo_loc.split("/", 1)[1])
+            new_reg = self.generate_destination_registry_url(project)
 
             all_tags.append(
                 (f"{repo_loc}:{tag_name}", f"{new_reg}:{tag_name}")
@@ -216,15 +218,9 @@ class RegistryClient(BaseClass):
             self.log.error(
                 f"Failed to login to docker registry {registry}, with error:\n{err}")
 
-    def generate_destination_registry_url(self, suffix):
+    def generate_destination_registry_url(self, project):
         """
-        :param suffix: The trailing piece for any sub-repositories.
-                        As registry.gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/jenkins-seed, the suffix
-                        is the jenkins-seed portion
         :returns: New reg should be the path to the project prepended with new registry and parent path information, with the suffix
                     So, customer.registry.com/project/path/suffix -> registry.gitlab.com/parent/project/path/suffix
         """
-        if self.config.dstn_parent_group_path:
-            # Docker repo/tag requires lower-case
-            return f"{self.config.destination_registry}/{self.config.dstn_parent_group_path.lower()}/{suffix}"
-        return f"{self.config.destination_registry}/{suffix}"
+        return f"{self.config.destination_registry}/{get_target_project_path(project)}"
