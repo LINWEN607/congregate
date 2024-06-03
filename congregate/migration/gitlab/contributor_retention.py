@@ -55,8 +55,8 @@ class ContributorRetentionClient(BaseClass):
                 self.log.error("Request failed")
 
     def add_contributor_to_map(self, author):
-        # If the author is not already a project member
-        if author['username'] not in self.members:
+        # If the author is not already a direct project member
+        if author['username'] not in self.members.keys():
             # extracting ID from GQL string 'gid://gitlab/user/<id>'
             author['id'] = author['id'].split("/")[-1]
             # Add the element/element note author to the contributor map
@@ -80,6 +80,7 @@ class ContributorRetentionClient(BaseClass):
                 self.projects.add_member(
                     self.src_id, self.config.source_host, self.config.source_token, new_member_payload.to_dict())
 
+    # Currently not used
     def add_contributors_to_group(self):
         '''
             Add contributors from contributor map to source group
@@ -119,9 +120,9 @@ class ContributorRetentionClient(BaseClass):
 
     def get_members(self, asset_type):
         if asset_type == 'project':
-            return rewrite_list_into_dict(list(self.projects.get_members(self.src_id, self.config.source_host, self.config.source_token)), "email")
+            return rewrite_list_into_dict(list(self.projects.get_members(self.src_id, self.config.source_host, self.config.source_token)), "username")
         if asset_type == 'group':
-            return rewrite_list_into_dict(list(self.groups.get_all_group_members(self.src_id, self.config.source_host, self.config.source_token)), "email")
+            return rewrite_list_into_dict(list(self.groups.get_all_group_members(self.src_id, self.config.source_host, self.config.source_token)), "username")
 
     def generate_contributors_query(self, element, cursor):
         return {
