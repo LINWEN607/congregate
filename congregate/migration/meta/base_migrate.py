@@ -12,7 +12,7 @@ from importlib import import_module
 from requests import Response
 from requests.exceptions import RequestException
 
-from gitlab_ps_utils import json_utils, misc_utils, string_utils
+from gitlab_ps_utils import json_utils, misc_utils, string_utils, dict_utils
 
 import congregate.helpers.migrate_utils as mig_utils
 from congregate.migration.meta.constants import EXT_CI_SOURCE_CLASSES
@@ -38,6 +38,7 @@ class MigrateClient(BaseClass):
         start=time(),
         skip_users=False,
         remove_members=False,
+        sync_members=False,
         hard_delete=False,
         stream_groups=False,
         skip_groups=False,
@@ -67,6 +68,7 @@ class MigrateClient(BaseClass):
         self.skip_users = skip_users
         self.stream_groups = stream_groups
         self.remove_members = remove_members
+        self.sync_members = sync_members
         self.hard_delete = hard_delete
         self.skip_groups = skip_groups
         self.skip_projects = skip_projects
@@ -386,6 +388,25 @@ class MigrateClient(BaseClass):
                         f"Failed to remove {'group' if group else 'project'} {dst_id} member {uid}:\n{resp}")
             status = "partial" if status == "partial" else "removed"
         return status
+
+    def add_group_members(self, src_gid, dst_gid, full_path):
+        host = self.config.destination_host
+        token = self.config.destination_token
+        members = []
+        self.log.info(
+            f"Group '{full_path}' ({dst_gid}) found. Syncing members")
+        src_members = dict_utils.rewrite_list_into_dict(list(self.groups_api.get_all_group_members(
+            src_gid, self.config.source_host, self.config.source_token)), "email")
+        dst_members = dict_utils.rewrite_list_into_dict(list(self.groups_api.get_all_group_members(
+            dst_gid, host, token)), "email")
+        for x, y in src_members.items():
+            if x not in dst_members:
+                members.append(y)
+        if members:
+            result = self.groups.add_members_to_destination_group(
+                host, token, dst_gid, members)
+            self.log.info(
+                f"Members added to destination group '{full_path}' ({dst_gid}):\n{result}")
 
     def migrate_external_group(self, group):
         result = False

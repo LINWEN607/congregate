@@ -3,7 +3,7 @@ from gitlab_ps_utils.dict_utils import dig, rewrite_list_into_dict
 from gitlab_ps_utils.api import GitLabApi
 from gitlab_ps_utils.misc_utils import safe_json_response, get_dry_log
 from congregate.helpers.base_class import BaseClass
-from congregate.migration.gitlab.users import UsersClient
+from congregate.migration.gitlab.users import UsersApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.meta.api_models.new_member import NewMember
@@ -17,7 +17,7 @@ class ContributorRetentionClient(BaseClass):
     def __init__(self, src_id, dest_id, full_path, asset_type='project', dry_run=True):
         super().__init__()
         self.api = GitLabApi()
-        self.users = UsersClient()
+        self.users = UsersApi()
         self.projects = ProjectsApi()
         self.groups = GroupsApi()
         self.src_id = src_id
@@ -56,14 +56,14 @@ class ContributorRetentionClient(BaseClass):
 
     def add_contributor_to_map(self, author):
         # If the author is not already a direct project member
-        if author['username'] not in self.members.keys():
+        if author['username'] not in self.members:
             # extracting ID from GQL string 'gid://gitlab/user/<id>'
             author['id'] = author['id'].split("/")[-1]
             # Add the element/element note author to the contributor map
             if author.get('publicEmail'):
                 author_email = author['publicEmail']
             else:
-                author_email = self.users.users_api.get_user_email(
+                author_email = self.users.get_user_email(
                     author['id'], self.config.source_host, self.config.source_token)
             author['email'] = author_email
             self.contributor_map[author_email] = author
@@ -123,6 +123,7 @@ class ContributorRetentionClient(BaseClass):
             return rewrite_list_into_dict(list(self.projects.get_members(self.src_id, self.config.source_host, self.config.source_token)), "username")
         if asset_type == 'group':
             return rewrite_list_into_dict(list(self.groups.get_all_group_members(self.src_id, self.config.source_host, self.config.source_token)), "username")
+        return []
 
     def generate_contributors_query(self, element, cursor):
         return {

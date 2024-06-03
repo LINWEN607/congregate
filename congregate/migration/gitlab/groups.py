@@ -123,8 +123,7 @@ class GroupsClient(BaseClass):
                 return self.is_group_non_empty(resp.json())
 
     def delete_groups(self, dry_run=True, skip_projects=False):
-        staged_groups = get_staged_groups()
-        for sg in staged_groups:
+        for sg in get_staged_groups():
             # GitLab.com destination instances have a parent group
             dest_full_path = get_full_path_with_parent_namespace(
                 sg["full_path"])
