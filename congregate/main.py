@@ -13,7 +13,7 @@ Usage:
     congregate stage-users <users>... [--commit]
     congregate stage-wave <wave> [--commit] [--scm-source=hostname]
     congregate create-stage-wave-csv [--commit]
-    congregate migrate [--processes=<n>] [--reporting] [--skip-users] [--remove-members] [sync-members] [--stream-groups] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostname] [--commit] [--reg-dry-run] [--group-structure] [--retain-contributors]
+    congregate migrate [--processes=<n>] [--reporting] [--skip-users] [--remove-members] [--sync-members] [--stream-groups] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostname] [--commit] [--reg-dry-run] [--group-structure] [--retain-contributors]
     congregate rollback [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
     congregate ui
     congregate do-all [--commit]
@@ -23,7 +23,6 @@ Usage:
     congregate update-aws-creds
     congregate update-parent-group-members [--access-level=<level>] [--add-members] [--commit]
     congregate update-members-access-level [--current-level=<level>] [--target-level=<level>] [--skip-groups] [--skip-projects] [--commit]
-    congregate sync-members [--skip-groups] [--skip-projects] [--commit]
     congregate remove-inactive-users [--commit] [--membership]
     congregate get-total-count
     # TODO: Refactor, project name matching does not seem correct
@@ -462,9 +461,6 @@ def main():
                 target_level = arguments["--target-level"] or "Guest"
                 users.update_members_access_level(
                     current_level, target_level, skip_groups=SKIP_GROUPS, skip_projects=SKIP_PROJECTS, dry_run=DRY_RUN)
-            if arguments["sync-members"]:
-                users.sync_members(skip_groups=SKIP_GROUPS,
-                                   skip_projects=SKIP_PROJECTS, dry_run=DRY_RUN)
             if arguments["update-aws-creds"]:
                 if config.s3_access_key and config.s3_secret_key:
                     command = f"aws configure set aws_access_key_id {config.s3_access_key}"
