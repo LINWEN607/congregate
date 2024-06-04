@@ -427,8 +427,8 @@ class GitLabMigrateClient(MigrateClient):
         if not self.remove_members:
             self.remove_import_user(dst_gid, gl_type="group")
 
-        # Add missing members
-        if self.sync_members:
+        # Add missing members; SKIP if removing all other members
+        if self.sync_members and not self.remove_members:
             self.add_group_members(src_gid, dst_gid, full_path)
 
         return results
