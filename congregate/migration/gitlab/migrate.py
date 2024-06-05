@@ -429,7 +429,8 @@ class GitLabMigrateClient(MigrateClient):
 
         # Add missing members; SKIP if removing all other members
         if self.sync_members and not self.remove_members:
-            self.add_group_members(src_gid, dst_gid, full_path)
+            results["members_added"] = self.add_group_members(
+                src_gid, dst_gid, full_path)
 
         return results
 

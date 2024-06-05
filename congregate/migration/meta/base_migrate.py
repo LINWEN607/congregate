@@ -393,6 +393,7 @@ class MigrateClient(BaseClass):
         host = self.config.destination_host
         token = self.config.destination_token
         members = []
+        result = None
         src_members = dict_utils.rewrite_list_into_dict(list(self.groups_api.get_all_group_members(
             src_gid, self.config.source_host, self.config.source_token)), "email")
         dst_members = dict_utils.rewrite_list_into_dict(list(self.groups_api.get_all_group_members(
@@ -405,6 +406,7 @@ class MigrateClient(BaseClass):
                 host, token, dst_gid, members)
             self.log.info(
                 f"Members added to destination group '{full_path}' ({dst_gid}):\n{result}")
+        return result
 
     def migrate_external_group(self, group):
         result = False
