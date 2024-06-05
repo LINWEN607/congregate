@@ -91,6 +91,7 @@ class MigrateClient(BaseClass):
                                 start=self.start,
                                 skip_users=self.skip_users,
                                 remove_members=self.remove_members,
+                                sync_members=self.sync_members,
                                 hard_delete=self.hard_delete,
                                 stream_groups=self.stream_groups,
                                 skip_groups=self.skip_groups,

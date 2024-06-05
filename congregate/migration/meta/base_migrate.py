@@ -393,8 +393,6 @@ class MigrateClient(BaseClass):
         host = self.config.destination_host
         token = self.config.destination_token
         members = []
-        self.log.info(
-            f"Group '{full_path}' ({dst_gid}) found. Syncing members")
         src_members = dict_utils.rewrite_list_into_dict(list(self.groups_api.get_all_group_members(
             src_gid, self.config.source_host, self.config.source_token)), "email")
         dst_members = dict_utils.rewrite_list_into_dict(list(self.groups_api.get_all_group_members(

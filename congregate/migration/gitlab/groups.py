@@ -230,19 +230,22 @@ class GroupsClient(BaseClass):
     def add_members_to_destination_group(self, host, token, group_id, members):
         result = {}
         self.log.info(
-            f"Adding members to Group ID {group_id}:\n{json_pretty(members)}")
+            f"Adding {len(members)} member{'s' if len(members) > 1 else ''} to Group ID {group_id}")
         for member in members:
-            if member.get("email"):
-                user_id_req = find_user_by_email_comparison_without_id(
-                    member["email"])
+            if email := member.get("email"):
+                user_id_req = find_user_by_email_comparison_without_id(email)
                 member["user_id"] = user_id_req.get(
                     "id") if user_id_req else None
-                result[member["email"]] = False
+                result[email] = False
                 if member.get("user_id"):
-                    resp = safe_json_response(
-                        self.groups_api.add_member_to_group(group_id, host, token, member))
-                    if resp:
-                        result[member["email"]] = True
+                    if safe_json_response(self.groups_api.add_member_to_group(group_id, host, token, member)):
+                        result[email] = True
+                    else:
+                        self.log.error(
+                            f"Failed to add user '{email}' to group {group_id}")
+                else:
+                    self.log.warning(
+                        f"Failed to find user '{email}' on destination")
         return result
 
     def find_and_stage_group_bulk_entities(self, groups):
