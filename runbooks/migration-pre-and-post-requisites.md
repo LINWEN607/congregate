@@ -259,12 +259,29 @@ Certain GitLab features are migrated but not adapted to the destination instance
 
     ```bash
     sudo gitlab-rails console
-    MergeRequest.joins(:blocking_merge_requests)   # should give all the MRs that are blocking other MRs
-    MergeRequest.joins(:blocked_merge_requests)   # should give all the MRs that are blocked
+    MergeRequest.joins(:blocking_merge_requests)   # MRs that are blocking other MRs
+    MergeRequest.joins(:blocked_merge_requests)   # MRs that are blocked
     ```
 
-  * Example entry: `#<MergeRequest id:6385 <project-path-with-namespace>!1>`
+    * Example entry: `#<MergeRequest id:6385 <project-path-with-namespace>!1>`
     * **NOTE:** the instance-level MR `id` (6385) will be different on destination, but the project-level MR `iid` (1) will be the same
+  * To list the groups shared with groups on source, which you may need to manually migrate, run the following in the Rails console:
+
+    ```bash
+    sudo gitlab-rails console
+    Group.joins(:shared_groups)   # groups that are invited to other groups
+    Group.joins(:shared_with_groups)   # origin groups, from where we "invite" other groups
+    ```
+
+    or
+
+    ```bash
+    sudo gitlab-rails console
+    GroupGroupLink.all.preload(:shared_with_group, :shared_group).each do |link|
+      puts "Group #{link.shared_group.path} (#{link.shared_group.id}) has invited group #{link.shared_with_group.path} (#{link.shared_with_group.id}) to it"
+    end
+    ```
+
 * [ ] Update project environment states on destination as they are not propagated via API (all are `active`)
 
 </details>
