@@ -563,8 +563,9 @@ class GitLabMigrateClient(MigrateClient):
                         dst_host, dst_token, dst_pid))
                     self.log.info(
                         f"Project {dst_pwn} (ID: {dst_pid}) found on destination, with import status: {import_status}")
-                    import_id = dst_pid
-                    if self.dry_run:
+                    if self.only_post_migration_info and not self.dry_run:
+                        import_id = dst_pid
+                    else:
                         result[dst_pwn] = dst_pid
                 else:
                     self.log.info(
