@@ -1,15 +1,17 @@
 import unittest
-from pytest import mark
 from unittest import mock
+from pytest import mark
 
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.migration.gitlab.registries import RegistryClient
+from congregate.tests.mockapi.gitlab.projects import MockProjectsApi
 
 
 @mark.unit_test
 class RegistryTests(unittest.TestCase):
     def setUp(self):
         self.reg = RegistryClient()
+        self.mock_projects = MockProjectsApi()
 
     @mock.patch.object(ConfigurationValidator, 'source_token', new_callable=mock.PropertyMock)
     @mock.patch.object(ConfigurationValidator, 'destination_token', new_callable=mock.PropertyMock)
@@ -29,27 +31,27 @@ class RegistryTests(unittest.TestCase):
     def test_new_registry_url(self, registry, path):
         registry.return_value = "registry.test.com"
         path.return_value = None
-        suffix = "test_project"
+        project = self.mock_projects.get_staged_group_project_with_target_namespace()
 
         self.assertEqual(self.reg.generate_destination_registry_url(
-            suffix).lower(), "registry.test.com/test_project")
+            project), "registry.test.com/test_project")
 
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_parent_group_path', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.destination_registry', new_callable=mock.PropertyMock)
     def test_new_registry_url_with_path(self, registry, path):
         registry.return_value = "registry.test.com"
         path.return_value = "organization"
-        suffix = "test_project"
+        project = self.mock_projects.get_staged_group_project_with_target_namespace()
 
         self.assertEqual(self.reg.generate_destination_registry_url(
-            suffix).lower(), "registry.test.com/organization/test_project")
+            project), "registry.test.com/organization/test_project")
 
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_parent_group_path', new_callable=mock.PropertyMock)
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.destination_registry', new_callable=mock.PropertyMock)
     def test_new_registry_url_with_path_uppercase(self, registry, path):
         registry.return_value = "registry.test.com"
         path.return_value = "Organization"
-        suffix = "test_project"
+        project = self.mock_projects.get_staged_group_project_with_target_namespace()
 
         self.assertEqual(self.reg.generate_destination_registry_url(
-            suffix).lower(), "registry.test.com/organization/test_project")
+            project), "registry.test.com/organization/test_project")
