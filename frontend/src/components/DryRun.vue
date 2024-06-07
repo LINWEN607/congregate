@@ -7,7 +7,7 @@
                 <div>Destination Slug: {{ data.entity.destination_slug }}</div>
                 <div>Source Full Path: {{ data.entity.source_full_path }}</div>
                 <div>Source Type: {{ data.entity.source_type }}</div>
-                <div>Migrating Projects: {{ data.entity.migrate_projects }}</div>
+                <div v-if="data.entity.source_type == 'group_entity'">Migrating Projects: {{ data.entity.migrate_projects }}</div>
                 <ul v-if="data.projects.length > 0 && data.entity.migrate_projects == true">Projects
                     <li v-for="project in data.projects">{{ project }}</li>
                 </ul>
