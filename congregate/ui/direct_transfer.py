@@ -1,3 +1,4 @@
+from distutils.util import strtobool
 from dacite import from_dict
 from flask import jsonify, Blueprint, request
 
@@ -24,7 +25,7 @@ def trigger_staged_migration(entity_type, dry_run=True):
     payload = None
     if entity_type == 'groups':
         data = get_staged_groups()
-        payload = dt_client.build_payload(data, 'group')
+        payload = dt_client.build_payload(data, 'group', skip_projects=bool(strtobool(request.args.get('skip_projects', 'false'))))
     elif entity_type == 'projects':
         data = get_staged_projects()
         payload = dt_client.build_payload(data, 'project')
