@@ -19,7 +19,8 @@ class UsersApi(GitLabApiWrapper):
         return self.api.generate_get_request(host, token, f"users/{uid}")
 
     def get_user_email(self, uid, host, token):
-        return self.get_user(uid, host, token).json()["email"]
+        returned = self.get_user(uid, host, token).json() 
+        return returned.get("email", returned.get("public_email", ""))
 
     def get_current_user(self, host, token):
         """
