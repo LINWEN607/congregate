@@ -70,9 +70,13 @@ class GroupsClient(BaseClass):
         prefix = location if location != "source" else ""
 
         if self.config.direct_transfer:
-            for group in self.groups_api.get_all_groups(
-                    host, token):
-                traverse_groups_task.delay(host, token, group)
+            if self.config.src_parent_group_path:
+                traverse_groups_task.delay(host, token, safe_json_response(self.groups_api.get_group(
+                    self.config.src_parent_id, host, token)))
+            else:
+                for group in self.groups_api.get_all_groups(
+                        host, token):
+                    traverse_groups_task.delay(host, token, group)
         else:
             if self.config.src_parent_group_path:
                 self.multi.start_multi_process_stream_with_args(self.traverse_groups,
@@ -123,8 +127,7 @@ class GroupsClient(BaseClass):
                 return self.is_group_non_empty(resp.json())
 
     def delete_groups(self, dry_run=True, skip_projects=False):
-        staged_groups = get_staged_groups()
-        for sg in staged_groups:
+        for sg in get_staged_groups():
             # GitLab.com destination instances have a parent group
             dest_full_path = get_full_path_with_parent_namespace(
                 sg["full_path"])
@@ -231,19 +234,22 @@ class GroupsClient(BaseClass):
     def add_members_to_destination_group(self, host, token, group_id, members):
         result = {}
         self.log.info(
-            f"Adding members to Group ID {group_id}:\n{json_pretty(members)}")
+            f"Adding {len(members)} member{'s' if len(members) > 1 else ''} to Group ID {group_id}")
         for member in members:
-            if member.get("email"):
-                user_id_req = find_user_by_email_comparison_without_id(
-                    member["email"])
+            if email := member.get("email"):
+                user_id_req = find_user_by_email_comparison_without_id(email)
                 member["user_id"] = user_id_req.get(
                     "id") if user_id_req else None
-                result[member["email"]] = False
+                result[email] = False
                 if member.get("user_id"):
-                    resp = safe_json_response(
-                        self.groups_api.add_member_to_group(group_id, host, token, member))
-                    if resp:
-                        result[member["email"]] = True
+                    if safe_json_response(self.groups_api.add_member_to_group(group_id, host, token, member)):
+                        result[email] = True
+                    else:
+                        self.log.error(
+                            f"Failed to add user '{email}' to group {group_id}")
+                else:
+                    self.log.warning(
+                        f"Failed to find user '{email}' on destination")
         return result
 
     def find_and_stage_group_bulk_entities(self, groups):

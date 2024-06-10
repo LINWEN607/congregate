@@ -29,6 +29,7 @@ class MigrateClient(BaseClass):
         start=time(),
         skip_users=False,
         remove_members=False,
+        sync_members=False,
         hard_delete=False,
         stream_groups=False,
         skip_groups=False,
@@ -55,6 +56,7 @@ class MigrateClient(BaseClass):
         self.skip_users = skip_users
         self.stream_groups = stream_groups
         self.remove_members = remove_members
+        self.sync_members = sync_members
         self.hard_delete = hard_delete
         self.skip_groups = skip_groups
         self.skip_projects = skip_projects
@@ -83,12 +85,13 @@ class MigrateClient(BaseClass):
         rotate_logs()
 
         if self.config.source_type == "gitlab":
-            GitLabMigrateClient(dry_run=self.dry_run, 
-                                processes=self.processes, 
+            GitLabMigrateClient(dry_run=self.dry_run,
+                                processes=self.processes,
                                 only_post_migration_info=self.only_post_migration_info,
                                 start=self.start,
                                 skip_users=self.skip_users,
                                 remove_members=self.remove_members,
+                                sync_members=self.sync_members,
                                 hard_delete=self.hard_delete,
                                 stream_groups=self.stream_groups,
                                 skip_groups=self.skip_groups,
@@ -103,26 +106,26 @@ class MigrateClient(BaseClass):
                                 retain_contributors=self.retain_contributors
                                 ).migrate()
         elif self.config.source_type == "bitbucket server":
-            BitBucketServerMigrateClient(dry_run=self.dry_run, 
-                                processes=self.processes, 
-                                only_post_migration_info=self.only_post_migration_info,
-                                start=self.start,
-                                skip_users=self.skip_users,
-                                remove_members=self.remove_members,
-                                hard_delete=self.hard_delete,
-                                stream_groups=self.stream_groups,
-                                skip_groups=self.skip_groups,
-                                skip_projects=self.skip_projects,
-                                skip_group_export=self.skip_group_export,
-                                skip_group_import=self.skip_group_import,
-                                skip_project_export=self.skip_project_export,
-                                skip_project_import=self.skip_project_import,
-                                subgroups_only=self.subgroups_only,
-                                group_structure=self.group_structure
-                                ).migrate()
+            BitBucketServerMigrateClient(dry_run=self.dry_run,
+                                         processes=self.processes,
+                                         only_post_migration_info=self.only_post_migration_info,
+                                         start=self.start,
+                                         skip_users=self.skip_users,
+                                         remove_members=self.remove_members,
+                                         hard_delete=self.hard_delete,
+                                         stream_groups=self.stream_groups,
+                                         skip_groups=self.skip_groups,
+                                         skip_projects=self.skip_projects,
+                                         skip_group_export=self.skip_group_export,
+                                         skip_group_import=self.skip_group_import,
+                                         skip_project_export=self.skip_project_export,
+                                         skip_project_import=self.skip_project_import,
+                                         subgroups_only=self.subgroups_only,
+                                         group_structure=self.group_structure
+                                         ).migrate()
         elif self.config.source_type == "github" or self.config.list_multiple_source_config("github_source"):
-            GitHubMigrateClient(dry_run=self.dry_run, 
-                                processes=self.processes, 
+            GitHubMigrateClient(dry_run=self.dry_run,
+                                processes=self.processes,
                                 only_post_migration_info=self.only_post_migration_info,
                                 start=self.start,
                                 skip_users=self.skip_users,
@@ -144,5 +147,3 @@ class MigrateClient(BaseClass):
         mig_utils.add_post_migration_stats(self.start, log=self.log)
         self.log.warning(
             f"{misc_utils.get_dry_log(self.dry_run)}Completed migrating from {self.config.source_host} to {self.config.destination_host}")
-
-    

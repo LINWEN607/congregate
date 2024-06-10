@@ -53,6 +53,7 @@ class GitLabMigrateClient(MigrateClient):
                  start=None,
                  skip_users=False,
                  remove_members=False,
+                 sync_members=False,
                  hard_delete=False,
                  stream_groups=False,
                  skip_groups=False,
@@ -97,6 +98,7 @@ class GitLabMigrateClient(MigrateClient):
                          start,
                          skip_users,
                          remove_members,
+                         sync_members,
                          hard_delete,
                          stream_groups,
                          skip_groups,
@@ -425,6 +427,11 @@ class GitLabMigrateClient(MigrateClient):
         if not self.remove_members:
             self.remove_import_user(dst_gid, gl_type="group")
 
+        # Add missing members; SKIP if removing all other members
+        if self.sync_members and not self.remove_members:
+            results["members_added"] = self.add_group_members(
+                src_gid, dst_gid, full_path)
+
         return results
 
     def migrate_project_info(self):
@@ -557,8 +564,9 @@ class GitLabMigrateClient(MigrateClient):
                         dst_host, dst_token, dst_pid))
                     self.log.info(
                         f"Project {dst_pwn} (ID: {dst_pid}) found on destination, with import status: {import_status}")
-                    import_id = dst_pid
-                    if self.dry_run:
+                    if self.only_post_migration_info and not self.dry_run:
+                        import_id = dst_pid
+                    else:
                         result[dst_pwn] = dst_pid
                 else:
                     self.log.info(

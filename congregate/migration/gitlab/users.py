@@ -9,7 +9,6 @@ from gitlab_ps_utils.misc_utils import get_dry_log, get_timedelta, is_error_mess
     safe_json_response, strip_netloc
 from gitlab_ps_utils.json_utils import json_pretty, read_json_file_into_object, write_json_to_file
 from gitlab_ps_utils.dict_utils import rewrite_list_into_dict, rewrite_json_list_into_dict
-from gitlab_ps_utils.list_utils import remove_dupes
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.congregate_mdbc import CongregateMongoConnector, mongo_connection

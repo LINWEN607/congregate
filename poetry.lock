@@ -835,13 +835,13 @@ dev = ["flake8", "markdown", "twine", "wheel"]
 
 [[package]]
 name = "gitlab-ps-utils"
-version = "0.10.0"
+version = "0.10.2"
 description = "Shared python utilities used by GitLab Professional Services tooling"
 optional = false
 python-versions = ">=3.8.0"
 files = [
-    {file = "gitlab_ps_utils-0.10.0-py3-none-any.whl", hash = "sha256:727401306eb223469fa9d31ad07690a8e92724967a7fe0ad2ef05d8f77944e29"},
-    {file = "gitlab_ps_utils-0.10.0.tar.gz", hash = "sha256:5c976ca1e284e147ea5d09ec603156a960bfc30e17f09be552a895916cd6a2e9"},
+    {file = "gitlab_ps_utils-0.10.2-py3-none-any.whl", hash = "sha256:fcfb8e3c4d29d086d263b20f712dd26496989f7e71fb379d4c98aaa1f8d3e916"},
+    {file = "gitlab_ps_utils-0.10.2.tar.gz", hash = "sha256:3cc85cd12c71afa498ec8690d9bc38eec3bc123d17a290ff6cc5c2f4c0c68f7b"},
 ]
 
 [package.dependencies]
@@ -2816,4 +2816,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8.12"
-content-hash = "47f6f1d93304b35571172d552499690f62e03447cc779d1d915c16aa31816ce9"
+content-hash = "54b0503adaac7a17e390d8e3a738de5733ae9a19df4255930e63604de4f2ab09"

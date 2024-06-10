@@ -13,7 +13,7 @@ Usage:
     congregate stage-users <users>... [--commit]
     congregate stage-wave <wave> [--commit] [--scm-source=hostname]
     congregate create-stage-wave-csv [--commit]
-    congregate migrate [--processes=<n>] [--reporting] [--skip-users] [--remove-members] [--stream-groups] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostname] [--commit] [--reg-dry-run] [--group-structure] [--retain-contributors]
+    congregate migrate [--processes=<n>] [--reporting] [--skip-users] [--remove-members] [--sync-members] [--stream-groups] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostname] [--commit] [--reg-dry-run] [--group-structure] [--retain-contributors]
     congregate rollback [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
     congregate ui
     congregate do-all [--commit]
@@ -84,6 +84,7 @@ Arguments:
     scm-source                              Specific SCM source hostname
     skip-users                              Stage: Skip staging users; Migrate: Skip migrating users; Rollback: Remove only groups and projects.
     remove-members                          Remove all members of created (GitHub) or imported (GitLab) groups. Skip adding any members of BitBucket Server repos and projects.
+    sync-members                            Align group members list between source and destination by adding missing members on destination.
     hard-delete                             Remove user contributions and solely owned groups
     stream-groups                           Streamed approach of migrating staged groups in bulk
     skip-groups                             Rollback: Remove only users and projects
@@ -275,6 +276,7 @@ def main():
         SKIP_GROUPS = arguments["--skip-groups"]
         SKIP_PROJECTS = arguments["--skip-projects"]
         REMOVE_MEMBERS = arguments["--remove-members"]
+        SYNC_MEMBERS = arguments["--sync-members"]
         ONLY_POST_MIGRATION_INFO = arguments["--only-post-migration-info"]
         PARTIAL = arguments["--partial"]
         SRC_INSTANCES = arguments["--src-instances"]
@@ -413,6 +415,7 @@ def main():
                     dry_run=DRY_RUN,
                     skip_users=SKIP_USERS,
                     remove_members=REMOVE_MEMBERS,
+                    sync_members=SYNC_MEMBERS,
                     stream_groups=arguments["--stream-groups"],
                     skip_group_export=bool(
                         arguments["--skip-group-export"] or ONLY_POST_MIGRATION_INFO),
