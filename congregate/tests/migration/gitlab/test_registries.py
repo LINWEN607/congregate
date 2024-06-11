@@ -30,28 +30,44 @@ class RegistryTests(unittest.TestCase):
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.destination_registry', new_callable=mock.PropertyMock)
     def test_new_registry_url(self, registry, path):
         registry.return_value = "registry.test.com"
-        path.return_value = None
-        project = self.mock_projects.get_staged_group_project_with_target_namespace()
+        path.return_value = "pmm-demo/spring-app-secure-2"
+        project = self.mock_projects.get_staged_group_project()
 
         self.assertEqual(self.reg.generate_destination_registry_url(
-            project), "registry.test.com/test_project")
+            project), "registry.test.com/pmm-demo/spring-app-secure-2")
 
-    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_parent_group_path', new_callable=mock.PropertyMock)
+    @mock.patch("congregate.helpers.migrate_utils.get_dst_path_with_namespace")
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.destination_registry', new_callable=mock.PropertyMock)
-    def test_new_registry_url_with_path(self, registry, path):
+    def test_new_registry_url_with_dest_group(self, registry, path):
         registry.return_value = "registry.test.com"
-        path.return_value = "organization"
-        project = self.mock_projects.get_staged_group_project_with_target_namespace()
+        path.return_value = "organization/pmm-demo/spring-app-secure-2"
+        project = self.mock_projects.get_staged_group_project()
 
         self.assertEqual(self.reg.generate_destination_registry_url(
-            project), "registry.test.com/organization/test_project")
+            project), "registry.test.com/organization/pmm-demo/spring-app-secure-2")
 
-    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_parent_group_path', new_callable=mock.PropertyMock)
+    @mock.patch("congregate.helpers.migrate_utils.get_dst_path_with_namespace")
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.destination_registry', new_callable=mock.PropertyMock)
-    def test_new_registry_url_with_path_uppercase(self, registry, path):
+    def test_new_registry_url_with_dest_group_uppercase(self, registry, path):
         registry.return_value = "registry.test.com"
-        path.return_value = "Organization"
+        path.return_value = "ORGanization/pmm-demo/spring-app-secure-2"
+        project = self.mock_projects.get_staged_group_project()
+
+        self.assertEqual(self.reg.generate_destination_registry_url(
+            project), "registry.test.com/organization/pmm-demo/spring-app-secure-2")
+
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.destination_registry', new_callable=mock.PropertyMock)
+    def test_new_registry_url_with_target_namespace(self, registry):
+        registry.return_value = "registry.test.com"
         project = self.mock_projects.get_staged_group_project_with_target_namespace()
 
         self.assertEqual(self.reg.generate_destination_registry_url(
-            project), "registry.test.com/organization/test_project")
+            project), "registry.test.com/top-level-group/sub-level-group/pmm-demo/spring-app-secure-2")
+
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.destination_registry', new_callable=mock.PropertyMock)
+    def test_new_registry_url_with_target_namespace_override(self, registry):
+        registry.return_value = "registry.test.com"
+        project = self.mock_projects.get_staged_group_project_with_target_namespace_override()
+
+        self.assertEqual(self.reg.generate_destination_registry_url(
+            project), "registry.test.com/top-level-group/sub-level-group/spring-app-secure-2")

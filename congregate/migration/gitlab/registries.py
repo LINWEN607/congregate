@@ -223,4 +223,4 @@ class RegistryClient(BaseClass):
         :returns: New reg should be the path to the project prepended with new registry and parent path information, with the suffix
                     So, customer.registry.com/project/path/suffix -> registry.gitlab.com/parent/project/path/suffix
         """
-        return f"{self.config.destination_registry}/{get_target_project_path(project)}"
+        return f"{self.config.destination_registry}/{get_target_project_path(project)}".lower()
