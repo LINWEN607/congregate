@@ -175,7 +175,7 @@ class ProjectsClient(BaseClass):
             len(unarchived_group_projects), "\n".join(up for up in unarchived_group_projects)))
 
     def update_staged_projects_archive_state(
-            self, archive=True, dest=False, dry_run=True):
+            self, archive=True, dest=False, dry_run=True, rollback=False):
         start = time()
         rotate_logs()
         staged_projects = get_staged_projects()
@@ -194,11 +194,25 @@ class ProjectsClient(BaseClass):
                 self.log.info(
                     f"{get_dry_log(dry_run)}{action_type} {host_type} ({host}) project {path}")
                 if not dry_run:
-                    resp = self.projects_api.archive_project(
-                        host, token, pid) if archive else self.projects_api.unarchive_project(host, token, pid)
-                    if resp.status_code != 201:
-                        self.log.error(
-                            f"Failed to {action_type.lower()} {host_type} ({host}) project {path}, with response:\n{resp} - {resp.text}")
+                    if archive:
+                        resp = self.projects_api.archive_project(host, token, pid)
+                        if resp.status_code != 201:
+                            self.log.error(
+                                f"Failed to {action_type.lower()} {host_type} ({host}) project {path}, with response:\n{resp} - {resp.text}")
+                    else:
+                        # Unarchive only previously active projects during rollback
+                        if rollback and not sp["archived"]:
+                            if self.config.archive_logic:
+                                self.log.info(f"Unarchiving previously active project '{path}' (ID: {pid})")
+                                resp = self.projects_api.unarchive_project(host, token, pid)
+                                if resp.status_code != 201:
+                                    self.log.error(
+                                        f"Failed to {action_type.lower()} {host_type} ({host}) project {path}, with response:\n{resp} - {resp.text}")
+                        elif not rollback:
+                            resp = self.projects_api.unarchive_project(host, token, pid)
+                            if resp.status_code != 201:
+                                self.log.error(
+                                    f"Failed to {action_type.lower()} {host_type} ({host}) project {path}, with response:\n{resp} - {resp.text}")
         except RequestException as re:
             self.log.error(
                 f"Failed to {action_type.lower()} {host_type} ({host}) projects, with error:\n{re}")

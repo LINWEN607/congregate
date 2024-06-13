@@ -369,6 +369,10 @@ class Config(BaseConfig):
     @property
     def ssl_verify(self):
         return self.prop_bool("APP", "ssl_verify", default=True)
+    
+    @property
+    def archive_logic(self):
+        return self.prop_bool("APP", "archive_logic", default=False)
 
     @property
     def wave_spreadsheet_path(self):

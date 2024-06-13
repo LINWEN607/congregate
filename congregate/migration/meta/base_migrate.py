@@ -298,6 +298,13 @@ class MigrateClient(BaseClass):
                 f"{dry_log}Removing staged users on destination (hard_delete={self.hard_delete})")
             self.users.delete_users(
                 dry_run=self.dry_run, hard_delete=self.hard_delete)
+            
+        # Unarchive previously active projects on source during rollback
+        if self.config.archive_logic:    
+            self.log.info(
+                f"{dry_log}Unarchiving previously active projects on source due to rollback")
+            self.projects.update_staged_projects_archive_state(
+                archive=False, dest=False, dry_run=self.dry_run, rollback=True)
 
         mig_utils.add_post_migration_stats(self.start, log=self.log)
 

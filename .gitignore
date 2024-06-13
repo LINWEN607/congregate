@@ -52,6 +52,7 @@ pylint.txt
 
 mongo/*
 congregate/data/*
+opt/congregate/data/*
 docker/github/data/congregate.conf
 docker/github/gitlab-*/
 
