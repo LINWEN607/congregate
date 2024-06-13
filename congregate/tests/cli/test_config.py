@@ -617,7 +617,8 @@ class ConfigTests(unittest.TestCase):
             "force_rand_pwd":"True",\
             "export_import_status_check_time":"30",\
             "export_import_timeout":"3600",\
-            "slack_url":"https://slack.url"\
+            "slack_url":"https://slack.url",\
+            "archive_logic":"False"\
         }'
 
         with patch('congregate.cli.config.write_to_file', mock_file):
