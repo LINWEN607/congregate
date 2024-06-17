@@ -609,7 +609,7 @@ class GitLabMigrateClient(MigrateClient):
                 delete_project_export(filename)
 
             # Archive project immediately after import
-            if self.config.archive_logic:
+            if import_id and self.config.archive_logic:
                 if not archived and not self.dry_run:
                     self.log.info(
                         f"Archiving active source project '{path}' (ID: {src_id})")
