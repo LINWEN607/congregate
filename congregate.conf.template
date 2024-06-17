@@ -246,8 +246,10 @@ processes = 4
 ### The port used to serve up the flask/VueJS UI
 ui_port = 8000
 
+### The flag that says if we should archive project on source ASAP
+archive_logic = False
+
 ###! **HIDDEN PROPERTIES**
 ### Path to a JSON file for remapping URLs during a GitLab to GitLab import. Notes:
 # remapping_file_path =
 
-archive_logic = False
