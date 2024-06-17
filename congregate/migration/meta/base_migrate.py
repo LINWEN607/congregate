@@ -300,7 +300,7 @@ class MigrateClient(BaseClass):
                 dry_run=self.dry_run, hard_delete=self.hard_delete)
             
         # Unarchive previously active projects on source during rollback
-        if self.config.archive_logic:    
+        if self.config.archive_logic and (not self.skip_projects or not self.skip_groups):    
             self.log.info(
                 f"{dry_log}Unarchiving previously active projects on source due to rollback")
             self.projects.update_staged_projects_archive_state(
