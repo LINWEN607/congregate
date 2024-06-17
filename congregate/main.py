@@ -510,7 +510,7 @@ def main():
                 # GitLab as source and/or destination instance
                 if (config.source_type == "gitlab") or DEST:
                     projects.update_staged_projects_archive_state(
-                        dest=DEST, dry_run=DRY_RUN)
+                        dest=DEST, dry_run=DRY_RUN, rollback=ROLLBACK)
                 elif config.source_type == "github" or config.list_multiple_source_config("github_source"):
                     for single_source in config.list_multiple_source_config(
                             "github_source"):
@@ -527,7 +527,7 @@ def main():
                 # GitLab as source and/or destination instance
                 if (config.source_type == "gitlab") or DEST:
                     projects.update_staged_projects_archive_state(
-                        archive=False, dest=DEST, dry_run=DRY_RUN)
+                        archive=False, dest=DEST, dry_run=DRY_RUN, rollback=ROLLBACK)
                 elif config.source_type == "github" or config.list_multiple_source_config("github_source"):
                     if SCM_SOURCE is not None:
                         for single_source in config.list_multiple_source_config(
