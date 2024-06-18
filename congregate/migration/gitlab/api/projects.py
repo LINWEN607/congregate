@@ -205,7 +205,7 @@ class ProjectsApi(GitLabApiWrapper):
         response = self.get_project(pid, host, token)
         if response.status_code == 200:
             project_data = response.json()
-            return project_data.get("archived", False)
+            return project_data.get("archived", True)
         else:
             response.raise_for_status()
 
