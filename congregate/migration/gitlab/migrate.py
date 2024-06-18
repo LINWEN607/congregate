@@ -542,10 +542,10 @@ class GitLabMigrateClient(MigrateClient):
 
     def handle_importing_projects(self, project, dst_host=None, dst_token=None, group_path=None, filename=None):
         src_id = project["id"]
-        archived = project["archived"]
         path = project["path_with_namespace"]
         dst_host = dst_host or self.config.destination_host
         dst_token = dst_token or self.config.destination_token
+        archived = self.projects_api.get_project_archive_state(self.config.source_host, self.config.source_token, src_id)
         dst_pwn, tn = mig_utils.get_stage_wave_paths(
             project, group_path=group_path)
         result = {

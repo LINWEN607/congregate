@@ -192,6 +192,22 @@ class ProjectsApi(GitLabApiWrapper):
         if not message:
             message = f"Unarchiving project {pid}"
         return self.api.generate_post_request(host, token, f"projects/{pid}/unarchive", {}, description=message)
+    
+    def get_project_archive_state(self, host, token, pid):
+        """
+        Retrieves the archive state of the project.
+
+            :param pid: (int) GitLab project ID
+            :param host: (str) GitLab host URL
+            :param token: (str) Access token to GitLab instance
+            :return: Boolean indicating if the project is archived
+        """
+        response = self.get_project(pid, host, token)
+        if response.status_code == 200:
+            project_data = response.json()
+            return project_data.get("archived", False)
+        else:
+            response.raise_for_status()
 
     def delete_project(self, host, token, pid):
         """
