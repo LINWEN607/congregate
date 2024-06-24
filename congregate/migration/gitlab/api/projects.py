@@ -206,8 +206,8 @@ class ProjectsApi(GitLabApiWrapper):
         if response.status_code == 200:
             project_data = response.json()
             return project_data.get("archived", True)
-        else:
-            response.raise_for_status()
+        response.raise_for_status()
+        return True
 
     def delete_project(self, host, token, pid):
         """
