@@ -15,7 +15,7 @@ class IssueLinksApi(GitLabApiWrapper):
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /projects/:project_id/issues/:issue_iid/links
         """
-        return self.api.list_all(host, token, f"projects/{project_id}/issues/{issue_iid}/links")
+        return self.api.generate_get_request(host, token, f"projects/{project_id}/issues/{issue_iid}/links")
 
     def create_issue_link(self, host, token, project_id, issue_iid, target_project_id, target_issue_iid, link_type='relates_to'):
         """

@@ -43,6 +43,7 @@ from congregate.migration.meta.api_models.single_project_features import SingleP
 from congregate.migration.meta.api_models.project_details import ProjectDetails
 from congregate.migration.meta.api_models.bulk_import_entity_status import BulkImportEntityStatus
 from congregate.migration.gitlab.contributor_retention import ContributorRetentionClient
+from congregate.migration.gitlab.issue_links import IssueLinksClient
 
 
 class GitLabMigrateClient(MigrateClient):
@@ -89,6 +90,8 @@ class GitLabMigrateClient(MigrateClient):
         self.environments = EnvironmentsClient()
         self.branches = BranchesClient()
         self.project_feature_flags_client = ProjectFeatureFlagClient(
+            DRY_RUN=False)
+        self.issue_links_client = IssueLinksClient(
             DRY_RUN=False)
         self.project_feature_flags_users_lists_client = ProjectFeatureFlagsUserListsClient(
             DRY_RUN=False)
@@ -699,6 +702,9 @@ class GitLabMigrateClient(MigrateClient):
             # Merge Request Approvals
             results["project_level_mr_approvals"] = MergeRequestApprovalsClient(dest_host=dest_host, dest_token=dest_token).migrate_project_level_mr_approvals(
                 src_id, dst_id, src_path)
+
+        # Migrate issue links
+        self.issue_links_client.migrate_issue_links(self.config.source_host, self.config.source_token, dest_host, dest_token, src_id, dst_id)
 
         # Source fields
         results["src_id"] = src_id
