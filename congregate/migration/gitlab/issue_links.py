@@ -28,7 +28,7 @@ class IssueLinksClient(BaseClass):
                     break
         return project_id_mapping
 
-    def migrate_issue_links(self, src_host, src_token, dest_host, dest_token, src_project_id, dest_project_id):
+    def migrate_issue_links(self, src_host, src_token, dest_host, dest_token, src_project_id, dest_project_id, project_id_mapping):
         """
         Migrate issue links from source project to destination project.
 
@@ -38,6 +38,7 @@ class IssueLinksClient(BaseClass):
         :param: dest_token: (str) Access token to destination GitLab instance
         :param: src_project_id: (int) Source GitLab project ID
         :param: dest_project_id: (int) Destination GitLab project ID
+        :param: project_id_mapping: (dict) Mapping of source project IDs to destination project IDs
         """
         
         for issue in  self.issues_api.get_all_project_issues(src_project_id, src_host, src_token):
@@ -52,20 +53,27 @@ class IssueLinksClient(BaseClass):
                     if link:
                         print(f"link found {link}")
 
-                        target_project_id = link['project_id']
+                        src_target_project_id = link['project_id']
                         target_issue_iid = link['iid']
                         link_type = link['link_type']
 
 
                         # if not self.dry_run:
-                            # Recreate the issue link on the destination side
-                        
+
+                        # Translate source project ID to destination project ID
+                        dst_target_project_id = project_id_mapping.get(src_target_project_id)
+
+                        if dst_target_project_id is None:
+                            print(f"Skipping link for issue {src_issue_iid}: unable to find destination ID for project {src_target_project_id}")
+                            continue
+
+                        # Recreate the issue link on the destination side
                         response = self.issue_links_api.create_issue_link(
                             dest_host,
                             dest_token,
                             dest_project_id,
                             src_issue_iid,
-                            target_project_id,
+                            dst_target_project_id,
                             target_issue_iid,
                             link_type
                         )
