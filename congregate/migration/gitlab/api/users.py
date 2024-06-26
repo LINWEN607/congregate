@@ -22,7 +22,7 @@ class UsersApi(GitLabApiWrapper):
         returned = self.get_user(uid, host, token).json() 
         return returned.get("email", returned.get("public_email", ""))
 
-    def get_current_user(self, host, token):
+    def get_current_user(self, host, token, headers=None):
         """
         Get the current user based on access token
 
@@ -32,7 +32,7 @@ class UsersApi(GitLabApiWrapper):
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing the response to GET /user
         """
-        return self.api.generate_get_request(host, token, "user")
+        return self.api.generate_get_request(host, token, "user", headers=headers)
 
     def modify_user(self, uid, host, token, data=None):
         """

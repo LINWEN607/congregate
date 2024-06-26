@@ -59,18 +59,17 @@ workflow:
 .gitlab-destination:
   extends: .gitlab-license
   variables:
-    # CI_DEBUG_SERVICES: "true"
-    # GITLAB_LICENSE_PATH: "$GITLAB_LICENSE"
+    GITLAB_HTTPS: "$GITLAB_HTTPS"
+    GITLAB_ROOT_PASSWORD: "$GITLAB_ROOT_PASSWORD"
     GITLAB_OMNIBUS_CONFIG: |-
-      gitlab_rails['initial_root_password'] = '5iveL!fe'
       gitlab_rails['initial_license_file'] = '/builds/gitlab-org/professional-services-automation/tools/migration/congregate.tmp/GITLAB_LICENSE'
       gitlab_rails['env'] = {
         "GITLAB_LICENSE_MODE" => "test",
         "CUSTOMER_PORTAL_URL" => "https://customers.staging.gitlab.com"
       }
   services:
-    - name: gitlab/gitlab-ee:latest
-      alias: gitlab_destination
+    - name: gitlab/gitlab-ce:latest
+      alias: gitlab-dest
       command:
         [
           "sh",
@@ -87,9 +86,9 @@ workflow:
 
 .e2e-cleanup:
   after_script:
-    - curl -O http://gitlab_destination:443/api_json.log
-    - curl -O http://gitlab_destination:443/importer.log
-    - curl -O http://gitlab_destination:443/exceptions_json.log
+    - curl -O http://gitlab-dest:443/api_json.log
+    - curl -O http://gitlab-dest:443/importer.log
+    - curl -O http://gitlab-dest:443/exceptions_json.log
     - pip install awscli
     - aws ec2 terminate-instances --instance-ids $(cat instance_id)
   artifacts:
@@ -290,8 +289,8 @@ check ldap compose yaml:
     - ci/spin_up_test_vm.sh
     - export GITLAB_SRC=http://$(cat source_ip)
     - export GITLAB_SRC_REG_URL=$(cat source_ip):4567
-    - export GITLAB_DEST=http://gitlab_destination
-    - export GITLAB_DEST_REG_URL=gitlab_destination:4567
+    - export GITLAB_DEST=http://gitlab-dest
+    - export GITLAB_DEST_REG_URL=gitlab-dest:4567
   rules:
     - if: "$CI_PIPELINE_SOURCE != 'schedule'"
       changes:
@@ -318,6 +317,9 @@ check ldap compose yaml:
   tags:
     - congregate-auto-scale-runner
 
+.pytest-coverage:
+  coverage: '/TOTAL.*? (100(?:\.0+)?\%\|[1-9]?\d(?:\.\d+)?\%)$/'
+
 test:pylint:
   extends:
     - .test-job
@@ -338,7 +340,9 @@ test:pylint:syntax-errors:
     when: on_failure
 
 test:unit:
-  extends: .test-job
+  extends: 
+    - .test-job
+    - .pytest-coverage
   script:
     - poetry run pytest -m 'unit_test' --cov-report html --cov-report term-missing --cov-config=.coveragerc --cov=congregate congregate/tests/
   timeout: 5 minutes
@@ -349,12 +353,13 @@ test:unit:
 test:end-to-end full:
   extends:
     - .e2e-test-setup
+    - .pytest-coverage
   script:
     - cp instance_id full_instance_id
     - poetry run pytest -s -m e2e_gl_setup congregate/tests/
     - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
   retry: 2
-  timeout: 30 minutes
+  timeout: 45 minutes
   cache:
     key: "$CI_COMMIT_SHA-full"
     paths:
@@ -364,12 +369,13 @@ test:end-to-end full:
 test:end-to-end single group:
   extends:
     - .e2e-test-setup
+    - .pytest-coverage
   script:
     - cp instance_id sg_instance_id
     - poetry run pytest -s -m e2e_gl_setup_2 congregate/tests/
     - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
   retry: 2
-  timeout: 30 minutes
+  timeout: 45 minutes
   cache:
     key: "$CI_COMMIT_SHA-sg"
     paths:

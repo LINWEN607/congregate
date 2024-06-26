@@ -52,7 +52,8 @@ PROJECT_DIFF_KEYS_TO_IGNORE = [
     "import_status",
     "import_type",
     "import_url",
-    "description_html"
+    "description_html",
+    "updated_at"
 ]
 
 GROUP_DIFF_KEYS_TO_IGNORE = [

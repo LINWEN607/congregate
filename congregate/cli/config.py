@@ -43,6 +43,7 @@ def generate_config():
                input("Destination instance Host: "))
     config.set("DESTINATION", "dstn_access_token",
                obfuscate("Destination instance GitLab access token (Settings -> Access Tokens): "))
+    
     migration_user = safe_json_response(users.get_current_user(config.get("DESTINATION", "dstn_hostname"),
                                                                deobfuscate(config.get("DESTINATION", "dstn_access_token"))))
     if migration_user.get("id"):

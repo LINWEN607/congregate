@@ -13,12 +13,12 @@ from congregate.helpers.seed.generator import SeedDataGenerator
 class MigrationEndToEndTestSetup(unittest.TestCase):
     def setUp(self):
         self.t = token_generator()
-        print("Generating Source Token")
-        self.src_token = self.t.generate_token("source_token", url=os.getenv(
-            "GITLAB_SRC"), username="root", pword="5iveL!fe")  # source token
         print("Generating Destination Token")
-        self.dest_token = self.t.generate_token("destination_token", url=os.getenv(
-            "GITLAB_DEST"), username="root", pword="5iveL!fe")  # Destination access token
+        self.dest_token = self.t.generate_pat_from_oauth_token(url=os.getenv(
+            "GITLAB_DEST"), username="root", pword=os.getenv('GITLAB_ROOT_PASSWORD'))  # Destination access token
+        print("Generating Source Token")
+        self.src_token = self.t.generate_pat_from_oauth_token(url=os.getenv(
+            "GITLAB_SRC"), username="root", pword=os.getenv('GITLAB_ROOT_PASSWORD'))  # Source access token
         self.generate_single_group_config_with_tokens()
         self.s = SeedDataGenerator()
 
