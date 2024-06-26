@@ -28,32 +28,6 @@ class IssueLinksClient(BaseClass):
                     break
         return project_id_mapping
 
-    def create_issue_id_mapping(self, src_project_id, dest_project_id, src_host, src_token, dest_host, dest_token):
-        """
-        Create a mapping of source issue IDs to destination issue IDs based on title and description.
-
-        :param: src_project_id: (int) Source GitLab project ID
-        :param: dest_project_id: (int) Destination GitLab project ID
-        :param: src_host: (str) Source GitLab host URL
-        :param: src_token: (str) Access token to source GitLab instance
-        :param: dest_host: (str) Destination GitLab host URL
-        :param: dest_token: (str) Access token to destination GitLab instance
-        :return: dict Mapping of source issue IDs to destination issue IDs
-        """
-        src_issues = self.issues_api.get_all_project_issues(src_project_id, src_host, src_token)
-        dest_issues = self.issues_api.get_all_project_issues(dest_project_id, dest_host, dest_token)
-
-        src_issue_map = {(issue['title'], issue['description']): issue['iid'] for issue in src_issues}
-        dest_issue_map = {(issue['title'], issue['description']): issue['iid'] for issue in dest_issues}
-
-        issue_id_mapping = {}
-        for key, src_iid in src_issue_map.items():
-            dest_iid = dest_issue_map.get(key)
-            if dest_iid:
-                issue_id_mapping[src_iid] = dest_iid
-
-        return issue_id_mapping
-
     def migrate_issue_links(self, src_host, src_token, dest_host, dest_token, src_project_id, dest_project_id):
         """
         Migrate issue links from source project to destination project.
