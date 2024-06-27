@@ -704,8 +704,8 @@ class GitLabMigrateClient(MigrateClient):
                 src_id, dst_id, src_path)
 
         # Get all projects from the source and destination
-        src_projects = self.projects_api.get_all_projects(self.config.source_host, self.config.source_token).json()
-        dest_projects = self.projects_api.get_all_projects(dest_host, dest_token).json()
+        src_projects = self.projects_api.get_all_projects(self.config.source_host, self.config.source_token)
+        dest_projects = self.projects_api.get_all_projects(dest_host, dest_token)
 
         # Create project ID mapping
         project_id_mapping = self.issue_links_client.create_project_id_mapping(src_projects, dest_projects)
