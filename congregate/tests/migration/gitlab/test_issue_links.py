@@ -1,0 +1,74 @@
+import unittest
+from unittest.mock import patch, MagicMock
+from congregate.migration.gitlab.issue_links import IssueLinksClient
+from pytest import mark
+import warnings
+
+# mongomock is using deprecated logic as of Python 3.3
+# This warning suppression is used so tests can pass
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    import mongomock
+
+class MockProjectsApi:
+    def get_all_projects(self):
+        return [
+            {"id": 1, "name": "Project1"},
+            {"id": 2, "name": "Project2"},
+            {"id": 3, "name": "Project3"}
+        ]
+
+class MockGitLabApiWrapper:
+    def __init__(self):
+        self.projects_api = MockProjectsApi()
+
+
+@mark.unit_test
+class ProjectMigrationTests(unittest.TestCase):
+    def setUp(self):
+        self.api_wrapper = MockGitLabApiWrapper()
+        self.issue_links = IssueLinksClient(DRY_RUN=False)
+
+    def test_create_project_id_mapping(self):
+        src_projects = self.api_wrapper.projects_api.get_all_projects()
+        dest_projects = [
+            {"id": 10, "name": "Project1"},
+            {"id": 11, "name": "Project2"},
+            {"id": 12, "name": "Project3"}
+        ]
+
+        project_id_mapping = self.issue_links.create_project_id_mapping(src_projects, dest_projects)
+        expected_mapping = {
+            1: 10,
+            2: 11,
+            3: 12
+        }
+
+        self.assertDictEqual(project_id_mapping, expected_mapping)
+
+    @patch('congregate.migration.gitlab.api.issues.IssuesApi.get_all_project_issues')
+    @patch('congregate.migration.gitlab.api.issue_links.IssueLinksApi.list_issue_links')
+    @patch('congregate.migration.gitlab.api.issue_links.IssueLinksApi.create_issue_link')
+    def test_migrate_issue_links(self, mock_create_issue_link, mock_list_issue_links, mock_get_all_project_issues):
+        src_project_id = 1
+        dest_project_id = 10
+        project_id_mapping = {
+            1: 10,
+            2: 20,
+            3: 30
+        }
+
+        mock_get_all_project_issues.return_value = [
+            {"iid": 1, "title": "Issue 1", "description": "Description 1"},
+            {"iid": 2, "title": "Issue 2", "description": "Description 2"}
+        ]
+        mock_list_issue_links.return_value = MagicMock(json=lambda: [
+            {"project_id": 2, "iid": 5, "link_type": "relates_to"},
+            {"project_id": 3, "iid": 7, "link_type": "blocks"}
+        ])
+        mock_create_issue_link.return_value = MagicMock(status_code=201)
+
+        self.issue_links.migrate_issue_links("source_host", "source_token", "dest_host", "dest_token", src_project_id, dest_project_id, project_id_mapping)
+
+        mock_create_issue_link.assert_any_call("dest_host", "dest_token", dest_project_id, 1, 20, 5, "relates_to")
+        mock_create_issue_link.assert_any_call("dest_host", "dest_token", dest_project_id, 1, 30, 7, "blocks")
