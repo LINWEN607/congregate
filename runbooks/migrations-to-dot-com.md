@@ -248,12 +248,20 @@ PSE conducting the migration:
       * `json.exception.class`
       * `json.extra.relation_name`
 
-### Migrate over 5 GB Large Projects
+### Migrate project export larger than 5Gb
+
+Project exports include, among others:
+
+* Repository
+* Wiki
+* LFS objects
+* Snippets
+* Uploads
 
 <details>
-<summary>Instructions for migrating large projects.</summary>
+<summary>Instructions for migrating project exports >5Gb</summary>
 
-#### Import the Project from AWS S3 for Large Projects
+#### Import project from AWS S3
 
 **NOTE**: If the project size is bigger than 5 GB, less than 10 GB. We can import the project from AWS S3 through API.
 
@@ -262,9 +270,26 @@ PSE conducting the migration:
    2. `aws configure` to [configure the AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html)
    3. `aws s3 ls s3://<bucket_name>` to verify if you can list your bucket
    4. `aws s3 cp <the project.tar.gz> s3://<bucket_name>` to upload the project package to S3 bucket
-2. Follow [Import the Project from AWS S3](https://docs.gitlab.com/ee/api/project_import_export.html#import-a-file-from-aws-s3) to import the project from S3 to GitLab.com
+2. Follow [Import the Project from AWS S3](https://docs.gitlab.com/ee/api/project_import_export.html#import-a-file-from-aws-s3) to import the project from S3 to GitLab.com. Example:
 
-#### Workarounds for Large Repositories
+    ```bash
+    curl -v POST \
+      --header "PRIVATE-TOKEN: <token>" \
+      --header "Content-Type: application/json" \
+      --url "https://gitlab.com/api/v4/projects/remote-import-s3" \
+      --data '{
+        "path": "<project-path>",
+        "name": "<defaults-to-path-if-empty>",
+        "namespace": “<full-target-group-path>",
+        "region": "<s3-bucket-region>",
+        "bucket_name": "<s3-bucket-name>",
+        "file_key": "<export-file-name>.tar.gz",
+        "access_key_id": “<aws-access-key>",
+        "secret_access_key": “<aws-secret-key>"
+      }'
+    ```
+
+#### Workarounds
 
 Maximum import size limitations can prevent an import from being successful. If changing the import limits is not possible, you can try one of the workarounds listed here.
 
