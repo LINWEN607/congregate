@@ -149,7 +149,7 @@ class ConfigurationValidator(Config):
                         "dstn_parent_group_path", msg=f"Public destination parent group: {group_full_path}. Please set visibility to 'internal' or 'private'")
             else:
                 raise ConfigurationException(
-                        "dstn_parent_group_path", msg=f"Destination group in config [{dstn_parent_group_path}] does not match group path from API response [{group_full_path}] Please correct configuration settings")
+                    "dstn_parent_group_path", msg=f"Destination group in config [{dstn_parent_group_path}] does not match group path from API response [{group_full_path}] Please correct configuration settings")
             return True
         return True
 
@@ -165,7 +165,8 @@ class ConfigurationValidator(Config):
             is_admin = user.get(
                 "is_admin") if self.source_type == "gitlab" else True
             if not is_admin:
-                print("Destination token is currently assigned to a standard user. Some API endpoints may not behave correctly")
+                print(
+                    "Destination token is currently assigned to a standard user. Some API endpoints may not behave correctly")
             return True
         return True
 
@@ -275,8 +276,10 @@ class ConfigurationValidator(Config):
     def validate_direct_transfer_enabled(self):
         src_gitlab_dot_com = is_dot_com(self.source_host)
         dest_gitlab_dot_com = is_dot_com(self.destination_host)
-        src_bulk_import, src_max_download = self.__get_dt_configuration(self.source_host, self.source_token, src_gitlab_dot_com)
-        dest_bulk_import, dest_max_download = self.__get_dt_configuration(self.destination_host, self.destination_token, dest_gitlab_dot_com)
+        src_bulk_import, src_max_download = self.__get_dt_configuration(
+            self.source_host, self.source_token, src_gitlab_dot_com)
+        dest_bulk_import, dest_max_download = self.__get_dt_configuration(
+            self.destination_host, self.destination_token, dest_gitlab_dot_com)
         if src_bulk_import is None:
             print("Warning: Cannot confirm bulk import is enabled on source. This could be due to using a regular user personal access token. See docs: https://docs.gitlab.com/ee/api/settings.html#get-current-application-settings")
         if dest_bulk_import is None:
@@ -301,7 +304,7 @@ class ConfigurationValidator(Config):
                 'direct_transfer', f"Cannot confirm if bulk import is enabled on either source or destination. This is likely due to using standard user access tokens on both self-managed instances. Please use an admin token for at least the source instance"
             )
         return True
-    
+
     def __get_dt_configuration(self, host, token, dot_com):
         if not dot_com:
             instance_api = InstanceApi()

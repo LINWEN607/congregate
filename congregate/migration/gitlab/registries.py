@@ -156,7 +156,7 @@ class RegistryClient(BaseClass):
                 continue
 
             # Retag for the new destination
-            new_reg = self.generate_destination_registry_url(project)
+            new_reg = self.generate_destination_registry_url(project, repo_loc)
 
             all_tags.append(
                 (f"{repo_loc}:{tag_name}", f"{new_reg}:{tag_name}")
@@ -218,9 +218,11 @@ class RegistryClient(BaseClass):
             self.log.error(
                 f"Failed to login to docker registry {registry}, with error:\n{err}")
 
-    def generate_destination_registry_url(self, project):
+    def generate_destination_registry_url(self, project, suffix):
         """
         :returns: New reg should be the path to the project prepended with new registry and parent path information, with the suffix
                     So, customer.registry.com/project/path/suffix -> registry.gitlab.com/parent/project/path/suffix
         """
-        return f"{self.config.destination_registry}/{get_target_project_path(project)}".lower()
+        suffix = suffix.replace(
+            f"{self.config.source_registry}/{project.get('path_with_namespace')}", "")
+        return f"{self.config.destination_registry}/{get_target_project_path(project)}{suffix}".lower()
