@@ -317,6 +317,7 @@ def generate_config():
     config.set("APP", "ui_port", "8000")
     config.set("APP", "processes", "4")
     config.set("APP", "ssl_verify", "True")
+    config.set("APP", "archive_logic", "False")
 
     write_to_file(config)
 

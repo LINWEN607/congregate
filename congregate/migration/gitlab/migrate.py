@@ -526,6 +526,12 @@ class GitLabMigrateClient(MigrateClient):
                 self.log.info(
                     f"Saved project [{name}:{pid}] archive to {final_path}")
                 delete_project_features(pid)
+
+            # Archive project immediately after export
+            if self.config.archive_logic:
+                self.log.info(
+                    f"Archiving source project '{name}' (ID: {pid})")
+                self.projects_api.archive_project(self.config.source_host, self.config.source_token, pid)
         except (IOError, RequestException) as oe:
             self.log.error(
                 f"Failed to export/download project {name} (ID: {pid}) as {filename} with error:\n{oe}")
@@ -536,10 +542,10 @@ class GitLabMigrateClient(MigrateClient):
 
     def handle_importing_projects(self, project, dst_host=None, dst_token=None, group_path=None, filename=None):
         src_id = project["id"]
-        archived = project["archived"]
         path = project["path_with_namespace"]
         dst_host = dst_host or self.config.destination_host
         dst_token = dst_token or self.config.destination_token
+        archived = self.projects_api.get_project_archive_state(self.config.source_host, self.config.source_token, src_id)
         dst_pwn, tn = mig_utils.get_stage_wave_paths(
             project, group_path=group_path)
         result = {
@@ -601,6 +607,13 @@ class GitLabMigrateClient(MigrateClient):
             if self.config.airgap:
                 self.log.info(f"Deleting project export file {filename}")
                 delete_project_export(filename)
+
+            # Archive project immediately after import
+            if import_id and self.config.archive_logic:
+                if not archived and not self.dry_run:
+                    self.log.info(
+                        f"Archiving active source project '{path}' (ID: {src_id})")
+                    self.projects_api.archive_project(self.config.source_host, self.config.source_token, src_id)
         return result
 
     def migrate_single_project_features(self, project, dst_id, dest_host=None, dest_token=None):
