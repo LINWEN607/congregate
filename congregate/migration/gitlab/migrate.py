@@ -95,6 +95,7 @@ class GitLabMigrateClient(MigrateClient):
             DRY_RUN=False)
         self.project_feature_flags_users_lists_client = ProjectFeatureFlagsUserListsClient(
             DRY_RUN=False)
+        self.project_id_mapping = {}
         super().__init__(dry_run,
                          processes,
                          only_post_migration_info,
@@ -590,6 +591,8 @@ class GitLabMigrateClient(MigrateClient):
                     import_id = ie_client.import_project(
                         project, dry_run=self.dry_run, group_path=group_path or tn)
                 if import_id and not self.dry_run:
+                     # Store the mapping
+                    self.project_id_mapping[src_id] = import_id
                     # Disable Shared CI
                     self.disable_shared_ci(dst_pwn, import_id)
                     # Post import features
@@ -703,15 +706,8 @@ class GitLabMigrateClient(MigrateClient):
             results["project_level_mr_approvals"] = MergeRequestApprovalsClient(dest_host=dest_host, dest_token=dest_token).migrate_project_level_mr_approvals(
                 src_id, dst_id, src_path)
 
-        # Get all projects from the source and destination
-        src_projects = self.projects_api.get_all_projects(self.config.source_host, self.config.source_token)
-        dest_projects = self.projects_api.get_all_projects(dest_host, dest_token)
-
-        # Create project ID mapping
-        project_id_mapping = self.issue_links_client.create_project_id_mapping(src_projects, dest_projects)
-
         # Migrate issue links
-        self.issue_links_client.migrate_issue_links(self.config.source_host, self.config.source_token, dest_host, dest_token, src_id, dst_id, project_id_mapping)
+        self.issue_links_client.migrate_issue_links(self.config.source_host, self.config.source_token, dest_host, dest_token, src_id, dst_id, self.project_id_mapping)
 
         # Source fields
         results["src_id"] = src_id
