@@ -29,23 +29,6 @@ class ProjectMigrationTests(unittest.TestCase):
         self.api_wrapper = MockGitLabApiWrapper()
         self.issue_links = IssueLinksClient(DRY_RUN=False)
 
-    def test_create_project_id_mapping(self):
-        src_projects = self.api_wrapper.projects_api.get_all_projects()
-        dest_projects = [
-            {"id": 10, "name": "Project1"},
-            {"id": 11, "name": "Project2"},
-            {"id": 12, "name": "Project3"}
-        ]
-
-        project_id_mapping = self.issue_links.create_project_id_mapping(src_projects, dest_projects)
-        expected_mapping = {
-            1: 10,
-            2: 11,
-            3: 12
-        }
-
-        self.assertDictEqual(project_id_mapping, expected_mapping)
-
     @patch('congregate.migration.gitlab.api.issues.IssuesApi.get_all_project_issues')
     @patch('congregate.migration.gitlab.api.issue_links.IssueLinksApi.list_issue_links')
     @patch('congregate.migration.gitlab.api.issue_links.IssueLinksApi.create_issue_link')

@@ -9,31 +9,6 @@ class IssueLinksClient(BaseClass):
         self.issues_api = IssuesApi()
         self.issue_links_api = IssueLinksApi()
         super().__init__()
-    
-    def create_project_id_mapping(self, src_projects, dest_projects):
-        """
-        Create a mapping of source project IDs to destination project IDs based on project names.
-
-        :param: src_projects: (generator) Generator of source GitLab projects
-        :param: dest_projects: (generator) Generator of destination GitLab projects
-        :return: dict Mapping of source project IDs to destination project IDs
-        """
-        project_id_mapping = {}
-        
-        # Convert the destination projects generator to a list as we are iterating multiple times
-        dest_projects_list = list(dest_projects)
-
-        for src_project in src_projects:
-            error, formated_src_project = is_error_message_present(src_project)
-            if error or not formated_src_project:
-                self.log.error(f"Failed to list src project:\n{formated_src_project}")
-            else:
-                src_name = formated_src_project['name']
-                for dest_project in dest_projects_list:
-                    if dest_project['name'] == src_name:
-                        project_id_mapping[formated_src_project['id']] = dest_project['id']
-                        break
-        return project_id_mapping
 
     def migrate_issue_links(self, src_host, src_token, dest_host, dest_token, src_project_id, dest_project_id, project_id_mapping):
         """
