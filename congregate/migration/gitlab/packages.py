@@ -1,4 +1,5 @@
 from pathlib import Path
+from traceback import print_exc
 from requests.exceptions import RequestException
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.api.packages import PackagesApi
@@ -24,31 +25,32 @@ class PackagesClient(BaseClass):
         try:
             for package in self.packages.get_project_packages(self.config.source_host, self.config.source_token, src_id):
                 package_type = package.get('package_type')
-                if package_type == 'generic':
-                    self.migrate_generic_packages(
-                        src_id, dest_id, package, results)
-                elif package_type == 'maven':
-                    self.migrate_maven_packages(
-                        src_id, dest_id, package, project_name, results)
-                elif package_type == 'pypi':
-                    self.migrate_pypi_packages(
-                        src_id, dest_id, package, results)
-                elif package_type == 'npm':
-                    self.migrate_npm_packages(
-                        src_id, dest_id, package, results)
-                else:
-                    self.log.warning(
-                        f"Skipping {package.get('name')}, type {package.get('package_type')} not supported")
-                    results.append(
-                        {'Migrated': False, 'Package': package.get('name')})
+                try:
+                    if package_type == 'generic':
+                        self.migrate_generic_packages(
+                            src_id, dest_id, package, results)
+                    elif package_type == 'maven':
+                        self.migrate_maven_packages(
+                            src_id, dest_id, package, project_name, results)
+                    elif package_type == 'pypi':
+                        self.migrate_pypi_packages(
+                            src_id, dest_id, package, results)
+                    elif package_type == 'npm':
+                        self.migrate_npm_packages(
+                            src_id, dest_id, package, results)
+                    else:
+                        self.log.warning(
+                            f"Skipping {package.get('name')}, type {package.get('package_type')} not supported")
+                        results.append(
+                            {'Migrated': False, 'Package': package.get('name')})
+                except Exception:
+                    self.log.error(print_exc())
         except RequestException as re:
             self.log.error(
-                f"Failed to get all project '{project_name}' (ID:{src_id}) packages, due to a request exception")
-            self.log.debug(re)
+                f"Failed to get all project '{project_name}' (ID:{src_id}) packages, due to a request exception:\n{re}")
         except Exception as e:
             self.log.error(
-                f"Failed to get all project '{project_name}' (ID:{src_id}) packages, due to an exception")
-            self.log.debug(e)
+                f"Failed to get all project '{project_name}' (ID:{src_id}) packages, due to an exception:\n{e}")
         return results
 
     def format_groupid(self, name):
@@ -208,11 +210,11 @@ class PackagesClient(BaseClass):
 
             if response.status_code != 201:
                 self.log.error(
-                    f"Failed to migrate package '{package.file_name}' file '{package['file_name']}':\n{response} - {response.text}")
+                    f"Failed to migrate package '{package.file_name}' file '{package_file['file_name']}':\n{response} - {response.text}")
                 migration_status = False
             else:
                 self.log.info(
-                    f"Successfully migrated package '{package.file_name}' file '{package['file_name']}'")
+                    f"Successfully migrated package '{package.file_name}' file '{package_file['file_name']}'")
 
         results.append({'Migrated': migration_status, 'Package': artifact})
 
@@ -269,7 +271,7 @@ class PackagesClient(BaseClass):
 
             # The json data that will be sent over the network and dropped in the package registry of the destination instance
             json_data = generate_npm_json_data(
-                package_metadata_bytes, package_data, file_name, file_content, custom_tarball_url)
+                package_metadata_bytes, package_data, file_name, file_content, version, custom_tarball_url)
 
             # Uploading the data to the destination instance
             response = self.npm_packages.upload_npm_package(

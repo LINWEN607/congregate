@@ -1,3 +1,4 @@
+from copy import deepcopy as copy
 from urllib.parse import quote_plus
 from congregate.migration.gitlab.api.base_api import GitLabApiWrapper
 from congregate.migration.meta.api_models.npm_package_data import NpmPackageData
@@ -49,5 +50,9 @@ class NpmPackagesApi(GitLabApiWrapper):
             'Private-Token': token,
             'Content-Type': 'application/json'
         }
+        filtered_message = copy(package_data.to_dict())
+        filtered_message.pop('content', None)
+
+        message = f"Uploading to NPM registry with payload {filtered_message}"
         
-        return self.api.generate_put_request(host, token, f"projects/{pid}/packages/npm/{quote_plus(package_data.name)}", data=json_data, headers=headers)
+        return self.api.generate_put_request(host, token, f"projects/{pid}/packages/npm/@{quote_plus(package_data.name).lstrip('@')}", data=json_data, headers=headers, description=message)
