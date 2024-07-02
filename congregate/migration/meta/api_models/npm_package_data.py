@@ -25,3 +25,6 @@ class NpmPackageData:
             # pylint: disable=not-an-iterable
             self.content = MultiPartContent(*self.content)
             # pylint: enable=not-an-iterable
+    
+    def to_dict(self):
+        return asdict(self)

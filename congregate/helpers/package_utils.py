@@ -1,6 +1,7 @@
 import tarfile, json, base64
 from io import BytesIO
 from dacite import from_dict
+from gitlab_ps_utils.dict_utils import dig
 from congregate import log
 from congregate.helpers.utils import guess_file_type
 from congregate.migration.meta.api_models.pypi_package_data import PyPiPackageData
@@ -81,7 +82,7 @@ def generate_npm_package_payload(package: NpmPackage, pkg_json) -> NpmPackageDat
     })
     return package_payload
 
-def generate_npm_json_data(package_metadata_bytes, package_data, tarball_name, tarball_content, custom_tarball_url):
+def generate_npm_json_data(package_metadata_bytes, package_data, tarball_name, tarball_content, version, custom_tarball_url):
     # Base64 encode the tarball content
     encoded_content = base64.b64encode(tarball_content).decode('utf-8')
 
@@ -99,16 +100,14 @@ def generate_npm_json_data(package_metadata_bytes, package_data, tarball_name, t
         },
         "_id": package_data.name,
         "description": package_data.description,
-        "dist-tags": package_metadata['dist-tags'],
+        "dist-tags": {"latest": version},
         "name": package_data.name,
         "readme": package_data.description,
-        "versions": {}
+        "versions": { version: dig(package_metadata, 'versions', version) }
     }
 
-    # Process versions to replace tarball URL
-    for version, details in package_metadata['versions'].items():
-        details['dist']['tarball'] = custom_tarball_url
-        package_json_dict['versions'][version] = details
+    # Update tarball URL
+    package_json_dict["versions"][version]['dist']['tarball'] = custom_tarball_url
 
     package_json = json.dumps(package_json_dict)
 
