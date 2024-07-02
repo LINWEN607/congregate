@@ -17,34 +17,9 @@ class RegistryClient(BaseClass):
         super().__init__()
         self.reg_dry_run = reg_dry_run
 
-    def are_enabled(self, new_id, old_id):
-        src = self.is_enabled(self.config.source_host,
-                              self.config.source_token, old_id)
-        dest = self.is_enabled(self.config.destination_host,
-                               self.config.destination_token, new_id)
-        return (src, dest)
-
-    def is_enabled(self, host, token, pid):
-        project = safe_json_response(
-            self.projects_api.get_project(pid, host, token))
-        return project.get("container_registry_enabled",
-                           False) if project else False
-
-    def migrate_registries(self, project, new_id):
+    def migrate_registries(self, project):
         old_id = project.get("id")
         name = project.get("path_with_namespace")
-        try:
-            reg = self.are_enabled(new_id, old_id)
-            if reg[0] and reg[1]:
-                return self.migrate(project, old_id, name)
-            self.log.warning(
-                f"Container registry is disabled for project {name} on {'source' if not reg[0] else 'destination' if not reg[1] else 'source and destination'} instance")
-        except Exception as e:
-            self.log.error(
-                f"Failed to migrate container registries for project {name}, with error:\n{e}")
-            return False
-
-    def migrate(self, project, old_id, name):
         try:
             # Login to source registry
             src_client = self.__login_to_registry(
