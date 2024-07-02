@@ -668,9 +668,10 @@ class GitLabMigrateClient(MigrateClient):
                 src_id, dst_id, src_path)
 
             # Container Registries
-            if self.config.source_registry and self.config.destination_registry:
-                results["container_registry"] = self.registries.migrate_registries(
-                    project, dst_id)
+            if project.get("container_registry_enabled"):
+                if self.config.source_registry and self.config.destination_registry:
+                    results["container_registry"] = self.registries.migrate_registries(
+                        project)
 
             # Package Registries
             if project.get("packages_enabled"):
