@@ -199,5 +199,5 @@ class RegistryClient(BaseClass):
                     So, customer.registry.com/project/path/suffix -> registry.gitlab.com/parent/project/path/suffix
         """
         suffix = suffix.replace(
-            f"{self.config.source_registry}/{project.get('path_with_namespace')}", "")
+            f"{self.config.source_registry}/{project.get('path_with_namespace')}".lower(), "")
         return f"{self.config.destination_registry}/{get_target_project_path(project)}{suffix}".lower()
