@@ -706,9 +706,6 @@ class GitLabMigrateClient(MigrateClient):
             results["project_level_mr_approvals"] = MergeRequestApprovalsClient(dest_host=dest_host, dest_token=dest_token).migrate_project_level_mr_approvals(
                 src_id, dst_id, src_path)
 
-        # Migrate issue links
-        self.issue_links_client.migrate_issue_links(self.config.source_host, self.config.source_token, dest_host, dest_token, src_id, dst_id, self.project_id_mapping)
-
         # Source fields
         results["src_id"] = src_id
         results["src_path"] = src_path
@@ -773,6 +770,10 @@ class GitLabMigrateClient(MigrateClient):
                     src_id, None, path_with_namespace)
 
             return results
+        
+    def migrate_linked_items_in_issues(self, src_id, dst_id, dest_host=None, dest_token=None):
+        # Migrate issue links
+        self.issue_links_client.migrate_issue_links(self.config.source_host, self.config.source_token, dest_host, dest_token, src_id, dst_id, self.project_id_mapping)
 
 
 @shared_task
