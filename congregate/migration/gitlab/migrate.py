@@ -514,25 +514,26 @@ class GitLabMigrateClient(MigrateClient):
                 self.log.info(
                     f"{dry_log}Contributor Retention is enabled. Project export is complete Removing all project contributors from members")
                 c_retention.remove_contributors_from_project(source=True)
-            if self.config.airgap:
-                exported_features = self.export_single_project_features(
-                    project, src_host, src_token)
-                result[filename] = {
-                    'exported': True,
-                    'exported_features': exported_features
-                }
-                final_path = create_archive(
-                    pid, f"{self.config.filesystem_path}/downloads/{filename}")
-                self.log.info(
-                    f"Saved project [{name}:{pid}] archive to {final_path}")
-                delete_project_features(pid)
+            if not self.dry_run:
+                if self.config.airgap:
+                    exported_features = self.export_single_project_features(
+                        project, src_host, src_token)
+                    result[filename] = {
+                        'exported': True,
+                        'exported_features': exported_features
+                    }
+                    final_path = create_archive(
+                        pid, f"{self.config.filesystem_path}/downloads/{filename}")
+                    self.log.info(
+                        f"Saved project [{name}:{pid}] archive to {final_path}")
+                    delete_project_features(pid)
 
-            # Archive project immediately after export
-            if self.config.archive_logic:
-                self.log.info(
-                    f"Archiving source project '{name}' (ID: {pid})")
-                self.projects_api.archive_project(
-                    self.config.source_host, self.config.source_token, pid)
+                # Archive project immediately after export
+                if self.config.archive_logic:
+                    self.log.info(
+                        f"Archiving source project '{name}' (ID: {pid})")
+                    self.projects_api.archive_project(
+                        self.config.source_host, self.config.source_token, pid)
         except (IOError, RequestException) as oe:
             self.log.error(
                 f"Failed to export/download project {name} (ID: {pid}) as {filename} with error:\n{oe}")
@@ -546,8 +547,10 @@ class GitLabMigrateClient(MigrateClient):
         path = project["path_with_namespace"]
         dst_host = dst_host or self.config.destination_host
         dst_token = dst_token or self.config.destination_token
+        src_host = self.config.source_host
+        src_token = self.config.source_token
         archived = self.projects_api.get_project_archive_state(
-            self.config.source_host, self.config.source_token, src_id)
+            src_host, src_token, src_id)
         dst_pwn, tn = mig_utils.get_stage_wave_paths(
             project, group_path=group_path)
         result = {
@@ -566,7 +569,7 @@ class GitLabMigrateClient(MigrateClient):
                     self.log.info(
                         f"Unarchiving source project '{path}' (ID: {src_id})")
                     self.projects_api.unarchive_project(
-                        self.config.source_host, self.config.source_token, src_id)
+                        src_host, src_token, src_id)
                 if dst_pid:
                     import_status = misc_utils.safe_json_response(self.projects_api.get_project_import_status(
                         dst_host, dst_token, dst_pid))
@@ -601,22 +604,20 @@ class GitLabMigrateClient(MigrateClient):
             self.log.error(e)
             self.log.error(print_exc())
         finally:
-            if archived and not self.dry_run:
-                self.log.info(
-                    f"Archiving back source project '{path}' (ID: {src_id})")
-                self.projects_api.archive_project(
-                    self.config.source_host, self.config.source_token, src_id)
-            if self.config.airgap:
-                self.log.info(f"Deleting project export file {filename}")
-                delete_project_export(filename)
-
-            # Archive project immediately after import
-            if import_id and self.config.archive_logic:
-                if not archived and not self.dry_run:
-                    self.log.info(
-                        f"Archiving active source project '{path}' (ID: {src_id})")
+            if not self.dry_run:
+                if archived:
                     self.projects_api.archive_project(
-                        self.config.source_host, self.config.source_token, src_id)
+                        src_host, src_token, src_id,
+                        message=f"Archiving back source project '{path}' (ID: {src_id})")
+                # Archive project immediately after import
+                elif self.config.archive_logic and import_id:
+                    self.projects_api.archive_project(
+                        src_host, src_token, src_id,
+                        message=f"Archiving active source project '{path}' (ID: {src_id})")
+
+                if self.config.airgap:
+                    self.log.info(f"Deleting project export file {filename}")
+                    delete_project_export(filename)
         return result
 
     def migrate_single_project_features(self, project, dst_id, dest_host=None, dest_token=None):
