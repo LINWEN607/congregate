@@ -771,9 +771,11 @@ class GitLabMigrateClient(MigrateClient):
 
             return results
         
-    def migrate_linked_items_in_issues(self, src_id, dst_id, dest_host=None, dest_token=None):
+    def migrate_linked_items_in_issues(self):
+        # Get different project ids from source and destination
+        # Get the mapping file and do the mapping
         # Migrate issue links
-        self.issue_links_client.migrate_issue_links(self.config.source_host, self.config.source_token, dest_host, dest_token, src_id, dst_id, self.project_id_mapping)
+        self.issue_links_client.migrate_issue_links(self.config.source_host, self.config.source_token, self.config.destination_host, self.config.destination_token, self.project_id_mapping)
 
 
 @shared_task

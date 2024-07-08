@@ -31,6 +31,7 @@ Usage:
     congregate url-rewrite-only [--commit]
     congregate remove-users-from-parent-group [--commit]
     congregate migrate-variables-in-stage [--commit]
+    congregate migrate-linked-issues [--commit]
     congregate pull-mirror-staged-projects [--commit]
     congregate push-mirror-staged-projects [--disabled] [--keep_div_refs] [--force] [--commit]
     congregate toggle-staged-projects-push-mirror [--disable] [--commit]
@@ -166,6 +167,7 @@ Commands:
     url-rewrite-only                        Performs the URL rewrite portion of a migration as a stand-alone step, instead of as a post-migration step. Requires the projects to be staged, and to exist on destination
     remove-users-from-parent-group          Remove all users with at most Reporter access from the parent group.
     migrate-variables-in-stage              Migrate CI variables for staged projects.
+    migrate-linked-issues                   Migrate Linked items in issues for staged projects.
     pull-mirror-staged-projects             Set up project pull mirroring for staged projects.
     push-mirror-staged-projects             Set up and enable (by default) project push mirroring for staged projects.
                                                 Assuming both the mirrored repo and empty project structure (create-staged-projects-structure) for mirroring already exist on destination.
@@ -323,6 +325,7 @@ def main():
             from congregate.migration.gitlab.compare import CompareClient
             from congregate.migration.migrate import MigrateClient
             from congregate.migration.meta.base_migrate import MigrateClient as BaseMigrateClient
+            from congregate.migration.gitlab.migrate import GitLabMigrateClient
             from congregate.migration.gitlab.branches import BranchesClient
             from congregate.cli import do_all
             from congregate.cli.list_source import ListClient
@@ -408,6 +411,10 @@ def main():
                     },
                     dry_run=DRY_RUN
                 )
+
+            if arguments["migrate-linked-issues"]:
+                migrate = GitLabMigrateClient(dry_run=DRY_RUN)
+                migrate.migrate_linked_items_in_issues()
 
             if arguments["migrate"]:
                 migrate = MigrateClient(
