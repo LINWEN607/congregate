@@ -9,6 +9,7 @@ from traceback import print_exc
 from requests.exceptions import RequestException
 
 from gitlab_ps_utils import json_utils, misc_utils
+from gitlab_ps_utils.json_utils import write_json_to_file
 from celery import shared_task
 from dacite import from_dict
 
@@ -772,10 +773,16 @@ class GitLabMigrateClient(MigrateClient):
             return results
         
     def migrate_linked_items_in_issues(self):
-        # Get different project ids from source and destination
-        # Get the mapping file and do the mapping
+        # Read the mapping file from the json and put it inside the project_id_mapping variable
+        project_id_mapping = mig_utils.get_staged_projects()
         # Migrate issue links
-        self.issue_links_client.migrate_issue_links(self.config.source_host, self.config.source_token, self.config.destination_host, self.config.destination_token, self.project_id_mapping)
+        self.issue_links_client.migrate_issue_links(self.config.source_host, self.config.source_token, self.config.destination_host, self.config.destination_token, project_id_mapping)
+
+    def write_project_id_mapping_file(self):
+        """
+            Write projects id mapping to a JSON file
+        """
+        write_json_to_file(f"{self.app_path}/data/project_id_mapping.json", self.project_id_mapping)
 
 
 @shared_task

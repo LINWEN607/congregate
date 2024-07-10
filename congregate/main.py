@@ -318,7 +318,7 @@ def main():
                 getattr(c, v)
         else:
             from gitlab_ps_utils.string_utils import convert_to_underscores
-            from congregate.migration.gitlab.users import UsersClient
+            # from congregate.migration.gitlab.users import UsersClient
             from congregate.migration.gitlab.groups import GroupsClient
             from congregate.migration.gitlab.projects import ProjectsClient
             from congregate.migration.gitlab.variables import VariablesClient
