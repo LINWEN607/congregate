@@ -29,12 +29,12 @@ class IssueLinksClient(BaseClass):
                 issue_links = issue_links_response.json()
                 for link in issue_links:
                     if link:
-                        src_target_project_id = link['target_project_id']
-                        target_issue_iid = link['target_issue_iid']
+                        src_target_project_id = link['project_id']
+                        target_issue_iid = link['iid']
                         link_type = link['link_type']
                         if not self.dry_run:
                             # Translate source project ID to destination project ID
-                            dst_target_project_id = project_id_mapping.get(src_target_project_id)
+                            dst_target_project_id = project_id_mapping.get(str(src_target_project_id))
                             if dst_target_project_id is None:
                                 self.log.info(f"Skipping link for issue {src_issue_iid}: unable to find destination ID for project {src_target_project_id}")
                                 continue
