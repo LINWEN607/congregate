@@ -36,9 +36,9 @@ class ProjectMigrationTests(unittest.TestCase):
         src_project_id = 1
         dest_project_id = 10
         project_id_mapping = {
-            1: 10,
-            2: 20,
-            3: 30
+            "1": 10,
+            "2": 20,
+            "3": 30
         }
 
         mock_get_all_project_issues.return_value = [
@@ -51,7 +51,7 @@ class ProjectMigrationTests(unittest.TestCase):
         ])
         mock_create_issue_link.return_value = MagicMock(status_code=201)
 
-        self.issue_links.migrate_issue_links("source_host", "source_token", "dest_host", "dest_token", src_project_id, dest_project_id, project_id_mapping)
+        self.issue_links.migrate_issue_links("source_host", "source_token", "dest_host", "dest_token", project_id_mapping)
 
         mock_create_issue_link.assert_any_call("dest_host", "dest_token", dest_project_id, 1, 20, 5, "relates_to")
         mock_create_issue_link.assert_any_call("dest_host", "dest_token", dest_project_id, 1, 30, 7, "blocks")
