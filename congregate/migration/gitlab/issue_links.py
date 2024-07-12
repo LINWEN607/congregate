@@ -1,7 +1,7 @@
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.api.issues import IssuesApi
 from congregate.migration.gitlab.api.issue_links import IssueLinksApi
-from gitlab_ps_utils.misc_utils import is_error_message_present
+from gitlab_ps_utils.misc_utils import get_dry_log
 
 class IssueLinksClient(BaseClass):
     def __init__(self, DRY_RUN=True):
@@ -53,3 +53,5 @@ class IssueLinksClient(BaseClass):
                     target_issue_iid,
                     link_type
                 )
+            else:
+                self.log.info(f"{get_dry_log(self.dry_run)} No action performed for issue links migration")
