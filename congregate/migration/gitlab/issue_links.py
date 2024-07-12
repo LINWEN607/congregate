@@ -32,6 +32,9 @@ class IssueLinksClient(BaseClass):
 
     def get_issue_links(self, src_project_id, src_issue_iid):
         issue_links_response = self.issue_links_api.list_issue_links(self.config.source_host, self.config.source_token, src_project_id, src_issue_iid)
+        if issue_links_response.status_code != 200:
+            self.log.error(f"Failed to list issue links for project {src_project_id}, issue {src_issue_iid}: {issue_links_response.status_code}")
+            return []
         return issue_links_response.json()
 
     def migrate_single_issue_link(self, link, src_issue_iid, dest_project_id, project_id_mapping):
@@ -44,7 +47,7 @@ class IssueLinksClient(BaseClass):
                 if dst_target_project_id is None:
                     self.log.info(f"Skipping link for issue {src_issue_iid}: unable to find destination ID for project {src_target_project_id}")
                     return
-                self.issue_links_api.create_issue_link(
+                create_response = self.issue_links_api.create_issue_link(
                     self.config.destination_host,
                     self.config.destination_token,
                     dest_project_id,
@@ -53,5 +56,7 @@ class IssueLinksClient(BaseClass):
                     target_issue_iid,
                     link_type
                 )
+                if create_response.status_code != 201:
+                    self.log.warning(f"Failed to create issue link for project {dest_project_id}, issue {src_issue_iid}: {create_response.status_code}")
             else:
                 self.log.info(f"{get_dry_log(self.dry_run)} No action performed for issue links migration")
