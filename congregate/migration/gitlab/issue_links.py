@@ -45,7 +45,7 @@ class IssueLinksClient(BaseClass):
             if not self.dry_run:
                 dst_target_project_id = project_id_mapping.get(int(src_target_project_id))
                 if dst_target_project_id is None:
-                    self.log.info(f"Skipping link for issue {src_issue_iid}: unable to find destination ID for project {src_target_project_id}")
+                    self.log.warning(f"Skipping link for issue {src_issue_iid}: unable to find destination ID for project {src_target_project_id}")
                     return
                 create_response = self.issue_links_api.create_issue_link(
                     self.config.destination_host,
