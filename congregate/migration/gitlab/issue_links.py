@@ -10,22 +10,18 @@ class IssueLinksClient(BaseClass):
         self.issue_links_api = IssueLinksApi()
         super().__init__()
 
-    def migrate_issue_links(self, src_host, src_token, dest_host, dest_token, project_id_mapping):
+    def migrate_issue_links(self, project_id_mapping):
         """
         Migrate issue links from source projects to destination projects using project_id_mapping.
 
-        :param: src_host: (str) Source GitLab host URL
-        :param: src_token: (str) Access token to source GitLab instance
-        :param: dest_host: (str) Destination GitLab host URL
-        :param: dest_token: (str) Access token to destination GitLab instance
         :param: project_id_mapping: (dict) Mapping of source project IDs to destination project IDs
         """
         
         for src_project_id, dest_project_id in project_id_mapping.items():
-            for issue in self.issues_api.get_all_project_issues(src_project_id, src_host, src_token):
+            for issue in self.issues_api.get_all_project_issues(src_project_id, self.config.source_host, self.config.source_token):
                 src_issue_iid = issue['iid']
                 # Get all issue links for the current issue
-                issue_links_response = self.issue_links_api.list_issue_links(src_host, src_token, src_project_id, src_issue_iid)
+                issue_links_response = self.issue_links_api.list_issue_links(self.config.source_host, self.config.source_token, src_project_id, src_issue_iid)
                 issue_links = issue_links_response.json()
                 for link in issue_links:
                     if link:
@@ -40,8 +36,8 @@ class IssueLinksClient(BaseClass):
                                 continue
                             # Recreate the issue link on the destination side
                             self.issue_links_api.create_issue_link(
-                                dest_host,
-                                dest_token,
+                                self.config.destination_host,
+                                self.config.destination_token,
                                 dest_project_id,
                                 src_issue_iid,
                                 dst_target_project_id,
