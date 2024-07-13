@@ -625,6 +625,9 @@ class GitLabMigrateClient(MigrateClient):
                 if self.config.airgap:
                     self.log.info(f"Deleting project export file {filename}")
                     delete_project_export(filename)
+
+                # Write project id mapping file
+                self.write_project_id_mapping_file()
         return result
 
     def migrate_single_project_features(self, project, dst_id, dest_host=None, dest_token=None):
