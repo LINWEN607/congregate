@@ -35,6 +35,12 @@ congregate validate-config
 supervisorctl start all
 ```
 
+- If the `supervisorctl` command gives any errors like `connection refused`. Attempt to reboot `supervisord` with the default config and try again:
+
+```bash
+sudo supervisord -c /etc/supervisor/conf.d/supervisord.conf
+```
+
 ## Example configuration for direct transfer migrations (when using the supplied docker-compose.yml file)
 
 ```bash
