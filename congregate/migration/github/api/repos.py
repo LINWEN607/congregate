@@ -203,3 +203,433 @@ class ReposApi():
         GitHub API v3 Doc: https://developer.github.com/v3/pulls/review_requests/#list-requested-reviewers-for-a-pull-request
         """
         return self.api.generate_v3_get_request(self.host, f"repos/{owner}/{repo}/pulls/{pull_number}/requested_reviewers")
+    
+    def get_repo_v4(self, owner, repo):
+        """
+        Get a repository using GraphQL.
+        """
+        query = """
+        query($owner: String!, $name: String!) {
+            repository(owner: $owner, name: $name) {
+                name
+                description
+                url
+                createdAt
+                updatedAt
+                stargazerCount
+                forkCount
+            }
+        }
+        """
+        variables = {
+            "owner": owner,
+            "name": repo
+        }
+        return self.api.generate_v4_post_request(self.host, query, variables)
+
+    def get_repo_commits_v4(self, owner, repo):
+        """
+        List repository commits using GraphQL.
+        """
+        query = """
+        query($owner: String!, $name: String!, $limit: Int!) {
+            repository(owner: $owner, name: $name) {
+                ref(qualifiedName: "main") {
+                    target {
+                        ... on Commit {
+                            history(first: $limit) {
+                                edges {
+                                    node {
+                                        message
+                                        committedDate
+                                        author {
+                                            name
+                                            email
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        """
+        variables = {
+            "owner": owner,
+            "name": repo,
+            "limit": 100
+        }
+        return self.api.generate_v4_post_request(self.host, query, variables)
+
+    def get_repo_branches_v4(self, owner, repo):
+        """
+        List repository branches using GraphQL.
+        """
+        query = """
+        query($owner: String!, $name: String!) {
+            repository(owner: $owner, name: $name) {
+                refs(refPrefix: "refs/heads/", first: 100) {
+                    nodes {
+                        name
+                    }
+                }
+            }
+        }
+        """
+        variables = {
+            "owner": owner,
+            "name": repo
+        }
+        return self.api.generate_v4_post_request(self.host, query, variables)
+
+    def get_repo_pulls_v4(self, owner, repo, state="ALL"):
+        """
+        List repository pull requests using GraphQL.
+        """
+        query = """
+        query($owner: String!, $name: String!, $state: [PullRequestState!]) {
+            repository(owner: $owner, name: $name) {
+                pullRequests(states: $state, first: 100) {
+                    nodes {
+                        title
+                        body
+                        createdAt
+                        url
+                        state
+                    }
+                }
+            }
+        }
+        """
+        variables = {
+            "owner": owner,
+            "name": repo,
+            "state": state
+        }
+        return self.api.generate_v4_post_request(self.host, query, variables)
+
+    def get_repo_tags_v4(self, owner, repo):
+        """
+        List repository tags using GraphQL.
+        """
+        query = """
+        query($owner: String!, $name: String!) {
+            repository(owner: $owner, name: $name) {
+                refs(refPrefix: "refs/tags/", first: 100) {
+                    nodes {
+                        name
+                        target {
+                            ... on Tag {
+                                id
+                                tagger {
+                                    name
+                                    email
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        """
+        variables = {
+            "owner": owner,
+            "name": repo
+        }
+        return self.api.generate_v4_post_request(self.host, query, variables)
+
+    def get_repo_milestones_v4(self, owner, repo, state="ALL"):
+        """
+        List repository milestones using GraphQL.
+        """
+        query = """
+        query($owner: String!, $name: String!, $state: [MilestoneState!]) {
+            repository(owner: $owner, name: $name) {
+                milestones(states: $state, first: 100) {
+                    nodes {
+                        title
+                        description
+                        state
+                        dueOn
+                    }
+                }
+            }
+        }
+        """
+        variables = {
+            "owner": owner,
+            "name": repo,
+            "state": state
+        }
+        return self.api.generate_v4_post_request(self.host, query, variables)
+
+    def get_repo_issues_v4(self, owner, repo, state="OPEN"):
+        """
+        List repository issues using GraphQL.
+        """
+        query = """
+        query($owner: String!, $name: String!, $state: [IssueState!]) {
+            repository(owner: $owner, name: $name) {
+                issues(states: $state, first: 100) {
+                    nodes {
+                        title
+                        body
+                        createdAt
+                        url
+                        state
+                    }
+                }
+            }
+        }
+        """
+        variables = {
+            "owner": owner,
+            "name": repo,
+            "state": state
+        }
+        return self.api.generate_v4_post_request(self.host, query, variables)
+
+    def get_repo_releases_v4(self, owner, repo):
+        """
+        List repository releases using GraphQL.
+        """
+        query = """
+        query($owner: String!, $name: String!) {
+            repository(owner: $owner, name: $name) {
+                releases(first: 100) {
+                    nodes {
+                        name
+                        description
+                        publishedAt
+                        url
+                    }
+                }
+            }
+        }
+        """
+        variables = {
+            "owner": owner,
+            "name": repo
+        }
+        return self.api.generate_v4_post_request(self.host, query, variables)
+
+    def get_repo_issue_comments_v4(self, owner, repo, issue_number):
+        """
+        List repository issue comments using GraphQL.
+        """
+        query = """
+        query($owner: String!, $name: String!, $issueNumber: Int!) {
+            repository(owner: $owner, name: $name) {
+                issue(number: $issueNumber) {
+                    comments(first: 100) {
+                        nodes {
+                            body
+                            createdAt
+                            author {
+                                login
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        """
+        variables = {
+            "owner": owner,
+            "name": repo,
+            "issueNumber": issue_number
+        }
+        return self.api.generate_v4_post_request(self.host, query, variables)
+
+    def get_repo_teams_v4(self, owner, repo):
+        """
+        List repository teams using GraphQL.
+        """
+        query = """
+        query($owner: String!, $name: String!) {
+            repository(owner: $owner, name: $name) {
+                teams(first: 100) {
+                    nodes {
+                        slug
+                        name
+                        description
+                    }
+                }
+            }
+        }
+        """
+        variables = {
+            "owner": owner,
+            "name": repo
+        }
+        return self.api.generate_v4_post_request(self.host, query, variables)
+
+    def get_all_public_repos_v4(self):
+        """
+        Lists all public repositories using GraphQL.
+        """
+        query = """
+        query {
+            search(query: "is:public", type: REPOSITORY, first: 100) {
+                edges {
+                    node {
+                        ... on Repository {
+                            name
+                            owner {
+                                login
+                            }
+                            description
+                            url
+                        }
+                    }
+                }
+            }
+        }
+        """
+        return self.api.generate_v4_post_request(self.host, query)
+
+    def get_all_user_repos_v4(self, username):
+        """
+        Lists public repositories for the specified user using GraphQL.
+        """
+        query = """
+        query($login: String!, $limit: Int!) {
+            user(login: $login) {
+                repositories(first: $limit, privacy: PUBLIC) {
+                    nodes {
+                        name
+                        description
+                        url
+                    }
+                }
+            }
+        }
+        """
+        variables = {
+            "login": username,
+            "limit": 100
+        }
+        return self.api.generate_v4_post_request(self.host, query, variables)
+
+    def get_all_repo_collaborators_v4(self, owner, repo):
+        """
+        List repository collaborators using GraphQL.
+        """
+        query = """
+        query($owner: String!, $name: String!) {
+            repository(owner: $owner, name: $name) {
+                collaborators(first: 100) {
+                    nodes {
+                        login
+                        name
+                        url
+                    }
+                }
+            }
+        }
+        """
+        variables = {
+            "owner": owner,
+            "name": repo
+        }
+        return self.api.generate_v4_post_request(self.host, query, variables)
+
+    def get_all_repo_deploy_keys_v4(self, owner, repo):
+        """
+        List repository deploy keys using GraphQL.
+        """
+        query = """
+        query($owner: String!, $name: String!) {
+            repository(owner: $owner, name: $name) {
+                deployKeys(first: 100) {
+                    nodes {
+                        id
+                        title
+                        createdAt
+                    }
+                }
+            }
+        }
+        """
+        variables = {
+            "owner": owner,
+            "name": repo
+        }
+        return self.api.generate_v4_post_request(self.host, query, variables)
+
+    def list_pull_requests_v4(self, owner, repo, state="OPEN"):
+        """
+        List pull requests using GraphQL.
+        """
+        query = """
+        query($owner: String!, $name: String!, $state: [PullRequestState!]) {
+            repository(owner: $owner, name: $name) {
+                pullRequests(states: $state, first: 100) {
+                    nodes {
+                        title
+                        body
+                        createdAt
+                        url
+                        state
+                    }
+                }
+            }
+        }
+        """
+        variables = {
+            "owner": owner,
+            "name": repo,
+            "state": state
+        }
+        return self.api.generate_v4_post_request(self.host, query, variables)
+
+    def get_a_single_pull_request_v4(self, owner, repo, pull_number):
+        """
+        Get a pull request using GraphQL.
+        """
+        query = """
+        query($owner: String!, $name: String!, $number: Int!) {
+            repository(owner: $owner, name: $name) {
+                pullRequest(number: $number) {
+                    title
+                    body
+                    createdAt
+                    url
+                    state
+                }
+            }
+        }
+        """
+        variables = {
+            "owner": owner,
+            "name": repo,
+            "number": pull_number
+        }
+        return self.api.generate_v4_post_request(self.host, query, variables)
+
+    def list_reviewers_for_a_pull_request_v4(self, owner, repo, pull_number):
+        """
+        List requested reviewers for a pull request using GraphQL.
+        """
+        query = """
+        query($owner: String!, $name: String!, $number: Int!) {
+            repository(owner: $owner, name: $name) {
+                pullRequest(number: $number) {
+                    requestedReviewers(first: 100) {
+                        nodes {
+                            login
+                            name
+                            url
+                        }
+                    }
+                }
+            }
+        }
+        """
+        variables = {
+            "owner": owner,
+            "name": repo,
+            "number": pull_number
+        }
+        return self.api.generate_v4_post_request(self.host, query, variables)
