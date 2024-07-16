@@ -98,3 +98,226 @@ class OrgsApi():
             data,
             description=message
         )
+    
+    def get_all_orgs_v4(self):
+        """
+        Lists all organizations.
+
+        Using GraphQL API
+        """
+        query = """
+        query {
+            viewer {
+                organizations(first: 100) {
+                    nodes {
+                        login
+                        name
+                        url
+                    }
+                }
+            }
+        }
+        """
+        return self.api.list_all_v4(self.host, query)
+
+    def get_org_v4(self, org):
+        """
+        Get an organization.
+
+        Using GraphQL API
+        """
+        query = """
+        query($login: String!) {
+            organization(login: $login) {
+                login
+                name
+                url
+            }
+        }
+        """
+        variables = {
+            "login": org
+        }
+        return self.api.list_all_v4(self.host, query, variables)
+
+    def get_all_org_repos_v4(self, org):
+        """
+        Lists repositories for the specified organization.
+
+        Using GraphQL API
+        """
+        query = """
+        query($login: String!, $limit: Int!) {
+            organization(login: $login) {
+                repositories(first: $limit) {
+                    nodes {
+                        name
+                        description
+                        url
+                    }
+                }
+            }
+        }
+        """
+        variables = {
+            "login": org,
+            "limit": 100
+        }
+        return self.api.list_all_v4(self.host, query, variables)
+
+    def get_all_org_members_v4(self, org):
+        """
+        List all users who are members of an organization.
+
+        Using GraphQL API
+        """
+        query = """
+        query($login: String!, $limit: Int!) {
+            organization(login: $login) {
+                membersWithRole(first: $limit) {
+                    nodes {
+                        login
+                        name
+                        url
+                    }
+                }
+            }
+        }
+        """
+        variables = {
+            "login": org,
+            "limit": 100
+        }
+        return self.api.list_all_v4(self.host, query, variables)
+
+    def get_all_org_teams_v4(self, org):
+        """
+        Lists all teams in an organization.
+
+        Using GraphQL API
+        """
+        query = """
+        query($login: String!, $limit: Int!) {
+            organization(login: $login) {
+                teams(first: $limit) {
+                    nodes {
+                        slug
+                        name
+                        url
+                    }
+                }
+            }
+        }
+        """
+        variables = {
+            "login": org,
+            "limit": 100
+        }
+        return self.api.list_all_v4(self.host, query, variables)
+
+    def get_org_team_v4(self, org, team_slug):
+        """
+        Gets a team using the team's slug.
+
+        Using GraphQL API
+        """
+        query = """
+        query($login: String!, $slug: String!) {
+            organization(login: $login) {
+                team(slug: $slug) {
+                    slug
+                    name
+                    url
+                }
+            }
+        }
+        """
+        variables = {
+            "login": org,
+            "slug": team_slug
+        }
+        return self.api.list_all_v4(self.host, query, variables)
+
+    def get_all_org_team_repos_v4(self, org, team_slug):
+        """
+        Lists a team's repositories.
+
+        Using GraphQL API
+        """
+        query = """
+        query($login: String!, $slug: String!, $limit: Int!) {
+            organization(login: $login) {
+                team(slug: $slug) {
+                    repositories(first: $limit) {
+                        nodes {
+                            name
+                            description
+                            url
+                        }
+                    }
+                }
+            }
+        }
+        """
+        variables = {
+            "login": org,
+            "slug": team_slug,
+            "limit": 100
+        }
+        return self.api.list_all_v4(self.host, query, variables)
+
+    def get_all_org_team_members_v4(self, org, team_slug):
+        """
+        Lists members of a team.
+
+        Using GraphQL API
+        """
+        query = """
+        query($login: String!, $slug: String!, $limit: Int!) {
+            organization(login: $login) {
+                team(slug: $slug) {
+                    members(first: $limit) {
+                        nodes {
+                            login
+                            name
+                            url
+                        }
+                    }
+                }
+            }
+        }
+        """
+        variables = {
+            "login": org,
+            "slug": team_slug,
+            "limit": 100
+        }
+        return self.api.list_all_v4(self.host, query, variables)
+
+    def get_all_org_child_teams_v4(self, org, team_slug):
+        """
+        Lists the child teams of a team.
+
+        Using GraphQL API
+        """
+        query = """
+        query($login: String!, $slug: String!, $limit: Int!) {
+            organization(login: $login) {
+                team(slug: $slug) {
+                    childTeams(first: $limit) {
+                        nodes {
+                            slug
+                            name
+                            url
+                        }
+                    }
+                }
+            }
+        }
+        """
+        variables = {
+            "login": org,
+            "slug": team_slug,
+            "limit": 100
+        }
+        return self.api.list_all_v4(self.host, query, variables)
