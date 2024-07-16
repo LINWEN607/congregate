@@ -23,3 +23,57 @@ class GistsApi():
         GitHub API v3 Doc: https://docs.github.com/en/free-pro-team@latest/rest/reference/gists#get-a-gist
         """
         return self.api.list_all(self.host, f"gists/{gist_id}")
+
+    def get_public_gists_v4(self):
+        """
+        List public gists.
+
+        Using GraphQL API
+        """
+        query = """
+        query($limit: Int!) {
+            viewer {
+                gists(first: $limit, privacy: PUBLIC) {
+                    nodes {
+                        id
+                        description
+                        url
+                        files {
+                            name
+                            text
+                        }
+                    }
+                }
+            }
+        }
+        """
+        variables = {
+            "limit": 100
+        }
+        return self.api.list_all(self.host, query, variables)
+
+    def get_single_gist_v4(self, gist_id):
+        """
+        Get a single gist by ID.
+
+        Using GraphQL API
+        """
+        query = """
+        query($id: ID!) {
+            node(id: $id) {
+                ... on Gist {
+                    id
+                    description
+                    url
+                    files {
+                        name
+                        text
+                    }
+                }
+            }
+        }
+        """
+        variables = {
+            "id": gist_id
+        }
+        return self.api.list_all(self.host, query, variables)
