@@ -150,6 +150,22 @@ class GitHubApi():
 
     @stable_retry
     @token_rotate
+    def generate_v4_post_request(self, host, query, variables=None):
+        """
+        Generates POST request to GitHub GraphQL API
+        """
+        url = self.generate_v4_request_url(host)
+        headers = self.generate_v4_request_header(self.token)
+        payload = {
+            'query': query,
+        }
+        if variables:
+            payload['variables'] = variables
+        return requests.post(url, json=payload, headers=headers, verify=self.config.ssl_verify)
+
+
+    @stable_retry
+    @token_rotate
     def generate_v3_patch_request(
             self, host, api, data, headers=None, description=None):
         """
@@ -266,6 +282,48 @@ class GitHubApi():
         count = len(uniq)
         log.info(f"Total count for {host} endpoint {api}: {count}")
         return count
+
+    def list_all_v4(self, host, query, variables=None):
+        """
+        Generates a list of all projects, groups, users, etc.
+
+        :param host: (str) GitHub host URL
+        :param query: (str) GraphQL query
+        :param variables: (dict) Any query variables needed in the request
+
+        :yields: Individual objects from the presumed array of data
+        """
+        log.info(f"Listing {host} with query: {query}")
+        r = self.generate_v4_post_request(host, query, variables)
+        resp_json = safe_json_response(r)
+        if r.status_code != 200:
+            if r.status_code >= 400:
+                log.error(
+                    f"\nERROR: HTTP Response was {r.status_code}.\nBody Text: '{r.text}'")
+            yield {}
+        else:
+            yield resp_json
+
+    def get_total_count_v4(self, host, query, variables=None):
+        """
+        Retrieves total count of records from GraphQL query
+
+        :param host: (str) GitHub host URL
+        :param query: (str) GraphQL query
+        :param variables: (dict) Any query variables needed in the request
+
+        :returns: Total number of records related to that API call
+        """
+        uniq = {}
+        for data in self.list_all(host, query, variables):
+            if 'data' in data:
+                nodes = data['data'].get('viewer', {}).get('repositories', {}).get('nodes', [])
+                for node in nodes:
+                    uniq[node.get("id", node.get("name"))] = 1
+        count = len(uniq)
+        log.info(f"Total count for {host} query: {count}")
+        return count
+
 
     def pageless_data(self, resp_json, page_check=False, lastPage=False):
         """
