@@ -683,8 +683,9 @@ class GitLabMigrateClient(MigrateClient):
             # Project Feature Flag Users Lists
             project_feature_flags_users_lists = self.project_feature_flags_users_lists_client.migrate_project_feature_flags_user_lists_for_project(
                 src_id, dst_id)
-            results["project_feature_flags_users_lists"] = project_feature_flags_users_lists.get(
-                'completed')
+            if project_feature_flags_users_lists:
+                results["project_feature_flags_users_lists"] = project_feature_flags_users_lists.get(
+                    'completed')
 
             # Project Feature Flags
             results["project_feature_flags"] = self.project_feature_flags_client.migrate_project_feature_flags_for_project(

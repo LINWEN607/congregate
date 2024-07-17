@@ -47,8 +47,8 @@ class ProjectFeatureFlagsUserListsClient(BaseClass):
                 error, user_list = is_error_message_present(user_list)
                 if error or not user_list:
                     self.log.error(f"{get_dry_log(self.dry_run)} Failed to list feature flags:\n{user_list}")
-                    return False
-
+                    return None
+                
                 modeled_user_list = from_dict(data_class=ProjectFeatureFlagsUserListsPayload, data=user_list)
                 self.log.info(f"{get_dry_log(self.dry_run)} Moving {modeled_user_list.to_dict()} from {source_project_id} to {destination_project_id}")
 
