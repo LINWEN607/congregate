@@ -24,3 +24,53 @@ class TeamsApi():
         GitHub API v3 Doc: https://docs.github.com/en/free-pro-team@latest/rest/reference/teams#list-team-members-legacy
         """
         return self.api.list_all(self.host, f"teams/{team_id}/members")
+
+    def get_team_repos_v4(self, org, team_slug):
+        """
+        List team repositories using GraphQL.
+        """
+        query = """
+        query($org: String!, $teamSlug: String!) {
+            organization(login: $org) {
+                team(slug: $teamSlug) {
+                    repositories(first: 100) {
+                        nodes {
+                            name
+                            description
+                            url
+                        }
+                    }
+                }
+            }
+        }
+        """
+        variables = {
+            "org": org,
+            "teamSlug": team_slug
+        }
+        return self.api.generate_v4_post_request(self.host, query, variables)
+
+    def get_team_members_v4(self, org, team_slug):
+        """
+        List team members using GraphQL.
+        """
+        query = """
+        query($org: String!, $teamSlug: String!) {
+            organization(login: $org) {
+                team(slug: $teamSlug) {
+                    members(first: 100) {
+                        nodes {
+                            login
+                            name
+                            url
+                        }
+                    }
+                }
+            }
+        }
+        """
+        variables = {
+            "org": org,
+            "teamSlug": team_slug
+        }
+        return self.api.generate_v4_post_request(self.host, query, variables)
