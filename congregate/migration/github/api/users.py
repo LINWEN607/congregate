@@ -38,3 +38,42 @@ class UsersApi():
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/rate-limit#get-rate-limit-status-for-the-authenticated-user
         """
         return self.api.generate_v3_get_request(self.host, "rate_limit")
+
+    def get_user_v4(self, username):
+        """
+        Get a user using GraphQL.
+        """
+        query = """
+        query($login: String!) {
+            user(login: $login) {
+                login
+                name
+                url
+                bio
+                avatarUrl
+                createdAt
+            }
+        }
+        """
+        variables = {
+            "login": username
+        }
+        return self.api.generate_v4_post_request(self.host, query, variables)
+
+    def get_import_user_v4(self):
+        """
+        Get the authenticated user using GraphQL.
+        """
+        query = """
+        query {
+            viewer {
+                login
+                name
+                url
+                bio
+                avatarUrl
+                createdAt
+            }
+        }
+        """
+        return self.api.generate_v4_post_request(self.host, query)
