@@ -40,7 +40,11 @@ services:
         volumes:
             - $CONGREGATE_DATA/redis-cache:/data
         ports:
+<<<<<<< HEAD
             - "6379:6379"
+=======
+            - 6379:6379
+>>>>>>> 48fba4f4 (Adding persistent volume for mongo container)
         command: redis-server --save 20 1 --loglevel warning --requirepass password --stop-writes-on-bgsave-error no 
         networks:
           default:
