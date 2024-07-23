@@ -2,6 +2,7 @@ import json
 
 from congregate.migration.github.api.base import GitHubApi
 from congregate.helpers.conf import Config
+from gitlab_ps_utils.misc_utils import safe_json_response
 
 
 class ReposApi():
@@ -217,7 +218,7 @@ class ReposApi():
                 createdAt
                 updatedAt
                 stargazerCount
-                forkCount
+                viewerPermission
             }
         }
         """
@@ -264,14 +265,21 @@ class ReposApi():
 
     def get_repo_branches_v4(self, owner, repo):
         """
-        List repository branches using GraphQL.
+        List repository branches using GraphQL with pagination.
         """
         query = """
-        query($owner: String!, $name: String!) {
+        query($owner: String!, $name: String!, $cursor: String) {
             repository(owner: $owner, name: $name) {
-                refs(refPrefix: "refs/heads/", first: 100) {
+                refs(refPrefix: "refs/heads/", first: 100, after: $cursor) {
                     nodes {
                         name
+                        branchProtectionRule {
+                            id
+                        }
+                    }
+                    pageInfo {
+                        endCursor
+                        hasNextPage
                     }
                 }
             }
@@ -279,9 +287,24 @@ class ReposApi():
         """
         variables = {
             "owner": owner,
-            "name": repo
+            "name": repo,
+            "cursor": None
         }
-        return self.api.generate_v4_post_request(self.host, query, variables)
+
+        all_branches = []
+        while True:
+            response = safe_json_response(self.api.generate_v4_post_request(self.host, query, variables))
+            if response and 'data' in response:
+                branches_data = response['data']['repository']['refs']
+                all_branches.extend(branches_data['nodes'])
+                if branches_data['pageInfo']['hasNextPage']:
+                    variables['cursor'] = branches_data['pageInfo']['endCursor']
+                else:
+                    break
+            else:
+                break
+
+        return all_branches
 
     def get_repo_pulls_v4(self, owner, repo, state="ALL"):
         """

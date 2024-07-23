@@ -29,6 +29,14 @@ class ReposClient(BaseClass):
         ((u"admin", False), (u"push", False), (u"pull", True)): 20
     }
 
+    REPO_PERMISSIONS_MAP_V4 = {
+        "ADMIN": 40,      # Equivalent to having admin rights
+        "MAINTAIN": 40,   # Equivalent to being a maintainer
+        "WRITE": 30,      # Equivalent to having push rights
+        "TRIAGE": 20,     # Equivalent to having triage rights
+        "READ": 20        # Equivalent to having read rights
+    }
+
     GROUP_TYPE = ["Organization", "Enterprise"]
 
     def __init__(self, host, token, processes=None):
@@ -125,14 +133,14 @@ class ReposClient(BaseClass):
             elif kind == "User":
                 members = [{"login": owner}]
                 user_repo = safe_json_response(
-                    self.repos_api.get_repo(owner, repo))
+                    self.repos_api.get_repo_v4(owner, repo))
                 error, user_repo = is_error_message_present(user_repo)
                 if error or not user_repo:
                     self.log.error(
                         f"Failed to get JSON for user {owner} repo {repo}: {user_repo}")
                     return []
-                members[0]["permissions"] = self.REPO_PERMISSIONS_MAP[tuple(
-                    user_repo.get("permissions").items())]
+                members[0]["permissions"] = self.REPO_PERMISSIONS_MAP_V4.get(user_repo['data']['repository']['viewerPermission'], 0)
+
             return self.users.format_users(members, mongo)
         except KeyError as ke:
             self.log.error(
@@ -172,7 +180,7 @@ class ReposClient(BaseClass):
         """
         self.multi.start_multi_process_stream_with_args(
             self.handle_protected_branches,
-            self.repos_api.get_repo_branches(
+            self.repos_api.get_repo_branches_v4(
                 repo["namespace"],
                 repo["path"]),
             new_id,
@@ -180,7 +188,7 @@ class ReposClient(BaseClass):
         return True
 
     def handle_protected_branches(self, new_id, branch):
-        if branch["protected"]:
+        if branch["branchProtectionRule"]:
             single_branch = self.format_protected_branch(
                 new_id, branch["name"])
             r = self.gl_projects_api.protect_repository_branches(
