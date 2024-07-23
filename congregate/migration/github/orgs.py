@@ -44,31 +44,32 @@ class OrgsClient(BaseClass):
         if is_github_dot_com(
                 self.config.source_host) and self.config.src_parent_org:
             orgs = [safe_json_response(
-                self.orgs_api.get_org(self.config.src_parent_org))]
+                self.orgs_api.get_org_v4(self.config.src_parent_org))]
         else:
-            orgs = self.orgs_api.get_all_orgs()
+            orgs = self.orgs_api.get_all_orgs_v4()
         self.multi.start_multi_process_stream_with_args(
             self.handle_org_retrieval, orgs, groups, processes=processes, nestable=True)
 
     def handle_org_retrieval(self, groups, org):
         mongoclient = CongregateMongoConnector()
-        self.add_org_as_group(groups, org["login"], mongoclient)
-        for team in self.orgs_api.get_all_org_teams(org["login"]):
+        self.add_org_as_group(groups, org["data"]["organization"]["login"], mongoclient)
+        for team in self.orgs_api.get_all_org_teams_v4(org["data"]["organization"]["login"]):
             self.add_team_as_subgroup(
                 org, team, mongoclient)
         mongoclient.close_connection()
 
     def add_org_as_group(self, groups, org_name, mongo):
-        org = safe_json_response(self.orgs_api.get_org(org_name))
+        org = safe_json_response(self.orgs_api.get_org_v4(org_name))
         is_error, org = is_error_message_present(org)
         if groups is None or is_error or not org:
             self.log.error(
                 f"Failed to append org {org_name} ({org}) to list {groups}")
         else:
             org_repos = []
-            for org_repo, _ in self.orgs_api.get_all_org_repos(
-                    org_name, page_check=True):
+            for org_repo in self.orgs_api.get_all_org_repos_v4(
+                    org_name):
                 formatted_repo = self.repos.format_repo(org_repo, mongo)
+                print(f"formatted repo = {formatted_repo}")
                 mongo.insert_data(
                     f"projects-{self.host}", formatted_repo)
                 formatted_repo.pop("_id")
@@ -77,11 +78,11 @@ class OrgsClient(BaseClass):
                 org_repos.append(formatted_repo.get("id"))
             members = self.add_org_members([], org, mongo)
             mongo.insert_data(f"groups-{self.host}", {
-                "name": org["login"],
-                "id": org["id"],
-                "path": org["login"],
-                "full_path": org["login"],
-                "description": org.get("description", ""),
+                "name": org["data"]["organization"]["login"],
+                "id": org["data"]["organization"]["id"],
+                "path": org["data"]["organization"]["login"],
+                "full_path": org["data"]["organization"]["login"],
+                "description": org["data"]["organization"].get("description", ""),
                 "visibility": "private",   # No mapping field
                 "parent_id": None,   # top-level group
                 "auto_devops_enabled": False,
@@ -115,7 +116,7 @@ class OrgsClient(BaseClass):
             full_path = [org_name, team["slug"]]
             while team["parent"]:
                 full_path.insert(1, dig(team, 'parent', 'slug'))
-                team = safe_json_response(self.orgs_api.get_org_team(
+                team = safe_json_response(self.orgs_api.get_org_team_v4(
                     org_name, dig(team, 'parent', 'slug')))
                 error, team = is_error_message_present(team)
                 if error or not team:
@@ -130,7 +131,7 @@ class OrgsClient(BaseClass):
     def add_org_members(self, members, org, mongo):
         permissions = self.ORG_PERMISSIONS_MAP[org.get(
             "default_repository_permission", None)]
-        for m in self.orgs_api.get_all_org_members(org["login"]):
+        for m in self.orgs_api.get_all_org_members_v4(org["data"]["organization"]["login"]):
             m["permissions"] = permissions
             members.append(m)
         return self.users.format_users(members, mongo)

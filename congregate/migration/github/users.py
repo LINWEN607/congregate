@@ -30,7 +30,7 @@ class UsersClient(BaseClass):
         if self.config.src_parent_org or (is_github_dot_com(
                 self.config.source_host) and self.config.src_parent_org):
             users = []
-            for m in self.orgs_api.get_all_org_members(
+            for m in self.orgs_api.get_all_org_members_v4(
                     self.config.src_parent_org):
                 users.append(safe_json_response(
                     self.users_api.get_user(m["login"])))

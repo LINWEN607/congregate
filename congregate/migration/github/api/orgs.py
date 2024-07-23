@@ -1,5 +1,6 @@
 from congregate.migration.github.api.base import GitHubApi
 from congregate.helpers.conf import Config
+from gitlab_ps_utils.misc_utils import safe_json_response
 
 
 class OrgsApi():
@@ -101,24 +102,41 @@ class OrgsApi():
     
     def get_all_orgs_v4(self):
         """
-        Lists all organizations.
-
-        Using GraphQL API
+        Lists all organizations using GraphQL.
         """
         query = """
-        query {
+        query($cursor: String) {
             viewer {
-                organizations(first: 100) {
+                organizations(first: 100, after: $cursor) {
                     nodes {
                         login
-                        name
-                        url
+                    }
+                    pageInfo {
+                        endCursor
+                        hasNextPage
                     }
                 }
             }
         }
         """
-        return self.api.list_all_v4(self.host, query)
+        variables = {
+            "cursor": None
+        }
+
+        all_orgs = []
+        while True:
+            response = safe_json_response(self.api.generate_v4_post_request(self.host, query, variables))
+            if response and 'data' in response:
+                orgs_data = response['data']['viewer']['organizations']
+                all_orgs.extend(orgs_data['nodes'])
+                if orgs_data['pageInfo']['hasNextPage']:
+                    variables['cursor'] = orgs_data['pageInfo']['endCursor']
+                else:
+                    break
+            else:
+                break
+
+        return all_orgs
 
     def get_org_v4(self, org):
         """
@@ -129,31 +147,42 @@ class OrgsApi():
         query = """
         query($login: String!) {
             organization(login: $login) {
+                id
                 login
-                name
-                url
+                description
             }
         }
         """
         variables = {
             "login": org
         }
-        return self.api.list_all_v4(self.host, query, variables)
+
+        return self.api.generate_v4_post_request(self.host, query, variables)
 
     def get_all_org_repos_v4(self, org):
         """
-        Lists repositories for the specified organization.
-
-        Using GraphQL API
+        Lists repositories for the specified organization using GraphQL.
         """
         query = """
-        query($login: String!, $limit: Int!) {
+        query($login: String!, $cursor: String) {
             organization(login: $login) {
-                repositories(first: $limit) {
+                repositories(first: 100, after: $cursor) {
                     nodes {
+                        id
                         name
                         description
                         url
+                        nameWithOwner
+                        visibility
+                        owner {
+                            id
+                            login
+                            type
+                        }
+                    }
+                    pageInfo {
+                        endCursor
+                        hasNextPage
                     }
                 }
             }
@@ -161,49 +190,40 @@ class OrgsApi():
         """
         variables = {
             "login": org,
-            "limit": 100
+            "cursor": None
         }
-        return self.api.list_all_v4(self.host, query, variables)
+
+        all_repos = []
+        while True:
+            response = safe_json_response(self.api.generate_v4_post_request(self.host, query, variables))
+            if response and 'data' in response:
+                repos_data = response['data']['organization']['repositories']
+                all_repos.extend(repos_data['nodes'])
+                if repos_data['pageInfo']['hasNextPage']:
+                    variables['cursor'] = repos_data['pageInfo']['endCursor']
+                else:
+                    break
+            else:
+                break
+
+        return all_repos
 
     def get_all_org_members_v4(self, org):
         """
-        List all users who are members of an organization.
-
-        Using GraphQL API
+        Lists all users who are members of an organization using GraphQL.
         """
         query = """
-        query($login: String!, $limit: Int!) {
+        query($login: String!, $cursor: String) {
             organization(login: $login) {
-                membersWithRole(first: $limit) {
+                membersWithRole(first: 100, after: $cursor) {
                     nodes {
                         login
                         name
                         url
                     }
-                }
-            }
-        }
-        """
-        variables = {
-            "login": org,
-            "limit": 100
-        }
-        return self.api.list_all_v4(self.host, query, variables)
-
-    def get_all_org_teams_v4(self, org):
-        """
-        Lists all teams in an organization.
-
-        Using GraphQL API
-        """
-        query = """
-        query($login: String!, $limit: Int!) {
-            organization(login: $login) {
-                teams(first: $limit) {
-                    nodes {
-                        slug
-                        name
-                        url
+                    pageInfo {
+                        endCursor
+                        hasNextPage
                     }
                 }
             }
@@ -211,9 +231,64 @@ class OrgsApi():
         """
         variables = {
             "login": org,
-            "limit": 100
+            "cursor": None
         }
-        return self.api.list_all_v4(self.host, query, variables)
+
+        all_members = []
+        while True:
+            response = safe_json_response(self.api.generate_v4_post_request(self.host, query, variables))
+            if response and 'data' in response:
+                members_data = response['data']['organization']['membersWithRole']
+                all_members.extend(members_data['nodes'])
+                if members_data['pageInfo']['hasNextPage']:
+                    variables['cursor'] = members_data['pageInfo']['endCursor']
+                else:
+                    break
+            else:
+                break
+
+        return all_members
+
+    def get_all_org_teams_v4(self, org):
+        """
+        Lists all teams in an organization using GraphQL.
+        """
+        query = """
+        query($login: String!, $cursor: String) {
+            organization(login: $login) {
+                teams(first: 100, after: $cursor) {
+                    nodes {
+                        slug
+                        name
+                        url
+                    }
+                    pageInfo {
+                        endCursor
+                        hasNextPage
+                    }
+                }
+            }
+        }
+        """
+        variables = {
+            "login": org,
+            "cursor": None
+        }
+
+        all_teams = []
+        while True:
+            response = safe_json_response(self.api.generate_v4_post_request(self.host, query, variables))
+            if response and 'data' in response:
+                teams_data = response['data']['organization']['teams']
+                all_teams.extend(teams_data['nodes'])
+                if teams_data['pageInfo']['hasNextPage']:
+                    variables['cursor'] = teams_data['pageInfo']['endCursor']
+                else:
+                    break
+            else:
+                break
+
+        return all_teams
 
     def get_org_team_v4(self, org, team_slug):
         """
@@ -236,7 +311,7 @@ class OrgsApi():
             "login": org,
             "slug": team_slug
         }
-        return self.api.list_all_v4(self.host, query, variables)
+        return self.api.generate_v4_post_request(self.host, query, variables)
 
     def get_all_org_team_repos_v4(self, org, team_slug):
         """

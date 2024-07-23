@@ -76,7 +76,7 @@ class ReposClient(BaseClass):
         Format public and org/team repos.
         Leave org/team repo members empty ([]) as they are retrieved during staging.
         """
-        repo_url = repo["html_url"] + ".git"
+        repo_url = repo["url"] + ".git"
         repo_path = dig(repo, 'owner', 'login')
         repo_type = dig(repo, 'owner', 'type')
         repo_name = repo.get('name')
@@ -94,8 +94,8 @@ class ReposClient(BaseClass):
                 "kind": "group" if repo_type in self.GROUP_TYPE else "user",
                 "full_path": repo_path},
             "http_url_to_repo": repo_url,
-            "path_with_namespace": repo.get("full_name"),
-            "visibility": "private" if repo.get("private") else "public",
+            "path_with_namespace": repo.get("nameWithOwner"),
+            "visibility": repo.get("visibility"),
             "description": repo.get("description", ""),
             # This request is extremely slow at scale and needs a refactor
             # "members": []
