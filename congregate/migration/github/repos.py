@@ -306,9 +306,9 @@ class ReposClient(BaseClass):
         return [{
             "name": b["name"],
                     "commit": {
-                        "id": dig(b, 'commit', 'sha'),
+                        "id": b['target']['oid'],
             },
-            "protected": b["protected"],
+            "protected": b["branchProtectionRule"],
         } for b in branches]
 
     def transform_gh_pull_requests(self, pull_requests):

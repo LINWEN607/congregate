@@ -273,6 +273,11 @@ class ReposApi():
                 refs(refPrefix: "refs/heads/", first: 100, after: $cursor) {
                     nodes {
                         name
+                        target {
+                            ... on Commit {
+                                oid
+                            }
+                        }
                         branchProtectionRule {
                             id
                         }

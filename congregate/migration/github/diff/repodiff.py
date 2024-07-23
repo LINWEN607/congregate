@@ -130,7 +130,7 @@ class RepoDiffClient(BaseDiffClient):
                 project, f"repositories/{project['id']}/branches", "projects/:id/repository/branches")
 
             # branches
-            repo_branch_data = list(self.repos_api.get_repo_branches(
+            repo_branch_data = list(self.repos_api.get_repo_branches_v4(
                 project["namespace"], project["name"]))
             transformed_data = self.repos_client.transform_gh_branches(
                 repo_branch_data)
