@@ -9,8 +9,8 @@ services:
             - /var/run/docker.sock:/var/run/docker.sock
             - $CONGREGATE_DATA:/opt/congregate/data
         ports:
-            - 8000:8000
-            - 5555:5555
+            - "8000:8000"
+            - "5555:5555"
         entrypoint: "/bin/bash -c 'supervisord -c /etc/supervisor/conf.d/supervisord.conf && sleep infinity'"
         networks:
           default:
@@ -39,7 +39,7 @@ services:
         volumes:
             - $CONGREGATE_DATA/redis-cache:/data
         ports:
-            - 6379:6379
+            - "6379:6379"
         command: redis-server --save 20 1 --loglevel warning --requirepass password --stop-writes-on-bgsave-error no 
         networks:
           default:

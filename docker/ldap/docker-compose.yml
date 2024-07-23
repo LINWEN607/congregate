@@ -45,7 +45,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
-      - 8000:8000
+      - '8000:8000'
     entrypoint: "/bin/bash -c 'sleep infinity'"
     networks:
       ldap:

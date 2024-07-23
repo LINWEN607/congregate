@@ -10,8 +10,8 @@ services:
             - $CONGREGATE_PATH:/opt/congregate
             - $CONGREGATE_DATA:/opt/congregate/data
         ports:
-            - 8000:8000
-            - 5555:5555
+            - "8000:8000"
+            - "5555:5555"
         networks:
           default:
             aliases:
@@ -40,7 +40,7 @@ services:
         volumes:
             - $CONGREGATE_DATA/redis-cache:/data
         ports:
-            - 6379:6379
+            - "6379:6379"
         command: redis-server --save 20 1 --loglevel warning --requirepass password --stop-writes-on-bgsave-error no 
         networks:
           default:
