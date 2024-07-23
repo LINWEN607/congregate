@@ -165,7 +165,7 @@ build cdk image:
   stage: build
   script:
     - echo "SOURCE IS $CI_PIPELINE_SOURCE"
-    - cp ./docker/dev/cdk.Dockerfile ./Dockerfile
+    - cp ./docker/dev/cdk/Dockerfile ./Dockerfile
     - docker build --tag "$CDK_IMAGE_NAME" .
     - docker push "$CDK_IMAGE_NAME"
   rules:
@@ -234,7 +234,7 @@ check ldap compose yaml:
     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --profile default -y
     - source $HOME/.cargo/env
     - apk add python3 py-pip python3-dev libffi-dev openssl-dev gcc libc-dev rust cargo make
-    - /usr/bin/python3.8 -m pip install --upgrade pip
+    - python3 -m pip install --upgrade pip
     - pip3 install docker-compose
     - docker-compose -f docker-compose.yml config
   rules:
