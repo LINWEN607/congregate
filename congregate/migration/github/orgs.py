@@ -69,7 +69,6 @@ class OrgsClient(BaseClass):
             for org_repo in self.orgs_api.get_all_org_repos_v4(
                     org_name):
                 formatted_repo = self.repos.format_repo(org_repo, mongo)
-                print(f"formatted repo = {formatted_repo}")
                 mongo.insert_data(
                     f"projects-{self.host}", formatted_repo)
                 formatted_repo.pop("_id")
@@ -131,6 +130,7 @@ class OrgsClient(BaseClass):
     def add_org_members(self, members, org, mongo):
         permissions = self.ORG_PERMISSIONS_MAP[org.get(
             "default_repository_permission", None)]
+        print(f"org = {org}")
         for m in self.orgs_api.get_all_org_members_v4(org["data"]["organization"]["login"]):
             m["permissions"] = permissions
             members.append(m)

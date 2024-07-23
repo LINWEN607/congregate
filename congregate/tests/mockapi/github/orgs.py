@@ -72,6 +72,52 @@ class MockOrgsApi():
                 "seats": 0
             }
         }
+    
+    def get_org_v4(self):
+        return {
+            "data": {
+                "organization": {
+                    "login": "org1",
+                    "id": 8,
+                    "node_id": "MDEyOk9yZ2FuaXphdGlvbjg=",
+                    "url": "https://github.example.net/api/v3/orgs/org1",
+                    "repos_url": "https://github.example.net/api/v3/orgs/org1/repos",
+                    "events_url": "https://github.example.net/api/v3/orgs/org1/events",
+                    "hooks_url": "https://github.example.net/api/v3/orgs/org1/hooks",
+                    "issues_url": "https://github.example.net/api/v3/orgs/org1/issues",
+                    "members_url": "https://github.example.net/api/v3/orgs/org1/members{/member}",
+                    "public_members_url": "https://github.example.net/api/v3/orgs/org1/public_members{/member}",
+                    "avatar_url": "https://github.example.net/avatars/u/8?",
+                    "description": None,
+                    "has_organization_projects": True,
+                    "has_repository_projects": True,
+                    "public_repos": 1,
+                    "public_gists": 0,
+                    "followers": 0,
+                    "following": 0,
+                    "html_url": "https://github.example.net/org1",
+                    "created_at": "2020-07-16T11:55:11Z",
+                    "updated_at": "2020-07-16T11:55:11Z",
+                    "type": "Organization",
+                    "total_private_repos": 1,
+                    "owned_private_repos": 2,
+                    "private_gists": 0,
+                    "disk_usage": 30001,
+                    "collaborators": 0,
+                    "billing_email": None,
+                    "default_repository_permission": "read",
+                    "members_can_create_repositories": True,
+                    "two_factor_requirement_enabled": False,
+                    "plan": {
+                        "name": "enterprise",
+                        "space": 976562499,
+                        "private_repos": 999999999999,
+                        "filled_seats": 3,
+                        "seats": 0
+                    }
+                }
+            }
+        }
 
     def get_all_org_repos(self):
         return [
@@ -101,7 +147,7 @@ class MockOrgsApi():
                     "type": "Organization",
                     "site_admin": False
                 },
-                "html_url": "https://github.example.net/org1/googleapis",
+                "url": "https://github.example.net/org1/googleapis",
                 "description": None,
                 "fork": False,
                 "url": "https://github.example.net/api/v3/repos/org1/googleapis",
