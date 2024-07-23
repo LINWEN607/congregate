@@ -374,20 +374,20 @@ class ReposApi():
         List repository tags using GraphQL.
         """
         query = """
-        query($owner: String!, $name: String!) {
+        query($owner: String!, $name: String!, $cursor: String) {
             repository(owner: $owner, name: $name) {
-                refs(refPrefix: "refs/tags/", first: 100) {
+                refs(refPrefix: "refs/tags/", first: 100, after: $cursor) {
                     nodes {
                         name
                         target {
-                            ... on Tag {
-                                id
-                                tagger {
-                                    name
-                                    email
-                                }
+                            ... on Commit {
+                                oid
                             }
                         }
+                    }
+                    pageInfo {
+                        endCursor
+                        hasNextPage
                     }
                 }
             }
@@ -395,9 +395,24 @@ class ReposApi():
         """
         variables = {
             "owner": owner,
-            "name": repo
+            "name": repo,
+            "cursor": None
         }
-        return self.api.generate_v4_post_request(self.host, query, variables)
+
+        all_tags = []
+        while True:
+            response = safe_json_response(self.api.generate_v4_post_request(self.host, query, variables))
+            if response and 'data' in response:
+                tags_data = response['data']['repository']['refs']
+                all_tags.extend(tags_data['nodes'])
+                if tags_data['pageInfo']['hasNextPage']:
+                    variables['cursor'] = tags_data['pageInfo']['endCursor']
+                else:
+                    break
+            else:
+                break
+
+        return all_tags
 
     def get_repo_milestones_v4(self, owner, repo, state="ALL"):
         """

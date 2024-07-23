@@ -332,7 +332,7 @@ class ReposClient(BaseClass):
         return [{
             "name": t["name"],
             "commit": {
-                "id": dig(t, 'commit', 'sha'),
+                "id": dig(t, 'target', 'oid'),
             }
         } for t in tags]
 

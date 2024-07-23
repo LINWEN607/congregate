@@ -157,7 +157,7 @@ class RepoDiffClient(BaseDiffClient):
             # pass in PR id here??
 
             # tags
-            repo_tag_data = list(self.repos_api.get_repo_tags(
+            repo_tag_data = list(self.repos_api.get_repo_tags_v4(
                 project["namespace"], project["name"]))
             transformed_data = self.repos_client.transform_gh_tags(
                 repo_tag_data)
