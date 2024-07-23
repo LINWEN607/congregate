@@ -311,20 +311,20 @@ class ReposApi():
 
         return all_branches
 
-    def get_repo_pulls_v4(self, owner, repo, state="ALL"):
+    def get_repo_pulls_v4(self, owner, repo, state="OPEN"):
         """
         List repository pull requests using GraphQL.
         """
         query = """
-        query($owner: String!, $name: String!, $state: [PullRequestState!]) {
+        query($owner: String!, $name: String!, $state: PullRequestState!, $cursor: String) {
             repository(owner: $owner, name: $name) {
-                pullRequests(states: $state, first: 100) {
+                pullRequests(states: [$state], first: 100, after: $cursor) {
                     nodes {
-                        title
-                        body
-                        createdAt
-                        url
-                        state
+                        number
+                    }
+                    pageInfo {
+                        endCursor
+                        hasNextPage
                     }
                 }
             }
@@ -333,9 +333,24 @@ class ReposApi():
         variables = {
             "owner": owner,
             "name": repo,
-            "state": state
+            "state": state,
+            "cursor": None
         }
-        return self.api.generate_v4_post_request(self.host, query, variables)
+
+        all_pulls = []
+        while True:
+            response = safe_json_response(self.api.generate_v4_post_request(self.host, query, variables))
+            if response and 'data' in response:
+                pulls_data = response['data']['repository']['pullRequests']
+                all_pulls.extend(pulls_data['nodes'])
+                if pulls_data['pageInfo']['hasNextPage']:
+                    variables['cursor'] = pulls_data['pageInfo']['endCursor']
+                else:
+                    break
+            else:
+                break
+
+        return all_pulls
 
     def get_repo_tags_v4(self, owner, repo):
         """

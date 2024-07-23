@@ -420,7 +420,7 @@ class ReposClient(BaseClass):
         user_emails_dict = {}
         self.multi.start_multi_process_stream_with_args(
             self.handle_list_of_reviewers,
-            self.repos_api.get_repo_pulls(
+            self.repos_api.get_repo_pulls_v4(
                 owner,
                 repo),
             owner,
