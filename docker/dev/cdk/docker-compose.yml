@@ -22,6 +22,8 @@ services:
         image: mongo:4.4.16
         container_name: congregate_mongo
         restart: always
+        volumes:
+            - $CONGREGATE_DATA/mongo-data:/data
         ports:
             - "27017:27017"
         hostname: 'mongo'
@@ -36,10 +38,10 @@ services:
         hostname: 'redis'
         restart: always
         volumes:
-            - ./cache:/data
+            - $CONGREGATE_DATA/redis-cache:/data
         ports:
             - 6379:6379
-        command: redis-server --save 20 1 --loglevel warning --requirepass password
+        command: redis-server --save 20 1 --loglevel warning --requirepass password --stop-writes-on-bgsave-error no 
         networks:
           default:
             aliases:
