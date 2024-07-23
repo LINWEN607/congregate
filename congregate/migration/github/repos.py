@@ -314,18 +314,18 @@ class ReposClient(BaseClass):
     def transform_gh_pull_requests(self, pull_requests):
         return [{
             "title": pr["title"],
-            "description": dig(pr, 'head', 'repo', 'description'),
+            "description": pr["body"],
             "state": "opened" if pr["state"] == "open" else "closed",
             "created_at": pr["created_at"],
             "updated_at": pr["updated_at"],
             "author": {
-                "username": dig(pr, 'user', 'login'),
+                "username": dig(pr, 'author', 'login'),
             },
             "assignees": [{
                 "username": a["login"]
-            } for a in pr.get("assignees", [])],
+            } for a in pr['assignees']['nodes']],
             "work_in_progress": pr["draft"],
-            "milestone": pr["milestone"]
+            "milestone": pr["milestone"]["title"]
         } for pr in pull_requests]
 
     def transform_gh_tags(self, tags):

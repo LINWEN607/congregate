@@ -140,7 +140,7 @@ class RepoDiffClient(BaseDiffClient):
             # branch permissions
 
             # pull requests
-            repo_pr_data = list(self.repos_api.get_repo_pulls(
+            repo_pr_data = list(self.repos_api.get_repo_pulls_v4(
                 project["namespace"], project["name"]))
             transformed_data = self.repos_client.transform_gh_pull_requests(
                 repo_pr_data)

@@ -321,6 +321,23 @@ class ReposApi():
                 pullRequests(states: [$state], first: 100, after: $cursor) {
                     nodes {
                         number
+                        title
+                        body
+                        state
+                        createdAt
+                        updatedAt
+                        draft
+                        author {
+                            login
+                        }
+                        assignees(first: 100) {
+                            nodes {
+                                login
+                            }
+                        }
+                        milestone {
+                            title
+                        }
                     }
                     pageInfo {
                         endCursor
