@@ -63,7 +63,8 @@ class StageProjectsTests(unittest.TestCase):
                 "path_with_namespace": "diaspora/diaspora-client",
                 "archived": False,
                 "shared_with_groups": [],
-                "jobs_enabled": None
+                "jobs_enabled": None,
+                "packages_enabled": None,
             },
             {
                 "name": "Puppet",
@@ -90,7 +91,8 @@ class StageProjectsTests(unittest.TestCase):
                 "path_with_namespace": "brightbox/puppet",
                 "archived": False,
                 "shared_with_groups": [],
-                "jobs_enabled": None
+                "jobs_enabled": None,
+                "packages_enabled": None,
             }
         ]
 
@@ -262,7 +264,8 @@ class StageProjectsTests(unittest.TestCase):
                 "path_with_namespace": "diaspora/diaspora-client",
                 "archived": False,
                 "shared_with_groups": [],
-                "jobs_enabled": None
+                "jobs_enabled": None,
+                "packages_enabled": None,
             },
             {
                 "name": "Puppet",
@@ -289,7 +292,8 @@ class StageProjectsTests(unittest.TestCase):
                 "path_with_namespace": "brightbox/puppet",
                 "archived": False,
                 "shared_with_groups": [],
-                "jobs_enabled": None
+                "jobs_enabled": None,
+                "packages_enabled": None,
             }
         ]
 
