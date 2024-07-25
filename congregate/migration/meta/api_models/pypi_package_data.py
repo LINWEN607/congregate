@@ -1,9 +1,9 @@
-from io import BytesIO
 from typing import Optional
 from dataclasses import dataclass, asdict, astuple
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 from gitlab_ps_utils.dict_utils import strip_none
 from congregate.migration.meta.api_models.multipart_content import MultiPartContent
+
 
 @dataclass
 class PyPiPackageData:
