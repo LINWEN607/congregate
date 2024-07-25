@@ -41,7 +41,7 @@ Usage:
     congregate enable-mirroring [--commit] # TODO: Find a use for it or remove
     congregate count-unarchived-projects [--local]
     congregate archive-staged-projects [--commit] [--dest] [--scm-source=hostname]
-    congregate unarchive-staged-projects [--commit] [--dest] [--scm-source=hostname]
+    congregate unarchive-staged-projects [--commit] [--dest] [--scm-source=hostname] [--rollback]
     congregate set-bb-read-only-branch-permissions [--bb-projects] [--commit]
     congregate unset-bb-read-only-branch-permissions [--bb-projects] [--commit]
     congregate set-bb-read-only-member-permissions [--bb-projects] [--commit]
