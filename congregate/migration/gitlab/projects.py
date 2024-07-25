@@ -23,7 +23,7 @@ from congregate.migration.gitlab import constants
 from congregate.migration.mirror import MirrorClient
 from congregate.helpers.migrate_utils import get_dst_path_with_namespace,  get_full_path_with_parent_namespace, \
     dig, get_staged_projects, get_staged_groups, find_user_by_email_comparison_without_id, add_post_migration_stats, is_user_project, \
-    check_for_staged_user_projects, get_stage_wave_paths
+    check_for_staged_user_projects, get_stage_wave_paths, search_for_user_by_user_mapping_field
 from congregate.helpers.utils import rotate_logs
 from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
 from congregate.migration.meta.api_models.shared_with_group import SharedWithGroupPayload
@@ -195,7 +195,8 @@ class ProjectsClient(BaseClass):
                     f"{get_dry_log(dry_run)}{action_type} {host_type} ({host}) project {path}")
                 if not dry_run:
                     if archive:
-                        resp = self.projects_api.archive_project(host, token, pid)
+                        resp = self.projects_api.archive_project(
+                            host, token, pid)
                         if resp.status_code != 201:
                             self.log.error(
                                 f"Failed to {action_type.lower()} {host_type} ({host}) project {path}, with response:\n{resp} - {resp.text}")
@@ -203,13 +204,16 @@ class ProjectsClient(BaseClass):
                         # Unarchive only previously active projects during rollback
                         if rollback and not sp["archived"]:
                             if self.config.archive_logic:
-                                self.log.info(f"Unarchiving previously active project '{path}' (ID: {pid})")
-                                resp = self.projects_api.unarchive_project(host, token, pid)
+                                self.log.info(
+                                    f"Unarchiving previously active project '{path}' (ID: {pid})")
+                                resp = self.projects_api.unarchive_project(
+                                    host, token, pid)
                                 if resp.status_code != 201:
                                     self.log.error(
                                         f"Failed to {action_type.lower()} {host_type} ({host}) project {path}, with response:\n{resp} - {resp.text}")
                         elif not rollback:
-                            resp = self.projects_api.unarchive_project(host, token, pid)
+                            resp = self.projects_api.unarchive_project(
+                                host, token, pid)
                             if resp.status_code != 201:
                                 self.log.error(
                                     f"Failed to {action_type.lower()} {host_type} ({host}) project {path}, with response:\n{resp} - {resp.text}")
@@ -328,16 +332,24 @@ class ProjectsClient(BaseClass):
         result = {}
         self.log.info(
             f"Adding members to project ID {project_id}:\n{json_pretty(members)}")
+        field = self.config.user_mapping_field
+        user = {}
         for member in members:
-            user_id_req = find_user_by_email_comparison_without_id(
-                member["email"])
-            member["user_id"] = user_id_req.get("id") if user_id_req else None
-            result[member["email"]] = False
-            if member.get("user_id"):
+            user = search_for_user_by_user_mapping_field(
+                field, member, host, token)
+            member["user_id"] = user.get("id")
+            result[member[field]] = False
+            if member["user_id"]:
                 resp = safe_json_response(self.projects_api.add_member(
                     project_id, host, token, member))
                 if resp:
-                    result[member["email"]] = True
+                    result[member[field]] = True
+                else:
+                    self.log.warning(
+                        f"Failed to add member '{member}' to project {project_id}, with response:\n{resp}")
+            else:
+                self.log.warning(
+                    f"Failed to add member '{member}' to project {project_id}, user not found")
         return result
 
     def get_replacement_data(self, data, f, project_id, src_branch):

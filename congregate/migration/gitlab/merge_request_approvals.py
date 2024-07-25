@@ -152,7 +152,7 @@ class MergeRequestApprovalsClient(DbOrHttpMixin, BaseGitLabClient):
         if field == "email":
             new_user_search = self.users_api.search_for_user_by_email(
                 d_host, d_token, user[field])
-        if field == "username":
+        elif field == "username":
             new_user_search = self.users_api.search_for_user_by_username(
                 d_host, d_token, user[field])
         for u in new_user_search:
