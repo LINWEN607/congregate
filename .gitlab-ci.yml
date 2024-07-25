@@ -165,13 +165,13 @@ build cdk image:
   stage: build
   script:
     - echo "SOURCE IS $CI_PIPELINE_SOURCE"
-    - cp ./docker/dev/cdk.Dockerfile ./Dockerfile
+    - cp ./docker/dev/cdk/Dockerfile ./Dockerfile
     - docker build --tag "$CDK_IMAGE_NAME" .
     - docker push "$CDK_IMAGE_NAME"
   rules:
     - if: "$CI_PIPELINE_SOURCE == 'merge_request_event'"
       changes:
-        - docker/dev/*
+        - docker/dev/**/*
       variables:
         CDK_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHORT_SHA-cdk-3.8
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
@@ -233,12 +233,10 @@ check ldap compose yaml:
     - apk add curl
     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --profile default -y
     - source $HOME/.cargo/env
-    - apk add python3 py-pip python3-dev libffi-dev openssl-dev gcc libc-dev rust cargo make
-    - /usr/bin/python3.8 -m pip install --upgrade pip
-    - pip3 install docker-compose
-    - docker-compose -f docker-compose.yml config
+    - apk add libffi-dev openssl-dev gcc libc-dev rust cargo make
+    - docker compose -f docker-compose.yml config
   rules:
-    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
+    - if: "$CI_PIPELINE_SOURCE != 'schedule'"
       changes:
         - docker/ldap/**/*
 
