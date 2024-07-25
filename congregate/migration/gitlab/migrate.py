@@ -564,12 +564,6 @@ class GitLabMigrateClient(MigrateClient):
                 dst_pid = self.projects.find_project_by_path(
                     dst_host, dst_token, dst_pwn)
 
-                # Certain project features cannot be migrated when archived
-                if archived and not self.dry_run:
-                    self.log.info(
-                        f"Unarchiving source project '{path}' (ID: {src_id})")
-                    self.projects_api.unarchive_project(
-                        src_host, src_token, src_id)
                 if dst_pid:
                     import_status = misc_utils.safe_json_response(self.projects_api.get_project_import_status(
                         dst_host, dst_token, dst_pid))
@@ -587,6 +581,12 @@ class GitLabMigrateClient(MigrateClient):
                     import_id = ie_client.import_project(
                         project, dry_run=self.dry_run, group_path=group_path or tn)
                 if import_id and not self.dry_run:
+                    # Certain project features cannot be migrated when archived
+                    if archived:
+                        self.log.info(
+                            f"Unarchiving source project '{path}' (ID: {src_id})")
+                        self.projects_api.unarchive_project(
+                            src_host, src_token, src_id)
                     # Disable Shared CI
                     self.disable_shared_ci(dst_pwn, import_id)
                     # Post import features
