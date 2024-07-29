@@ -16,9 +16,10 @@ This documentation covers setting up a Congregate instance to use Direct Transfe
 - Set up a VM with your container runtime of choice and docker-compose on the source and destination network
 - On the VM, pull down [this docker-compose.yml](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/blob/master/docker/release/docker-compose.yml) file. This file will spin up a Congregate, MongoDB, and Redis container.
   - Congregate relies on MongoDB to store data during the export and import as well as track any export and import job statuses. Redis is used to act as the message broker for the export and import job requests
-- Create a `data` directory in the location that will be pointed to by `$CONGREGATE_DATA`. Note : Do this as a non-escalated user
-- Set an environment variable called `$CONGREGATE_DATA` to point to data location you just created
+- Set an environment variable called `$CONGREGATE_DATA` to point to a location where you want to store any data from the container
 - Create a `cache` directory in the same location where the docker-compose file will be run. This will be used for the redis cache
+- In `$CONGREGATE_DATA`, edit or create the `congregate.conf` file to match the configurations below. Update any paths or URLs accordingly
+- In `$CONGREGATE_DATA`, create a directory called `logs`
 - Start up the docker-compose file in the background and open a shell in the congregate container:
 
 ```bash
@@ -32,12 +33,6 @@ docker exec -it congregate /bin/bash
 congregate init
 congregate validate-config
 supervisorctl start all
-```
-
-- If the `supervisorctl` command gives any errors like `connection refused`. Attempt to reboot `supervisord` with the default config and try again:
-
-```bash
-sudo supervisord -c /etc/supervisor/conf.d/supervisord.conf
 ```
 
 ## Example configuration for direct transfer migrations (when using the supplied docker-compose.yml file)

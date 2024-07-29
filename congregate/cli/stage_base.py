@@ -87,24 +87,21 @@ class BaseStageClass(BaseClass):
         """
         if self.config.wave_spreadsheet_path:
             write_json_to_file(f"{self.app_path}/data/staged_groups.json", remove_dupes_with_keys(
-                self.staged_groups, ["id", "full_path"]))
+                    self.staged_groups, ["id", "full_path"]))
         else:
-            write_json_to_file(
-                f"{self.app_path}/data/staged_groups.json", remove_dupes(self.staged_groups))
+            write_json_to_file(f"{self.app_path}/data/staged_groups.json", remove_dupes(self.staged_groups))
 
     def write_staged_projects_file(self):
         """
             Write staged projects to a JSON file
         """
-        write_json_to_file(
-            f"{self.app_path}/data/staged_projects.json", remove_dupes(self.staged_projects))
+        write_json_to_file(f"{self.app_path}/data/staged_projects.json", remove_dupes(self.staged_projects))
 
     def write_staged_users_file(self):
         """
             Write staged users to a JSON file
         """
-        write_json_to_file(
-            f"{self.app_path}/data/staged_users.json", remove_dupes(self.staged_users))
+        write_json_to_file(f"{self.app_path}/data/staged_users.json", remove_dupes(self.staged_users))
 
     def append_member_to_members_list(
             self, members_list, member, dry_run=True):
@@ -153,7 +150,6 @@ class BaseStageClass(BaseClass):
                 "description": project["description"],
                 # Will be deprecated in favor of builds_access_level
                 "jobs_enabled": project.get("jobs_enabled"),
-                "packages_enabled": project.get("packages_enabled"),
                 "project_type": dig(project, 'namespace', 'kind'),
                 "members": project["members"],
                 "http_url_to_repo": project["http_url_to_repo"]

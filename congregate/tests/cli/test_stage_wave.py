@@ -74,7 +74,6 @@ class StageWaveTests(unittest.TestCase):
                 "visibility": "private",
                 "description": "Project that does stuff",
                 "jobs_enabled": None,
-                "packages_enabled": None,
                 "project_type": "group",
                 "members": [
                     {
@@ -104,7 +103,6 @@ class StageWaveTests(unittest.TestCase):
                 "visibility": "private",
                 "description": None,
                 "jobs_enabled": None,
-                "packages_enabled": None,
                 "project_type": "group",
                 "members": [
                     {
@@ -192,7 +190,6 @@ class StageWaveTests(unittest.TestCase):
                 "visibility": "private",
                 "description": "Project that does stuff",
                 "jobs_enabled": None,
-                "packages_enabled": None,
                 "project_type": "group",
                 "members": [
                     {
@@ -222,7 +219,6 @@ class StageWaveTests(unittest.TestCase):
                 "visibility": "private",
                 "description": None,
                 "jobs_enabled": None,
-                "packages_enabled": None,
                 "project_type": "group",
                 "members": [
                     {
@@ -310,7 +306,6 @@ class StageWaveTests(unittest.TestCase):
                 "visibility": "private",
                 "description": "Project that does stuff",
                 "jobs_enabled": None,
-                "packages_enabled": None,
                 "project_type": "group",
                 "members": [
                     {
@@ -340,7 +335,6 @@ class StageWaveTests(unittest.TestCase):
                 "visibility": "private",
                 "description": None,
                 "jobs_enabled": None,
-                "packages_enabled": None,
                 "project_type": "group",
                 "members": [
                     {
@@ -443,7 +437,6 @@ class StageWaveTests(unittest.TestCase):
                 "visibility": "private",
                 "description": "Project that does stuff",
                 "jobs_enabled": None,
-                "packages_enabled": None,
                 "project_type": "group",
                 "members": [
                     {
@@ -476,7 +469,6 @@ class StageWaveTests(unittest.TestCase):
                 "visibility": "private",
                 "description": None,
                 "jobs_enabled": None,
-                "packages_enabled": None,
                 "project_type": "group",
                 "members": [
                     {

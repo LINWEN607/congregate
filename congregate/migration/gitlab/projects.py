@@ -195,8 +195,7 @@ class ProjectsClient(BaseClass):
                     f"{get_dry_log(dry_run)}{action_type} {host_type} ({host}) project {path}")
                 if not dry_run:
                     if archive:
-                        resp = self.projects_api.archive_project(
-                            host, token, pid)
+                        resp = self.projects_api.archive_project(host, token, pid)
                         if resp.status_code != 201:
                             self.log.error(
                                 f"Failed to {action_type.lower()} {host_type} ({host}) project {path}, with response:\n{resp} - {resp.text}")
@@ -204,16 +203,13 @@ class ProjectsClient(BaseClass):
                         # Unarchive only previously active projects during rollback
                         if rollback and not sp["archived"]:
                             if self.config.archive_logic:
-                                self.log.info(
-                                    f"Unarchiving previously active project '{path}' (ID: {pid})")
-                                resp = self.projects_api.unarchive_project(
-                                    host, token, pid)
+                                self.log.info(f"Unarchiving previously active project '{path}' (ID: {pid})")
+                                resp = self.projects_api.unarchive_project(host, token, pid)
                                 if resp.status_code != 201:
                                     self.log.error(
                                         f"Failed to {action_type.lower()} {host_type} ({host}) project {path}, with response:\n{resp} - {resp.text}")
                         elif not rollback:
-                            resp = self.projects_api.unarchive_project(
-                                host, token, pid)
+                            resp = self.projects_api.unarchive_project(host, token, pid)
                             if resp.status_code != 201:
                                 self.log.error(
                                     f"Failed to {action_type.lower()} {host_type} ({host}) project {path}, with response:\n{resp} - {resp.text}")

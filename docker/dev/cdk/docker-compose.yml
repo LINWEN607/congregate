@@ -10,8 +10,8 @@ services:
             - $CONGREGATE_PATH:/opt/congregate
             - $CONGREGATE_DATA:/opt/congregate/data
         ports:
-            - "8000:8000"
-            - "5555:5555"
+            - 8000:8000
+            - 5555:5555
         networks:
           default:
             aliases:
@@ -22,8 +22,6 @@ services:
         image: mongo:4.4.16
         container_name: congregate_mongo
         restart: always
-        volumes:
-            - $CONGREGATE_DATA/mongo-data:/data
         ports:
             - "27017:27017"
         hostname: 'mongo'
@@ -38,10 +36,10 @@ services:
         hostname: 'redis'
         restart: always
         volumes:
-            - $CONGREGATE_DATA/redis-cache:/data
+            - ./cache:/data
         ports:
-            - "6379:6379"
-        command: redis-server --save 20 1 --loglevel warning --requirepass password --stop-writes-on-bgsave-error no 
+            - 6379:6379
+        command: redis-server --save 20 1 --loglevel warning --requirepass password
         networks:
           default:
             aliases:
