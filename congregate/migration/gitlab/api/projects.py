@@ -2,7 +2,6 @@ import json
 from urllib.parse import quote_plus
 from congregate.migration.gitlab.api.base_api import GitLabApiWrapper
 from congregate.migration.gitlab.api.users import UsersApi
-import requests
 
 class ProjectsApi(GitLabApiWrapper):
     def __init__(self):

@@ -1,13 +1,12 @@
 from requests.exceptions import RequestException
 from dacite import from_dict
-import traceback
-import time
 
 from gitlab_ps_utils.misc_utils import is_error_message_present, safe_json_response
 
 from congregate.helpers.db_or_http import DbOrHttpMixin
 from congregate.migration.gitlab.base_gitlab_client import BaseGitLabClient
 from congregate.migration.gitlab.api.projects import ProjectsApi
+from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.meta.api_models.project_environment import NewProjectEnvironmentPayload
 from congregate.migration.meta.api_models.project_protected_environment import NewProjectProtectedEnvironmentPayload
 
@@ -15,6 +14,7 @@ from congregate.migration.meta.api_models.project_protected_environment import N
 class EnvironmentsClient(DbOrHttpMixin, BaseGitLabClient):
     def __init__(self, src_host=None, src_token=None, dest_host=None, dest_token=None):
         self.projects = ProjectsApi()
+        self.users = UsersApi()
         super(EnvironmentsClient, self).__init__(src_host=src_host,
                                                  src_token=src_token, dest_host=dest_host, dest_token=dest_token)
 
@@ -51,10 +51,9 @@ class EnvironmentsClient(DbOrHttpMixin, BaseGitLabClient):
                     airgap_export=self.config.airgap_export):
                     self.update_state(name, dest_id, env, create_resp)
 
-            # Migrate protected environments settings
+            # Migrate protected environments settings if there is any
             # Note: The import user should not be part of approvers or deployers because he is getting removed from the group later in the migration
-            if not self.migrate_protected_environments_rules(src_id, dest_id):
-                self.log.error(f"Failed to migrate protected environments rules for project {name}")
+            self.migrate_protected_environments_rules(src_id, dest_id)
 
             return True
         except TypeError as te:
@@ -67,17 +66,38 @@ class EnvironmentsClient(DbOrHttpMixin, BaseGitLabClient):
             return False
 
     def migrate_protected_environments_rules(self, src_id, dest_id):
-        try:
-            src_protected_envs = safe_json_response(self.projects.get_all_project_protected_environments(src_id, self.src_host, self.src_token))
+        src_protected_envs = safe_json_response(self.projects.get_all_project_protected_environments(src_id, self.src_host, self.src_token))
+        if not src_protected_envs:
+            self.log.info(f"No protected environments found for project ID {src_id}")
+            return
 
-            for env in src_protected_envs:
-                self.create_or_update_protected_environment(dest_id, env)
+        updated_envs = self.update_user_ids_in_protected_environments(src_protected_envs)
+        for env in updated_envs:
+            self.create_or_update_protected_environment(dest_id, env)
+        return
+        
+    def update_user_ids_in_protected_environments(self, protected_envs):
+        for env in protected_envs:
+            for access_level in env['deploy_access_levels']:
+                if 'user_id' in access_level and access_level['user_id'] is not None:
+                    returned = self.users.get_user(access_level['user_id'], self.src_host, self.src_token).json()
+                    username = returned.get("username")
+                    if username:
+                        user_returned = safe_json_response(self.users.search_for_user_by_username(self.src_host, self.src_token, username))[0]
+                        new_user_id = user_returned.get("id")
+                        if new_user_id:
+                            access_level['user_id'] = new_user_id
 
-            return True
-        except Exception as e:
-            self.log.error(f"Exception during protected environment migration: {e}")
-            print(traceback.format_exc())
-            return False
+            for rule in env['approval_rules']:
+                if 'user_id' in rule and rule['user_id'] is not None:
+                    returned = self.users.get_user(rule['user_id'], self.src_host, self.src_token).json()
+                    username = returned.get("username")
+                    if username:
+                        user_returned = safe_json_response(self.users.search_for_user_by_username(self.src_host, self.src_token, username))[0]
+                        new_user_id = user_returned.get("id")
+                        if new_user_id:
+                            rule['user_id'] = new_user_id
+        return protected_envs
 
     def create_or_update_protected_environment(self, pid, env):
         #First, try to unprotect the environment if it already exists
@@ -86,7 +106,7 @@ class EnvironmentsClient(DbOrHttpMixin, BaseGitLabClient):
             data = self.generate_protected_environment_data(environment=env)
             response = self.projects.create_protected_environment(self.dest_host, self.dest_token, pid, data)
             if response.status_code == 201:
-                self.log.info(f"Protected environment '{env['name']}' created successfully. Response = {response.text}")
+                self.log.info(f"Protected environment '{env['name']}' created successfully")
             elif response.status_code == 409:
                 # This is in case the environment could not be unprotected. Then we just update it.
                 # Note: The api duplicates rules if they were already existing this is why it's not the prefered option
