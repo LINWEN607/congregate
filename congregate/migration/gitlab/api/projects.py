@@ -2,7 +2,7 @@ import json
 from urllib.parse import quote_plus
 from congregate.migration.gitlab.api.base_api import GitLabApiWrapper
 from congregate.migration.gitlab.api.users import UsersApi
-
+import requests
 
 class ProjectsApi(GitLabApiWrapper):
     def __init__(self):
@@ -1104,6 +1104,58 @@ class ProjectsApi(GitLabApiWrapper):
         if not message:
             message = f"Creating new environment for project {pid} with payload {str(data)}"
         return self.api.generate_post_request(host, token, f"projects/{pid}/environments", json.dumps(data), description=message)
+    
+    def create_protected_environment(self, host, token, pid, data, message=None):
+        """
+        Creates a new protected environment
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/protected_environments.html#protect-a-single-environment
+
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :param: pid: (str) GitLab project ID
+            :param: data: (dict) Object containing the necessary data for creating an environment. Refer to the link above for specific examples
+            :return: Response object containing the response to POST /projects/:pid/protected_environments
+
+        """
+        if not message:
+            message = f"Creating new protected environment for project {pid} with payload {json.dumps(data)}"
+        return self.api.generate_post_request(host, token, f"projects/{pid}/protected_environments", json.dumps(data), description=message)
+    
+    def update_protected_environment(self, host, token, pid, data, name, message=None):
+        """
+        Creates a new protected environment
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/protected_environments.html#protect-a-single-environment
+
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :param: pid: (str) GitLab project ID
+            :param: data: (dict) Object containing the necessary data for creating an environment. Refer to the link above for specific examples
+            :param: name: (str) The name of the environment
+            :return: Response object containing the response to POST /projects/:pid/protected_environments
+
+        """
+        if not message:
+            message = f"Updating protected environment {name} for project {pid} with payload {str(data)}"
+        return self.api.generate_put_request(host, token, f"projects/{pid}/protected_environments/{name}", json.dumps(data), description=message)
+
+    def unprotect_environment(self, host, token, pid, name, message=None):
+        """
+        unprotect an environment.
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/protected_environments.html#unprotect-a-single-environment
+
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :param: pid: (int) GitLab project ID
+            :param: name: (str) The name of the environment
+            :return: Response object containing the response to DELETE /projects/:pid/protected_environments/:name
+
+        """
+        if not message:
+            message = f"Unprotecting environment {name} for project {pid}"
+        return self.api.generate_delete_request(host, token, f"projects/{pid}/protected_environments/{name}")
 
     def stop_environment(self, host, token, pid, eid, data, message=None):
         """
