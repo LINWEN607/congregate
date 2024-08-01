@@ -81,9 +81,9 @@ class EnvironmentsClient(DbOrHttpMixin, BaseGitLabClient):
             for access_level in env['deploy_access_levels']:
                 if 'user_id' in access_level and access_level['user_id'] is not None:
                     returned = self.users.get_user(access_level['user_id'], self.src_host, self.src_token).json()
-                    username = returned.get("username")
-                    if username:
-                        user_returned = safe_json_response(self.users.search_for_user_by_username(self.src_host, self.src_token, username))[0]
+                    email = returned.get("email")
+                    if email:
+                        user_returned = safe_json_response(self.users.search_for_user_by_email(self.dest_host, self.dest_token, email))[0]
                         new_user_id = user_returned.get("id")
                         if new_user_id:
                             access_level['user_id'] = new_user_id
@@ -91,9 +91,9 @@ class EnvironmentsClient(DbOrHttpMixin, BaseGitLabClient):
             for rule in env['approval_rules']:
                 if 'user_id' in rule and rule['user_id'] is not None:
                     returned = self.users.get_user(rule['user_id'], self.src_host, self.src_token).json()
-                    username = returned.get("username")
-                    if username:
-                        user_returned = safe_json_response(self.users.search_for_user_by_username(self.src_host, self.src_token, username))[0]
+                    email = returned.get("email")
+                    if email:
+                        user_returned = safe_json_response(self.users.search_for_user_by_email(self.dest_host, self.dest_token, email))[0]
                         new_user_id = user_returned.get("id")
                         if new_user_id:
                             rule['user_id'] = new_user_id
