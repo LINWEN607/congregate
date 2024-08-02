@@ -7,16 +7,16 @@ from congregate.helpers.db_or_http import DbOrHttpMixin
 from congregate.migration.gitlab.base_gitlab_client import BaseGitLabClient
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.users import UsersApi
+from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.meta.api_models.project_environment import NewProjectEnvironmentPayload
 from congregate.migration.meta.api_models.project_protected_environment import NewProjectProtectedEnvironmentPayload
-
-import traceback
 
 
 class EnvironmentsClient(DbOrHttpMixin, BaseGitLabClient):
     def __init__(self, src_host=None, src_token=None, dest_host=None, dest_token=None):
         self.projects = ProjectsApi()
         self.users = UsersApi()
+        self.groups = GroupsApi()
         super(EnvironmentsClient, self).__init__(src_host=src_host,
                                                  src_token=src_token, dest_host=dest_host, dest_token=dest_token)
 
@@ -74,8 +74,8 @@ class EnvironmentsClient(DbOrHttpMixin, BaseGitLabClient):
         if not src_protected_envs:
             self.log.info(f"No protected environments found for project ID {src_id}")
             return
-        # Update user IDs in source environments
-        src_protected_envs = self.update_user_ids_in_protected_environments(src_protected_envs)
+        # Update user and group IDs in source environments
+        src_protected_envs = self.update_ids_in_protected_environments(src_protected_envs)
         
         # Filter out existing rules in the destination
         updated_envs = self.filter_existing_rules(src_protected_envs, dest_protected_envs)
@@ -84,7 +84,7 @@ class EnvironmentsClient(DbOrHttpMixin, BaseGitLabClient):
             if env['deploy_access_levels'] or env['approval_rules']:  # Only create/update if there are changes
                 self.create_or_update_protected_environment(dest_id, env)
         
-    def update_user_ids_in_protected_environments(self, protected_envs):
+    def update_ids_in_protected_environments(self, protected_envs):
         for env in protected_envs:
             for access_level in env['deploy_access_levels']:
                 if 'user_id' in access_level and access_level['user_id'] is not None:
@@ -97,6 +97,16 @@ class EnvironmentsClient(DbOrHttpMixin, BaseGitLabClient):
                             if new_user_id:
                                 access_level['user_id'] = new_user_id
 
+                if 'group_id' in access_level and access_level['group_id'] is not None:
+                    returned = self.groups.get_group(access_level['group_id'], self.src_host, self.src_token).json()
+                    full_path = returned.get("full_path")
+                    if full_path:
+                        group_returned = self.groups.get_group_by_full_path(full_path, self.dest_host, self.dest_token).json()
+                        if group_returned:
+                            new_group_id = group_returned.get("id")
+                            if new_group_id:
+                                access_level['group_id'] = new_group_id
+
             for rule in env['approval_rules']:
                 if 'user_id' in rule and rule['user_id'] is not None:
                     returned = self.users.get_user(rule['user_id'], self.src_host, self.src_token).json()
@@ -107,7 +117,18 @@ class EnvironmentsClient(DbOrHttpMixin, BaseGitLabClient):
                             new_user_id = user_returned[0].get("id")
                             if new_user_id:
                                 rule['user_id'] = new_user_id
+
+                if 'group_id' in rule and rule['group_id'] is not None:
+                    returned = self.groups.get_group(rule['group_id'], self.src_host, self.src_token).json()
+                    full_path = returned.get("full_path")
+                    if full_path:
+                        group_returned = self.groups.get_group_by_full_path(full_path, self.dest_host, self.dest_token).json()
+                        if group_returned:
+                            new_group_id = group_returned.get("id")
+                            if new_group_id:
+                                rule['group_id'] = new_group_id
         return protected_envs
+
 
     def create_or_update_protected_environment(self, pid, env):
         data = self.generate_protected_environment_data(environment=env)
