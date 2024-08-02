@@ -68,46 +68,45 @@ class EnvironmentsClient(DbOrHttpMixin, BaseGitLabClient):
             return False
 
     def migrate_protected_environments_rules(self, src_id, dest_id):
-        try:
-            src_protected_envs = safe_json_response(self.projects.get_all_project_protected_environments(src_id, self.src_host, self.src_token))
-            dest_protected_envs = safe_json_response(self.projects.get_all_project_protected_environments(dest_id, self.dest_host, self.dest_token))
+        src_protected_envs = safe_json_response(self.projects.get_all_project_protected_environments(src_id, self.src_host, self.src_token))
+        dest_protected_envs = safe_json_response(self.projects.get_all_project_protected_environments(dest_id, self.dest_host, self.dest_token))
 
-            if not src_protected_envs:
-                self.log.info(f"No protected environments found for project ID {src_id}")
-                return
-            # Update user IDs in source environments
-            src_protected_envs = self.update_user_ids_in_protected_environments(src_protected_envs)
-            
-            # Filter out existing rules in the destination
-            updated_envs = self.filter_existing_rules(src_protected_envs, dest_protected_envs)
-            
-            for env in updated_envs:
-                if env['deploy_access_levels'] or env['approval_rules']:  # Only create/update if there are changes
-                    self.create_or_update_protected_environment(dest_id, env)
-        except Exception:
-            print(traceback.format_exc())
+        if not src_protected_envs:
+            self.log.info(f"No protected environments found for project ID {src_id}")
+            return
+        # Update user IDs in source environments
+        src_protected_envs = self.update_user_ids_in_protected_environments(src_protected_envs)
+        
+        # Filter out existing rules in the destination
+        updated_envs = self.filter_existing_rules(src_protected_envs, dest_protected_envs)
+        
+        for env in updated_envs:
+            if env['deploy_access_levels'] or env['approval_rules']:  # Only create/update if there are changes
+                self.create_or_update_protected_environment(dest_id, env)
         
     def update_user_ids_in_protected_environments(self, protected_envs):
         for env in protected_envs:
             for access_level in env['deploy_access_levels']:
                 if 'user_id' in access_level and access_level['user_id'] is not None:
                     returned = self.users.get_user(access_level['user_id'], self.src_host, self.src_token).json()
-                    username = returned.get("username")
-                    if username:
-                        user_returned = safe_json_response(self.users.search_for_user_by_email(self.dest_host, self.dest_token, username))[0]
-                        new_user_id = user_returned.get("id")
-                        if new_user_id:
-                            access_level['user_id'] = new_user_id
+                    email = returned.get("email")
+                    if email:
+                        user_returned = safe_json_response(self.users.search_for_user_by_email(self.dest_host, self.dest_token, email))
+                        if user_returned:
+                            new_user_id = user_returned[0].get("id")
+                            if new_user_id:
+                                access_level['user_id'] = new_user_id
 
             for rule in env['approval_rules']:
                 if 'user_id' in rule and rule['user_id'] is not None:
                     returned = self.users.get_user(rule['user_id'], self.src_host, self.src_token).json()
-                    username = returned.get("username")
-                    if username:
-                        user_returned = safe_json_response(self.users.search_for_user_by_email(self.dest_host, self.dest_token, username))[0]
-                        new_user_id = user_returned.get("id")
-                        if new_user_id:
-                            rule['user_id'] = new_user_id
+                    email = returned.get("email")
+                    if email:
+                        user_returned = safe_json_response(self.users.search_for_user_by_email(self.dest_host, self.dest_token, email))
+                        if user_returned:
+                            new_user_id = user_returned[0].get("id")
+                            if new_user_id:
+                                rule['user_id'] = new_user_id
         return protected_envs
 
     def create_or_update_protected_environment(self, pid, env):
@@ -131,11 +130,21 @@ class EnvironmentsClient(DbOrHttpMixin, BaseGitLabClient):
                 if src_env['name'] == dest_env['name']:
                     src_env['deploy_access_levels'] = [
                         rule for rule in src_env['deploy_access_levels']
-                        if rule not in dest_env['deploy_access_levels']
+                        if not any(
+                            rule['access_level'] == d_rule['access_level'] and
+                            rule['user_id'] == d_rule['user_id'] and
+                            rule['group_id'] == d_rule['group_id']
+                            for d_rule in dest_env['deploy_access_levels']
+                        )
                     ]
                     src_env['approval_rules'] = [
                         rule for rule in src_env['approval_rules']
-                        if rule not in dest_env['approval_rules']
+                        if not any(
+                            rule['access_level'] == d_rule['access_level'] and
+                            rule['user_id'] == d_rule['user_id'] and
+                            rule['group_id'] == d_rule['group_id']
+                            for d_rule in dest_env['approval_rules']
+                        )
                     ]
         return src_envs
 
