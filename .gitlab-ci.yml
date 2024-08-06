@@ -165,7 +165,7 @@ build cdk image:
   stage: build
   script:
     - echo "SOURCE IS $CI_PIPELINE_SOURCE"
-    - cp ./docker/dev/cdk.Dockerfile ./Dockerfile
+    - cp ./docker/dev/cdk/Dockerfile ./Dockerfile
     - docker build --tag "$CDK_IMAGE_NAME" .
     - docker push "$CDK_IMAGE_NAME"
   rules:
