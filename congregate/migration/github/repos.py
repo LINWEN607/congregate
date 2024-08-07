@@ -70,7 +70,7 @@ class ReposClient(BaseClass):
                 f"NOT listing public repos on {self.config.source_host}")
         else:
             self.multi.start_multi_process_stream(
-                self.handle_retrieving_repos, self.repos_api.get_all_public_repos(), processes=processes, nestable=True)
+                self.handle_retrieving_repos, self.repos_api.get_all_public_repos_v4(), processes=processes, nestable=True)
 
     def handle_retrieving_repos(self, repo, mongo=None):
         if not mongo:
@@ -85,8 +85,8 @@ class ReposClient(BaseClass):
         Leave org/team repo members empty ([]) as they are retrieved during staging.
         """
         repo_url = repo["url"] + ".git"
-        repo_path = dig(repo, 'owner', 'login')
-        repo_type = dig(repo, 'owner', 'type')
+        repo_path = repo['owner']['login']
+        repo_type = repo['owner']['__typename']
         repo_name = repo.get('name')
         return {
             "id": repo.get("id"),
@@ -96,22 +96,22 @@ class ReposClient(BaseClass):
                 "Jenkins": self.list_ci_sources_jenkins(repo_url, mongo) if self.config.jenkins_ci_source_host else [],
                 "TeamCity": self.list_ci_sources_teamcity(repo_url, mongo) if self.config.tc_ci_source_host else []},
             "namespace": {
-                "id": dig(repo, 'owner', 'id'),
+                "id": repo['owner']['id'],
                 "path": repo_path,
                 "name": repo_path,
-                "kind": "group" if repo_type in self.GROUP_TYPE else "user",
+                "kind": "group" if repo_type == "Organization" else "user",
                 "full_path": repo_path},
             "http_url_to_repo": repo_url,
             "path_with_namespace": repo.get("nameWithOwner"),
             "visibility": repo.get("visibility"),
             "description": repo.get("description", ""),
-            # This request is extremely slow at scale and needs a refactor
-            # "members": []
+            "isArchived": repo.get("isArchived"),
             "members": [] if org else self.add_repo_members(
-                repo["owner"]["type"],
+                repo["owner"]["__typename"],
                 repo["owner"]["login"],
                 repo["name"],
-                mongo)}
+                mongo)
+        }
 
     def add_repo_members(self, kind, owner, repo, mongo):
         """
@@ -349,14 +349,14 @@ class ReposClient(BaseClass):
     def transform_gh_releases(self, releases):
         return [{
             "name": r["name"],
-            "tag_name": r["tag_name"],
-            "description": r["body"],
-            "created_at": r["created_at"],
-            "released_at": r["published_at"],
+            "tag_name": r["tagName"],
+            "description": r["description"],
+            "created_at": r["createdAt"],
+            "released_at": r["publishedAt"],
             "author": {
-                "username": dig(r, 'author', 'login'),
+                "username": r["author"]["login"] if r["author"] else None,
             },
-            "upcoming_release": r["prerelease"],
+            "upcoming_release": r["isPrerelease"],
         } for r in releases]
 
     def transform_gh_pr_comments(self, pr_comments):
@@ -374,24 +374,24 @@ class ReposClient(BaseClass):
             "title": i["title"],
             "description": i["body"],
             "state": i.get("state", "closed"),
-            "created_at": i["created_at"],
-            "updated_at": i["updated_at"],
-            "closed_at": i["closed_at"],
+            "created_at": i["createdAt"],
+            "updated_at": i["updatedAt"],
+            "closed_at": i["closedAt"],
             "labels": [l["name"] for l in i.get("labels", [])],
-            "milestone": i["milestone"],
+            "milestone": i["milestone"]["title"] if i["milestone"] else None,
             "assignees": [a["login"] for a in i.get("assignees", [])],
             "author": {
-                "username": dig(i, 'user', 'login'),
+                "username": i["author"]["login"] if i["author"] else None,
             },
-            "assignee": i["assignee"],
-            "user_notes_count": i["comments"],
-            "discussion_locked": i["locked"],
+            "assignee": i["assignee"]["username"] if i["assignee"] else None,
+            "user_notes_count": i["comments"]["totalCount"],
+            "discussion_locked": i["discussionLocked"],
         } for i in issues]
 
     def archive_migrated_repo(self, new_id, repo):
         gh_repo = safe_json_response(
-            self.repos_api.get_repo(repo["namespace"], repo["path"]))
-        if gh_repo and gh_repo.get("archived"):
+            self.repos_api.get_repo_v4(repo["namespace"], repo["path"]))
+        if gh_repo and gh_repo.get("isArchived"):
             self.gl_projects_api.archive_project(
                 self.config.destination_host, self.config.destination_token, new_id)
             return True

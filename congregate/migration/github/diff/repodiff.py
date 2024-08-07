@@ -165,7 +165,7 @@ class RepoDiffClient(BaseDiffClient):
                 project, "name", transformed_data, self.gl_repository_api.get_all_project_repository_tags, obfuscate=True)
 
             # issues
-            repo_issue_data = list(self.repos_api.get_repo_issues(
+            repo_issue_data = list(self.repos_api.get_repo_issues_v4(
                 project["namespace"], project["name"]))
             transformed_data = self.repos_client.transform_gh_issues(
                 repo_issue_data)
@@ -173,7 +173,7 @@ class RepoDiffClient(BaseDiffClient):
                 project, None, transformed_data, self.gl_projects_api.get_all_project_issues, obfuscate=True)
 
             # milestones
-            repo_milestone_data = list(self.repos_api.get_repo_milestones(
+            repo_milestone_data = list(self.repos_api.get_repo_milestones_v4(
                 project["namespace"], project["name"]))
             transformed_data = self.repos_client.transform_gh_milestones(
                 repo_milestone_data)
@@ -181,7 +181,7 @@ class RepoDiffClient(BaseDiffClient):
                 project, None, transformed_data, self.gl_projects_api.get_all_project_milestones, obfuscate=True)
 
             # releases
-            repo_release_data = list(self.repos_api.get_repo_releases(
+            repo_release_data = list(self.repos_api.get_repo_releases_v4(
                 project["namespace"], project["name"]))
             transformed_data = self.repos_client.transform_gh_releases(
                 repo_release_data)

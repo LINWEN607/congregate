@@ -214,6 +214,7 @@ class ReposApi():
             repository(owner: $owner, name: $name) {
                 name
                 description
+                isArchived
                 url
                 createdAt
                 updatedAt
@@ -419,14 +420,23 @@ class ReposApi():
         List repository milestones using GraphQL.
         """
         query = """
-        query($owner: String!, $name: String!, $state: [MilestoneState!]) {
+        query($owner: String!, $name: String!, $state: MilestoneState!, $cursor: String) {
             repository(owner: $owner, name: $name) {
-                milestones(states: $state, first: 100) {
+                milestones(states: [$state], first: 100, after: $cursor) {
                     nodes {
+                        id
+                        number
                         title
                         description
                         state
+                        createdAt
+                        updatedAt
                         dueOn
+                        closedAt
+                    }
+                    pageInfo {
+                        endCursor
+                        hasNextPage
                     }
                 }
             }
@@ -435,24 +445,68 @@ class ReposApi():
         variables = {
             "owner": owner,
             "name": repo,
-            "state": state
+            "state": state,
+            "cursor": None
         }
-        return self.api.generate_v4_post_request(self.host, query, variables)
 
-    def get_repo_issues_v4(self, owner, repo, state="OPEN"):
+        all_milestones = []
+        while True:
+            response = safe_json_response(self.api.generate_v4_post_request(self.host, query, variables))
+            if response and 'data' in response:
+                milestones_data = response['data']['repository']['milestones']
+                all_milestones.extend(milestones_data['nodes'])
+                if milestones_data['pageInfo']['hasNextPage']:
+                    variables['cursor'] = milestones_data['pageInfo']['endCursor']
+                else:
+                    break
+            else:
+                break
+
+        return all_milestones
+
+    def get_repo_issues_v4(self, owner, repo, state="ALL"):
         """
-        List repository issues using GraphQL.
+        List repository issues using GraphQL with pagination.
         """
         query = """
-        query($owner: String!, $name: String!, $state: [IssueState!]) {
+        query($owner: String!, $name: String!, $state: IssueState, $cursor: String) {
             repository(owner: $owner, name: $name) {
-                issues(states: $state, first: 100) {
+                issues(states: [$state], first: 100, after: $cursor) {
                     nodes {
+                        id
+                        number
                         title
+                        description
                         body
-                        createdAt
-                        url
                         state
+                        createdAt
+                        updatedAt
+                        closedAt
+                        url
+                        discussionLocked
+                        comments {
+                            totalCount
+                        }
+                        author {
+                            login
+                        }
+                        assignees(first: 100) {
+                            nodes {
+                                login
+                            }
+                        }
+                        milestone {
+                            title
+                        }
+                        labels(first: 100) {
+                            nodes {
+                                name
+                            }
+                        }
+                    }
+                    pageInfo {
+                        endCursor
+                        hasNextPage
                     }
                 }
             }
@@ -461,23 +515,56 @@ class ReposApi():
         variables = {
             "owner": owner,
             "name": repo,
-            "state": state
+            "state": state,
+            "cursor": None
         }
-        return self.api.generate_v4_post_request(self.host, query, variables)
+
+        all_issues = []
+        while True:
+            response = safe_json_response(self.api.generate_v4_post_request(self.host, query, variables))
+            if response and 'data' in response:
+                issues_data = response['data']['repository']['issues']
+                all_issues.extend(issues_data['nodes'])
+                if issues_data['pageInfo']['hasNextPage']:
+                    variables['cursor'] = issues_data['pageInfo']['endCursor']
+                else:
+                    break
+            else:
+                break
+
+        # Transform assignee and assignees, labels
+        for issue in all_issues:
+            issue['assignees'] = [{"login": a["login"]} for a in issue['assignees']['nodes']]
+            if issue['assignees']:
+                issue['assignee'] = issue['assignees'][0]
+            else:
+                issue['assignee'] = None
+            issue['labels'] = [{"name": l["name"]} for l in issue['labels']['nodes']]
+
+        return all_issues
 
     def get_repo_releases_v4(self, owner, repo):
         """
-        List repository releases using GraphQL.
+        List repository releases using GraphQL with pagination.
         """
         query = """
-        query($owner: String!, $name: String!) {
+        query($owner: String!, $name: String!, $cursor: String) {
             repository(owner: $owner, name: $name) {
-                releases(first: 100) {
+                releases(first: 100, after: $cursor) {
                     nodes {
                         name
-                        description
+                        tagName
+                        description: body
+                        createdAt
                         publishedAt
-                        url
+                        author {
+                            login
+                        }
+                        isPrerelease: prerelease
+                    }
+                    pageInfo {
+                        endCursor
+                        hasNextPage
                     }
                 }
             }
@@ -485,9 +572,24 @@ class ReposApi():
         """
         variables = {
             "owner": owner,
-            "name": repo
+            "name": repo,
+            "cursor": None
         }
-        return self.api.generate_v4_post_request(self.host, query, variables)
+
+        all_releases = []
+        while True:
+            response = self.api.generate_v4_post_request(self.host, query, variables)
+            if response and 'data' in response:
+                releases_data = response['data']['repository']['releases']
+                all_releases.extend(releases_data['nodes'])
+                if releases_data['pageInfo']['hasNextPage']:
+                    variables['cursor'] = releases_data['pageInfo']['endCursor']
+                else:
+                    break
+            else:
+                break
+
+        return all_releases
 
     def get_repo_issue_comments_v4(self, owner, repo, issue_number):
         """
@@ -542,27 +644,55 @@ class ReposApi():
 
     def get_all_public_repos_v4(self):
         """
-        Lists all public repositories using GraphQL.
+        List all public repositories using GraphQL with pagination.
         """
         query = """
-        query {
-            search(query: "is:public", type: REPOSITORY, first: 100) {
+        query($cursor: String) {
+            search(query: "is:public", type: REPOSITORY, first: 100, after: $cursor) {
                 edges {
                     node {
                         ... on Repository {
+                            id
                             name
-                            owner {
-                                login
-                            }
                             description
                             url
+                            owner {
+                                login
+                                id
+                                __typename
+                            }
+                            isPrivate
+                            visibility
+                            nameWithOwner
+                            isArchived
                         }
                     }
+                }
+                pageInfo {
+                    endCursor
+                    hasNextPage
                 }
             }
         }
         """
-        return self.api.generate_v4_post_request(self.host, query)
+        variables = {
+            "cursor": None
+        }
+
+        all_repos = []
+        while True:
+            response = self.api.generate_v4_post_request(self.host, query, variables)
+            if response and 'data' in response:
+                repos_data = response['data']['search']
+                all_repos.extend(edge['node'] for edge in repos_data['edges'])
+                if repos_data['pageInfo']['hasNextPage']:
+                    variables['cursor'] = repos_data['pageInfo']['endCursor']
+                else:
+                    break
+            else:
+                break
+
+        return all_repos
 
     def get_all_user_repos_v4(self, username):
         """
