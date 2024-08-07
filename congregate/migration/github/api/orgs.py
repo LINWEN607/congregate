@@ -177,7 +177,7 @@ class OrgsApi():
                         owner {
                             id
                             login
-                            type
+                            __typename
                         }
                     }
                     pageInfo {

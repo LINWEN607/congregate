@@ -438,8 +438,7 @@ class ReposClient(BaseClass):
                 owner, repo, pull["number"])):
             for user in reviewers.get("users", []):
                 if not user_emails_dict.get(user['login']):
-                    single_user = safe_json_response(
-                        self.users_api.get_user(user["login"]))
+                    single_user = self.users_api.get_user_v4(user["login"])
                     if email := self.users.get_email_address(
                             single_user, None, mongo):
                         user_emails_dict[user['login']] = email

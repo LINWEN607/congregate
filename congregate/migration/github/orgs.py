@@ -130,7 +130,6 @@ class OrgsClient(BaseClass):
     def add_org_members(self, members, org, mongo):
         permissions = self.ORG_PERMISSIONS_MAP[org.get(
             "default_repository_permission", None)]
-        print(f"org = {org}")
         for m in self.orgs_api.get_all_org_members_v4(org["data"]["organization"]["login"]):
             m["permissions"] = permissions
             members.append(m)

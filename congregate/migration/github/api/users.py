@@ -1,4 +1,5 @@
 from congregate.migration.github.api.base import GitHubApi
+from gitlab_ps_utils.misc_utils import safe_json_response
 
 
 class UsersApi():
@@ -39,26 +40,31 @@ class UsersApi():
         """
         return self.api.generate_v3_get_request(self.host, "rate_limit")
 
-    def get_user_v4(self, username):
+    def get_user_v4(self, login):
         """
-        Get a user using GraphQL.
+        Get user details using GraphQL.
         """
         query = """
         query($login: String!) {
             user(login: $login) {
+                id
                 login
                 name
-                url
-                bio
+                email
                 avatarUrl
-                createdAt
+                suspendedAt
+                siteAdmin
             }
         }
         """
         variables = {
-            "login": username
+            "login": login
         }
-        return self.api.generate_v4_post_request(self.host, query, variables)
+
+        response = safe_json_response(self.api.generate_v4_post_request(self.host, query, variables))
+        if response and 'data' in response:
+            return response['data']['user']
+        return None
 
     def get_import_user_v4(self):
         """
