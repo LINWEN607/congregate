@@ -578,7 +578,7 @@ class ReposApi():
 
         all_releases = []
         while True:
-            response = self.api.generate_v4_post_request(self.host, query, variables)
+            response = safe_json_response(self.api.generate_v4_post_request(self.host, query, variables))
             if response and 'data' in response:
                 releases_data = response['data']['repository']['releases']
                 all_releases.extend(releases_data['nodes'])
@@ -681,7 +681,7 @@ class ReposApi():
 
         all_repos = []
         while True:
-            response = self.api.generate_v4_post_request(self.host, query, variables)
+            response = safe_json_response(self.api.generate_v4_post_request(self.host, query, variables))
             if response and 'data' in response:
                 repos_data = response['data']['search']
                 all_repos.extend(edge['node'] for edge in repos_data['edges'])

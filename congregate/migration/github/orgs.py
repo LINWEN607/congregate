@@ -98,7 +98,7 @@ class OrgsClient(BaseClass):
         else:
             org_name = org.get("login")
             if self.get_team_full_path(org_name, team):
-                for team_repo in self.teams_api.get_team_repos(team["id"]):
+                for team_repo in self.teams_api.get_team_repos_v4(team["id"]):
                     formatted_repo = self.repos.format_repo(team_repo, mongo)
                     mongo.insert_data(
                         f"projects-{self.host}", formatted_repo)

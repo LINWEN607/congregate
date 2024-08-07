@@ -30,14 +30,28 @@ class TeamsApi():
         List team repositories using GraphQL.
         """
         query = """
-        query($org: String!, $teamSlug: String!) {
+        query($org: String!, $teamSlug: String!, $cursor: String) {
             organization(login: $org) {
                 team(slug: $teamSlug) {
-                    repositories(first: 100) {
+                    repositories(first: 100, after: $cursor) {
                         nodes {
+                            id
                             name
                             description
                             url
+                            owner {
+                                login
+                                id
+                                __typename
+                            }
+                            isPrivate
+                            visibility
+                            nameWithOwner
+                            isArchived
+                        }
+                        pageInfo {
+                            endCursor
+                            hasNextPage
                         }
                     }
                 }
@@ -46,9 +60,24 @@ class TeamsApi():
         """
         variables = {
             "org": org,
-            "teamSlug": team_slug
+            "teamSlug": team_slug,
+            "cursor": None
         }
-        return self.api.generate_v4_post_request(self.host, query, variables)
+
+        all_repos = []
+        while True:
+            response = self.api.generate_v4_post_request(self.host, query, variables)
+            if response and 'data' in response:
+                repos_data = response['data']['organization']['team']['repositories']
+                all_repos.extend(repos_data['nodes'])
+                if repos_data['pageInfo']['hasNextPage']:
+                    variables['cursor'] = repos_data['pageInfo']['endCursor']
+                else:
+                    break
+            else:
+                break
+
+        return all_repos
 
     def get_team_members_v4(self, org, team_slug):
         """
