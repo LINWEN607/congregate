@@ -74,6 +74,7 @@ class EnvironmentsClient(DbOrHttpMixin, BaseGitLabClient):
         if not src_protected_envs:
             self.log.info(f"No protected environments found for project ID {src_id}")
             return
+
         # Update user and group IDs in source environments
         src_protected_envs = self.update_ids_in_protected_environments(src_protected_envs)
         
@@ -83,50 +84,86 @@ class EnvironmentsClient(DbOrHttpMixin, BaseGitLabClient):
         for env in updated_envs:
             if env['deploy_access_levels'] or env['approval_rules']:  # Only create/update if there are changes
                 self.create_or_update_protected_environment(dest_id, env)
-        
+
     def update_ids_in_protected_environments(self, protected_envs):
         for env in protected_envs:
             for access_level in env['deploy_access_levels']:
                 if 'user_id' in access_level and access_level['user_id'] is not None:
+                    self.log.debug(f"Fetching user details for user_id {access_level['user_id']}")
                     returned = self.users.get_user(access_level['user_id'], self.src_host, self.src_token).json()
                     email = returned.get("email")
                     if email:
+                        self.log.debug(f"Found email {email} for user_id {access_level['user_id']}")
                         user_returned = safe_json_response(self.users.search_for_user_by_email(self.dest_host, self.dest_token, email))
                         if user_returned:
                             new_user_id = user_returned[0].get("id")
                             if new_user_id:
+                                self.log.debug(f"Mapping user_id {access_level['user_id']} to new user_id {new_user_id}")
                                 access_level['user_id'] = new_user_id
+                            else:
+                                self.log.warning(f"New user ID not found for email {email}")
+                        else:
+                            self.log.warning(f"Couldn't find destination user by email {email}")
+                    else:
+                        self.log.warning(f"Couldn't find email for user_id {access_level['user_id']}")
 
                 if 'group_id' in access_level and access_level['group_id'] is not None:
+                    self.log.debug(f"Fetching group details for group_id {access_level['group_id']}")
                     returned = self.groups.get_group(access_level['group_id'], self.src_host, self.src_token).json()
                     full_path = returned.get("full_path")
                     if full_path:
+                        self.log.debug(f"Found full_path {full_path} for group_id {access_level['group_id']}")
                         group_returned = self.groups.get_group_by_full_path(full_path, self.dest_host, self.dest_token).json()
                         if group_returned:
                             new_group_id = group_returned.get("id")
                             if new_group_id:
+                                self.log.debug(f"Mapping group_id {access_level['group_id']} to new group_id {new_group_id}")
                                 access_level['group_id'] = new_group_id
+                            else:
+                                self.log.warning(f"New group ID not found for full_path {full_path}")
+                        else:
+                            self.log.warning(f"Couldn't find destination group by full_path {full_path}")
+                    else:
+                        self.log.warning(f"Couldn't find full_path for group_id {access_level['group_id']}")
 
             for rule in env['approval_rules']:
                 if 'user_id' in rule and rule['user_id'] is not None:
+                    self.log.debug(f"Fetching user details for user_id {rule['user_id']}")
                     returned = self.users.get_user(rule['user_id'], self.src_host, self.src_token).json()
                     email = returned.get("email")
                     if email:
+                        self.log.debug(f"Found email {email} for user_id {rule['user_id']}")
                         user_returned = safe_json_response(self.users.search_for_user_by_email(self.dest_host, self.dest_token, email))
                         if user_returned:
                             new_user_id = user_returned[0].get("id")
                             if new_user_id:
+                                self.log.debug(f"Mapping user_id {rule['user_id']} to new user_id {new_user_id}")
                                 rule['user_id'] = new_user_id
+                            else:
+                                self.log.warning(f"New user ID not found for email {email}")
+                        else:
+                            self.log.warning(f"Couldn't find destination user by email {email}")
+                    else:
+                        self.log.warning(f"Couldn't find email for user_id {rule['user_id']}")
 
                 if 'group_id' in rule and rule['group_id'] is not None:
+                    self.log.debug(f"Fetching group details for group_id {rule['group_id']}")
                     returned = self.groups.get_group(rule['group_id'], self.src_host, self.src_token).json()
                     full_path = returned.get("full_path")
                     if full_path:
+                        self.log.debug(f"Found full_path {full_path} for group_id {rule['group_id']}")
                         group_returned = self.groups.get_group_by_full_path(full_path, self.dest_host, self.dest_token).json()
                         if group_returned:
                             new_group_id = group_returned.get("id")
                             if new_group_id:
+                                self.log.debug(f"Mapping group_id {rule['group_id']} to new group_id {new_group_id}")
                                 rule['group_id'] = new_group_id
+                            else:
+                                self.log.warning(f"New group ID not found for full_path {full_path}")
+                        else:
+                            self.log.warning(f"Couldn't find destination group by full_path {full_path}")
+                    else:
+                        self.log.warning(f"Couldn't find full_path for group_id {rule['group_id']}")
         return protected_envs
 
 
