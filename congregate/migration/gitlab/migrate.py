@@ -700,7 +700,7 @@ class GitLabMigrateClient(MigrateClient):
 
             # Project Feature Flags
             results["project_feature_flags"] = self.project_feature_flags_client.migrate_project_feature_flags_for_project(
-                src_id, dst_id, project_feature_flags_users_lists.get('user_lists_conversion_list'))
+                src_id, dst_id, project_feature_flags_users_lists.get('user_lists_conversion_list') if isinstance(project_feature_flags_users_lists, dict))
 
         if self.config.source_tier not in ["core", "free"]:
             # Push Rules - handled by GitLab Importer as of 13.6
