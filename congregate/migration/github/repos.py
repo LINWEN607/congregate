@@ -89,7 +89,7 @@ class ReposClient(BaseClass):
         repo_type = repo['owner']['__typename']
         repo_name = repo.get('name')
         return {
-            "id": repo.get("id"),
+            "id": repo.get("databaseId"),
             "path": repo_name,
             "name": repo_name,
             "ci_sources": {

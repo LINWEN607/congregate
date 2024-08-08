@@ -147,7 +147,7 @@ class OrgsApi():
         query = """
         query($login: String!) {
             organization(login: $login) {
-                id
+                databaseId
                 login
                 description
             }
@@ -168,12 +168,13 @@ class OrgsApi():
             organization(login: $login) {
                 repositories(first: 100, after: $cursor) {
                     nodes {
-                        id
+                        databaseId
                         name
                         description
                         url
                         nameWithOwner
                         visibility
+                        isArchived
                         owner {
                             id
                             login

@@ -35,7 +35,7 @@ class TeamsApi():
                 team(slug: $teamSlug) {
                     repositories(first: 100, after: $cursor) {
                         nodes {
-                            id
+                            databaseId
                             name
                             description
                             url

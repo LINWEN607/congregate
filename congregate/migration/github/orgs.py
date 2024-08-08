@@ -78,7 +78,7 @@ class OrgsClient(BaseClass):
             members = self.add_org_members([], org, mongo)
             mongo.insert_data(f"groups-{self.host}", {
                 "name": org["data"]["organization"]["login"],
-                "id": org["data"]["organization"]["id"],
+                "id": org["data"]["organization"]["databaseId"],
                 "path": org["data"]["organization"]["login"],
                 "full_path": org["data"]["organization"]["login"],
                 "description": org["data"]["organization"].get("description", ""),
@@ -96,7 +96,7 @@ class OrgsClient(BaseClass):
         if error or not team:
             self.log.error(f"Failed to store team '{team}'")
         else:
-            org_name = org.get("login")
+            org_name = org["data"]["organization"]["login"]
             if self.get_team_full_path(org_name, team):
                 for team_repo in self.teams_api.get_team_repos_v4(team["id"]):
                     formatted_repo = self.repos.format_repo(team_repo, mongo)

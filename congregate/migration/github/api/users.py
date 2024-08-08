@@ -47,13 +47,12 @@ class UsersApi():
         query = """
         query($login: String!) {
             user(login: $login) {
-                id
+                databaseId
                 login
                 name
                 email
                 avatarUrl
-                suspendedAt
-                siteAdmin
+                isSiteAdmin
             }
         }
         """

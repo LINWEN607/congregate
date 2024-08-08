@@ -652,7 +652,7 @@ class ReposApi():
                 edges {
                     node {
                         ... on Repository {
-                            id
+                            databaseId
                             name
                             description
                             url

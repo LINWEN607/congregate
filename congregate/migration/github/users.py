@@ -72,13 +72,13 @@ class UsersClient(BaseClass):
 
     def format_user(self, single_user, github_browser, mongo):
         return {
-            "id": single_user["id"],
+            "id": single_user["databaseId"],
             "username": single_user["login"],
             "name": single_user["name"] or single_user["login"],
             "email": self.get_email_address(single_user, github_browser, mongo),
             "avatar_url": single_user.get("avatarUrl", ""),
-            "state": "blocked" if single_user.get("suspendedAt") else "active",
-            "is_admin": single_user["siteAdmin"]
+            "state": "active", # Org members are always active.
+            "is_admin": single_user["isSiteAdmin"]
         }
 
     def get_email_address(self, single_user, github_browser, mongo):
