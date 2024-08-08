@@ -37,9 +37,11 @@ def get_staged_projects():
     return read_json_file_into_object(
         f"{b.app_path}/data/staged_projects.json")
 
+
 def get_project_id_mapping():
     return read_json_file_into_object(
         f"{b.app_path}/data/project_id_mapping.json")
+
 
 def get_staged_projects_without_failed_export(staged_projects, failed_export):
     """
@@ -236,7 +238,8 @@ def find_user_by_email_comparison_without_id(email, src=False):
 
 def search_for_user_by_user_mapping_field(field, user, host, token):
     if field == "email":
-        user_search = find_user_by_email_comparison_without_id(user.get(field))
+        user_search = users_api.search_for_user_by_email(
+            host, token, user.get(field))
     elif field == "username" and not is_dot_com(b.config.destination_host):
         user_search = users_api.search_for_user_by_username(
             host, token, user.get(field))
@@ -247,7 +250,7 @@ def search_for_user_by_user_mapping_field(field, user, host, token):
     for u in user_search:
         if u.get(field, "").lower() == user.get(field, "").lower():
             return u
-    return user
+    return {}
 
 
 def get_dst_path_with_namespace(p, mirror=False, group_path=None):
