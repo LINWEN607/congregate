@@ -234,12 +234,12 @@ def find_user_by_email_comparison_without_id(email, src=False):
 def search_for_user_by_user_mapping_field(field, user, host, token):
     if field == "email":
         user_search = find_user_by_email_comparison_without_id(user.get(field))
-    elif field == "username":
+    elif field == "username" and not is_dot_com(b.config.destination_host):
         user_search = users_api.search_for_user_by_username(
             host, token, user.get(field))
     else:
         b.log.error(
-            f"Invalid user mapping field configured: '{field}'")
+            f"Invalid (or insecure, for gitlab.com) user mapping field configured: '{field}'")
         return user
     for u in user_search:
         if u.get(field, "").lower() == user.get(field, "").lower():

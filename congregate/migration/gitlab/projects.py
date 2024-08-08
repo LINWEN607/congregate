@@ -22,7 +22,7 @@ from congregate.migration.gitlab.users import UsersClient
 from congregate.migration.gitlab import constants
 from congregate.migration.mirror import MirrorClient
 from congregate.helpers.migrate_utils import get_dst_path_with_namespace,  get_full_path_with_parent_namespace, \
-    dig, get_staged_projects, get_staged_groups, find_user_by_email_comparison_without_id, add_post_migration_stats, is_user_project, \
+    dig, get_staged_projects, get_staged_groups, add_post_migration_stats, is_user_project, \
     check_for_staged_user_projects, get_stage_wave_paths, search_for_user_by_user_mapping_field
 from congregate.helpers.utils import rotate_logs
 from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
@@ -331,7 +331,7 @@ class ProjectsClient(BaseClass):
             self, host, token, project_id, members):
         result = {}
         self.log.info(
-            f"Adding members to project ID {project_id}:\n{json_pretty(members)}")
+            f"Adding {len(members)} member{'s' if len(members) > 1 else ''} to project ID {project_id}:\n{json_pretty(members)}")
         field = self.config.user_mapping_field
         user = {}
         for member in members:
@@ -340,13 +340,13 @@ class ProjectsClient(BaseClass):
             member["user_id"] = user.get("id")
             result[member[field]] = False
             if member["user_id"]:
-                resp = safe_json_response(self.projects_api.add_member(
-                    project_id, host, token, member))
-                if resp:
-                    result[member[field]] = True
-                else:
+                resp = self.projects_api.add_member(
+                    project_id, host, token, member)
+                if resp.status_code != 200:
                     self.log.warning(
-                        f"Failed to add member '{member}' to project {project_id}, with response:\n{resp}")
+                        f"Failed to add member '{member}' to project {project_id}:\n{resp} - {resp.text}")
+                else:
+                    result[member[field]] = True
             else:
                 self.log.warning(
                     f"Failed to add member '{member}' to project {project_id}, user not found")
