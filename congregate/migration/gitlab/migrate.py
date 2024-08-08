@@ -9,6 +9,7 @@ from traceback import print_exc
 from requests.exceptions import RequestException
 
 from gitlab_ps_utils import json_utils, misc_utils
+from gitlab_ps_utils.json_utils import write_json_to_file
 from celery import shared_task
 from dacite import from_dict
 
@@ -43,6 +44,7 @@ from congregate.migration.meta.api_models.single_project_features import SingleP
 from congregate.migration.meta.api_models.project_details import ProjectDetails
 from congregate.migration.meta.api_models.bulk_import_entity_status import BulkImportEntityStatus
 from congregate.migration.gitlab.contributor_retention import ContributorRetentionClient
+from congregate.migration.gitlab.issue_links import IssueLinksClient
 
 
 class GitLabMigrateClient(MigrateClient):
@@ -90,8 +92,11 @@ class GitLabMigrateClient(MigrateClient):
         self.branches = BranchesClient()
         self.project_feature_flags_client = ProjectFeatureFlagClient(
             DRY_RUN=False)
+        self.issue_links_client = IssueLinksClient(
+            DRY_RUN=False)
         self.project_feature_flags_users_lists_client = ProjectFeatureFlagsUserListsClient(
             DRY_RUN=False)
+        self.project_id_mapping = {}
         super().__init__(dry_run,
                          processes,
                          only_post_migration_info,
@@ -581,17 +586,23 @@ class GitLabMigrateClient(MigrateClient):
                     import_id = ie_client.import_project(
                         project, dry_run=self.dry_run, group_path=group_path or tn)
                 if import_id and not self.dry_run:
+                    # Store project ID mapping
+                    self.project_id_mapping[src_id] = import_id
+
+                    # Disable Shared CI
+                    self.disable_shared_ci(dst_pwn, import_id)
+
+                    # Post import features
+                    self.log.info(
+                        f"Migrating additional source project '{path}' (ID: {src_id}) GitLab features")
+
                     # Certain project features cannot be migrated when archived
                     if archived:
                         self.log.info(
                             f"Unarchiving source project '{path}' (ID: {src_id})")
                         self.projects_api.unarchive_project(
                             src_host, src_token, src_id)
-                    # Disable Shared CI
-                    self.disable_shared_ci(dst_pwn, import_id)
-                    # Post import features
-                    self.log.info(
-                        f"Migrating additional source project '{path}' (ID: {src_id}) GitLab features")
+
                     result[dst_pwn] = self.migrate_single_project_features(
                         project, import_id, dest_host=dst_host, dest_token=dst_token)
             elif not self.dry_run:
@@ -618,6 +629,9 @@ class GitLabMigrateClient(MigrateClient):
                 if self.config.airgap:
                     self.log.info(f"Deleting project export file {filename}")
                     delete_project_export(filename)
+
+                # Write project id mapping file
+                self.write_project_id_mapping_file()
         return result
 
     def migrate_single_project_features(self, project, dst_id, dest_host=None, dest_token=None):
@@ -661,9 +675,10 @@ class GitLabMigrateClient(MigrateClient):
                 src_id, dst_id, src_path)
 
             # Container Registries
-            if self.config.source_registry and self.config.destination_registry:
-                results["container_registry"] = self.registries.migrate_registries(
-                    project, dst_id)
+            if project.get("container_registry_enabled"):
+                if self.config.source_registry and self.config.destination_registry:
+                    results["container_registry"] = self.registries.migrate_registries(
+                        project)
 
             # Package Registries
             if project.get("packages_enabled"):
@@ -764,6 +779,16 @@ class GitLabMigrateClient(MigrateClient):
                     src_id, None, path_with_namespace)
 
             return results
+
+    def migrate_linked_items_in_issues(self):
+        # Read the mapping file from the json and put it inside the project_id_mapping variable
+        project_id_mapping = mig_utils.get_project_id_mapping()
+        # Migrate issue links
+        self.issue_links_client.migrate_issue_links(project_id_mapping)
+
+    def write_project_id_mapping_file(self):
+        write_json_to_file(
+            f"{self.app_path}/data/project_id_mapping.json", self.project_id_mapping)
 
 
 @shared_task

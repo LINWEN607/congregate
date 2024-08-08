@@ -8,7 +8,7 @@ from celery import shared_task
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.congregate_mdbc import CongregateMongoConnector, mongo_connection
 from congregate.helpers.migrate_utils import get_full_path_with_parent_namespace, is_top_level_group, get_staged_groups, \
-    find_user_by_email_comparison_without_id, search_for_user_by_user_mapping_field
+    search_for_user_by_user_mapping_field
 from congregate.migration.gitlab.variables import VariablesClient
 from congregate.migration.gitlab import constants
 from congregate.migration.gitlab.api.groups import GroupsApi

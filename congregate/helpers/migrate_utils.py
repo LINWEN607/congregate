@@ -37,6 +37,9 @@ def get_staged_projects():
     return read_json_file_into_object(
         f"{b.app_path}/data/staged_projects.json")
 
+def get_project_id_mapping():
+    return read_json_file_into_object(
+        f"{b.app_path}/data/project_id_mapping.json")
 
 def get_staged_projects_without_failed_export(staged_projects, failed_export):
     """

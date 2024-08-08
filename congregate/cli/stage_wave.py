@@ -145,10 +145,10 @@ class WaveStageCLI(BaseStageClass):
         '''
         if not (mapping := self.config.wave_spreadsheet_column_mapping):
             self.log.warning(
-                "We didn't find a wave_spreadsheet_column_mapping in congregate.conf")
+                "No 'wave_spreadsheet_column_mapping' field in congregate.conf")
         if not (columns := self.config.wave_spreadsheet_columns):
             self.log.warning(
-                "We didn't find a wave_spreadsheet_columns in congregate.conf")
+                "No 'wave_spreadsheet_columns' field in congregate.conf")
         if not self.check_spreadsheet_lengths(mapping, columns):
             self.log.warning(
                 "The length of wave_spreadsheet_columns didn't match "
