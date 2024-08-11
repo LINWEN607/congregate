@@ -340,6 +340,8 @@ class ProjectsClient(BaseClass):
             member["user_id"] = user.get("id")
             result[member[field]] = False
             if member["user_id"]:
+                # Due to 400 error: user_id, username are mutually exclusive
+                member.pop("username", None)
                 resp = self.projects_api.add_member(
                     project_id, host, token, member)
                 if resp.status_code != 200:
