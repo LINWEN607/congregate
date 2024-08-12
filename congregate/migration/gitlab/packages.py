@@ -6,7 +6,7 @@ from congregate.migration.gitlab.api.packages import PackagesApi
 from congregate.migration.gitlab.api.pypi import PyPiPackagesApi
 from congregate.migration.gitlab.api.maven import MavenPackagesApi
 from congregate.migration.gitlab.api.npm import NpmPackagesApi
-from congregate.helpers.package_utils import generate_pypi_package_payload, generate_npm_package_payload, extract_pypi_package_metadata, extract_npm_package_metadata, get_pkg_data, generate_npm_json_data, generate_custom_npm_tarball_url
+from congregate.helpers.package_utils import generate_pypi_package_payload, generate_npm_package_payload, extract_pypi_package_metadata, extract_npm_package_metadata, get_pkg_data, generate_npm_json_data, generate_custom_npm_tarball_url, extract_pypi_wheel_metadata
 from congregate.migration.meta.api_models.pypi_package import PyPiPackage
 from congregate.migration.meta.api_models.npm_package import NpmPackage
 from congregate.migration.meta.api_models.maven_package import MavenPackage
@@ -201,6 +201,8 @@ class PackagesClient(BaseClass):
             if file_name.endswith('.tar.gz'):
                 metadata = extract_pypi_package_metadata(
                     get_pkg_data(file_content, 'PKG-INFO'))
+            elif file_name.endswith('.whl'):
+                metadata = extract_pypi_wheel_metadata(file_content)
 
         for package in files:
             package_data = generate_pypi_package_payload(package, metadata)

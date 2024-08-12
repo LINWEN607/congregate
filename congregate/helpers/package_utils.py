@@ -1,4 +1,4 @@
-import tarfile, json, base64
+import tarfile, json, base64, zipfile
 from io import BytesIO
 from dacite import from_dict
 from gitlab_ps_utils.dict_utils import dig
@@ -72,6 +72,18 @@ def generate_pypi_package_payload(package: PyPiPackage, pkg_info) -> PyPiPackage
         'sha256_digest': package.sha256_digest,
         **pkg_info
     })
+
+def extract_pypi_wheel_metadata(file_content):
+    try:
+        with zipfile.ZipFile(BytesIO(file_content)) as z:
+            for name in z.namelist():
+                if name.endswith('.dist-info/METADATA'):
+                    with z.open(name) as metadata_file:
+                        pkg_info_content = metadata_file.read().decode('utf-8')
+                        return extract_pypi_package_metadata(pkg_info_content)
+    except zipfile.BadZipFile:
+        log.error("The provided file is not a valid .whl (zip) file.")
+    return {}
 
 def generate_npm_package_payload(package: NpmPackage, pkg_json) -> NpmPackageData:
     file_type = guess_file_type(package.file_name)
