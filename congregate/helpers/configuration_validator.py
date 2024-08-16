@@ -76,8 +76,11 @@ class ConfigurationValidator(Config):
 
     @property
     def source_token(self):
+        obfuscated = True
+        if self.source_type == 'azure devops':
+            obfuscated = False
         src_token = self.prop("SOURCE", "src_access_token",
-                              default=None, obfuscated=True)
+                            default=None, obfuscated=obfuscated)
         if self.src_token_validated_in_session:
             return src_token
         self.src_token_validated_in_session = self.validate_src_token(
@@ -180,6 +183,8 @@ class ConfigurationValidator(Config):
                 self.validate_src_token_github(user, err_msg, src_token)
             elif self.source_type == "bitbucket server":
                 self.validate_src_token_bitbucket(user, err_msg, src_token)
+            elif self.source_type == "azure devops":
+                self.validate_src_token_ado(user, err_msg, src_token)
             return True
         return True
 
@@ -260,6 +265,9 @@ class ConfigurationValidator(Config):
         if not user or is_error or not is_admin:
             raise ConfigurationException(
                 "source_token", msg=f"{msg}{json_pretty(user)}")
+
+    def validate_src_token_ado(self, user, msg, token):
+        return True
 
     def validate_airgap_configuration(self):
         airgap_export = self.prop_bool("APP", "airgap_export", default=False)

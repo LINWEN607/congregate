@@ -170,9 +170,9 @@ class Config(BaseConfig):
                          default=None, obfuscated=True)
 
     @property
-    def source_token(self):
+    def source_token(self, obfuscate=True):
         return self.prop("SOURCE", "src_access_token",
-                         default=None, obfuscated=True)
+                         default=None, obfuscated=obfuscate)
 
     @property
     def source_token_array(self):
