@@ -292,8 +292,7 @@ class ConfigurationValidator(Config):
                 raise ConfigurationException(
                     "source_token", msg=f"{msg}Invalid user authentication:\n{json_pretty(connection_data)}")
         else: 
-            raise ConfigurationException(
-                    "source_token", msg=f"{msg}Invalid user authentication:\n{json_pretty(connection_data)}")
+            return False
 
     def validate_airgap_configuration(self):
         airgap_export = self.prop_bool("APP", "airgap_export", default=False)
