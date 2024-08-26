@@ -53,6 +53,7 @@ class UsersApi():
                 email
                 avatarUrl
                 isSiteAdmin
+                __typename
             }
         }
         """

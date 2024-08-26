@@ -49,7 +49,7 @@ class UsersClient(BaseClass):
             self.log.error("Failed to get JSON for user {} ({})".format(
                 user["login"], single_user))
         else:
-            if single_user.get("type") != "Organization":
+            if single_user.get("__typename") != "Organization":
                 formatted_user = self.format_user(single_user, browser, mongo)
                 mongo.insert_data(
                     f"users-{strip_netloc(self.host)}", formatted_user)

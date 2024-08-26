@@ -262,12 +262,16 @@ class OrgsApi():
                         slug
                         name
                         url
+                        parentTeam {
+                            slug
+                        }
                     }
                     pageInfo {
                         endCursor
                         hasNextPage
                     }
                 }
+                login
             }
         }
         """

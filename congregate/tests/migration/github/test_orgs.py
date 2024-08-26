@@ -130,7 +130,7 @@ class OrgsTests(unittest.TestCase):
                 "members": repo_members,
                 "path": "googleapis",
                 "path_with_namespace": "org1/googleapis",
-                "http_url_to_repo": "https://github.example.net/org1/googleapis.git",
+                "http_url_to_repo": "https://github.example.net/api/v3/repos/org1/googleapis.git",
                 "ci_sources": {
                     "Jenkins": [],
                     "TeamCity": []
@@ -143,7 +143,8 @@ class OrgsTests(unittest.TestCase):
                     "name": "org1"
                 },
                 "id": 5,
-                "visibility": "public",
+                "visibility": "private",
+                "isArchived": False,
                 "description": None
             },
             {
@@ -155,7 +156,7 @@ class OrgsTests(unittest.TestCase):
                     "TeamCity": []
                 },
                 "path_with_namespace": "org1/gradio",
-                "http_url_to_repo": "https://github.example.net/org1/gradio.git",
+                "http_url_to_repo": "https://github.example.net/api/v3/repos/org1/gradio.git",
                 "namespace": {
                     "path": "org1",
                     "kind": "group",
@@ -165,6 +166,7 @@ class OrgsTests(unittest.TestCase):
                 },
                 "id": 6,
                 "visibility": "private",
+                "isArchived": False,
                 "description": None
             }
         ]
@@ -184,7 +186,7 @@ class OrgsTests(unittest.TestCase):
         ]
 
         self.orgs.add_org_as_group(
-            [self.mock_orgs.get_org()], "org1", self.mongo_mock)
+            [self.mock_orgs.get_org_v4()], "org1", self.mongo_mock)
 
         actual_groups = [
             d for d, _ in self.mongo_mock.stream_collection("groups-github.example.com")]
@@ -193,8 +195,8 @@ class OrgsTests(unittest.TestCase):
 
         for i, _ in enumerate(expected_groups):
             self.assertDictEqual(actual_groups[i], expected_groups[i])
-        # for i, _ in enumerate(expected_projects):
-        #     self.assertDictEqual(actual_projects[i], expected_projects[i])
+        for i, _ in enumerate(expected_projects):
+            self.assertDictEqual(actual_projects[i], expected_projects[i])
 
     @patch.object(OrgsApi, "get_org_v4")
     def test_add_org_as_group_error(self, mock_org_response):
@@ -233,7 +235,7 @@ class OrgsTests(unittest.TestCase):
         self.assertLogs(
             "Failed to store team {}".format(mock_team))
 
-    @patch.object(TeamsApi, "get_team_repos")
+    @patch.object(TeamsApi, "get_team_repos_v4")
     @patch.object(TeamsApi, "get_team_members")
     @patch.object(UsersClient, "format_users")
     @patch.object(ReposClient, "add_repo_members")
@@ -309,9 +311,10 @@ class OrgsTests(unittest.TestCase):
                     "kind": "group",
                     "full_path": "org2"
                 },
-                "nameWithOwner": "org2/arrow",
-                "http_url_to_repo": "https://github.example.net/org2/arrow.git",
-                "visibility": "public",
+                "path_with_namespace": "org2/arrow",
+                "http_url_to_repo": "https://github.example.net/api/v3/repos/org2/arrow.git",
+                "visibility": "private",
+                "isArchived": False,
                 "description": None,
                 "members": org_team_repo_members
             },
@@ -330,9 +333,10 @@ class OrgsTests(unittest.TestCase):
                     "kind": "group",
                     "full_path": "org2"
                 },
-                "nameWithOwner": "org2/phaser",
-                "http_url_to_repo": "https://github.example.net/org2/phaser.git",
+                "path_with_namespace": "org2/phaser",
+                "http_url_to_repo": "https://github.example.net/api/v3/repos/org2/phaser.git",
                 "visibility": "private",
+                "isArchived": False,
                 "description": None,
                 "members": org_team_repo_members
             }
@@ -366,12 +370,11 @@ class OrgsTests(unittest.TestCase):
 
         self.assertLogs(
             f"Failed to get full_path for team ({self.mock_orgs.get_org_child_team()})")
+        for i, _ in enumerate(expected_projects):
+            self.assertDictEqual(actual_projects[i], expected_projects[i])
 
-        # for i, _ in enumerate(expected_projects):
-        #     self.assertDictEqual(actual_projects[i], expected_projects[i])
-
-    @patch.object(TeamsApi, "get_team_repos")
-    @patch.object(TeamsApi, "get_team_members")
+    @patch.object(TeamsApi, "get_team_repos_v4")
+    @patch.object(TeamsApi, "get_team_members_v4")
     @patch.object(UsersClient, "format_users")
     @patch.object(ReposClient, "add_repo_members")
     @patch.object(OrgsApi, "get_org_team_v4")
@@ -444,8 +447,9 @@ class OrgsTests(unittest.TestCase):
                     "full_path": "org2"
                 },
                 "path_with_namespace": "org2/arrow",
-                "http_url_to_repo": "https://github.example.net/org2/arrow.git",
-                "visibility": "public",
+                "http_url_to_repo": "https://github.example.net/api/v3/repos/org2/arrow.git",
+                "visibility": "private",
+                "isArchived": False,
                 "description": None,
                 "members": org_team_repo_members
             },
@@ -465,8 +469,9 @@ class OrgsTests(unittest.TestCase):
                     "full_path": "org2"
                 },
                 "path_with_namespace": "org2/phaser",
-                "http_url_to_repo": "https://github.example.net/org2/phaser.git",
+                "http_url_to_repo": "https://github.example.net/api/v3/repos/org2/phaser.git",
                 "visibility": "private",
+                "isArchived": False,
                 "description": None,
                 "members": org_team_repo_members
             }
@@ -498,6 +503,6 @@ class OrgsTests(unittest.TestCase):
 
         self.assertEqual(actual_groups.sort(key=lambda x: x["id"]),
                          expected_groups.sort(key=lambda x: x["id"]))
-        # for i, _ in enumerate(expected_projects):
-        #     self.assertEqual(
-        #         actual_projects[i].items(), expected_projects[i].items())
+        for i, _ in enumerate(expected_projects):
+            self.assertEqual(
+                actual_projects[i].items(), expected_projects[i].items())

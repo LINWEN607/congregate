@@ -38,7 +38,7 @@ class UsersTests(unittest.TestCase):
     @patch.object(GitHubBrowser, "scrape_user_email")
     @patch("io.TextIOBase")
     @patch('builtins.open')
-    @patch.object(UsersApi, "get_user")
+    @patch.object(UsersApi, "get_user_v4")
     @patch.object(CongregateMongoConnector, "close_connection")
     @responses.activate
     def test_retrieve_user_info(self,
@@ -62,7 +62,7 @@ class UsersTests(unittest.TestCase):
         mock_user3 = MagicMock()
         type(mock_user3).status_code = PropertyMock(return_value=200)
         mock_user3.json.return_value = self.mock_users.get_user()[2]
-        mock_single_user.side_effect = [mock_user1, mock_user2, mock_user3]
+        mock_single_user.side_effect = [mock_user1.json.return_value, mock_user2.json.return_value, mock_user3.json.return_value]
 
         mock_open.return_value = mock_file
 
@@ -114,7 +114,7 @@ class UsersTests(unittest.TestCase):
 
     @patch.object(UsersClient, "establish_browser_connection")
     @patch.object(GitHubBrowser, "scrape_user_email")
-    @patch.object(UsersApi, "get_user")
+    @patch.object(UsersApi, "get_user_v4")
     @patch("congregate.helpers.conf.Config.source_host", new_callable=PropertyMock)
     def test_format_users_with_permissions(self,
                                            mock_source_host,
@@ -136,7 +136,7 @@ class UsersTests(unittest.TestCase):
         mock_user3 = MagicMock()
         type(mock_user3).status_code = PropertyMock(return_value=200)
         mock_user3.json.return_value = self.mock_users.get_user()[2]
-        mock_single_user.side_effect = [mock_user1, mock_user2, mock_user3]
+        mock_single_user.side_effect = [mock_user1.json.return_value, mock_user2.json.return_value, mock_user3.json.return_value]
         mongo = CongregateMongoConnector(client=mongomock.MongoClient)
         actual_users = self.users.format_users([
             {"login": "ghost", "permissions": 40},
@@ -182,7 +182,7 @@ class UsersTests(unittest.TestCase):
 
     @patch.object(UsersClient, "establish_browser_connection")
     @patch.object(GitHubBrowser, "scrape_user_email")
-    @patch.object(UsersApi, "get_user")
+    @patch.object(UsersApi, "get_user_v4")
     @patch("congregate.helpers.conf.Config.source_host", new_callable=PropertyMock)
     def test_format_users_with_error(self,
                                      mock_source_host,
@@ -207,7 +207,7 @@ class UsersTests(unittest.TestCase):
         mock_user3 = MagicMock()
         type(mock_user3).status_code = PropertyMock(return_value=200)
         mock_user3.json.return_value = self.mock_users.get_user()[2]
-        mock_single_user.side_effect = [mock_user1, mock_user2, mock_user3]
+        mock_single_user.side_effect = [mock_user1.json.return_value, mock_user2.json.return_value, mock_user3.json.return_value]
         mongo = CongregateMongoConnector(client=mongomock.MongoClient)
         actual_users = self.users.format_users([
             {"login": "ghost", "permissions": 40},

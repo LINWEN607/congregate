@@ -98,7 +98,7 @@ class OrgsClient(BaseClass):
         else:
             org_name = org["data"]["organization"]["login"]
             if self.get_team_full_path(org_name, team):
-                for team_repo in self.teams_api.get_team_repos_v4(team["id"]):
+                for team_repo in self.teams_api.get_team_repos_v4(org_name, team["slug"]):
                     formatted_repo = self.repos.format_repo(team_repo, mongo)
                     mongo.insert_data(
                         f"projects-{self.host}", formatted_repo)
@@ -113,10 +113,10 @@ class OrgsClient(BaseClass):
         """
         try:
             full_path = [org_name, team["slug"]]
-            while team["parent"]:
-                full_path.insert(1, dig(team, 'parent', 'slug'))
+            while team["parentTeam"]:
+                full_path.insert(1, dig(team, 'parentTeam', 'slug'))
                 team = safe_json_response(self.orgs_api.get_org_team_v4(
-                    org_name, dig(team, 'parent', 'slug')))
+                    org_name, dig(team, 'parentTeam', 'slug')))
                 error, team = is_error_message_present(team)
                 if error or not team:
                     self.log.error(
