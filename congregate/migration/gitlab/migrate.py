@@ -533,8 +533,8 @@ class GitLabMigrateClient(MigrateClient):
                         f"Saved project [{name}:{pid}] archive to {final_path}")
                     delete_project_features(pid)
 
-                # Archive project immediately after export
-                if self.config.archive_logic:
+                # Archive project immediately after export, if exported
+                if self.config.archive_logic and result[filename]:
                     self.log.info(
                         f"Archiving source project '{name}' (ID: {pid})")
                     self.projects_api.archive_project(
@@ -620,7 +620,7 @@ class GitLabMigrateClient(MigrateClient):
                     self.projects_api.archive_project(
                         src_host, src_token, src_id,
                         message=f"Archiving back source project '{path}' (ID: {src_id})")
-                # Archive project immediately after import
+                # Archive project immediately after import, if imported
                 elif self.config.archive_logic and import_id:
                     self.projects_api.archive_project(
                         src_host, src_token, src_id,
