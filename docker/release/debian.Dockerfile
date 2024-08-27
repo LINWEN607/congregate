@@ -90,6 +90,9 @@ RUN cd /opt/congregate && \
     chown -R ps-user:sudo dist && \
     chmod -R 750 dist
 
+RUN touch /var/run/docker.sock
+RUN chown root:sudo /var/run/docker.sock
+
 USER ps-user
 
 # Initialize congregate directories
