@@ -72,6 +72,9 @@ RUN cd /opt/congregate && \
     chmod +x congregate.sh && \
     ln congregate.sh /usr/bin/congregate
 
+RUN touch /var/run/docker.sock
+RUN chown root:wheel /var/run/docker.sock
+
 # Switch to ps-user for the rest of the installation
 USER ps-user
 
