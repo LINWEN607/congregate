@@ -190,6 +190,8 @@ Lots of this section is covered in our [runbooks](runbooks), but an overview is 
 * Branch protection settings
 * Merge request approver settings
 
+<!-- 
+
 ### Automated diff report
 
 TODO
@@ -201,6 +203,8 @@ TODO
 ## Congregate Configuration Items
 
 TODO
+
+-->
 
 ### Migration Reporting
 
