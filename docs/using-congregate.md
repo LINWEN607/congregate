@@ -218,7 +218,9 @@ To configure this functionality, we need to add some lines to the congregate.con
 
 Once we have the issues automatically being created on `./congregate.sh migrate --commit` we can configure [a stand-alone utility](https://gitlab.com/ubs-group1/ubs/UBS-Services-SOW-PSE-00169/reporting-utility) to poll these issues and build a csv that can be ingested by the customer's data-analyzer tool of choice.
 
+<!--
 **TODO:** Add info on this once we have it more complete.
+-->
 
 ### Wave definition spreadsheet ingestion
 
