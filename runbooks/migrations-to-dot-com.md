@@ -113,6 +113,7 @@ PSE conducting the migration:
     * See GitLab migration prerequisites for details
 * [ ] Create a directory called "waves" in `/opt/congregate/data` in the container if it doesn't already exist
 * [ ] Create a directory called `user_wave` in `/opt/congregate/data/waves` if it doesn't already exist
+* [ ] Ensure the permissions for the directories `/opt/congregate/data` are set to ps-user. 
 * [ ] Run `nohup ./congregate.sh list > data/waves/listing.log 2>&1 &` at the beginning of the migration blackout period
 * [ ] Stage ALL users
   * **NOTE:** Make sure no groups and projects are staged
