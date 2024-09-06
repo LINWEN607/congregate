@@ -9,32 +9,27 @@ from congregate.migration.ado.api.repositories import RepositoriesApi
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.congregate_mdbc import CongregateMongoConnector, mongo_connection
 
-class ProjectsClient(BaseClass):
+class GroupsClient(BaseClass):
     
     def __init__(self):
         self.api = AzureDevOpsApiWrapper()
         self.projects_api = ProjectsApi()
-        self.repositories_api = RepositoriesApi()
         super().__init__()
 
-    def retrieve_project_info(self, processes=None):
+    def retrieve_group_info(self, processes=None):
 
         for project in self.projects_api.get_all_projects():
-                self.handle_retrieving_project(project)
+                self.handle_retrieving_group(project)
 
     @mongo_connection
-    def handle_retrieving_project(self, project, mongo=None):
+    def handle_retrieving_group(self, project, mongo=None):
 
         if project:
             count = self.api.get_count(f'{project["id"]}/_apis/git/repositories')
-            if count >= 1:
-                repositories = self.repositories_api.get_all_repositories(project["id"])
+            if count > 1:
 
-                for repository in repositories:
-                    if repository:
-
-                        mongo.insert_data(
-                            f"projects-{strip_netloc(self.config.source_host)}",
-                            self.api.format_project(project, repository, count, mongo))
+                mongo.insert_data(
+                    f"groups-{strip_netloc(self.config.source_host)}",
+                    self.api.format_group(project, mongo))
         else:
             self.log.error("Failed to retrieve project information")
