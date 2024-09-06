@@ -29,7 +29,7 @@ class StageWaveCSVGeneratorTests(unittest.TestCase):
             }
         }
 
-        with self.assertLogs() as cm:
+        with self.assertLogs(self.wcli.log.name) as cm:
             self.wcli.generate(
                 destination_file="templates/generate_test.csv",
                 header_info=header_info,

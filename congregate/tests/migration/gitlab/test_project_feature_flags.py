@@ -18,12 +18,10 @@ LOGGER = logging.getLogger(__name__)
 class ProjectFeatureFlagTests(unittest.TestCase):
     def setUp(self):
         self.project_feature_flag_api = ProjectFeatureFlagsApi()
+        self.project_feature_flag_api.log.propagate = True
         self.project_feature_flag_client = ProjectFeatureFlagClient(False)
+        self.project_feature_flag_client.log.propagate = True
         self.mock_project_feature_flag_api = MockProjectFeatureFlagApi()
-
-    @pytest.fixture(autouse=True)
-    def inject_fixtures(self, caplog):
-        self._caplog = caplog
 
     # Client tests
     @patch.object(ProjectFeatureFlagsApi, "get_all_project_feature_flags")
@@ -80,25 +78,34 @@ class ProjectFeatureFlagTests(unittest.TestCase):
         """
         Checks the return value is [] and that the proper message is logged if no FF are returned for the source project
         """
-        mock = self.project_feature_flag_client.project_feature_flags_api
-        mock.get_all_project_feature_flags = MagicMock(return_value=[])
-        ret_val = self.project_feature_flag_client.migrate_project_feature_flags_for_project(1, 2)
-        assert "No feature flags found for source_project_id 1" in self._caplog.records[0].message
-        # assert ret_val == []
+        with self.assertLogs(self.project_feature_flag_client.log.name) as captured:
+            mock = self.project_feature_flag_client.project_feature_flags_api
+            mock.get_all_project_feature_flags = MagicMock(return_value=[])
+            self.project_feature_flag_client.migrate_project_feature_flags_for_project(1, 2)
+            for out in captured.output:
+                self.assertIn("No feature flags found for source_project_id 1", out)
 
     def test_rewrite_strategies_when_none_feature_flag(self):
-        self.project_feature_flag_client.rewrite_strategies(None, {"1":1})
-        assert "FeatureFlag is None" in self._caplog.records[0].message
+        with self.assertLogs(self.project_feature_flag_client.log.name) as captured:
+            self.project_feature_flag_client.rewrite_strategies(None, {"1":1})
+            for out in captured.output:
+                self.assertIn("FeatureFlag is None", out)
 
     def test_rewrite_strategies_when_no_strategies(self):
-        self.project_feature_flag_client.rewrite_strategies({"strategies": None}, {"1":1})
-        assert "No strategies found for feature_flag: {'strategies': None}" in self._caplog.records[0].message
+        with self.assertLogs(self.project_feature_flag_client.log.name) as captured:
+            self.project_feature_flag_client.rewrite_strategies({"strategies": None}, {"1":1})
+            for out in captured.output:
+                self.assertIn("No strategies found for feature_flag: {'strategies': None}", out)
 
     def test_error_message_when_old_or_new_strategy_id_is_missing(self):
-        self.project_feature_flag_client.dry_run = False
-        self.project_feature_flag_client.rewrite_strategies({"strategies": [{"user_list": {"notid":1}}]}, {"1":1})
-        assert "Incomplete dictionary:\nstrategy: {'user_list': {'notid': 1}}\nuser_xid_conversion_dict: {'1': 1}" in self._caplog.records[0].message
+        with self.assertLogs(self.project_feature_flag_client.log.name) as captured:
+            self.project_feature_flag_client.dry_run = False
+            self.project_feature_flag_client.rewrite_strategies({"strategies": [{"user_list": {"notid":1}}]}, {"1":1})
+            for out in captured.output:
+                self.assertIn("Incomplete dictionary:\nstrategy: {'user_list': {'notid': 1}}\nuser_xid_conversion_dict: {'1': 1}",
+                            out)
 
     def test_rewrite_strategies_when_none_user_xid_conversion_dict(self):
-        self.project_feature_flag_client.rewrite_strategies({"strategies": None}, None)
-        assert "user_xid_conversion_dict is None" in self._caplog.records[0].message
+        with self.assertLogs(self.project_feature_flag_client.log.name) as captured:
+            self.project_feature_flag_client.rewrite_strategies({"strategies": None}, None)
+            self.assertIn("ERROR:congregate.helpers.base_class:user_xid_conversion_dict is None", captured.output)
