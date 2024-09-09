@@ -130,7 +130,7 @@ class TeamcityClient(BaseExternalCiClient):
 
                     data = {
                         "branch": f"{job}-teamcity-config",
-                        "commit_message": "Adding build_config.xml for TeamCity job",
+                        "commit_message": "[skip ci] Adding 'build_config.xml' for TeamCity job",
                         "content": build_config
                     }
 
@@ -148,7 +148,7 @@ class TeamcityClient(BaseExternalCiClient):
                         if content:
                             data = {
                                 "branch": f"{job}-teamcity-config",
-                                "commit_message": f"Adding {file_name} for TeamCity job",
+                                "commit_message": f"[skip ci] Adding '{file_name}' for TeamCity job",
                                 "content": content
                             }
                             req = self.project_repository_api.create_repo_file(

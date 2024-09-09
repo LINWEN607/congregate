@@ -106,7 +106,7 @@ class JenkinsClient(BaseExternalCiClient):
                     content = config_xml.text
                     data = {
                         "branch": f"{job.lstrip('/')}-jenkins-config",
-                        "commit_message": "Adding config.xml for Jenkins job",
+                        "commit_message": "[skip ci] Adding 'config.xml' for Jenkins job",
                         "content": content
                     }
 

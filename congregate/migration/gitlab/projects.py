@@ -565,11 +565,12 @@ class ProjectsClient(BaseClass):
 
             if branch_name != "":
                 # Put the new file
+                # Skip CI - https://docs.gitlab.com/ee/ci/pipelines/#skip-a-pipeline
                 put_file_data = {
                     "branch": f"{branch_name}",
                     "content": f"{new_yml_64}",
                     "encoding": "base64",
-                    "commit_message": f"Commit for migration regex replace replacing file '{f}'"
+                    "commit_message": f"[skip ci] Commit for migration regex replace replacing file '{f}'"
                 }
                 put_resp = self.project_repository_api.put_single_repo_file(
                     self.config.destination_host,
@@ -737,7 +738,7 @@ class ProjectsClient(BaseClass):
         branch = "mirroring-trigger"
         commit_data = {
             "branch": branch,
-            "commit_message": f"{branch} [skip-ci]",
+            "commit_message": f"[skip ci] {branch}",
             # retry in case of main (as of 14.0)
             "start_branch": staged_project.get("default_branch", "master"),
             "actions": [
