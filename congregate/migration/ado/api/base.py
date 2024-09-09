@@ -165,15 +165,15 @@ class AzureDevOpsApiWrapper(BaseClass):
 
     def format_project(self, project, repository, count, mongo):
         self.project_groups = {}
-        full_path = self.slugify(project["name"])
+        path_with_namespace = self.slugify(project["name"])
         if count > 1:
-            full_path = os.path.join(full_path, self.slugify(repository["name"]))
+            path_with_namespace = os.path.join(self.slugify(project["name"]), self.slugify(repository["name"]))
 
         return {
             "name": repository["name"],
             "id": repository["id"],
             "path": self.slugify(repository["name"]),
-            "path_with_namespace": full_path,
+            "path_with_namespace": path_with_namespace,
             "visibility": project["visibility"],
             "description": project.get("description", ""),
             "members": [],
@@ -188,7 +188,7 @@ class AzureDevOpsApiWrapper(BaseClass):
             "name": project["name"],
             "id": project["id"],
             "path": self.slugify(project["name"]),
-            "full_path": self.slugify(project["name"]),
+            "path_with_namespace": self.slugify(project["name"]),
             "visibility": project["visibility"],
             "description": project.get("description", ""),
             "members": [],
