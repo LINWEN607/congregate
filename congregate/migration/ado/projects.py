@@ -24,17 +24,18 @@ class ProjectsClient(BaseClass):
 
     @mongo_connection
     def handle_retrieving_project(self, project, mongo=None):
-
-        if project:
-            count = self.api.get_count(f'{project["id"]}/_apis/git/repositories')
-            if count >= 1:
-                repositories = self.repositories_api.get_all_repositories(project["id"])
-
-                for repository in repositories:
-                    if repository:
-
-                        mongo.insert_data(
-                            f"projects-{strip_netloc(self.config.source_host)}",
-                            self.api.format_project(project, repository, count, mongo))
-        else:
+        if not project:
             self.log.error("Failed to retrieve project information")
+            return
+
+        count = self.api.get_count(f'{project["id"]}/_apis/git/repositories')
+        if count < 1:
+            return
+
+        repositories = self.repositories_api.get_all_repositories(project["id"])
+        collection_name = f"projects-{strip_netloc(self.config.source_host)}"
+
+        for repository in repositories:
+            if repository:
+                formatted_project = self.api.format_project(project, repository, count, mongo)
+                mongo.insert_data(collection_name, formatted_project)
