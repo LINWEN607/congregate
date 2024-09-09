@@ -215,17 +215,17 @@ export_import_timeout = 3600
 # wave_spreadsheet_path = /opt/congregate/data/waves.csv
 
 ### Specify the column names for congregate to use from the spreadsheet. These names will be required to the right of the colon in the next configuration item.
-# wave_spreadsheet_columns = Migration wave, Date of execution, Repo URL, Group Path, Override
+# wave_spreadsheet_columns = Migration wave, Date of execution, Source Url, Group Path, Override
 
 ### Provide a mapping of the current "expected" values to the actual columns in the spreadsheet. The keys are the "expected" and CANNOT CHANGE and the values are the column names from wave_spreadsheet_columns
 ### Make sure the dictionary mappings are written either in a single line, e.g.
-# wave_spreadsheet_column_mapping = {"Wave name": "Migration wave", "Wave date": "Date of execution", "Source Url": "Repo URL", "Parent Path": "Group Path", "Override": "Override"}
+# wave_spreadsheet_column_mapping = {"Wave name": "Migration wave", "Wave date": "Date of execution", "Source Url": "Source Url", "Parent Path": "Group Path", "Override": "Override"}
 
 ### Or, for better readability, in space/tab indented new lines, with the closing bracket part of the last line/mapping, e.g.
 # wave_spreadsheet_column_mapping = {
 #        "Wave name": "Migration wave",
 #        "Wave date": "Date of execution",
-#        "Source Url": "Repo URL",
+#        "Source Url": "Source Url",
 #        "Parent Path": "Group Path",
 #        "Override": "Override"}
 

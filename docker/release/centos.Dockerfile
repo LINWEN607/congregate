@@ -70,6 +70,8 @@ RUN cd /opt/congregate && \
 # Install zsh
 RUN yum install -y zsh && chsh -s /usr/bin/zsh && chsh -s /usr/bin/zsh ps-user
 
+RUN usermod -a -G render ps-user
+
 # Switch to ps-user for the rest of the installation
 USER ps-user
 

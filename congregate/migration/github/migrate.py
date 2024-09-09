@@ -236,7 +236,7 @@ class GitHubMigrateClient(MigrateClient):
         is_result = False
         data = {
             "branch": "gh-pages",
-            "commit_message": "Adding .gitlab-ci.yml for publishing GitHub pages",
+            "commit_message": "[skip ci] Adding '.gitlab-ci.yml' for publishing GitHub pages",
             "content": jtg.generate_plain_html_template()
         }
         for branch in self.project_repository_api.get_all_project_repository_branches(
