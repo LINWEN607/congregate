@@ -85,8 +85,8 @@ class ReposClient(BaseClass):
         Leave org/team repo members empty ([]) as they are retrieved during staging.
         """
         repo_url = repo["url"] + ".git"
-        repo_path = repo['owner']['login']
-        repo_type = repo['owner']['__typename']
+        repo_path = dig(repo, 'owner', 'login')
+        repo_type = dig(repo, 'owner', '__typename')
         repo_name = repo.get('name')
         return {
             "id": repo.get("databaseId"),
@@ -96,7 +96,7 @@ class ReposClient(BaseClass):
                 "Jenkins": self.list_ci_sources_jenkins(repo_url, mongo) if self.config.jenkins_ci_source_host else [],
                 "TeamCity": self.list_ci_sources_teamcity(repo_url, mongo) if self.config.tc_ci_source_host else []},
             "namespace": {
-                "id": repo['owner']['id'],
+                "id": dig(repo, 'owner', 'id'),
                 "path": repo_path,
                 "name": repo_path,
                 "kind": "group" if repo_type == "Organization" else "user",
@@ -107,9 +107,9 @@ class ReposClient(BaseClass):
             "description": repo.get("description", ""),
             "isArchived": repo.get("isArchived"),
             "members": [] if org else self.add_repo_members(
-                repo["owner"]["__typename"],
-                repo["owner"]["login"],
-                repo["name"],
+                repo_type,
+                repo_path,
+                repo_name,
                 mongo)
         }
 
@@ -306,7 +306,7 @@ class ReposClient(BaseClass):
         return [{
             "name": b["name"],
                     "commit": {
-                        "id": b['target']['oid'],
+                        "id": dig(b, 'target', 'oid'),
             },
             "protected": b["branchProtectionRule"],
         } for b in branches]
