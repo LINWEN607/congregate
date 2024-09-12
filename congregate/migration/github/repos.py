@@ -29,6 +29,14 @@ class ReposClient(BaseClass):
         ((u"admin", False), (u"push", False), (u"pull", True)): 20
     }
 
+    REPO_PERMISSIONS_MAP_V4 = {
+        "ADMIN": 40,      # Equivalent to having admin rights
+        "MAINTAIN": 40,   # Equivalent to being a maintainer
+        "WRITE": 30,      # Equivalent to having push rights
+        "TRIAGE": 20,     # Equivalent to having triage rights
+        "READ": 20        # Equivalent to having read rights
+    }
+
     GROUP_TYPE = ["Organization", "Enterprise"]
 
     def __init__(self, host, token, processes=None):
@@ -62,7 +70,7 @@ class ReposClient(BaseClass):
                 f"NOT listing public repos on {self.config.source_host}")
         else:
             self.multi.start_multi_process_stream(
-                self.handle_retrieving_repos, self.repos_api.get_all_public_repos(), processes=processes, nestable=True)
+                self.handle_retrieving_repos, self.repos_api.get_all_public_repos_v4(), processes=processes, nestable=True)
 
     def handle_retrieving_repos(self, repo, mongo=None):
         if not mongo:
@@ -76,12 +84,12 @@ class ReposClient(BaseClass):
         Format public and org/team repos.
         Leave org/team repo members empty ([]) as they are retrieved during staging.
         """
-        repo_url = repo["html_url"] + ".git"
+        repo_url = repo["url"] + ".git"
         repo_path = dig(repo, 'owner', 'login')
-        repo_type = dig(repo, 'owner', 'type')
+        repo_type = dig(repo, 'owner', '__typename')
         repo_name = repo.get('name')
         return {
-            "id": repo.get("id"),
+            "id": repo.get("databaseId"),
             "path": repo_name,
             "name": repo_name,
             "ci_sources": {
@@ -91,19 +99,19 @@ class ReposClient(BaseClass):
                 "id": dig(repo, 'owner', 'id'),
                 "path": repo_path,
                 "name": repo_path,
-                "kind": "group" if repo_type in self.GROUP_TYPE else "user",
+                "kind": "group" if repo_type == "Organization" else "user",
                 "full_path": repo_path},
             "http_url_to_repo": repo_url,
-            "path_with_namespace": repo.get("full_name"),
-            "visibility": "private" if repo.get("private") else "public",
+            "path_with_namespace": repo.get("nameWithOwner"),
+            "visibility": repo.get("visibility"),
             "description": repo.get("description", ""),
-            # This request is extremely slow at scale and needs a refactor
-            # "members": []
+            "isArchived": repo.get("isArchived"),
             "members": [] if org else self.add_repo_members(
-                repo["owner"]["type"],
-                repo["owner"]["login"],
-                repo["name"],
-                mongo)}
+                repo_type,
+                repo_path,
+                repo_name,
+                mongo)
+        }
 
     def add_repo_members(self, kind, owner, repo, mongo):
         """
@@ -125,14 +133,14 @@ class ReposClient(BaseClass):
             elif kind == "User":
                 members = [{"login": owner}]
                 user_repo = safe_json_response(
-                    self.repos_api.get_repo(owner, repo))
+                    self.repos_api.get_repo_v4(owner, repo))
                 error, user_repo = is_error_message_present(user_repo)
                 if error or not user_repo:
                     self.log.error(
                         f"Failed to get JSON for user {owner} repo {repo}: {user_repo}")
                     return []
-                members[0]["permissions"] = self.REPO_PERMISSIONS_MAP[tuple(
-                    user_repo.get("permissions").items())]
+                members[0]["permissions"] = self.REPO_PERMISSIONS_MAP_V4.get(user_repo['data']['repository']['viewerPermission'], 0)
+
             return self.users.format_users(members, mongo)
         except KeyError as ke:
             self.log.error(
@@ -172,7 +180,7 @@ class ReposClient(BaseClass):
         """
         self.multi.start_multi_process_stream_with_args(
             self.handle_protected_branches,
-            self.repos_api.get_repo_branches(
+            self.repos_api.get_repo_branches_v4(
                 repo["namespace"],
                 repo["path"]),
             new_id,
@@ -180,7 +188,7 @@ class ReposClient(BaseClass):
         return True
 
     def handle_protected_branches(self, new_id, branch):
-        if branch["protected"]:
+        if branch["branchProtectionRule"]:
             single_branch = self.format_protected_branch(
                 new_id, branch["name"])
             r = self.gl_projects_api.protect_repository_branches(
@@ -298,33 +306,33 @@ class ReposClient(BaseClass):
         return [{
             "name": b["name"],
                     "commit": {
-                        "id": dig(b, 'commit', 'sha'),
+                        "id": dig(b, 'target', 'oid'),
             },
-            "protected": b["protected"],
+            "protected": b["branchProtectionRule"],
         } for b in branches]
 
     def transform_gh_pull_requests(self, pull_requests):
         return [{
             "title": pr["title"],
-            "description": dig(pr, 'head', 'repo', 'description'),
+            "description": pr["body"],
             "state": "opened" if pr["state"] == "open" else "closed",
             "created_at": pr["created_at"],
             "updated_at": pr["updated_at"],
             "author": {
-                "username": dig(pr, 'user', 'login'),
+                "username": dig(pr, 'author', 'login'),
             },
             "assignees": [{
                 "username": a["login"]
-            } for a in pr.get("assignees", [])],
+            } for a in pr['assignees']['nodes']],
             "work_in_progress": pr["draft"],
-            "milestone": pr["milestone"]
+            "milestone": pr["milestone"]["title"]
         } for pr in pull_requests]
 
     def transform_gh_tags(self, tags):
         return [{
             "name": t["name"],
             "commit": {
-                "id": dig(t, 'commit', 'sha'),
+                "id": dig(t, 'target', 'oid'),
             }
         } for t in tags]
 
@@ -341,14 +349,14 @@ class ReposClient(BaseClass):
     def transform_gh_releases(self, releases):
         return [{
             "name": r["name"],
-            "tag_name": r["tag_name"],
-            "description": r["body"],
-            "created_at": r["created_at"],
-            "released_at": r["published_at"],
+            "tag_name": r["tagName"],
+            "description": r["description"],
+            "created_at": r["createdAt"],
+            "released_at": r["publishedAt"],
             "author": {
-                "username": dig(r, 'author', 'login'),
+                "username": r["author"]["login"] if r["author"] else None,
             },
-            "upcoming_release": r["prerelease"],
+            "upcoming_release": r["isPrerelease"],
         } for r in releases]
 
     def transform_gh_pr_comments(self, pr_comments):
@@ -366,24 +374,24 @@ class ReposClient(BaseClass):
             "title": i["title"],
             "description": i["body"],
             "state": i.get("state", "closed"),
-            "created_at": i["created_at"],
-            "updated_at": i["updated_at"],
-            "closed_at": i["closed_at"],
+            "created_at": i["createdAt"],
+            "updated_at": i["updatedAt"],
+            "closed_at": i["closedAt"],
             "labels": [l["name"] for l in i.get("labels", [])],
-            "milestone": i["milestone"],
+            "milestone": i["milestone"]["title"] if i["milestone"] else None,
             "assignees": [a["login"] for a in i.get("assignees", [])],
             "author": {
-                "username": dig(i, 'user', 'login'),
+                "username": i["author"]["login"] if i["author"] else None,
             },
-            "assignee": i["assignee"],
-            "user_notes_count": i["comments"],
-            "discussion_locked": i["locked"],
+            "assignee": i["assignee"]["username"] if i["assignee"] else None,
+            "user_notes_count": i["comments"]["totalCount"],
+            "discussion_locked": i["discussionLocked"],
         } for i in issues]
 
     def archive_migrated_repo(self, new_id, repo):
         gh_repo = safe_json_response(
-            self.repos_api.get_repo(repo["namespace"], repo["path"]))
-        if gh_repo and gh_repo.get("archived"):
+            self.repos_api.get_repo_v4(repo["namespace"], repo["path"]))
+        if gh_repo and gh_repo.get("isArchived"):
             self.gl_projects_api.archive_project(
                 self.config.destination_host, self.config.destination_token, new_id)
             return True
@@ -412,7 +420,7 @@ class ReposClient(BaseClass):
         user_emails_dict = {}
         self.multi.start_multi_process_stream_with_args(
             self.handle_list_of_reviewers,
-            self.repos_api.get_repo_pulls(
+            self.repos_api.get_repo_pulls_v4(
                 owner,
                 repo),
             owner,
@@ -430,8 +438,7 @@ class ReposClient(BaseClass):
                 owner, repo, pull["number"])):
             for user in reviewers.get("users", []):
                 if not user_emails_dict.get(user['login']):
-                    single_user = safe_json_response(
-                        self.users_api.get_user(user["login"]))
+                    single_user = self.users_api.get_user_v4(user["login"])
                     if email := self.users.get_email_address(
                             single_user, None, mongo):
                         user_emails_dict[user['login']] = email

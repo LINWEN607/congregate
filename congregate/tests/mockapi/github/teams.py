@@ -2,11 +2,12 @@ class MockTeamsApi():
     def get_all_team_repos(self):
         return [
             {
-                "id": 8,
+                "databaseId": 8,
                 "node_id": "MDEwOlJlcG9zaXRvcnk4",
                 "name": "arrow",
-                "full_name": "org2/arrow",
-                "private": False,
+                "nameWithOwner": "org2/arrow",
+                "visibility": "private",
+                "isArchived": False,
                 "owner": {
                     "login": "org2",
                     "id": 9,
@@ -24,7 +25,7 @@ class MockTeamsApi():
                     "repos_url": "https://github.example.net/api/v3/users/org2/repos",
                     "events_url": "https://github.example.net/api/v3/users/org2/events{/privacy}",
                     "received_events_url": "https://github.example.net/api/v3/users/org2/received_events",
-                    "type": "Organization",
+                    "__typename": "Organization",
                     "site_admin": False
                 },
                 "html_url": "https://github.example.net/org2/arrow",
@@ -109,11 +110,12 @@ class MockTeamsApi():
                 }
             },
             {
-                "id": 9,
+                "databaseId": 9,
                 "node_id": "MDEwOlJlcG9zaXRvcnk5",
                 "name": "phaser",
-                "full_name": "org2/phaser",
-                "private": True,
+                "nameWithOwner": "org2/phaser",
+                "visibility": "private",
+                "isArchived": False,
                 "owner": {
                     "login": "org2",
                     "id": 9,
@@ -131,7 +133,7 @@ class MockTeamsApi():
                     "repos_url": "https://github.example.net/api/v3/users/org2/repos",
                     "events_url": "https://github.example.net/api/v3/users/org2/events{/privacy}",
                     "received_events_url": "https://github.example.net/api/v3/users/org2/received_events",
-                    "type": "Organization",
+                    "__typename": "Organization",
                     "site_admin": False
                 },
                 "html_url": "https://github.example.net/org2/phaser",

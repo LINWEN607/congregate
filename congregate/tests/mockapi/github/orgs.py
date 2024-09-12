@@ -2,39 +2,47 @@ class MockOrgsApi():
     def get_all_orgs(self):
         return [
             {
-                "login": "org1",
-                "id": 8,
-                "node_id": "MDEyOk9yZ2FuaXphdGlvbjg=",
-                "url": "https://github.example.net/api/v3/orgs/org1",
-                "repos_url": "https://github.example.net/api/v3/orgs/org1/repos",
-                "events_url": "https://github.example.net/api/v3/orgs/org1/events",
-                "hooks_url": "https://github.example.net/api/v3/orgs/org1/hooks",
-                "issues_url": "https://github.example.net/api/v3/orgs/org1/issues",
-                "members_url": "https://github.example.net/api/v3/orgs/org1/members{/member}",
-                "public_members_url": "https://github.example.net/api/v3/orgs/org1/public_members{/member}",
-                "avatar_url": "https://github.example.net/avatars/u/8?",
-                "description": None
+                "data": {
+                    "organization": {
+                        "login": "org1",
+                        "databaseId": 8,
+                        "node_id": "MDEyOk9yZ2FuaXphdGlvbjg=",
+                        "url": "https://github.example.net/api/v3/orgs/org1",
+                        "repos_url": "https://github.example.net/api/v3/orgs/org1/repos",
+                        "events_url": "https://github.example.net/api/v3/orgs/org1/events",
+                        "hooks_url": "https://github.example.net/api/v3/orgs/org1/hooks",
+                        "issues_url": "https://github.example.net/api/v3/orgs/org1/issues",
+                        "members_url": "https://github.example.net/api/v3/orgs/org1/members{/member}",
+                        "public_members_url": "https://github.example.net/api/v3/orgs/org1/public_members{/member}",
+                        "avatar_url": "https://github.example.net/avatars/u/8?",
+                        "description": None
+                    }
+                }
             },
             {
-                "login": "org2",
-                "id": 9,
-                "node_id": "MDEyOk9yZ2FuaXphdGlvbjk=",
-                "url": "https://github.example.net/api/v3/orgs/org2",
-                "repos_url": "https://github.example.net/api/v3/orgs/org2/repos",
-                "events_url": "https://github.example.net/api/v3/orgs/org2/events",
-                "hooks_url": "https://github.example.net/api/v3/orgs/org2/hooks",
-                "issues_url": "https://github.example.net/api/v3/orgs/org2/issues",
-                "members_url": "https://github.example.net/api/v3/orgs/org2/members{/member}",
-                "public_members_url": "https://github.example.net/api/v3/orgs/org2/public_members{/member}",
-                "avatar_url": "https://github.example.net/avatars/u/9?",
-                "description": None
+                "data": {
+                    "organization": {
+                        "login": "org2",
+                        "databaseId": 9,
+                        "node_id": "MDEyOk9yZ2FuaXphdGlvbjk=",
+                        "url": "https://github.example.net/api/v3/orgs/org2",
+                        "repos_url": "https://github.example.net/api/v3/orgs/org2/repos",
+                        "events_url": "https://github.example.net/api/v3/orgs/org2/events",
+                        "hooks_url": "https://github.example.net/api/v3/orgs/org2/hooks",
+                        "issues_url": "https://github.example.net/api/v3/orgs/org2/issues",
+                        "members_url": "https://github.example.net/api/v3/orgs/org2/members{/member}",
+                        "public_members_url": "https://github.example.net/api/v3/orgs/org2/public_members{/member}",
+                        "avatar_url": "https://github.example.net/avatars/u/9?",
+                        "description": None
+                    }
+                }
             }
         ]
 
     def get_org(self):
         return {
             "login": "org1",
-            "id": 8,
+            "databaseId": 8,
             "node_id": "MDEyOk9yZ2FuaXphdGlvbjg=",
             "url": "https://github.example.net/api/v3/orgs/org1",
             "repos_url": "https://github.example.net/api/v3/orgs/org1/repos",
@@ -72,15 +80,62 @@ class MockOrgsApi():
                 "seats": 0
             }
         }
+    
+    def get_org_v4(self):
+        return {
+            "data": {
+                "organization": {
+                    "login": "org1",
+                    "databaseId": 8,
+                    "node_id": "MDEyOk9yZ2FuaXphdGlvbjg=",
+                    "url": "https://github.example.net/api/v3/orgs/org1",
+                    "repos_url": "https://github.example.net/api/v3/orgs/org1/repos",
+                    "events_url": "https://github.example.net/api/v3/orgs/org1/events",
+                    "hooks_url": "https://github.example.net/api/v3/orgs/org1/hooks",
+                    "issues_url": "https://github.example.net/api/v3/orgs/org1/issues",
+                    "members_url": "https://github.example.net/api/v3/orgs/org1/members{/member}",
+                    "public_members_url": "https://github.example.net/api/v3/orgs/org1/public_members{/member}",
+                    "avatar_url": "https://github.example.net/avatars/u/8?",
+                    "description": None,
+                    "has_organization_projects": True,
+                    "has_repository_projects": True,
+                    "public_repos": 1,
+                    "public_gists": 0,
+                    "followers": 0,
+                    "following": 0,
+                    "html_url": "https://github.example.net/org1",
+                    "created_at": "2020-07-16T11:55:11Z",
+                    "updated_at": "2020-07-16T11:55:11Z",
+                    "type": "Organization",
+                    "total_private_repos": 1,
+                    "owned_private_repos": 2,
+                    "private_gists": 0,
+                    "disk_usage": 30001,
+                    "collaborators": 0,
+                    "billing_email": None,
+                    "default_repository_permission": "read",
+                    "members_can_create_repositories": True,
+                    "two_factor_requirement_enabled": False,
+                    "plan": {
+                        "name": "enterprise",
+                        "space": 976562499,
+                        "private_repos": 999999999999,
+                        "filled_seats": 3,
+                        "seats": 0
+                    }
+                }
+            }
+        }
 
     def get_all_org_repos(self):
         return [
             {
-                "id": 5,
+                "databaseId": 5,
                 "node_id": "MDEwOlJlcG9zaXRvcnk1",
                 "name": "googleapis",
-                "full_name": "org1/googleapis",
-                "private": False,
+                "nameWithOwner": "org1/googleapis",
+                "visibility": "private",
+                "isArchived": False,
                 "owner": {
                     "login": "org1",
                     "id": 8,
@@ -98,10 +153,10 @@ class MockOrgsApi():
                     "repos_url": "https://github.example.net/api/v3/users/org1/repos",
                     "events_url": "https://github.example.net/api/v3/users/org1/events{/privacy}",
                     "received_events_url": "https://github.example.net/api/v3/users/org1/received_events",
-                    "type": "Organization",
+                    "__typename": "Organization",
                     "site_admin": False
                 },
-                "html_url": "https://github.example.net/org1/googleapis",
+                "url": "https://github.example.net/org1/googleapis",
                 "description": None,
                 "fork": False,
                 "url": "https://github.example.net/api/v3/repos/org1/googleapis",
@@ -181,11 +236,12 @@ class MockOrgsApi():
                 }
             },
             {
-                "id": 6,
+                "databaseId": 6,
                 "node_id": "MDEwOlJlcG9zaXRvcnk2",
                 "name": "gradio",
-                "full_name": "org1/gradio",
-                "private": True,
+                "nameWithOwner": "org1/gradio",
+                "visibility": "private",
+                "isArchived": False,
                 "owner": {
                     "login": "org1",
                     "id": 8,
@@ -203,7 +259,7 @@ class MockOrgsApi():
                     "repos_url": "https://github.example.net/api/v3/users/org1/repos",
                     "events_url": "https://github.example.net/api/v3/users/org1/events{/privacy}",
                     "received_events_url": "https://github.example.net/api/v3/users/org1/received_events",
-                    "type": "Organization",
+                    "__typename": "Organization",
                     "site_admin": False
                 },
                 "html_url": "https://github.example.net/org1/gradio",
@@ -306,7 +362,7 @@ class MockOrgsApi():
                 "repos_url": "https://github.example.net/api/v3/users/bmay/repos",
                 "events_url": "https://github.example.net/api/v3/users/bmay/events{/privacy}",
                 "received_events_url": "https://github.example.net/api/v3/users/bmay/received_events",
-                "type": "User",
+                "__typename": "User",
                 "site_admin": False
             },
             {
@@ -326,7 +382,7 @@ class MockOrgsApi():
                 "repos_url": "https://github.example.net/api/v3/users/gitlab/repos",
                 "events_url": "https://github.example.net/api/v3/users/gitlab/events{/privacy}",
                 "received_events_url": "https://github.example.net/api/v3/users/gitlab/received_events",
-                "type": "User",
+                "__typename": "User",
                 "site_admin": True
             },
             {
@@ -346,7 +402,7 @@ class MockOrgsApi():
                 "repos_url": "https://github.example.net/api/v3/users/mlindsay/repos",
                 "events_url": "https://github.example.net/api/v3/users/mlindsay/events{/privacy}",
                 "received_events_url": "https://github.example.net/api/v3/users/mlindsay/received_events",
-                "type": "User",
+                "__typename": "User",
                 "site_admin": True
             },
             {
@@ -366,7 +422,7 @@ class MockOrgsApi():
                 "repos_url": "https://github.example.net/api/v3/users/nperic/repos",
                 "events_url": "https://github.example.net/api/v3/users/nperic/events{/privacy}",
                 "received_events_url": "https://github.example.net/api/v3/users/nperic/received_events",
-                "type": "User",
+                "__typename": "User",
                 "site_admin": True
             }
         ]
@@ -385,7 +441,7 @@ class MockOrgsApi():
                 "members_url": "https://github.example.net/api/v3/organizations/9/team/1/members{/member}",
                 "repositories_url": "https://github.example.net/api/v3/organizations/9/team/1/repos",
                 "permission": "pull",
-                "parent": None
+                "parentTeam": None
             },
             {
                 "name": "qa-child",
@@ -399,7 +455,7 @@ class MockOrgsApi():
                 "members_url": "https://github.example.net/api/v3/organizations/9/team/2/members{/member}",
                 "repositories_url": "https://github.example.net/api/v3/organizations/9/team/2/repos",
                 "permission": "pull",
-                "parent": {
+                "parentTeam": {
                     "name": "qa",
                     "id": 1,
                     "node_id": "MDQ6VGVhbTE=",
@@ -425,7 +481,7 @@ class MockOrgsApi():
                 "members_url": "https://github.example.net/api/v3/organizations/9/team/3/members{/member}",
                 "repositories_url": "https://github.example.net/api/v3/organizations/9/team/3/repos",
                 "permission": "pull",
-                "parent": {
+                "parentTeam": {
                     "name": "qa-child",
                     "id": 2,
                     "node_id": "MDQ6VGVhbTI=",
@@ -482,7 +538,7 @@ class MockOrgsApi():
                 "updated_at": "2020-07-16T12:04:56Z",
                 "type": "Organization"
             },
-            "parent": None
+            "parentTeam": None
         }
 
     def get_org_child_team(self):
@@ -526,7 +582,7 @@ class MockOrgsApi():
                 "updated_at": "2020-07-16T12:04:56Z",
                 "type": "Organization"
             },
-            "parent": {
+            "parentTeam": {
                 "name": "qa",
                 "id": 1,
                 "node_id": "MDQ6VGVhbTE=",
@@ -547,8 +603,9 @@ class MockOrgsApi():
                 "id": 8,
                 "node_id": "MDEwOlJlcG9zaXRvcnk4",
                 "name": "arrow",
-                "full_name": "org2/arrow",
-                "private": False,
+                "nameWithOwner": "org2/arrow",
+                "visibility": "private",
+                "isArchived": False,
                 "owner": {
                     "login": "org2",
                     "id": 9,
@@ -566,7 +623,7 @@ class MockOrgsApi():
                     "repos_url": "https://github.example.net/api/v3/users/org2/repos",
                     "events_url": "https://github.example.net/api/v3/users/org2/events{/privacy}",
                     "received_events_url": "https://github.example.net/api/v3/users/org2/received_events",
-                    "type": "Organization",
+                    "__typename": "Organization",
                     "site_admin": False
                 },
                 "html_url": "https://github.example.net/org2/arrow",
@@ -654,8 +711,9 @@ class MockOrgsApi():
                 "id": 9,
                 "node_id": "MDEwOlJlcG9zaXRvcnk5",
                 "name": "phaser",
-                "full_name": "org2/phaser",
-                "private": True,
+                "nameWithOwner": "org2/phaser",
+                "visibility": "private",
+                "isArchived": False,
                 "owner": {
                     "login": "org2",
                     "id": 9,
@@ -673,7 +731,7 @@ class MockOrgsApi():
                     "repos_url": "https://github.example.net/api/v3/users/org2/repos",
                     "events_url": "https://github.example.net/api/v3/users/org2/events{/privacy}",
                     "received_events_url": "https://github.example.net/api/v3/users/org2/received_events",
-                    "type": "Organization",
+                    "__typename": "Organization",
                     "site_admin": False
                 },
                 "html_url": "https://github.example.net/org2/phaser",
@@ -778,7 +836,7 @@ class MockOrgsApi():
                 "repos_url": "https://github.example.net/api/v3/users/gitlab/repos",
                 "events_url": "https://github.example.net/api/v3/users/gitlab/events{/privacy}",
                 "received_events_url": "https://github.example.net/api/v3/users/gitlab/received_events",
-                "type": "User",
+                "__typename": "User",
                 "site_admin": True
             },
             {
@@ -798,7 +856,7 @@ class MockOrgsApi():
                 "repos_url": "https://github.example.net/api/v3/users/pprokic/repos",
                 "events_url": "https://github.example.net/api/v3/users/pprokic/events{/privacy}",
                 "received_events_url": "https://github.example.net/api/v3/users/pprokic/received_events",
-                "type": "User",
+                "__typename": "User",
                 "site_admin": False
             }
         ]
@@ -817,7 +875,7 @@ class MockOrgsApi():
                 "members_url": "https://github.example.net/api/v3/organizations/9/team/2/members{/member}",
                 "repositories_url": "https://github.example.net/api/v3/organizations/9/team/2/repos",
                 "permission": "pull",
-                "parent": {
+                "parentTeam": {
                     "name": "qa",
                     "id": 1,
                     "node_id": "MDQ6VGVhbTE=",

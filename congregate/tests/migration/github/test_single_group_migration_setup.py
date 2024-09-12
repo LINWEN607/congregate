@@ -93,7 +93,7 @@ class Seed_GHE(BaseClass):
                 return True
 
     def _get_remote_orgs(self):
-        return self.orgs_api.get_all_orgs()
+        return self.orgs_api.get_all_orgs_v4()
 
     def do_it(self, repo):
         self.create_repo(repo)
