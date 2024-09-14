@@ -94,6 +94,14 @@ class BaseDiffClient(BaseClass):
         above is considered a success, and isn't worth looking at unless
         something comes up in User Acceptance Testing.  Items under 90% accuracy
         should merit further investigation.
+
+        This report does not currently take values for the following into account
+        for accuracy or overall accuracy.
+         - Total Number of Branches
+         - Total Number of Issues
+         - Total Number of Issue Comments
+         - Total Number of Merge Requests
+         - Total Number of Merge Request Comments
     """
 
     def __init__(self):
