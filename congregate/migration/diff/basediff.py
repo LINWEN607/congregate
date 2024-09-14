@@ -479,6 +479,66 @@ class BaseDiffClient(BaseClass):
             bgcolor = self.HEX_TITLE
         return bgcolor
 
+    def update_problematic_fields(self, html_file_path):
+        self.log.info(f"Starting the update of problematic fields in {html_file_path}")
+        
+        # Read the HTML file
+        with open(html_file_path, 'r', encoding='utf-8') as file:
+            soup = bs(file, 'html.parser')
+        
+        # Define the list of problematic fields
+        problematic_fields = [
+            "Total Number of Branches",
+            "Total Number of Issues",
+            "Total Number of Issue Comments",
+            "Total Number of Merge Requests",
+            "Total Number of Merge Request Comments"
+        ]
+        
+        # Loop over the problematic fields
+        for field in problematic_fields:            
+            # Find all the <td> elements that contain the problematic field names
+            field_tds = soup.find_all('td', string=re.compile(f".*{field}.*"))
+            
+            for field_td in field_tds:
+                # Find the next <td> (the one that contains the "N/A")
+                accuracy_td = field_td.find_next_sibling('td')
+                
+                if accuracy_td and "N/A" in accuracy_td.text:
+                    # Find the third <td> that contains source and destination values
+                    source_dest_td = accuracy_td.find_next_sibling('td')
+                    
+                    if source_dest_td:
+                        # Extract the source and destination values
+                        source_tag = source_dest_td.find('p', string=re.compile("source:"))
+                        dest_tag = source_dest_td.find('p', string=re.compile("destination:"))
+
+                        if source_tag and dest_tag:
+                            source = source_tag.text.replace('source: ', '').strip()
+                            destination = dest_tag.text.replace('destination: ', '').strip()
+
+                            # Handle None values as 100% accuracy
+                            if source == 'None' and destination == 'None':
+                                accuracy = 100.00
+                            else:
+                                try:
+                                    source_value = int(source)
+                                    dest_value = int(destination)
+                                    accuracy = 100.00 if source_value == dest_value else 0.00
+                                except ValueError:
+                                    self.log.warning(f"Non-integer values found for field: {field}")
+                                    continue
+
+                            # Update the accuracy field with the calculated percentage
+                            accuracy_td.clear()
+                            accuracy_td.append(f"{accuracy:.2f}%")
+
+        # Write the updated HTML back to the file
+        with open(html_file_path, 'w', encoding='utf-8') as file:
+            file.write(soup.prettify())
+
+        self.log.info(f"Problematic fields updated successfully in {html_file_path}")
+
     def generate_html_report(self, asset, diff, filepath, nested=False):
         filepath = f"{self.app_path}{filepath}"
         self.log.info(f"Writing HTML report to {filepath}")
@@ -652,6 +712,7 @@ class BaseDiffClient(BaseClass):
         soup.html.append(head)
         with open(filepath, "wb") as f:
             f.write(soup.prettify().encode())
+        self.update_problematic_fields(filepath)
 
     def asset_exists(self, endpoint, identifier):
         if identifier:
