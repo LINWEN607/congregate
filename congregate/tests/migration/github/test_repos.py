@@ -27,7 +27,7 @@ class ReposTests(unittest.TestCase):
         self.repos = ReposClient(
             host="https://github.company.com", token="123")
 
-    @patch.object(ReposApi, "get_repo")
+    @patch.object(ReposApi, "get_repo_v4")
     @patch.object(UsersClient, "format_users")
     @patch.object(ReposClient, "list_ci_sources_jenkins")
     @patch.object(ReposClient, "list_ci_sources_teamcity")
@@ -106,10 +106,11 @@ class ReposTests(unittest.TestCase):
                     "kind": "user",
                     "full_path": "gitlab"
                 },
+                "http_url_to_repo": "https://github.example.net/api/v3/repos/gitlab/website.git",
                 "path_with_namespace": "gitlab/website",
-                "http_url_to_repo": "https://github.example.net/gitlab/website.git",
-                "visibility": "public",
+                "visibility": "private",
                 "description": None,
+                "isArchived": False,
                 "members": formatted_users1
             },
             {
@@ -127,10 +128,11 @@ class ReposTests(unittest.TestCase):
                     "kind": "user",
                     "full_path": "pprokic"
                 },
+                "http_url_to_repo": "https://github.example.net/api/v3/repos/pprokic/pprokic-public-repo.git",
                 "path_with_namespace": "pprokic/pprokic-public-repo",
-                "http_url_to_repo": "https://github.example.net/pprokic/pprokic-public-repo.git",
-                "visibility": "public",
+                "visibility": "private",
                 "description": None,
+                "isArchived": False,
                 "members": formatted_users2
             }
         ]
@@ -139,7 +141,7 @@ class ReposTests(unittest.TestCase):
             self.assertEqual(
                 actual_projects[i].items(), expected_projects[i].items())
 
-    @patch.object(ReposApi, "get_repo")
+    @patch.object(ReposApi, "get_repo_v4")
     @patch.object(UsersClient, "format_users")
     @patch.object(ReposClient, "list_ci_sources_jenkins")
     @patch.object(ReposClient, "list_ci_sources_teamcity")
@@ -209,10 +211,11 @@ class ReposTests(unittest.TestCase):
                     "kind": "user",
                     "full_path": "gitlab"
                 },
-                "http_url_to_repo": "https://github.example.net/gitlab/website.git",
+                "http_url_to_repo": "https://github.example.net/api/v3/repos/gitlab/website.git",
                 "path_with_namespace": "gitlab/website",
-                "visibility": "public",
+                "visibility": "private",
                 "description": None,
+                "isArchived": False,
                 "members": formatted_users
             },
             {
@@ -230,10 +233,11 @@ class ReposTests(unittest.TestCase):
                     "kind": "user",
                     "full_path": "pprokic"
                 },
-                "http_url_to_repo": "https://github.example.net/pprokic/pprokic-public-repo.git",
+                "http_url_to_repo": "https://github.example.net/api/v3/repos/pprokic/pprokic-public-repo.git",
                 "path_with_namespace": "pprokic/pprokic-public-repo",
-                "visibility": "public",
+                "visibility": "private",
                 "description": None,
+                "isArchived": False,
                 "members": []
             }
         ]
@@ -355,10 +359,11 @@ class ReposTests(unittest.TestCase):
                     "kind": "group",
                     "full_path": "org2"
                 },
+                "http_url_to_repo": "https://github.example.net/api/v3/repos/org2/arrow.git",
                 "path_with_namespace": "org2/arrow",
-                "http_url_to_repo": "https://github.example.net/org2/arrow.git",
-                "visibility": "public",
+                "visibility": "private",
                 "description": None,
+                "isArchived": False,
                 "members": [],  # formatted_users1
             },
             {
@@ -376,10 +381,11 @@ class ReposTests(unittest.TestCase):
                     "kind": "group",
                     "full_path": "org3"
                 },
+                "http_url_to_repo": "https://github.example.net/api/v3/repos/org3/test-repo.git",
                 "path_with_namespace": "org3/test-repo",
-                "http_url_to_repo": "https://github.example.net/org3/test-repo.git",
-                "visibility": "public",
+                "visibility": "private",
                 "description": None,
+                "isArchived": False,
                 "members": [],  # formatted_users2
             }
         ]
@@ -428,9 +434,10 @@ class ReposTests(unittest.TestCase):
                     "kind": "group",
                     "full_path": "org2"
                 },
+                "http_url_to_repo": "https://github.example.net/api/v3/repos/org2/arrow.git",
                 "path_with_namespace": "org2/arrow",
-                "http_url_to_repo": "https://github.example.net/org2/arrow.git",
-                "visibility": "public",
+                "visibility": "private",
+                "isArchived": False,
                 "description": None,
                 "members": []
             },
@@ -449,9 +456,10 @@ class ReposTests(unittest.TestCase):
                     "kind": "group",
                     "full_path": "org3"
                 },
+                "http_url_to_repo": "https://github.example.net/api/v3/repos/org3/test-repo.git",
                 "path_with_namespace": "org3/test-repo",
-                "http_url_to_repo": "https://github.example.net/org3/test-repo.git",
-                "visibility": "public",
+                "visibility": "private",
+                "isArchived": False,
                 "description": None,
                 "members": []
             }
@@ -532,14 +540,14 @@ class ReposTests(unittest.TestCase):
     @patch('congregate.helpers.conf.Config.src_parent_group_path', new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
     @patch.object(ProjectsApi, "archive_project")
-    @patch.object(ReposApi, "get_repo")
+    @patch.object(ReposApi, "get_repo_v4")
     def test_archive_migrated_repo_true(self, mock_get_repo, mock_archive, mock_token, mock_host):
         mock_token.return_value = "test"
         mock_host.return_value = "host"
 
         mock_repo = MagicMock()
         type(mock_repo).status_code = PropertyMock(return_value=200)
-        mock_repo.json.return_value = self.mock_repos.get_repo()[0]
+        mock_repo.json.return_value = self.mock_repos.get_repo()[0]["data"]["repository"]
         mock_get_repo.return_value = mock_repo
 
         archive_repo = MagicMock()

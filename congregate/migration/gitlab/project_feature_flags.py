@@ -63,7 +63,8 @@ class ProjectFeatureFlagClient(BaseClass):
                     return False
 
                 # Rewrite strategies
-                self.rewrite_strategies(flag, user_xid_conversion)
+                if user_xid_conversion:
+                    self.rewrite_strategies(flag, user_xid_conversion)
 
                 modeled_flag = from_dict(data_class=ProjectFeatureFlagPayload, data=flag)
                 self.log.info(f"Moving feature flag {modeled_flag.to_dict()} from source {source_project_id} to {destination_project_id}")
