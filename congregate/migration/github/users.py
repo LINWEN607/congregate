@@ -30,10 +30,9 @@ class UsersClient(BaseClass):
         if self.config.src_parent_org or (is_github_dot_com(
                 self.config.source_host) and self.config.src_parent_org):
             users = []
-            for m in self.orgs_api.get_all_org_members(
+            for m in self.orgs_api.get_all_org_members_v4(
                     self.config.src_parent_org):
-                users.append(safe_json_response(
-                    self.users_api.get_user(m["login"])))
+                users.append(self.users_api.get_user_v4(m["login"]))
         else:
             users = self.users_api.get_all_users()
         self.multi.start_multi_process_stream_with_args(
@@ -44,14 +43,13 @@ class UsersClient(BaseClass):
         # unit test
         if not mongo:
             mongo = CongregateMongoConnector()
-        single_user = safe_json_response(
-            self.users_api.get_user(user["login"]))
+        single_user = self.users_api.get_user_v4(user["login"])
         error, single_user = is_error_message_present(single_user)
         if error or not single_user:
             self.log.error("Failed to get JSON for user {} ({})".format(
                 user["login"], single_user))
         else:
-            if single_user.get("type") != "Organization":
+            if single_user.get("__typename") != "Organization":
                 formatted_user = self.format_user(single_user, browser, mongo)
                 mongo.insert_data(
                     f"users-{strip_netloc(self.host)}", formatted_user)
@@ -60,8 +58,7 @@ class UsersClient(BaseClass):
     def format_users(self, users, mongo):
         data = []
         for user in users:
-            single_user = safe_json_response(
-                self.users_api.get_user(user["login"]))
+            single_user = self.users_api.get_user_v4(user["login"])
             error, single_user = is_error_message_present(single_user)
             if error or not single_user:
                 self.log.error("Failed to get JSON for user {} ({})".format(
@@ -75,13 +72,13 @@ class UsersClient(BaseClass):
 
     def format_user(self, single_user, github_browser, mongo):
         return {
-            "id": single_user["id"],
+            "id": single_user["databaseId"],
             "username": single_user["login"],
             "name": single_user["name"] or single_user["login"],
             "email": self.get_email_address(single_user, github_browser, mongo),
-            "avatar_url": single_user.get("avatar_url", ""),
-            "state": "blocked" if single_user.get("suspended_at") else "active",
-            "is_admin": single_user["site_admin"]
+            "avatar_url": single_user.get("avatarUrl", ""),
+            "state": "active", # Org members are always active.
+            "is_admin": single_user["isSiteAdmin"]
         }
 
     def get_email_address(self, single_user, github_browser, mongo):

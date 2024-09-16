@@ -87,6 +87,8 @@ RUN chmod +x congregate.sh && ln -s /opt/congregate/congregate.sh /home/ps-user/
 
 COPY docker/release/centos/*.conf /etc/supervisor/conf.d/
 
+RUN usermod -a -G render ps-user
+
 USER ps-user
 
 # Initialize congregate directories

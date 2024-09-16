@@ -55,8 +55,13 @@ class HooksClient(BaseClass):
                             add_resp = self.instance_api.add_instance_hook(
                                 self.config.destination_host, self.config.destination_token, shc)
                         if not isinstance(add_resp, Response) or add_resp.status_code != 201:
-                            self.log.error(
-                                f"Failed to create instance hook {shc}, with error:\n{add_resp} - {add_resp.text}")
+                            if add_resp:
+                                self.log.error(
+                                    f"Failed to create instance hook {shc}, with error:\n{add_resp} - {add_resp.text}")
+                            else:
+                                self.log.error(
+                                    f"Failed to create instance hook {shc}. No response was returned.")
+
             except TypeError as te:
                 self.log.error(f"Instance hooks {resp} {te}")
             except RequestException as re:

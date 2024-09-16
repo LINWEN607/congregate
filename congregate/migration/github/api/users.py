@@ -1,4 +1,5 @@
 from congregate.migration.github.api.base import GitHubApi
+from gitlab_ps_utils.misc_utils import safe_json_response
 
 
 class UsersApi():
@@ -38,3 +39,47 @@ class UsersApi():
         GitHub API v3 Doc: https://docs.github.com/en/rest/reference/rate-limit#get-rate-limit-status-for-the-authenticated-user
         """
         return self.api.generate_v3_get_request(self.host, "rate_limit")
+
+    def get_user_v4(self, login):
+        """
+        Get user details using GraphQL.
+        """
+        query = """
+        query($login: String!) {
+            user(login: $login) {
+                databaseId
+                login
+                name
+                email
+                avatarUrl
+                isSiteAdmin
+                __typename
+            }
+        }
+        """
+        variables = {
+            "login": login
+        }
+
+        response = safe_json_response(self.api.generate_v4_post_request(self.host, query, variables))
+        if response and 'data' in response:
+            return response['data']['user']
+        return None
+
+    def get_import_user_v4(self):
+        """
+        Get the authenticated user using GraphQL.
+        """
+        query = """
+        query {
+            viewer {
+                login
+                name
+                url
+                bio
+                avatarUrl
+                createdAt
+            }
+        }
+        """
+        return self.api.generate_v4_post_request(self.host, query)

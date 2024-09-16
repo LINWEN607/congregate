@@ -623,6 +623,20 @@ container-scan-build:debian:
         - frontend/package.json
         - docker/release/debian.Dockerfile
 
+container-scan-build:no-mongo:
+  stage: build
+  extends:
+    - .docker-build
+  variables:
+    DISTRO: "no-mongo"
+    RELEASE_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-no-mongo
+  rules:
+    - if: "$CI_PIPELINE_SOURCE != 'schedule'"
+      changes:
+        - pyproject.toml
+        - frontend/package.json
+        - docker/release/no-mongo.Dockerfile
+
 # Scanning the centos image
 container_scanning_custom:
   extends: container_scanning

@@ -170,9 +170,9 @@ class Config(BaseConfig):
                          default=None, obfuscated=True)
 
     @property
-    def source_token(self):
+    def source_token(self, obfuscate=True):
         return self.prop("SOURCE", "src_access_token",
-                         default=None, obfuscated=True)
+                         default=None, obfuscated=obfuscate)
 
     @property
     def source_token_array(self):
@@ -593,3 +593,7 @@ class Config(BaseConfig):
     @property
     def user_mapping_field(self):
         return self.prop("DESTINATION", "user_mapping_field", default="email")
+
+    @property
+    def ado_api_version(self):
+        return self.prop("SOURCE", "api_version", default="7.0")

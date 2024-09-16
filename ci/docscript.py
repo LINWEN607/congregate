@@ -45,9 +45,9 @@ for i, x in enumerate(arr):
         }
 
         if i != (arr_length - 1):
-            data["commit_message"] = "Uploading docs [skip-ci]"
+            data["commit_message"] = "[skip ci] Uploading docs"
         else:
-            data["commit_message"] = "Uploading docs files"
+            data["commit_message"] = "[skip ci] Uploading docs files"
 
         url = f"/api/v4/projects/{PID}/repository/files/{quote_plus(file_path)}"
         payload = json.dumps(data)

@@ -13,6 +13,7 @@ from congregate.tests.mockapi.gitlab.users import MockUsersApi as GLMockUsers
 from congregate.tests.mockapi.gitlab.settings import MockAppSettingsApi as GLMockSettings
 from congregate.tests.mockapi.github.users import MockUsersApi as GHMockUsers
 from congregate.tests.mockapi.bitbucket.users import MockUsersApi as BBSUsers
+from congregate.tests.mockapi.ado.users import MockUsersApi as ADOUsers
 from congregate.tests.mockapi.gitlab.token import invalid_token
 from congregate.tests.mockapi.gitlab.error import other_error
 
@@ -26,6 +27,7 @@ class ConfigurationValidationTests(unittest.TestCase):
         self.github_users = GHMockUsers()
         self.gl_settings = GLMockSettings()
         self.bbs_users = BBSUsers()
+        self.ado_users = ADOUsers()
         self.config = ConfigurationValidator(
             path="congregate/tests/cli/data/test_not_ext_src_parent_group_path_no_mirror_name_aws_default.conf")
         
@@ -511,6 +513,28 @@ class ConfigurationValidationTests(unittest.TestCase):
         # Capture warning stdout
         out, _ = self.capsys.readouterr()
         self.assertEqual(out, "Source token is currently assigned to a standard user. Some API endpoints may not behave correctly\n")
+
+    @responses.activate
+    # pylint: enable=no-member
+    @mock.patch.object(ConfigurationValidator, 'source_type',
+                       new_callable=mock.PropertyMock)
+    @mock.patch.object(ConfigurationValidator, 'source_host',
+                       new_callable=mock.PropertyMock)
+    @mock.patch("getpass.getpass")
+    def test_validate_ado_src_token_success(
+            self, secret, host, src_type):
+        secret.return_value = "test"
+        src_type.return_value = "azure devops"
+        host.return_value = "https://dev.azure.com/gitlab-ps"
+        self.config.src_token_validated_in_session = False
+        url_value = "https://dev.azure.com/gitlab-ps/_apis/ConnectionData?api-version=7.0"
+        # url.return_value = url_value
+        self.config.as_obj().set("SOURCE", "source_token", obfuscate("Enter secret: "))
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                      json=self.ado_users.get_connection_data(), status=200, content_type='text/json', match_querystring=True)
+        # pylint: enable=no-member
+        self.assertTrue(self.config.source_token, "test")
 
     @responses.activate
     # pylint: enable=no-member

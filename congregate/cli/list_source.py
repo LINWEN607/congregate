@@ -21,6 +21,9 @@ from congregate.migration.github.repos import ReposClient as GitHubRepos
 from congregate.migration.github.orgs import OrgsClient as GitHubOrgs
 from congregate.migration.github.users import UsersClient as GitHubUsers
 
+from congregate.migration.ado.projects import ProjectsClient as AdoProjects
+from congregate.migration.ado.groups import GroupsClient as AdoGroups
+
 from congregate.migration.jenkins.base import JenkinsClient as JenkinsData
 from congregate.migration.teamcity.base import TeamcityClient as TeamcityData
 
@@ -167,6 +170,26 @@ class ListClient(BaseClass):
                     mongo.dump_collection_to_file(p, f"{app}/data/{p}.json")
         mongo.close_connection()
 
+    def list_azure_devops_data(self): 
+        mongo, p, g, u = self.mongo_init()
+
+        # Find only projects with =<1 repo ( = project in GitLab)
+        if not self.skip_projects:
+            projects = AdoProjects()
+            projects.retrieve_project_info(processes=self.processes)
+            mongo.dump_collection_to_file(
+                p, f"{self.app_path}/data/projects.json")
+
+        # Find ADO projects with >1 repos ( = group in GitLab)
+
+        if not self.skip_groups:
+            groups = AdoGroups()
+            groups.retrieve_group_info(processes=self.processes)
+            mongo.dump_collection_to_file(
+                g, f"{self.app_path}/data/groups.json")
+
+        mongo.close_connection()
+
     def list_jenkins_data(self):
         mongo = CongregateMongoConnector()
         for i, single_jenkins_ci_source in enumerate(
@@ -223,6 +246,8 @@ class ListClient(BaseClass):
             self.list_gitlab_data()
         elif src_type == "github":
             self.list_github_data()
+        elif src_type == "azure devops":
+            self.list_azure_devops_data()
         else:
             self.log.warning(
                 f"Cannot list from {src_type} source type - {self.config.source_host}")
