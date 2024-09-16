@@ -710,9 +710,9 @@ class BaseDiffClient(BaseClass):
         head.append(script)
         head.append(style)
         soup.html.append(head)
+        self.update_problematic_fields(soup)
         with open(filepath, "wb") as f:
             f.write(soup.prettify().encode())
-        self.update_problematic_fields(soup)
 
     def asset_exists(self, endpoint, identifier):
         if identifier:
