@@ -488,6 +488,14 @@ class BaseDiffClient(BaseClass):
         return bgcolor
 
     def update_problematic_fields(self, soup):
+        '''
+        Currently the way the generate HTML file is created doesn't calculate
+        the fields listed below. I tried to fix it in the generate_html_report
+        and other fields but couldn't get it to work properly. This change is 
+        temprary and the best solution would be to re-write the generate html
+        file to use the data in the project_diff.json as it seems that data
+        is accurate.
+        '''
         self.log.info(f"Starting the update of problematic fields")
 
         # Define the list of problematic fields
