@@ -104,7 +104,7 @@ Instructions for user migration collapsed by default.
 * [ ] Copy `data/results/dry_run_user_migration.json` to `/opt/congregate/data/waves/user_wave/` and attach to this issue
 * [ ] Notify in the internal Slack channel dedicated to this migration you have completed dry run for the user wave
 
-#### 
+####
 
 #### Migrate users
 
@@ -432,7 +432,7 @@ For each migration attempt check if any project or group imports failed or have 
   * `data/logs/import_failed_relations.json`
   * `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log`
 
-#### 
+####
 
 ### Post Migration of Failed User, Group and Project Info
 
@@ -447,7 +447,7 @@ For each migration attempt check if any project or group imports failed or have 
 ### Post Migration
 
 * [ ] If you had to run multiple `congregate migrate` attempts to bring over failed users, groups, or projects, you can run `congregate migrate --only-post-migration-info` to create a unified results file without the need to run `stitch-results`
-* [ ] Once you have a complete results file, run the diff report `congregate --generate-diff --staged`
+* [ ] Once you have a complete results file, run the diff report `congregate generate-diff --staged`
 * [ ] Notify in the internal Slack channel dedicated to this migration you are running the diff report
 * [ ] Run `nohup ./congregate.sh generate-diff --staged > data/waves/wave_<insert_wave_number>/diff<insert-wave-here>.log 2>&1 &` to generate the various diff reports
   * **NOTE:** Make sure to have the correct `data/staged_*` and `data/results/*_results.json` files present

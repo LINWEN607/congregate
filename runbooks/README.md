@@ -10,7 +10,7 @@ Refer to various runbooks in this folder when conducting various types of migrat
 
 These runbooks currently get [automatically pushed](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/blob/master/.gitlab-ci.yml#L287) to the following projects to be used as issue templates:
 
-- [Migration Engagement Template](https://gitlab.com/gitlab-org/professional-services-automation/delivery-kits/migration-template)
+- [Migration Engagement Template](https://gitlab.com/gitlab-org/professional-services-automation/delivery-kits/migration-delivery-kits/migration-template)
 - [PS-Migration Project](https://gitlab.com/gitlab-com/customer-success/professional-services-group/ps-migration)
 
 ## General Troubleshooting
