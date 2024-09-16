@@ -487,13 +487,9 @@ class BaseDiffClient(BaseClass):
             bgcolor = self.HEX_TITLE
         return bgcolor
 
-    def update_problematic_fields(self, html_file_path):
-        self.log.info(f"Starting the update of problematic fields in {html_file_path}")
-        
-        # Read the HTML file
-        with open(html_file_path, 'r', encoding='utf-8') as file:
-            soup = bs(file, 'html.parser')
-        
+    def update_problematic_fields(self, soup):
+        self.log.info(f"Starting the update of problematic fields")
+
         # Define the list of problematic fields
         problematic_fields = [
             "Total Number of Branches",
@@ -504,15 +500,15 @@ class BaseDiffClient(BaseClass):
         ]
         
         # Loop over the problematic fields
-        for field in problematic_fields:            
+        for field in problematic_fields:
             # Find all the <td> elements that contain the problematic field names
             field_tds = soup.find_all('td', string=re.compile(f".*{field}.*"))
             
-            for field_td in field_tds:
+            for field_td in field_tds:           
                 # Find the next <td> (the one that contains the "N/A")
                 accuracy_td = field_td.find_next_sibling('td')
                 
-                if accuracy_td and "N/A" in accuracy_td.text:
+                if accuracy_td and "N/A" in accuracy_td.text:                 
                     # Find the third <td> that contains source and destination values
                     source_dest_td = accuracy_td.find_next_sibling('td')
                     
@@ -541,11 +537,7 @@ class BaseDiffClient(BaseClass):
                             accuracy_td.clear()
                             accuracy_td.append(f"{accuracy:.2f}%")
 
-        # Write the updated HTML back to the file
-        with open(html_file_path, 'w', encoding='utf-8') as file:
-            file.write(soup.prettify())
-
-        self.log.info(f"Problematic fields updated successfully in {html_file_path}")
+        self.log.info(f"Problematic fields updated successfully")
 
     def generate_html_report(self, asset, diff, filepath, nested=False):
         filepath = f"{self.app_path}{filepath}"
@@ -720,7 +712,7 @@ class BaseDiffClient(BaseClass):
         soup.html.append(head)
         with open(filepath, "wb") as f:
             f.write(soup.prettify().encode())
-        self.update_problematic_fields(filepath)
+        self.update_problematic_fields(soup)
 
     def asset_exists(self, endpoint, identifier):
         if identifier:
