@@ -98,6 +98,7 @@ workflow:
       - data/**/*diff*.json
       - data/**/*results.json
       - data/**/audit*.log
+      - ./**/*.tar.gz
       - api_json.log
       - importer.log
       - exceptions_json.log
