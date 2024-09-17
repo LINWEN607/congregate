@@ -32,7 +32,7 @@ class BulkImportsClient(BaseGitLabClient):
                 import_response = import_response.json()
                 self.log.info(f"Successfully triggered bulk import request with response: {import_response}")
                 self.log.info(f"total entity count: {total_entity_count}")
-                while len(list(self.bulk_import.get_bulk_import_entities(self.dest_host, self.dest_token, import_response.get('id')))) != total_entity_count:
+                while len(list(self.bulk_import.get_bulk_import_entities(self.dest_host, self.dest_token, import_response.get('id')))) >= total_entity_count:
                     self.log.debug(f"Waiting to see all {total_entity_count} entities populated.")
                     sleep(self.config.poll_interval)          
                 return (import_response.get('id'), list(self.bulk_import.get_bulk_import_entities(self.dest_host, self.dest_token, import_response.get('id'))), None)
@@ -158,7 +158,7 @@ class BulkImportsClient(BaseGitLabClient):
         )
 
 @shared_task(bind=True, name='trigger-bulk-import-task')
-def kick_off_bulk_import(self, payload, dry_run=True):
+def kick_off_bulk_import(payload, dry_run=True):
     payload = from_dict(data_class=BulkImportPayload, data=payload)
     dt_client = BulkImportsClient(payload.configuration.url, payload.configuration.access_token)
     dt_id, dt_entities, errors = dt_client.trigger_bulk_import(payload, dry_run=dry_run)
