@@ -7,7 +7,6 @@ from glob import glob
 from gitlab_ps_utils.misc_utils import get_dry_log, safe_json_response
 from gitlab_ps_utils.file_utils import download_file, is_gzip
 from gitlab_ps_utils.json_utils import json_pretty
-from gitlab_ps_utils.decorators import stable_retry
 
 from requests.exceptions import RequestException
 from requests_toolbelt.multipart.encoder import MultipartEncoder
@@ -645,7 +644,6 @@ class ImportExportClient(BaseGitLabClient):
                 sleep(wait_time)
                 continue
             break
-        self.log.info(f"{self.config.filesystem_path}/downloads/{new_file}")
         if not is_gzip(f"{self.config.filesystem_path}/downloads/{new_file}"):
             raise ValueError("Downloaded file is NOT a Gzip file.")
         self.log.info(
