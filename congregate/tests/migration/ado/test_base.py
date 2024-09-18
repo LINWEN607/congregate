@@ -2,8 +2,7 @@ import unittest
 from unittest.mock import Mock
 from pytest import mark
 
-from congregate.migration.ado.api.base import AzureDevOpsApiWrapper
-from congregate.migration.ado.api.projects import ProjectsApi
+from congregate.migration.ado.base import AzureDevOpsWrapper
 from congregate.migration.ado.api.repositories import RepositoriesApi
 
 from congregate.tests.mockapi.ado.projects import MockProjectsApi
@@ -17,7 +16,7 @@ class BaseTests(unittest.TestCase):
         self.mock_projects = MockProjectsApi()
         self.mock_groups = MockGroupsApi()
         self.mock_repositories = MockRepositoriesApi()
-        self.api = AzureDevOpsApiWrapper()
+        self.api = AzureDevOpsWrapper()
         self.repositories_api = RepositoriesApi()
         self.api.slugify = Mock(side_effect=lambda x: x.lower().replace(' ', '-'))
 

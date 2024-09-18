@@ -61,7 +61,6 @@ class GroupStageCLI(BaseStageClass):
             if self.config.source_type == "azure devops":
                 matches = [group for group in groups if group["id"] in groups_to_stage]
                 for match in matches:
-                    print(match)
                     self.log.info(
                         f"{get_dry_log(dry_run)}Staging group '{match['full_path']}' (ID: {match['id']})")
                     self.staged_groups.append(self.format_group(match))
