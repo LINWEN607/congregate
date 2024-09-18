@@ -197,17 +197,17 @@ class MigrateClient(BaseClass):
                 else:
                     self.log.info(
                         f"SKIP: Not migrating {state} user:\n{json_utils.json_pretty(user)}")
-                if response is not None:
-                    # NOTE: Persist 'inactive' user state regardless of domain
-                    # and creation status.
-                    if user_data.get("state").lower() in self.INACTIVE:
-                        self.users.block_user(user_data)
-                    new_user = self.users.handle_user_creation_status(
-                        response, user_data)
+            if response is not None or self.config.block_users_with_state_mismatch:
+                # NOTE: Persist 'inactive' user state regardless of domain
+                # and creation status.
+                if user_data.get("state").lower() in self.INACTIVE:
+                    self.users.block_user(user_data)
+                new_user = self.users.handle_user_creation_status(
+                    response, user_data)
             if not self.dry_run and self.config.source_type == "gitlab":
-                self.gl_user_creation(new_user, old_user, email, user)
+                self.gl_post_user_creation(new_user, old_user, email, user)
             if not self.dry_run and self.config.source_type == "bitbucket server":
-                self.bb_user_creation(new_user, username, email, user)
+                self.bb_post_user_creation(new_user, username, email, user)
         except RequestException as e:
             self.log.error(
                 f"Failed to create user {user_data}, with error:\n{e}")
@@ -217,7 +217,7 @@ class MigrateClient(BaseClass):
             self.log.error(print_exc(e))
         return new_user
 
-    def gl_user_creation(self, new_user, old_user, email, user):
+    def gl_post_user_creation(self, new_user, old_user, email, user):
         if new_user:
             found_user = new_user if new_user.get(
                 "id") is not None else mig_utils.find_user_by_email_comparison_without_id(email)
@@ -242,7 +242,7 @@ class MigrateClient(BaseClass):
                 "id": None
             }
 
-    def bb_user_creation(self, new_user, old_user, email, user):
+    def bb_post_user_creation(self, new_user, old_user, email, user):
         if new_user:
             found_user = new_user if new_user.get(
                 "id") is not None else mig_utils.find_user_by_email_comparison_without_id(email)
@@ -298,9 +298,9 @@ class MigrateClient(BaseClass):
                 f"{dry_log}Removing staged users on destination (hard_delete={self.hard_delete})")
             self.users.delete_users(
                 dry_run=self.dry_run, hard_delete=self.hard_delete)
-            
+
         # Unarchive previously active projects on source during rollback
-        if self.config.archive_logic and (not self.skip_projects or not self.skip_groups):    
+        if self.config.archive_logic and (not self.skip_projects or not self.skip_groups):
             self.log.info(
                 f"{dry_log}Unarchiving previously active projects on source due to rollback")
             self.projects.update_staged_projects_archive_state(
