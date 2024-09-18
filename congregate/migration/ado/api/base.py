@@ -1,6 +1,4 @@
 import requests
-import re
-import os
 
 from congregate.helpers.base_class import BaseClass
 from gitlab_ps_utils.decorators import stable_retry
@@ -10,7 +8,6 @@ from gitlab_ps_utils.misc_utils import generate_audit_log_message, safe_json_res
 
 log = myLogger(__name__)
 audit = audit_logger(__name__)
-
 
 class AzureDevOpsApiWrapper(BaseClass):
 
@@ -157,40 +154,3 @@ class AzureDevOpsApiWrapper(BaseClass):
 
         response = self.generate_get_request(api, params=params)
         return response.json().get("count", 0)
-
-
-    def slugify(self, text):
-        return re.sub(r'\s+', '-', re.sub(r'[^\w\s-]', '', text.lower())).strip('-')
-    
-
-    def format_project(self, project, repository, count, mongo):
-        self.project_groups = {}
-        path_with_namespace = self.slugify(project["name"])
-        if count > 1:
-            path_with_namespace = os.path.join(self.slugify(project["name"]), self.slugify(repository["name"]))
-
-        return {
-            "name": repository["name"],
-            "id": repository["id"],
-            "path": self.slugify(repository["name"]),
-            "path_with_namespace": path_with_namespace,
-            "visibility": project["visibility"],
-            "description": project.get("description", ""),
-            "members": [],
-            "projects": [],
-            "http_url_to_repo": repository["remoteUrl"],
-            "ssh_url_to_repo": repository["sshUrl"]
-        }
-
-    def format_group(self, project, mongo):
-        self.project_groups = {}
-        return {
-            "name": project["name"],
-            "id": project["id"],
-            "path": self.slugify(project["name"]),
-            "full_path": self.slugify(project["name"]),
-            "visibility": project["visibility"],
-            "description": project.get("description", ""),
-            "members": [],
-            "projects": []
-        }
