@@ -1,6 +1,5 @@
 from congregate.migration.ado.api.base import AzureDevOpsApiWrapper
 
-
 class ProjectsApi():
     def __init__(self):
         self.api = AzureDevOpsApiWrapper()
@@ -20,4 +19,3 @@ class ProjectsApi():
         Core REST API: https://learn.microsoft.com/en-us/rest/api/azure/devops/core/projects/list?view=azure-devops-rest-7.1&tabs=HTTP
         """
         return self.api.list_all("_apis/projects")
-

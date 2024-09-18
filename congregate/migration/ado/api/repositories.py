@@ -1,6 +1,5 @@
 from congregate.migration.ado.api.base import AzureDevOpsApiWrapper
 
-
 class RepositoriesApi():
     def __init__(self):
         self.api = AzureDevOpsApiWrapper()
@@ -20,4 +19,3 @@ class RepositoriesApi():
         Core REST API: https://learn.microsoft.com/en-us/rest/api/azure/devops/git/repositories/list?view=azure-devops-rest-7.0&tabs=HTTP
         """
         return self.api.list_all(f"{project_id}/_apis/git/repositories")
-

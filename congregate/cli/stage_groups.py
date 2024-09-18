@@ -63,7 +63,8 @@ class GroupStageCLI(BaseStageClass):
                 for match in matches:
                     self.log.info(
                         f"{get_dry_log(dry_run)}Staging group '{match['full_path']}' (ID: {match['id']})")
-                    self.staged_groups.append(self.format_group(match))
+                    self.append_data(
+                            match, i, groups_to_stage, dry_run=dry_run)
             else:
 
                 if groups_to_stage[0] in ["all", "."] or len(

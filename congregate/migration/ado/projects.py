@@ -1,18 +1,17 @@
-from gitlab_ps_utils.misc_utils import get_dry_log, get_timedelta, is_error_message_present, \
-    safe_json_response, strip_netloc
-
-from gitlab_ps_utils.json_utils import json_pretty
+from gitlab_ps_utils.misc_utils import strip_netloc
 
 from congregate.migration.ado.api.base import AzureDevOpsApiWrapper
+from congregate.migration.ado.base import AzureDevOpsWrapper
 from congregate.migration.ado.api.projects import ProjectsApi
 from congregate.migration.ado.api.repositories import RepositoriesApi
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.congregate_mdbc import CongregateMongoConnector, mongo_connection
+from congregate.helpers.congregate_mdbc import mongo_connection
 
 class ProjectsClient(BaseClass):
     
     def __init__(self):
         self.api = AzureDevOpsApiWrapper()
+        self.base_api = AzureDevOpsWrapper()
         self.projects_api = ProjectsApi()
         self.repositories_api = RepositoriesApi()
         super().__init__()
@@ -36,7 +35,7 @@ class ProjectsClient(BaseClass):
 
         for repository in self.repositories_api.get_all_repositories(project["id"]):
             if repository:
-                formatted_project = self.api.format_project(project, repository, count, mongo)
+                formatted_project = self.base_api.format_project(project, repository, count, mongo)
                 mongo.insert_data(collection_name, formatted_project)
 
 

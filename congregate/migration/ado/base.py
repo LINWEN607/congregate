@@ -7,6 +7,7 @@ from gitlab_ps_utils.misc_utils import strip_netloc
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.ado.api.repositories import RepositoriesApi
 
+
 class AzureDevOpsWrapper(BaseClass):
 
     def __init__(self, subset=False):
@@ -56,9 +57,10 @@ class AzureDevOpsWrapper(BaseClass):
             for repo in self.repositories_api.get_all_repositories(project["id"]):
                 # Save all project repos ID references as part of group metadata
                 repos.append(repo.get("id"))
-                mongo.insert_data(
-                    f"projects-{strip_netloc(self.config.source_host)}",
-                    self.format_project(project, repo, len(repos), mongo))
+                if mongo is not None:
+                    mongo.insert_data(
+                        f"projects-{strip_netloc(self.config.source_host)}",
+                        self.format_project(project, repo, len(repos), mongo))
             # Remove duplicate entries
             return list(set(repos))
         except RequestException as re:
