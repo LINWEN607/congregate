@@ -188,7 +188,7 @@ class AzureDevOpsApiWrapper(BaseClass):
             "name": project["name"],
             "id": project["id"],
             "path": self.slugify(project["name"]),
-            "path_with_namespace": self.slugify(project["name"]),
+            "full_path": self.slugify(project["name"]),
             "visibility": project["visibility"],
             "description": project.get("description", ""),
             "members": [],
