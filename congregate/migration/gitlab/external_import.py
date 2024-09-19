@@ -21,6 +21,43 @@ class ImportClient(BaseClass):
         self.projects = ProjectsApi()
         self.instance = InstanceApi()
 
+    def trigger_import_from_azure(self, pwn, dst_pwn, tn, project, dry_run=True):
+        """
+        Use the built-in GitLab importer to start a Azure Devops import.
+
+            :param pwn: (str) Source path with namespace
+            :param dst_pwn: (str) Destination path with namespace
+            :param tn: (str) Full destination target namespace
+            :return: (dict) Successful or failed result data
+        """
+        azure_repo = self.get_project_repo_from_full_path(pwn)
+        data = {
+            "name": project.get("name"),
+            "path": project.get("path"),
+            "import_url": project.get("http_url_to_repo"),
+            "initialize_with_readme": False
+        }
+
+        if not dry_run:
+            try:
+                resp = self.ext_import.import_from_bitbucket_server(
+                    self.config.destination_host, self.config.destination_token, data)
+                error, resp = is_error_message_present(resp)
+                if error or not resp:
+                    error = resp.get("message")
+                    self.log.error(
+                        f"Repo {azure_repo} import to {tn} failed with response {resp} and error {error}")
+                    return self.get_failed_result(dst_pwn, error)
+                return self.get_result_data(dst_pwn, resp)
+            except ValueError as ve:
+                self.log.error(
+                    f"Failed to import repo {azure_repo} to {tn} due to {ve}")
+                return self.get_failed_result(dst_pwn)
+        else:
+            data.pop("personal_access_token", None)
+            migration_dry_run("project", data)
+            return self.get_failed_result(dst_pwn, data)
+        
     def trigger_import_from_bb_server(self, pwn, dst_pwn, tn, dry_run=True):
         """
         Use the built-in GitLab importer to start a BitBucket Server import.
