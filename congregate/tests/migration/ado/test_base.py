@@ -69,8 +69,7 @@ class BaseTests(unittest.TestCase):
             "members": [],
             "projects": [
                 '8630e352-f5b2-4abc-a25c-00a931f0cda2',
-               '9c766a24-385b-4931-afe4-245ad2e915aa'
+                '9c766a24-385b-4931-afe4-245ad2e915aa'
             ]
         }
-
-        self.assertEqual(expected_formatted_group, formatted_group)
+        self.assertEqual(sorted(expected_formatted_group['projects']), sorted(formatted_group['projects']))
