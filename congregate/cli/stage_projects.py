@@ -69,50 +69,59 @@ class ProjectStageCLI(BaseStageClass):
         # If there is CLI or UI input
         if list(filter(None, projects_to_stage)):
             # Stage ALL
-            if projects_to_stage[0] in ["all", "."] or len(
-                    projects_to_stage) == len(projects):
+            if self.config.source_type == "azure devops":
+                projects = [project for project in projects if project["id"] in projects_to_stage]
                 for p in projects:
                     self.log.info(
                         f"{get_dry_log(dry_run)}Staging project '{p['path_with_namespace']}' (ID: {p['id']})")
-                    self.staged_projects.append(self.get_project_metadata(p))
-
-                for g in groups:
-                    self.log.info(
-                        f"{get_dry_log(dry_run)}Staging group '{g['full_path']}' (ID: {g['id']})")
-                    self.staged_groups.append(self.format_group(g))
-
-                for u in users:
-                    self.log.info(
-                        f"{get_dry_log(dry_run)}Staging user '{u['email']}' (ID: {u['id']})")
-                    self.staged_users.append(u)
-            # CLI range input
-            elif re.search(r"\d+-\d+", projects_to_stage[0]) is not None:
-                match = (re.search(r"\d+-\d+", projects_to_stage[0])).group(0)
-                start = int(match.split("-")[0])
-                if start != 0:
-                    start -= 1
-                end = int(match.split("-")[1])
-                for i in range(start, end):
-                    self.append_data(projects[i], projects_to_stage, p_range=range(
-                        start, end), dry_run=dry_run)
-            # Random selection
-            else:
-                for i, d in enumerate(projects_to_stage):
-                    # Hacky check for id or project name by explicitly checking
-                    # variable type
-                    try:
-                        # Retrieve group object from groups.json
-                        project = self.rewritten_projects[int(
-                            re.sub("[^0-9]", "", projects_to_stage[i]))]
-                    except ValueError:
-                        self.log.error(
-                            f"Please use a space delimited list of integers (project IDs), NOT {d}")
-                        sys.exit(os.EX_IOERR)
-                    except KeyError:
-                        self.log.error(f"Unknown project ID {d}")
-                        sys.exit(os.EX_DATAERR)
                     self.append_data(
-                        project, projects_to_stage, dry_run=dry_run)
+                            p, i, projects_to_stage, dry_run=dry_run)
+            else:
+
+                if projects_to_stage[0] in ["all", "."] or len(
+                        projects_to_stage) == len(projects):
+                    for p in projects:
+                        self.log.info(
+                            f"{get_dry_log(dry_run)}Staging project '{p['path_with_namespace']}' (ID: {p['id']})")
+                        self.staged_projects.append(self.get_project_metadata(p))
+
+                    for g in groups:
+                        self.log.info(
+                            f"{get_dry_log(dry_run)}Staging group '{g['full_path']}' (ID: {g['id']})")
+                        self.staged_groups.append(self.format_group(g))
+
+                    for u in users:
+                        self.log.info(
+                            f"{get_dry_log(dry_run)}Staging user '{u['email']}' (ID: {u['id']})")
+                        self.staged_users.append(u)
+                # CLI range input
+                elif re.search(r"\d+-\d+", projects_to_stage[0]) is not None:
+                    match = (re.search(r"\d+-\d+", projects_to_stage[0])).group(0)
+                    start = int(match.split("-")[0])
+                    if start != 0:
+                        start -= 1
+                    end = int(match.split("-")[1])
+                    for i in range(start, end):
+                        self.append_data(projects[i], projects_to_stage, p_range=range(
+                            start, end), dry_run=dry_run)
+                # Random selection
+                else:
+                    for i, d in enumerate(projects_to_stage):
+                        # Hacky check for id or project name by explicitly checking
+                        # variable type
+                        try:
+                            # Retrieve group object from groups.json
+                            project = self.rewritten_projects[int(
+                                re.sub("[^0-9]", "", projects_to_stage[i]))]
+                        except ValueError:
+                            self.log.error(
+                                f"Please use a space delimited list of integers (project IDs), NOT {d}")
+                            sys.exit(os.EX_IOERR)
+                        except KeyError:
+                            self.log.error(f"Unknown project ID {d}")
+                            sys.exit(os.EX_DATAERR)
+                        self.append_data(
+                            project, projects_to_stage, dry_run=dry_run)
         else:
             self.log.info("Staging empty list")
             return self.staged_users, self.staged_groups, self.staged_projects

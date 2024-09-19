@@ -40,7 +40,14 @@ class BaseTests(unittest.TestCase):
             "description": "",
             "members": [],
             "http_url_to_repo": "https://gitlab-ps@dev.azure.com/gitlab-ps/Azure%20Bicep%20Workshop/_git/Azure%20Bicep%20Workshop",
-            "ssh_url_to_repo": "git@ssh.dev.azure.com:v3/gitlab-ps/Azure%20Bicep%20Workshop/Azure%20Bicep%20Workshop"
+            "ssh_url_to_repo": "git@ssh.dev.azure.com:v3/gitlab-ps/Azure%20Bicep%20Workshop/Azure%20Bicep%20Workshop",
+            "namespace": {
+                "full_path": "azure-bicep-workshop",
+                "id": "20671faf-e1bd-4226-8172-0cdf0fdb7128",
+                "kind": "group",
+                "name": "Azure Bicep Workshop",
+                "path": "azure-bicep-workshop"
+            }
         }
         
         self.assertEqual(expected_formatted_project, formatted_project)

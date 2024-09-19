@@ -3,6 +3,7 @@ import os
 from requests.exceptions import RequestException
 
 from gitlab_ps_utils.misc_utils import strip_netloc
+from gitlab_ps_utils.dict_utils import dig
 
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.ado.api.repositories import RepositoriesApi
@@ -36,7 +37,14 @@ class AzureDevOpsWrapper(BaseClass):
             "description": project.get("description", ""),
             "members": [],
             "http_url_to_repo": repository["remoteUrl"],
-            "ssh_url_to_repo": repository["sshUrl"]
+            "ssh_url_to_repo": repository["sshUrl"],
+            "namespace": {
+                "id": dig(repository, 'project', 'id'),
+                "path": self.slugify(project["name"]),
+                "name": dig(repository, 'project', 'name'),
+                "kind": "group",
+                "full_path": path_with_namespace
+            },
         }
 
     def format_group(self, project, mongo):
