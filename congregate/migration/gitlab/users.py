@@ -618,28 +618,35 @@ class UsersClient(BaseClass):
                 "If both 'reset_password' and 'force_random_password' are False, the 'password' field has to be set")
         return user_model.to_dict()
 
-    def block_user(self, user_data):
+    def change_user_state(self, user_data, block=True):
         try:
             response = find_user_by_email_comparison_without_id(
                 user_data["email"])
             user_creation_data = self.get_user_creation_id_and_email(response)
             if user_creation_data:
-                block_response = self.users_api.block_user(
-                    self.config.destination_host,
-                    self.config.destination_token,
-                    user_creation_data["id"])
-                self.log.info(
-                    f"Blocking user {user_data['username']} email {user_data['email']} (status: {block_response})")
-                if isinstance(block_response, Response) and block_response.status_code == 201:
-                    self.add_blocked_user_admin_note(user_creation_data)
+                text = "Block" if block else "Unblock"
+                if block:
+                    response = self.users_api.block_user(
+                        self.config.destination_host,
+                        self.config.destination_token,
+                        user_creation_data["id"])
+                    if isinstance(response, Response) and response.status_code == 201:
+                        self.add_blocked_user_admin_note(user_creation_data)
+                    else:
+                        self.log.error(
+                            f"Failed to {text.lower()} user {user_data}, with response:\n{response} - {response.text}")
                 else:
-                    self.log.error(
-                        f"Failed to block user {user_data}, with response:\n{block_response} - {block_response.text}")
-                return block_response
+                    response = self.users_api.unblock_user(
+                        self.config.destination_host,
+                        self.config.destination_token,
+                        user_creation_data["id"])
+                self.log.info(
+                    f"{text}ing user '{user_data['username']}' email {user_data['email']} (status: {response})")
+                return response
             return None
         except RequestException as e:
             self.log.error(
-                f"Failed request to block user {user_data}, with error:\n{e}")
+                f"Failed request to {text.lower()} user {user_data}, with error:\n{e}")
             return None
 
     def add_blocked_user_admin_note(self, user):

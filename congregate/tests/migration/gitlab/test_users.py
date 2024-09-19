@@ -351,7 +351,7 @@ class UsersTests(unittest.TestCase):
 
         mock_search.return_value = []
 
-        self.assertEqual(self.users.block_user(
+        self.assertEqual(self.users.change_user_state(
             self.mock_users.get_dummy_user()), None)
 
     @patch('congregate.helpers.conf.Config.destination_host',
@@ -376,7 +376,7 @@ class UsersTests(unittest.TestCase):
         mock_block.return_value = user_block
 
         with self.assertLogs(self.users.log, level="ERROR"):
-            self.assertEqual(self.users.block_user(
+            self.assertEqual(self.users.change_user_state(
                 self.mock_users.get_dummy_user()).status_code, 403)
 
     @patch('congregate.helpers.conf.Config.destination_host',
@@ -398,7 +398,7 @@ class UsersTests(unittest.TestCase):
         mock_block.side_effect = RequestException()
 
         with self.assertLogs(self.users.log, level="ERROR"):
-            self.assertEqual(self.users.block_user(
+            self.assertEqual(self.users.change_user_state(
                 self.mock_users.get_dummy_user()), None)
 
     @patch('congregate.helpers.conf.Config.destination_host',
@@ -428,7 +428,7 @@ class UsersTests(unittest.TestCase):
         user_modify.json.return_value = self.mock_users.get_dummy_user_blocked()
         mock_modify.return_value = user_modify
 
-        self.assertEqual(self.users.block_user(
+        self.assertEqual(self.users.change_user_state(
             self.mock_users.get_dummy_user()).status_code, 201)
 
     @patch('congregate.helpers.conf.Config.destination_host',
@@ -456,7 +456,7 @@ class UsersTests(unittest.TestCase):
         mock_modify.side_effect = RequestException()
 
         with self.assertLogs(self.users.log, level="ERROR"):
-            self.assertEqual(self.users.block_user(
+            self.assertEqual(self.users.change_user_state(
                 self.mock_users.get_dummy_user()).status_code, 201)
 
     @patch('congregate.helpers.conf.Config.destination_host',
@@ -487,7 +487,7 @@ class UsersTests(unittest.TestCase):
         mock_modify.return_value = user_modify
 
         with self.assertLogs(self.users.log, level="ERROR"):
-            self.assertEqual(self.users.block_user(
+            self.assertEqual(self.users.change_user_state(
                 self.mock_users.get_dummy_user()).status_code, 201)
 
     def test_remove_inactive_users(self):

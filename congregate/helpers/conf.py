@@ -304,13 +304,13 @@ class Config(BaseConfig):
         return self.prop_bool("USER", "keep_inactive_users", default=True)
 
     @property
-    def block_users_with_state_mismatch(self):
+    def align_users_with_state_mismatch(self):
         """
-        Determines if we should block existing users with state mismatch.
-        E.g. "inactive" on source and "active" on destination.
+        Determines if we should (un)block existing users with state mismatch.
+        E.g. "inactive" on source and "active" on destination or the opposite.
         :return: The set config value or False as default.
         """
-        return self.prop_bool("USER", "block_users_with_state_mismatch", default=False)
+        return self.prop_bool("USER", "align_users_with_state_mismatch", default=False)
 
     @property
     def reset_password(self):
