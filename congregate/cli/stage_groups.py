@@ -59,14 +59,36 @@ class GroupStageCLI(BaseStageClass):
         if list(filter(None, groups_to_stage)):
             # Stage ALL
             if self.config.source_type == "azure devops":
-                matches = [group for group in groups if group["id"] in groups_to_stage]
-                for match in matches:
-                    self.log.info(
-                        f"{get_dry_log(dry_run)}Staging group '{match['full_path']}' (ID: {match['id']})")
-                    self.append_data(
-                            match, i, groups_to_stage, dry_run=dry_run)
-            else:
+                UUID_PATTERN = r'^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})(\s+[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})*$'
+                if groups_to_stage[0] in ["all", "."] or len(
+                        groups_to_stage) == len(groups):
+                    for p in projects:
+                        self.log.info(
+                            f"{get_dry_log(dry_run)}Staging project '{p['path_with_namespace']}' (ID: {p['id']})")
+                        self.staged_projects.append(self.get_project_metadata(p))
 
+                    for g in groups:
+                        self.log.info(
+                            f"{get_dry_log(dry_run)}Staging group '{g['full_path']}' (ID: {g['id']})")
+                        self.staged_groups.append(self.format_group(g))
+
+                    for u in users:
+                        self.log.info(
+                            f"{get_dry_log(dry_run)}Staging user '{u['email']}' (ID: {u['id']})")
+                        self.staged_users.append(u)
+                elif re.match(UUID_PATTERN, groups_to_stage[0]):
+                    groups = [group for group in groups if group["id"] in groups_to_stage]
+                    for g in groups:
+                        self.log.info(
+                            f"{get_dry_log(dry_run)}Staging group '{g['full_path']}' (ID: {g['id']})")
+                        self.append_data(
+                                g, i, groups_to_stage, dry_run=dry_run)
+                else:
+                    self.log.error(
+                        f"Please use a space delimited list of UUIDs (group IDs), NOT {groups_to_stage[0]}")
+                    sys.exit(os.EX_IOERR)
+
+            else:
                 if groups_to_stage[0] in ["all", "."] or len(
                         groups_to_stage) == len(groups):
                     for p in projects:

@@ -70,14 +70,36 @@ class ProjectStageCLI(BaseStageClass):
         if list(filter(None, projects_to_stage)):
             # Stage ALL
             if self.config.source_type == "azure devops":
-                projects = [project for project in projects if project["id"] in projects_to_stage]
-                for p in projects:
-                    self.log.info(
-                        f"{get_dry_log(dry_run)}Staging project '{p['path_with_namespace']}' (ID: {p['id']})")
-                    self.append_data(
-                            p, i, projects_to_stage, dry_run=dry_run)
-            else:
+                UUID_PATTERN = r'^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})(\s+[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})*$'
+                if projects_to_stage[0] in ["all", "."] or len(
+                        projects_to_stage) == len(projects):
+                    for p in projects:
+                        self.log.info(
+                            f"{get_dry_log(dry_run)}Staging project '{p['path_with_namespace']}' (ID: {p['id']})")
+                        self.staged_projects.append(self.get_project_metadata(p))
 
+                    for g in groups:
+                        self.log.info(
+                            f"{get_dry_log(dry_run)}Staging group '{g['full_path']}' (ID: {g['id']})")
+                        self.staged_groups.append(self.format_group(g))
+
+                    for u in users:
+                        self.log.info(
+                            f"{get_dry_log(dry_run)}Staging user '{u['email']}' (ID: {u['id']})")
+                        self.staged_users.append(u)
+                elif re.match(UUID_PATTERN, projects_to_stage[0]):
+                    projects = [project for project in projects if project["id"] in projects_to_stage]
+                    for p in projects:
+                        self.log.info(
+                            f"{get_dry_log(dry_run)}Staging project '{p['path_with_namespace']}' (ID: {p['id']})")
+                        self.append_data(
+                                p, i, projects_to_stage, dry_run=dry_run)
+                else:
+                    self.log.error(
+                        f"Please use a space delimited list of UUIDs (project IDs), NOT {projects_to_stage[0]}")
+                    sys.exit(os.EX_IOERR)
+
+            else:
                 if projects_to_stage[0] in ["all", "."] or len(
                         projects_to_stage) == len(projects):
                     for p in projects:
