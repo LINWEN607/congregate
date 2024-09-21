@@ -55,7 +55,7 @@ class BaseTests(unittest.TestCase):
     @patch('congregate.helpers.conf.Config.source_host', new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.source_token', new_callable=PropertyMock)
     def test_format_group(self, mock_ext_user_token, mock_ext_src_url):
-        mock_ext_src_url.return_value = "https://dev.azure.com/gitlab-ps/"
+        mock_ext_src_url.return_value = "https://dev.azure.com/gitlab-ps"
         mock_ext_user_token.return_value = "token"
 
         # Test the formatting of group object based on group's mockAPI
