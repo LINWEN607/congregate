@@ -18,11 +18,9 @@ class AzureDevOpsWrapper(BaseClass):
         self.skip_project_members = False
         super().__init__()
 
-
     def slugify(self, text):
         return re.sub(r'\s+', '-', re.sub(r'[^\w\s-]', '', text.lower())).strip('-')
     
-
     def format_project(self, project, repository, count, mongo):
         path_with_namespace = self.slugify(project["name"])
         if count > 1:
@@ -56,7 +54,6 @@ class AzureDevOpsWrapper(BaseClass):
             "visibility": project["visibility"],
             "description": project.get("description", ""),
             "members": [],
-            # "projects": []
             "projects": [] if self.subset else self.add_project_repos([], project, mongo)
         }
 

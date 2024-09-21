@@ -9,8 +9,8 @@ from gitlab_ps_utils.misc_utils import generate_audit_log_message, safe_json_res
 log = myLogger(__name__)
 audit = audit_logger(__name__)
 
-class AzureDevOpsApiWrapper(BaseClass):
 
+class AzureDevOpsApiWrapper(BaseClass):
     def _get_headers(self):
         return {
             "Authorization": f"Basic {self.config.source_token}",

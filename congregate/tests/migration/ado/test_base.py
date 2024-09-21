@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch, PropertyMock
 from pytest import mark
 
 from congregate.migration.ado.base import AzureDevOpsWrapper
@@ -52,10 +52,14 @@ class BaseTests(unittest.TestCase):
         
         self.assertEqual(expected_formatted_project, formatted_project)
 
-    def test_format_group(self):
+    @patch('congregate.helpers.conf.Config.source_host', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.source_token', new_callable=PropertyMock)
+    def test_format_group(self, mock_ext_user_token, mock_ext_src_url):
+        mock_ext_src_url.return_value = "https://dev.azure.com/gitlab-ps/"
+        mock_ext_user_token.return_value = "token"
 
         # Test the formatting of group object based on group's mockAPI
-        
+
         group = self.mock_groups.get_single_group()
         formatted_group = self.api.format_group(group, mongo=None)
 
