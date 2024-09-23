@@ -52,15 +52,12 @@ class BaseTests(unittest.TestCase):
         
         self.assertEqual(expected_formatted_project, formatted_project)
 
-    @patch('congregate.helpers.conf.Config.source_host', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.source_token', new_callable=PropertyMock)
-    def test_format_group(self, mock_ext_user_token, mock_ext_src_url):
-        mock_ext_src_url.return_value = "https://dev.azure.com/gitlab-ps"
-        mock_ext_user_token.return_value = "token"
-
-        # Test the formatting of group object based on group's mockAPI
+    @patch('congregate.migration.ado.api.repositories', new_callable=PropertyMock)
+    def test_format_group(self, mock_get_all_repositories):
 
         group = self.mock_groups.get_single_group()
+        mock_get_all_repositories.return_value = self.mock_repositories.get_all_repositories()
+        self.api.add_project_repos = Mock(return_value=['8630e352-f5b2-4abc-a25c-00a931f0cda2', '9c766a24-385b-4931-afe4-245ad2e915aa'])
         formatted_group = self.api.format_group(group, mongo=None)
 
         expected_formatted_group = {
