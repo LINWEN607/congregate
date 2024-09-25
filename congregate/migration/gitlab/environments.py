@@ -35,25 +35,39 @@ class EnvironmentsClient(DbOrHttpMixin, BaseGitLabClient):
                 src_id,
                 airgap=self.config.airgap,
                 airgap_import=self.config.airgap_import)
-            envs = iter(resp)
+
+            # Convert the response to a list, ensuring the generator is fully consumed
+            envs = list(resp)
+     
+            if not envs:
+                self.log.info(f"No environments found for project {name}")
+                return True  # Return True, since there is nothing to migrate
+
             self.log.info(f"Migrating project {name} environments")
             for env in envs:
+                # Check if env is actually a dictionary or object you can work with
+                if not isinstance(env, dict):
+                    self.log.error(f"Unexpected environment type for project {name}: {type(env)} - {env}")
+                    continue  # Skip this environment since it's not a dicitionary
                 error, env = is_error_message_present(env)
                 if error or not env:
                     self.log.error(
                         f"Failed to fetch environments ({env}) for project {name}")
                     return False
-                if create_resp := self.send_data(
+                create_resp = self.send_data(
                     self.projects.create_environment,
                     (self.dest_host, self.dest_token, dest_id),
                     'project_environments',
                     src_id,
                     self.generate_environment_data(env),
                     airgap=self.config.airgap,
-                    airgap_export=self.config.airgap_export):
+                    airgap_export=self.config.airgap_export
+                )
+                if create_resp:
+                    # Updating state with environment data
                     self.update_state(name, dest_id, env, create_resp)
 
-            # Migrate protected environments settings if there is any
+            # Migrate protected environments settings if there are any
             # Note: The import user should not be part of approvers or deployers because he is getting removed from the group later in the migration
             self.migrate_protected_environments_rules(src_id, dest_id)
 
