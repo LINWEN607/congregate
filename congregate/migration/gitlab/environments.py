@@ -54,17 +54,14 @@ class EnvironmentsClient(DbOrHttpMixin, BaseGitLabClient):
                     self.log.error(
                         f"Failed to fetch environments ({env}) for project {name}")
                     return False
-                create_resp = self.send_data(
+                if create_resp := self.send_data(
                     self.projects.create_environment,
                     (self.dest_host, self.dest_token, dest_id),
                     'project_environments',
                     src_id,
                     self.generate_environment_data(env),
                     airgap=self.config.airgap,
-                    airgap_export=self.config.airgap_export
-                )
-                if create_resp:
-                    # Updating state with environment data
+                    airgap_export=self.config.airgap_export):
                     self.update_state(name, dest_id, env, create_resp)
 
             # Migrate protected environments settings if there are any
