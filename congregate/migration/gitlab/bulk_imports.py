@@ -157,6 +157,8 @@ class BulkImportsClient(BaseGitLabClient):
             migrate_projects=None
         )
 
+# 'self' is in the function parameters due to the use of the 'bind' parameter in the decorator
+# See https://docs.celeryq.dev/en/latest/userguide/tasks.html#bound-tasks for more information
 @shared_task(bind=True, name='trigger-bulk-import-task')
 def kick_off_bulk_import(self, payload, dry_run=True):
     payload = from_dict(data_class=BulkImportPayload, data=payload)
