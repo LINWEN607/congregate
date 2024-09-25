@@ -158,7 +158,7 @@ class BulkImportsClient(BaseGitLabClient):
         )
 
 @shared_task(bind=True, name='trigger-bulk-import-task')
-def kick_off_bulk_import(payload, dry_run=True):
+def kick_off_bulk_import(self, payload, dry_run=True):
     payload = from_dict(data_class=BulkImportPayload, data=payload)
     dt_client = BulkImportsClient(payload.configuration.url, payload.configuration.access_token)
     dt_id, dt_entities, errors = dt_client.trigger_bulk_import(payload, dry_run=dry_run)

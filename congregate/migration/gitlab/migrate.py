@@ -729,6 +729,9 @@ class GitLabMigrateClient(MigrateClient):
         self.remove_import_user(dst_id, host=dest_host, token=dest_token)
         if self.config.airgap:
             delete_project_features(src_id)
+        
+        self.log.info(
+            f"Completed migrating additional source project '{src_path}' (ID: {src_id}) GitLab features")
         return results
 
     def export_single_project_features(self, project, src_host, src_token):
@@ -823,7 +826,11 @@ def post_migration_task(entity, dest_host, dest_token, mongo=None, dry_run=True)
             source_group = mongo.safe_find_one(group_col, {
                 'full_path': entity.source_full_path
             })
-            return client.migrate_single_group_features(
-                source_group['id'], entity.namespace_id, entity.destination_full_path)
+            if source_group:
+                return client.migrate_single_group_features(
+                    source_group['id'], entity.namespace_id, entity.destination_full_path)
+            else:
+                print(f"source_group was None. It could not be found in the {group_col} collection using the full_path of {entity.source_full_path}. entity object is {entity}")
+                return False
     else:
         return False
