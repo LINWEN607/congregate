@@ -17,14 +17,14 @@ This documentation covers setting up a Congregate instance to use Direct Transfe
 - On the VM, pull down or create [this docker-compose.yml](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/blob/master/docker/release/docker-compose.yml) file into it's own directory. This file will spin up a Congregate, MongoDB, and Redis container.
   - Congregate relies on MongoDB to store data during the export and import as well as track any export and import job statuses. Redis is used to act as the message broker for the export and import job requests.
 
-## 1. Install Docker and Docker Compose (if not already installed)
+### 1. Install Docker and Docker Compose (if not already installed)
 
 Follow the official Docker installation guide for your operating system:
 
 - [Install Docker](https://docs.docker.com/get-docker/)
 - [Install Docker Compose](https://docs.docker.com/compose/install/)
 
-## 2. Set Up Environment Variables
+### 2. Set Up Environment Variables
 
 Ensure the `$CONGREGATE_DATA` environment variable is set and points to your data directory. For example:
 
@@ -42,7 +42,7 @@ mkdir -p $CONGREGATE_DATA/redis-cache
 
 Create a `cache` directory in the same location where the docker-compose file will be run. This will be used for the Redis cache.
 
-## 3. Create and Enable Swap
+### 3. Create and Enable Swap
 
 To ensure that Docker services have sufficient memory, create a 2GB swap file (recommended):
 
@@ -60,7 +60,7 @@ To make the swap file persistent across reboots, add it to `/etc/fstab`:
 echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
 ```
 
-## 4. Start the Docker Services in Detached Mode
+### 4. Start the Docker Services in Detached Mode
 
 Navigate to the directory where the docker-compose.yml file exists:
 
@@ -70,7 +70,7 @@ Start the services in detached mode:
 docker-compose up -d
 ```
 
-## 5. Manual Permission Fix
+### 5. Manual Permission Fix
 
 After starting the containers, log into the `congregate` container as `root` to manually change the ownership of the `data` folder and the Docker socket to ensure `ps-user` has the necessary permissions.
 
@@ -83,7 +83,7 @@ exit
 
 This ensures `ps-user` has proper permissions to access the data directory and Docker socket, avoiding issues during the initialization process.
 
-## 6. Post-Initialization Steps
+### 6. Post-Initialization Steps
 
 After ensuring the permissions are set, follow the initialization steps to initialize and validate the configuration:
 
@@ -93,7 +93,7 @@ congregate validate-config
 supervisorctl start all
 ```
 
-## 7. Troubleshooting Supervisorctl
+### 7. Troubleshooting Supervisorctl
 
 If the `supervisorctl` command gives any errors like `connection refused`, attempt to reboot `supervisord` with the default config and try again:
 
