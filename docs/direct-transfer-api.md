@@ -115,7 +115,7 @@ dstn_access_token = <base64-encoded-token>
 import_user_id = <id-corresponding-to-the-owner-of-the-token>
 
 [APP]
-mongo_host = mongo
+mongo_host = congregate_mongo
 redis_host = redis
 direct_transfer = true
 ```
