@@ -144,7 +144,7 @@ class AzureDevopsMigrateClient(MigrateClient):
                     pwn, dstn_pwn, tn, project, dry_run=self.dry_run)
                 result_response = result[dstn_pwn]["response"]
                 if (isinstance(result_response, dict)) and (project_id := result_response.get("id")):
-                    full_path = result_response.get("full_path").strip("/")
+                    full_path = result_response.get("name_with_namespace").strip("/")
                     success = self.ext_import.wait_for_project_to_import(
                         full_path)
                     if success:

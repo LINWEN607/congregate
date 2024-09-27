@@ -4,6 +4,7 @@ from time import sleep
 from gitlab_ps_utils.misc_utils import is_error_message_present, safe_json_response
 from gitlab_ps_utils.dict_utils import dig
 from gitlab_ps_utils.json_utils import json_pretty
+from gitlab_ps_utils.string_utils import deobfuscate
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.migrate_utils import migration_dry_run, sanitize_project_path
@@ -30,17 +31,21 @@ class ImportClient(BaseClass):
             :param tn: (str) Full destination target namespace
             :return: (dict) Successful or failed result data
         """
-        azure_repo = self.get_project_repo_from_full_path(pwn)
+        azure_repo = project.get("path")
+        url = project.get("http_url_to_repo").rsplit("@")[1]
+        token = deobfuscate(self.config.source_token)
+        
         data = {
             "name": project.get("name"),
-            "path": project.get("path"),
-            "import_url": project.get("http_url_to_repo"),
+            "namespace_id": self.config.dstn_parent_id,
+            "import_url": "https://"+ self.config.source_username+token+"@"+ url,
             "initialize_with_readme": False
         }
 
+
         if not dry_run:
             try:
-                resp = self.ext_import.import_from_bitbucket_server(
+                resp = self.ext_import.import_from_azure(
                     self.config.destination_host, self.config.destination_token, data)
                 error, resp = is_error_message_present(resp)
                 if error or not resp:
