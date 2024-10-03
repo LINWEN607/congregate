@@ -592,7 +592,7 @@ class GitLabMigrateClient(MigrateClient):
                     import_id = ie_client.import_project(
                         project, dry_run=self.dry_run, group_path=group_path or tn)
                 if import_id and not self.dry_run:
-                     # Store the mapping
+                    # Store the mapping
                     self.project_id_mapping[src_id] = import_id
                     # Disable Shared CI
                     self.disable_shared_ci(dst_pwn, import_id)
@@ -671,15 +671,13 @@ class GitLabMigrateClient(MigrateClient):
                 src_id, dst_id, src_path)
 
             # Container Registries
-            if project.get("container_registry_enabled"):
-                if self.config.source_registry and self.config.destination_registry:
-                    results["container_registry"] = self.registries.migrate_registries(
-                        project)
+            if self.config.source_registry and self.config.destination_registry:
+                results["container_registry"] = self.registries.migrate_registries(
+                    project, dst_id)
 
             # Package Registries
-            if project.get("packages_enabled"):
-                results["package_registry"] = self.packages.migrate_project_packages(
-                    src_id, dst_id, src_path)
+            results["package_registry"] = self.packages.migrate_project_packages(
+                src_id, dst_id, src_path)
 
             # Hooks (Webhooks)
             results["project_hooks"] = self.hooks.migrate_project_hooks(
@@ -731,6 +729,9 @@ class GitLabMigrateClient(MigrateClient):
         self.remove_import_user(dst_id, host=dest_host, token=dest_token)
         if self.config.airgap:
             delete_project_features(src_id)
+        
+        self.log.info(
+            f"Completed migrating additional source project '{src_path}' (ID: {src_id}) GitLab features")
         return results
 
     def export_single_project_features(self, project, src_host, src_token):
@@ -775,7 +776,7 @@ class GitLabMigrateClient(MigrateClient):
                     src_id, None, path_with_namespace)
 
             return results
-        
+
     def migrate_linked_items_in_issues(self):
         # Read the mapping file from the json and put it inside the project_id_mapping variable
         project_id_mapping = mig_utils.get_project_id_mapping()
@@ -783,7 +784,8 @@ class GitLabMigrateClient(MigrateClient):
         self.issue_links_client.migrate_issue_links(project_id_mapping)
 
     def write_project_id_mapping_file(self):
-        write_json_to_file(f"{self.app_path}/data/project_id_mapping.json", self.project_id_mapping)
+        write_json_to_file(
+            f"{self.app_path}/data/project_id_mapping.json", self.project_id_mapping)
 
 
 @shared_task
@@ -824,7 +826,11 @@ def post_migration_task(entity, dest_host, dest_token, mongo=None, dry_run=True)
             source_group = mongo.safe_find_one(group_col, {
                 'full_path': entity.source_full_path
             })
-            return client.migrate_single_group_features(
-                source_group['id'], entity.namespace_id, entity.destination_full_path)
+            if source_group:
+                return client.migrate_single_group_features(
+                    source_group['id'], entity.namespace_id, entity.destination_full_path)
+            else:
+                print(f"source_group was None. It could not be found in the {group_col} collection using the full_path of {entity.source_full_path}. entity object is {entity}")
+                return False
     else:
         return False
