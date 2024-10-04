@@ -4,6 +4,8 @@
 
 This documentation covers setting up a Congregate instance to use Direct Transfer.
 
+[[_TOC_]]
+
 ## Pre-requisites
 
 - A VM with a container runtime (docker, podman, rancher, etc) and docker-compose installed
@@ -17,7 +19,7 @@ This documentation covers setting up a Congregate instance to use Direct Transfe
 - On the VM, pull down or create [this docker-compose.yml](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/blob/master/docker/release/docker-compose.yml) file into it's own directory. This file will spin up a Congregate, MongoDB, and Redis container.
   - Congregate relies on MongoDB to store data during the export and import as well as track any export and import job statuses. Redis is used to act as the message broker for the export and import job requests.
 
-### 1. Install Docker and Docker Compose (if not already installed)
+### 1. Install `docker` and `docker-compose` (if not already installed)
 
 Follow the official Docker installation guide for your operating system:
 
@@ -81,27 +83,35 @@ chown root:ps-user /var/run/docker.sock
 exit
 ```
 
-This ensures `ps-user` has proper permissions to access the data directory and Docker socket, avoiding issues during the initialization process.
+This ensures the `ps-user` has proper permissions to access the Congregate container's `data` directory and Docker socket, avoiding issues during the initialization process.
 
 ### 6. Post-Initialization Steps
 
-After ensuring the permissions are set, follow the initialization steps to initialize and validate the configuration:
+After ensuring the permissions are set, follow the initialization steps to:
 
-```bash
-congregate init
-congregate validate-config
-supervisorctl start all
-```
+1. initialize configuration file
 
-### 7. Troubleshooting Supervisorctl
+    ```bash
+    docker exec -it congregate /bin/bash
+    congregate init
+    ```
 
-If the `supervisorctl` command gives any errors like `connection refused`, attempt to reboot `supervisord` with the default config and try again:
+1. [configure Congregate](#example-configuration-for-direct-transfer-migrations-when-using-the-supplied-docker-composeyml-file)
+1. validate configuration
 
-```bash
-sudo supervisord -c /etc/supervisor/conf.d/supervisord.conf
-```
+    ```bash
+    congregate validate-config
+    supervisorctl start all
+    ```
 
-## Example configuration for direct transfer migrations (when using the supplied docker-compose.yml file)
+1. start and validate `supervisorctl`
+
+    ```bash
+    supervisorctl start all
+    supervisorctl status
+    ```
+
+#### Example configuration for direct transfer migrations (when using the supplied docker-compose.yml file)
 
 ```bash
 [SOURCE]
@@ -120,4 +130,14 @@ redis_host = redis
 direct_transfer = true
 ```
 
-If you are familiar with using file-based export/import for migrating data from one GitLab instance to another, you will notice the `[EXPORT]` section is completely omitted from this configuration.
+**NOTE:** If you are familiar with using file-based export/import for migrating data from one GitLab instance to another, you will notice the `[EXPORT]` section is completely omitted from this configuration.
+
+### Troubleshooting Supervisorctl
+
+`supervisorctl` can give errors like `connection refused`.
+
+Attempt to reboot `supervisord` from the container using the default config and try again:
+
+```bash
+sudo supervisord -c /etc/supervisor/conf.d/supervisord.conf
+```
