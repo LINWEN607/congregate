@@ -16,6 +16,7 @@ from gitlab_ps_utils.json_utils import json_pretty
 from congregate.helpers.migrate_utils import get_staged_user_projects
 from congregate.helpers.utils import is_dot_com
 from congregate.cli.stage_base import BaseStageClass
+from congregate.migration.ado import constants
 
 
 class ProjectStageCLI(BaseStageClass):
@@ -70,7 +71,6 @@ class ProjectStageCLI(BaseStageClass):
         if list(filter(None, projects_to_stage)):
             # Stage ALL
             if self.config.source_type == "azure devops":
-                UUID_PATTERN = r'^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})(\s+[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})*$'
                 if projects_to_stage[0] in ["all", "."] or len(
                         projects_to_stage) == len(projects):
                     for p in projects:
@@ -87,7 +87,7 @@ class ProjectStageCLI(BaseStageClass):
                         self.log.info(
                             f"{get_dry_log(dry_run)}Staging user '{u['email']}' (ID: {u['id']})")
                         self.staged_users.append(u)
-                elif re.match(UUID_PATTERN, projects_to_stage[0]):
+                elif re.match(constants.UUID_PATTERN, projects_to_stage[0]):
                     projects = [project for project in projects if project["id"] in projects_to_stage]
                     for p in projects:
                         self.log.info(

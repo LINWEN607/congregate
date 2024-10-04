@@ -13,6 +13,7 @@ from gitlab_ps_utils.list_utils import remove_dupes
 from gitlab_ps_utils.dict_utils import rewrite_list_into_dict
 
 from congregate.cli.stage_base import BaseStageClass
+from congregate.migration.ado import constants
 
 
 class GroupStageCLI(BaseStageClass):
@@ -59,7 +60,6 @@ class GroupStageCLI(BaseStageClass):
         if list(filter(None, groups_to_stage)):
             # Stage ALL
             if self.config.source_type == "azure devops":
-                UUID_PATTERN = r'^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})(\s+[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})*$'
                 if groups_to_stage[0] in ["all", "."] or len(
                         groups_to_stage) == len(groups):
                     for p in projects:
@@ -76,7 +76,7 @@ class GroupStageCLI(BaseStageClass):
                         self.log.info(
                             f"{get_dry_log(dry_run)}Staging user '{u['email']}' (ID: {u['id']})")
                         self.staged_users.append(u)
-                elif re.match(UUID_PATTERN, groups_to_stage[0]):
+                elif re.match(constants.UUID_PATTERN, groups_to_stage[0]):
                     groups = [group for group in groups if group["id"] in groups_to_stage]
                     for g in groups:
                         self.log.info(
