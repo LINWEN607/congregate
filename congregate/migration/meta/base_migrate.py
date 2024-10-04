@@ -364,6 +364,9 @@ class MigrateClient(BaseClass):
             if not isinstance(resp, Response) or resp.status_code not in [204, 404]:
                 self.log.error(
                     f"Failed to remove import user (ID: {import_uid}) from {gl_type} (ID: {dst_id}):\n{resp}")
+            else:
+                self.log.info(
+                    f"Successfully removed import user (ID: {import_uid}) from {gl_type} (ID: {dst_id})")
         except RequestException as re:
             self.log.error(
                 f"Failed to remove import user (ID: {import_uid}) from {gl_type} (ID: {dst_id}), with error:\n{re}")

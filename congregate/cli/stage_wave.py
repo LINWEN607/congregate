@@ -187,7 +187,7 @@ class WaveStageCLI(BaseStageClass):
         try:
             if p_type == "group" or (p_type == "user" and not is_dot_com(self.config.destination_host)):
                 if parent_group_id := dig(self.rewritten_projects.get(p_id), "namespace", "id"):
-                    if group_to_stage := self.rewritten_groups[parent_group_id]:
+                    if group_to_stage := self.rewritten_groups.get(parent_group_id):
                         self.log.info(
                             f"{get_dry_log(dry_run)}Staging group {group_to_stage['full_path']} (ID: {group_to_stage['id']})")
                         self.handle_parent_group(wave_row, group_to_stage)
@@ -198,13 +198,13 @@ class WaveStageCLI(BaseStageClass):
                         for member in group_to_stage["members"]:
                             self.append_member_to_members_list(
                                 [], member, dry_run)
-                        self.log.info(
-                            f"{get_dry_log(dry_run)}Staging project '{p_path}' (ID: {p_id})"
-                            f"[{len(self.staged_projects) + 1}/{len(p_range) if p_range else len(projects_to_stage)}]")
-                        self.staged_projects.append(project)
                     else:
                         self.log.warning(
                             f"Project '{p_path}' ({p_id}) parent group ID {parent_group_id} NOT found among listed groups")
+                    self.log.info(
+                        f"{get_dry_log(dry_run)}Staging {p_type} project '{p_path}' (ID: {p_id})"
+                        f"[{len(self.staged_projects) + 1}/{len(p_range) if p_range else len(projects_to_stage)}]")
+                    self.staged_projects.append(project)
                 else:
                     self.log.warning(
                         f"Project '{p_path}' ({p_id}) NOT found among listed projects")
