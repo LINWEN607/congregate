@@ -1,1 +1,1 @@
-runbooks/setting-up-direct-transfer-migrations.md
+../runbooks/setting-up-direct-transfer-migrations.md

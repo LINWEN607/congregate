@@ -565,8 +565,10 @@ class UsersClient(BaseClass):
             users = []
             for user in self.groups_api.get_all_group_members(
                     self.config.src_parent_id, host, token):
-                users.append(safe_json_response(
-                    self.users_api.get_user(user["id"], host, token)))
+                # Exclude bot users
+                if not "_bot_" in user.get("username", ""):
+                    users.append(safe_json_response(
+                        self.users_api.get_user(user.get("id"), host, token)))
         else:
             users = self.users_api.get_all_users(host, token)
         if self.config.direct_transfer:
