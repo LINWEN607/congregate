@@ -45,7 +45,7 @@ class ImportClient(BaseClass):
 
         if not dry_run:
             try:
-                resp = self.ext_import.import_from_azure(
+                resp = self.ext_import.import_from_repo(
                     self.config.destination_host, self.config.destination_token, data)
                 error, resp = is_error_message_present(resp)
                 if error or not resp:

@@ -140,7 +140,7 @@ class AzureDevopsMigrateClient(MigrateClient):
                         f"Skipping import. Repo {dstn_pwn} has already been imported")
             # New import
             else:
-                result = self.ext_import.trigger_import_from_azure(
+                result = self.ext_import.trigger_import_from_repo(
                     pwn, dstn_pwn, tn, project, dry_run=self.dry_run)
                 result_response = result[dstn_pwn]["response"]
                 if (isinstance(result_response, dict)) and (project_id := result_response.get("id")):
