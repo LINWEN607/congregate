@@ -1,68 +1,66 @@
 import unittest
-import warnings
-from unittest.mock import patch, PropertyMock, MagicMock
-from pytest import mark
-# mongomock is using deprecated logic as of Python 3.3
-# This warning suppression is used so tests can pass
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore")
-    import mongomock
-from congregate.helpers.congregate_mdbc import CongregateMongoConnector
-from congregate.tests.mockapi.ado.projects import MockProjectsApi
-from congregate.migration.ado.projects import ProjectsClient
-from congregate.migration.ado.api.projects import ProjectsApi
+from unittest.mock import Mock, patch
+from congregate.migration.ado.projects import ProjectsClient  # Replace with the actual class name
 
+class TestHandleRetrievingProject(unittest.TestCase):
 
-
-@mark.unit_test
-class ProjectsTests(unittest.TestCase):
     def setUp(self):
-        self.mock_projects = MockProjectsApi()
-        self.projects = ProjectsClient()
+        self.projects = ProjectsClient()  # Replace with the actual class name
+        self.projects.log = Mock()
+        self.projects.api = Mock()
+        self.projects.repositories_api = Mock()
+        self.projects.base_api = Mock()
+        self.projects.config = Mock()
+        self.projects.config.source_host = "https://dev.azure.com/organization"
 
-    @patch.object(CongregateMongoConnector, "close_connection")
-    @patch.object(ProjectsApi, "get_all_projects")
-    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.source_host', new_callable=PropertyMock)
-    @patch('congregate.helpers.conf.Config.source_token', new_callable=PropertyMock)
-    def test_handle_retrieving_project(self, mock_user_token, mock_src_host, mock_dest_url,
-                                   mock_get_all_projects, mock_close_connection):
-        mock_dest_url.side_effect = ["http://gitlab.com", "http://gitlab.com"]
-        mock_src_host.return_value = "https://dev.azure.com"
-        mock_user_token.return_value = "username:password"
-        mock_resp = MagicMock()
-        type(mock_resp).status_code = PropertyMock(return_value=200)
-        mock_resp.json.side_effect = [
-            {"displayId": "main"}, {"displayId": "main"}, {"displayId": "main"}, {"displayId": "main"}]
-        mock_get_all_projects.return_value = self.mock_projects.get_single_project()
-        expected_projects = [
-            {
-                "id": "20671faf-e1bd-4226-8172-0cdf0fdb7128",
-                "name": "Azure Bicep Workshop",
-                "url": "https://dev.azure.com/gitlab-ps/_apis/projects/20671faf-e1bd-4226-8172-0cdf0fdb7128",
-                "state": "wellFormed",
-                "revision": 29,
-                "visibility": "private",
-                "lastUpdateTime": "2024-04-11T21:11:29.787Z"
-                
-            }
-        ]
+    def test_handle_retrieving_project_no_project(self):
+        self.projects.handle_retrieving_project(None)
+        self.projects.log.error.assert_called_once_with("Failed to retrieve project information")
 
-        mock_close_connection.return_value = None
+    def test_handle_retrieving_project_no_repositories(self):
+        project = {"id": "project_id"}
+        self.projects.api.get_count.return_value = 0
+        
+        self.projects.handle_retrieving_project(project)
+        
+        self.projects.api.get_count.assert_called_once_with("project_id/_apis/git/repositories")
+        self.projects.repositories_api.get_all_repositories.assert_not_called()
 
-        listed_project = [self.mock_projects.get_single_project(
-        )]
+    @patch('congregate.migration.ado.projects.strip_netloc')
+    def test_handle_retrieving_project_with_repositories(self, mock_strip_netloc):
+        project = {"id": "project_id"}
+        repository = {"name": "repo1"}
+        mock_strip_netloc.return_value = "dev.azure.com-organization"
+        self.projects.api.get_count.return_value = 1
+        self.projects.repositories_api.get_all_repositories.return_value = [repository]
+        self.projects.base_api.format_project.return_value = {"formatted": "project"}
+        
+        mock_mongo = Mock()
+        
+        self.projects.handle_retrieving_project(project, mock_mongo)
+        
+        self.projects.api.get_count.assert_called_once_with("project_id/_apis/git/repositories")
+        self.projects.repositories_api.get_all_repositories.assert_called_once_with("project_id")
+        self.projects.base_api.format_project.assert_called_once_with(project, repository, 1, mock_mongo)
+        mock_mongo.insert_data.assert_called_once_with("projects-dev.azure.com-organization", {"formatted": "project"})
 
-        mongo = CongregateMongoConnector(client=mongomock.MongoClient)
-        for project in listed_project:
-            self.projects.handle_retrieving_project(project, mongo=mongo)
+    @patch('congregate.migration.ado.projects.strip_netloc')
+    def test_handle_retrieving_project_multiple_repositories(self, mock_strip_netloc):
+        project = {"id": "project_id"}
+        repositories = [{"name": "repo1"}, {"name": "repo2"}]
+        mock_strip_netloc.return_value = "dev.azure.com-organization"
+        self.projects.api.get_count.return_value = 2
+        self.projects.repositories_api.get_all_repositories.return_value = repositories
+        self.projects.base_api.format_project.side_effect = [{"formatted": "project1"}, {"formatted": "project2"}]
+        
+        mock_mongo = Mock()
+        
+        self.projects.handle_retrieving_project(project, mock_mongo)
+        
+        self.projects.api.get_count.assert_called_once_with("project_id/_apis/git/repositories")
+        self.projects.repositories_api.get_all_repositories.assert_called_once_with("project_id")
+        self.assertEqual(self.projects.base_api.format_project.call_count, 2)
+        self.assertEqual(mock_mongo.insert_data.call_count, 2)
+        mock_mongo.insert_data.assert_any_call("projects-dev.azure.com-organization", {"formatted": "project1"})
+        mock_mongo.insert_data.assert_any_call("projects-dev.azure.com-organization", {"formatted": "project2"})
 
-        actual_projects = [d for d, _ in mongo.stream_collection(
-            "groups-dev.azure.company.com")]
-        print(actual_projects)
-
-        for i, _ in enumerate(expected_projects):
-            self.assertEqual(
-                actual_projects[i].items(), expected_projects[i].items())
-
-   
