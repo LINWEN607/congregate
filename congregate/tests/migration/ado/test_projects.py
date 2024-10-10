@@ -21,7 +21,7 @@ class ProjectsTests(unittest.TestCase):
     def setUp(self):
         self.mock_projects = MockProjectsApi()
         self.projects = ProjectsClient()
-
+    # pylint: disable=no-member
     @patch.object(CongregateMongoConnector, "close_connection")
     @patch.object(RepositoriesApi, "get_all_repositories")
     @patch.object(AzureDevOpsApiWrapper, "get_count")
@@ -34,6 +34,7 @@ class ProjectsTests(unittest.TestCase):
         mock_dest_url.side_effect = ["http://gitlab.com", "http://gitlab.com"]
         mock_src_host.return_value = "https://dev.azure.com"
         mock_user_token.return_value = "username:password"
+        
         mock_resp = MagicMock()
         mock_get_count.return_value = 1
         type(mock_resp).status_code = PropertyMock(return_value=200)
@@ -41,6 +42,7 @@ class ProjectsTests(unittest.TestCase):
             {"displayId": "main"}, {"displayId": "main"}, {"displayId": "main"}, {"displayId": "main"}]
         
         mock_generate_get_request.return_value = mock_resp
+        # pylint: enable=no-member
 
         mock_get_all_repositories.return_value = self.mock_projects.get_all_repositories()
 
