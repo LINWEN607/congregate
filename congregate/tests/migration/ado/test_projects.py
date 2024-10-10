@@ -18,10 +18,10 @@ from congregate.migration.ado.api.base import AzureDevOpsApiWrapper
 
 @mark.unit_test
 class ProjectsTests(unittest.TestCase):
+    # pylint: disable=no-member
     def setUp(self):
         self.mock_projects = MockProjectsApi()
         self.projects = ProjectsClient()
-    # pylint: disable=no-member
     @patch.object(CongregateMongoConnector, "close_connection")
     @patch.object(RepositoriesApi, "get_all_repositories")
     @patch.object(AzureDevOpsApiWrapper, "get_count")
@@ -42,7 +42,6 @@ class ProjectsTests(unittest.TestCase):
             {"displayId": "main"}, {"displayId": "main"}, {"displayId": "main"}, {"displayId": "main"}]
         
         mock_generate_get_request.return_value = mock_resp
-        # pylint: enable=no-member
 
         mock_get_all_repositories.return_value = self.mock_projects.get_all_repositories()
 
