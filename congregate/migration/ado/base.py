@@ -72,3 +72,11 @@ class AzureDevOpsWrapper(BaseClass):
             self.log.error(
                 f"Failed to GET repos from project '{project}', with error:\n{re}")
             return None
+
+    def format_user(self, user):
+        return {
+            "id": user["descriptor"],
+            "username": user["principalName"],
+            "name": user["displayName"],
+            "email": user["mailAddress"].lower()
+        }

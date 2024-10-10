@@ -19,7 +19,7 @@ class ProjectsClient(BaseClass):
     def retrieve_project_info(self, processes=None):
 
         for project in self.projects_api.get_all_projects():
-                self.handle_retrieving_project(project)
+            self.handle_retrieving_project(project)
 
     @mongo_connection
     def handle_retrieving_project(self, project, mongo=None):

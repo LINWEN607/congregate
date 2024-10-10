@@ -17,11 +17,14 @@ class AzureDevOpsApiWrapper(BaseClass):
             "Content-Type": "application/json"
         }
 
-    def generate_request_url(self, api):
-        return f"{self.config.source_host}/{api}"
-    
+    def generate_request_url(self, api, sub_api=None):
+        base_url = self.config.source_host
+        if sub_api:
+            base_url = base_url.replace("https://", f"https://{sub_api}.")
+        return f"{base_url}/{api}"
+
     @stable_retry
-    def generate_get_request(self, api, params=None, description=None):
+    def generate_get_request(self, api, sub_api, params=None, description=None):
         """
         Generates GET request to ADO API.
         You will need to provide the access token, and specific api url.
@@ -33,7 +36,7 @@ class AzureDevOpsApiWrapper(BaseClass):
             :return: The response object *not* the json() or text()
         """
 
-        url = self.generate_request_url(api)
+        url = self.generate_request_url(api, sub_api)
         audit.info(generate_audit_log_message("GET", description, url))
         headers = self._get_headers()
         if params:
@@ -43,7 +46,7 @@ class AzureDevOpsApiWrapper(BaseClass):
         return requests.get(url, params=(params or {}), headers=headers, verify=self.config.ssl_verify)
 
     @stable_retry
-    def generate_post_request(self, api, data, description=None):
+    def generate_post_request(self, api, data, description=None, params=None):
         """
         Generates POST request to ADO API.
         You will need to provide the access token, and specific api url.
@@ -120,18 +123,17 @@ class AzureDevOpsApiWrapper(BaseClass):
         headers = self._get_headers()
         return requests.delete(url, headers=headers, verify=self.config.ssl_verify)
 
-
-    def list_all(self, api, params=None):
+    def list_all(self, api, params=None, sub_api=False):
         """
-        Generates a list of all projects, groups, users, etc.
+        Generates a list of all projects, groups, etc.
 
-            :param api: (str) Specific ADO API endpoint (ex: users)
+            :param api: (str) Specific ADO API endpoint (ex: projects)
             :param params: (str) Any query parameters needed in the request
-            :yields: Individual objects from the presumed array of data    
+            :yields: Individual objects from the presumed array of data
         """
 
         while True:
-            response = self.generate_get_request(api, params=params)
+            response = self.generate_get_request(api, sub_api, params=params)
             response.raise_for_status()
             data = safe_json_response(response)
             for item in data.get("value", []):
@@ -142,7 +144,6 @@ class AzureDevOpsApiWrapper(BaseClass):
 
             params["continuationToken"] = response.headers["x-ms-continuationtoken"]
 
-
     def get_count(self, api, params=None):
         """
         Generates a count of all projects, groups, users, etc.
@@ -152,5 +153,5 @@ class AzureDevOpsApiWrapper(BaseClass):
             :return: (int) Count of objects in the presumed array of data
         """
 
-        response = self.generate_get_request(api, params=params)
+        response = self.generate_get_request(api, sub_api=None, params=params)
         return response.json().get("count", 0)
