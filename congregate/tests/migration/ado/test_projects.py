@@ -18,7 +18,6 @@ from congregate.migration.ado.api.base import AzureDevOpsApiWrapper
 
 @mark.unit_test
 class ProjectsTests(unittest.TestCase):
-    # pylint: disable=no-member
     def setUp(self):
         self.mock_projects = MockProjectsApi()
         self.projects = ProjectsClient()
