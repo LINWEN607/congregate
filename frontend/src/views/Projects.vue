@@ -1,76 +1,73 @@
 <template>
-  <div class='projects'>
+  <div id='projects'>
     <h2>Stage Projects</h2>
-    <div class="table">
-      <vue-good-table
-            ref="projects-table"
-            id="projects-table"
-            :columns="columns"
-            :rows="rows"
-            :search-options="{ enabled: true }"
-            :select-options="{ enabled: true }"
-            :pagination-options="{ enabled: true, perPage: 25 }"
-            :line-numbers="true"
-        />
+    <div id="table-control"><button>Select All</button><button>Deselect All</button><span>Total Selected: {{ selected }}</span></div>
+    <div ref="table" id = "staging-table">
+      
     </div>
     <Footer msg='Stage' asset='stage-projects' />
   </div>
 </template>
 
 <script>
-import 'vue-good-table/dist/vue-good-table.css'
-import { VueGoodTable } from 'vue-good-table'
 import axios from 'axios'
+import {TabulatorFull as Tabulator} from 'tabulator-tables';
 import Footer from '@/components/Footer.vue'
+
 
 export default {
   name: 'Projects',
   components: {
-    VueGoodTable,
     Footer
   },
   data () {
     return {
+      tabulator: null, //variable to hold your table
+      tableData: [],
       columns: [
         {
-          label: 'ID',
+          title: 'ID',
           field: 'id',
-          type: 'number'
         },
         {
-          label: 'Name',
+          title: 'Name',
           field: 'name'
         },
         {
-          label: 'Namespace',
+          title: 'Namespace',
           field: 'path_with_namespace'
         },
         {
-          label: 'Type',
+          title: 'Type',
           field: 'namespace.kind'
         },
         {
-          label: 'Visibility',
+          title: 'Visibility',
           field: 'visibility'
         },
         {
-          label: 'Archived',
+          title: 'Archived',
           field: 'archived'
         },
         {
-          label: 'Last Activity',
+          title: 'Last Activity',
           field: 'last_activity_at'
         }
       ],
       rows: [],
-      selected: []
+      selected: 0
     }
   },
   mounted: function () {
     this.getData()
+    //instantiate Tabulator when element is mounted
+    
+    
     this.$emitter.on('stage-projects', event => {
       this.stageData()
     })
+
+    
   },
   beforeDestroy: function() {
     this.$emitter.off('stage-projects')
@@ -78,8 +75,33 @@ export default {
   methods: {
     getData: function () {
       axios.get(`${import.meta.env.VITE_API_ROOT}/api/data/projects`).then(response => {
-        this.rows = response.data
-        this.getStagedData()
+        this.tableData = response.data
+        this.tabulator = new Tabulator(this.$refs.table, {
+        // ajaxURL: `${import.meta.env.VITE_API_ROOT}/api/data/projects`,
+          data: this.tableData, //link data to table
+          reactiveData:true, //enable data reactivity
+          columns: this.columns, //define table columns
+          selectableRows: true,
+          rowHeader:{
+            formatter:"rowSelection", 
+            titleFormatter:"rowSelection", 
+            headerSort:false, 
+            resizable: false, 
+            frozen:true, 
+            headerHozAlign:"center", 
+            hozAlign:"center"
+          },
+          pagination: true,
+          paginationSize: 50
+        });
+        let that = this
+        this.tabulator.on("rowSelectionChanged", function(data, rows){
+          console.log("Row count changed")
+          that.selected = data.length
+          console.log(that.selected)
+        });
+        // this.tabulator.replaceData()
+        // this.getStagedData()
       }).catch(function (error) {
         console.log(error)
       })
@@ -127,3 +149,13 @@ export default {
   }
 }
 </script>
+<style>
+@import "../../node_modules/tabulator-tables/dist/css/tabulator.css";
+#staging-table {
+  margin-bottom: 10%;
+}
+#table-control {
+  width: 100%;
+  text-align: left;
+}
+</style>
