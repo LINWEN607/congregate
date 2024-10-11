@@ -87,6 +87,6 @@ class AzureDevOpsWrapper(BaseClass):
             "id": user["descriptor"],
             "username": self.create_valid_username(user["displayName"]),
             "name": user["displayName"],
-            "email": user["mailAddress"].lower()
-            # "state": "active" if user["active"] else ("blocked" if is_dot_com else "deactivated"),
+            "email": user["mailAddress"].lower(),
+            "state": "active"
         }

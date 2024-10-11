@@ -28,7 +28,7 @@ class AzureDevOpsApiWrapper(BaseClass):
         return urljoin(base_url + '/', api)
 
     @stable_retry
-    def generate_get_request(self, api, sub_api, params=None, description=None):
+    def generate_get_request(self, api, sub_api=None, params=None, description=None):
         """
         Generates GET request to ADO API.
         You will need to provide the access token, and specific api url.
@@ -127,7 +127,7 @@ class AzureDevOpsApiWrapper(BaseClass):
         headers = self._get_headers()
         return requests.delete(url, headers=headers, verify=self.config.ssl_verify)
 
-    def list_all(self, api, params=None, sub_api=False):
+    def list_all(self, api, params=None, sub_api=None):
         """
         Generates a list of all projects, groups, etc.
 

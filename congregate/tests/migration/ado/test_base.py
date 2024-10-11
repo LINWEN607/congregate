@@ -86,7 +86,8 @@ class BaseTests(unittest.TestCase):
             "email": "gitlab-ps@outlook.com",
             "id": "aad.NzE0YzVlNTItMmU1OC03ODgwLWEzMGQtMmZiYjE2ODdjZTk1",
             "name": "GitLab PS",
-            "username": "gitlab.ps"
+            "username": "gitlab.ps",
+            "state": "active"
         }
         self.assertEqual(expected_formatted_user, formatted_user)
 
