@@ -26,7 +26,6 @@ class UsersClient(AzureDevOpsWrapper):
             # unit test
             if not mongo:
                 mongo = CongregateMongoConnector()
-            print(self.format_user(user))
             if formatted_user := self.format_user(user):
                 mongo.insert_data(
                     f"users-{strip_netloc(self.config.source_host)}",

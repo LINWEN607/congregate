@@ -8,6 +8,7 @@ from congregate.migration.ado.api.repositories import RepositoriesApi
 from congregate.tests.mockapi.ado.projects import MockProjectsApi
 from congregate.tests.mockapi.ado.groups import MockGroupsApi
 from congregate.tests.mockapi.ado.repositories import MockRepositoriesApi
+from congregate.tests.mockapi.ado.users import MockUsersApi
 
 @mark.unit_test
 class BaseTests(unittest.TestCase):
@@ -16,6 +17,7 @@ class BaseTests(unittest.TestCase):
         self.mock_projects = MockProjectsApi()
         self.mock_groups = MockGroupsApi()
         self.mock_repositories = MockRepositoriesApi()
+        self.mock_users = MockUsersApi()
         self.api = AzureDevOpsWrapper()
         self.repositories_api = RepositoriesApi()
         self.api.slugify = Mock(side_effect=lambda x: x.lower().replace(' ', '-'))
@@ -74,3 +76,27 @@ class BaseTests(unittest.TestCase):
             ]
         }
         self.assertEqual(sorted(expected_formatted_group['projects']), sorted(formatted_group['projects']))
+
+    def test_format_user(self):
+
+        users = self.mock_users.get_all_users()
+        user = users["value"][0]
+        formatted_user = self.api.format_user(user)
+        expected_formatted_user = {
+            "email": "gitlab-ps@outlook.com",
+            "id": "aad.NzE0YzVlNTItMmU1OC03ODgwLWEzMGQtMmZiYjE2ODdjZTk1",
+            "name": "GitLab PS",
+            "username": "gitlab.ps"
+        }
+        self.assertEqual(expected_formatted_user, formatted_user)
+
+    def test_create_valid_username_basic(self):
+        users = self.mock_users.get_all_users()
+        user_display_name = users["value"][1]["displayName"]
+        expected_username = "john.v.doe"
+        self.assertEqual(self.api.create_valid_username(user_display_name), expected_username)
+
+    def test_create_valid_username_with_leading_trailing_dots(self):
+        user = " ..john v doe.. "
+        expected_username = "john.v.doe"
+        self.assertEqual(self.api.create_valid_username(user), expected_username)
