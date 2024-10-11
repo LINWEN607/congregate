@@ -16,11 +16,8 @@ class UsersClient(AzureDevOpsWrapper):
         """
         List and transform all Azure DevOps user to GitLab user metadata
         """
-        for user in self.users_api.get_all_users():
-            self.handle_retrieving_users(user)
-
-        # self.multi.start_multi_process_stream_with_args(
-        #     self.handle_retrieving_users, self.users_api.get_all_users(), processes=processes, nestable=True)
+        self.multi.start_multi_process_stream_with_args(
+            self.handle_retrieving_users, self.users_api.get_all_users(), processes=processes, nestable=True)
 
     def handle_retrieving_users(self, user, mongo=None):
         error, resp = is_error_message_present(user)
@@ -29,6 +26,7 @@ class UsersClient(AzureDevOpsWrapper):
             # unit test
             if not mongo:
                 mongo = CongregateMongoConnector()
+            print(self.format_user(user))
             if formatted_user := self.format_user(user):
                 mongo.insert_data(
                     f"users-{strip_netloc(self.config.source_host)}",

@@ -6,6 +6,7 @@ from gitlab_ps_utils.misc_utils import strip_netloc
 from gitlab_ps_utils.dict_utils import dig
 
 from congregate.helpers.base_class import BaseClass
+from congregate.helpers.utils import is_dot_com
 from congregate.migration.ado.api.repositories import RepositoriesApi
 
 
@@ -20,7 +21,15 @@ class AzureDevOpsWrapper(BaseClass):
 
     def slugify(self, text):
         return re.sub(r'\s+', '-', re.sub(r'[^\w\s-]', '', text.lower())).strip('-')
-    
+
+    def create_valid_username(self, input_string):
+        lowercase_string = input_string.lower()
+        dotted_string = lowercase_string.replace(' ', '.')
+        valid_username = re.sub(r'[^a-z.]', '', dotted_string)
+        valid_username = valid_username.strip('.')
+        valid_username = re.sub(r'\.+', '.', valid_username)
+        return valid_username
+
     def format_project(self, project, repository, count, mongo):
         path_with_namespace = self.slugify(project["name"])
         if count > 1:
@@ -76,7 +85,8 @@ class AzureDevOpsWrapper(BaseClass):
     def format_user(self, user):
         return {
             "id": user["descriptor"],
-            "username": user["principalName"],
+            "username": self.create_valid_username(user["displayName"]),
             "name": user["displayName"],
             "email": user["mailAddress"].lower()
+            # "state": "active" if user["active"] else ("blocked" if is_dot_com else "deactivated"),
         }

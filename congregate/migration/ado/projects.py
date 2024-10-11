@@ -7,8 +7,8 @@ from congregate.migration.ado.api.repositories import RepositoriesApi
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.congregate_mdbc import mongo_connection
 
+
 class ProjectsClient(BaseClass):
-    
     def __init__(self):
         self.api = AzureDevOpsApiWrapper()
         self.base_api = AzureDevOpsWrapper()

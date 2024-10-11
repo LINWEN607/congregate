@@ -1,3 +1,4 @@
+from urllib.parse import urljoin
 import requests
 
 from congregate.helpers.base_class import BaseClass
@@ -19,9 +20,12 @@ class AzureDevOpsApiWrapper(BaseClass):
 
     def generate_request_url(self, api, sub_api=None):
         base_url = self.config.source_host
+        if not base_url.startswith("https://"):
+            base_url = f"https://{base_url}"
         if sub_api:
-            base_url = base_url.replace("https://", f"https://{sub_api}.")
-        return f"{base_url}/{api}"
+            base_url_parts = base_url.split("://")
+            base_url = f"{base_url_parts[0]}://{sub_api}.{base_url_parts[1]}"
+        return urljoin(base_url + '/', api)
 
     @stable_retry
     def generate_get_request(self, api, sub_api, params=None, description=None):
@@ -138,11 +142,14 @@ class AzureDevOpsApiWrapper(BaseClass):
             data = safe_json_response(response)
             for item in data.get("value", []):
                 yield item
+            
+            if params is None:
+                params = {}
 
-            if "x-ms-continuationtoken" not in response.headers:
+            if not any(key.lower() == "x-ms-continuationtoken" for key in response.headers):
                 break
 
-            params["continuationToken"] = response.headers["x-ms-continuationtoken"]
+            params["continuationToken"] = response.headers["X-MS-ContinuationToken"]
 
     def get_count(self, api, params=None):
         """
