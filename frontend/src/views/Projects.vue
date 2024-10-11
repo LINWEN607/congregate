@@ -1,5 +1,5 @@
 <template>
-  <StageTable asset="projects" :columns="columns"/>
+  <StageTable asset="projects" :columns="columns" addEvent="stageProject" removeEvent="unstageProject"/>
 </template>
 
 <script>
