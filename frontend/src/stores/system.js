@@ -37,5 +37,13 @@ export const useSystemStore = defineStore('system', {
         unstageUser(uid) {
             this.stagedUsers.delete(uid)
         }
+    },
+    getters: {
+        totalSelectedProjects: (state) => state.stagedProjects.size,
+        totalSelectedGroups: (state) => state.stagedGroups.size,
+        totalSelectedUsers: (state) => state.stagedUsers.size,
+        // totalAssetCount(asset) {
+        //     return this[asset].size
+        // }
     }
 })

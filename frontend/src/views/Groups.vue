@@ -1,5 +1,12 @@
 <template>
-  <StageTable asset="groups" :columns="columns" addEvent="stageGroup" removeEvent="unstageGroup"/>
+  <StageTable 
+    asset="groups" 
+    :columns="columns" 
+    addEvent="stageGroup" 
+    removeEvent="unstageGroup" 
+    assetStore="stagedGroups"
+    storeGetter="totalSelectedGroups"
+  />
 </template>
 
 <script>

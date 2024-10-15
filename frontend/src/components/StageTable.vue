@@ -1,11 +1,11 @@
 <template>
     <div id='stage-table'>
-        <h2>Stage {{ asset }}</h2>
+        <h2>Stage {{ capitalizedAssetName }}</h2>
         <div id="table-control">
             <button @click="selectAll()">Select All</button>
             <button @click="deselectAll()">Deselect All</button>
             <input type="text" v-model="filterQuery">Filter
-            <span>Total Selected: {{ selected }}</span>
+            <span>Total Selected: {{ totalSelectedCount }}</span>
             <button v-on:click="stageData()" :id="asset"
                 class="stage_button">Stage {{ asset }}</button>
         </div>
@@ -26,19 +26,25 @@
         columns: Array,
         addEvent: String,
         removeEvent: String,
-        assetStore: String
+        assetStore: String,
+        storeGetter: String
     },
     components: {},
     computed: {
-        ...mapStores(useSystemStore)
+        ...mapStores(useSystemStore),
+        // totalSelectedCount() {
+        //     console.log("Noticed an update")
+        //     return this.systemStore[this.assetStore].size
+        // }
     },
     data () {
       return {
         tabulator: null, //variable to hold your table
         tableData: [],
         rows: [],
-        selected: 0,
-        filterQuery: ''
+        totalSelected: 0,
+        filterQuery: '',
+        capitalizedAssetName: ''
       }
     },
     mounted: function () {
@@ -49,9 +55,11 @@
             this.tabulator.setData(`${import.meta.env.VITE_API_ROOT}/api/data/${this.asset}`)
         })
         this.tabulator.on("rowSelected", (row) => {
+            console.log("Updating store")
             this.systemStore[this.addEvent](row._row.data.id)
         })
         this.tabulator.on("rowDeselected", (row) => {
+            console.log("Removing from store")
             this.systemStore[this.removeEvent](row._row.data.id)
         })
         this.tabulator.on("dataProcessed", (data) => {
@@ -66,6 +74,10 @@
                 this.tabulator.selectRow(rows)
             }
         });
+        this.capitalizedAssetName = this.asset[0].toUpperCase() + this.asset.slice(1)
+        // this.$emitter.on(`update${this.capitalizedAssetName}`, () => {
+        //     this.updateSelectedRowCount()
+        // })
       //instantiate Tabulator when element is mounted
     },
     watch: {
@@ -98,9 +110,9 @@
 
             return match;
         },
-        updateSelectedRowCount(data) {
-            this.selected = data.length
-            console.log(this.selected)
+        updateSelectedRowCount() {
+            this.totalSelected = this.assetStore.size
+            console.log(this.totalSelected)
         },
         initializeTable: function() {
             this.tabulator = new Tabulator(this.$refs.table, {
@@ -169,7 +181,6 @@
                 this.tabulator.getSelectedData().forEach(element => {
                     ids.push(element.id)
                 })
-                console.log(ids)
                 axios.post(`${import.meta.env.VITE_API_ROOT}/api/stage/${this.asset}`, String(ids)).then(response => {
                     console.log(response)
                     this.$emitter.emit('alert', {
