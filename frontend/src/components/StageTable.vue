@@ -45,11 +45,6 @@
         
         // this.getData()
         this.initializeTable()
-        this.tabulator.on("rowSelectionChanged", (data) => {
-            console.log(data)
-            // this.tabulator.selectRow(data[0].id-1)
-            // this.updateSelectedRowCount(data)
-        })
         this.tabulator.on("tableBuilt", () => {
             this.tabulator.setData(`${import.meta.env.VITE_API_ROOT}/api/data/${this.asset}`)
         })
@@ -59,7 +54,8 @@
         this.tabulator.on("rowDeselected", (row) => {
             this.systemStore[this.removeEvent](row._row.data.id)
         })
-        this.tabulator.on("dataLoaded", (data) => {
+        this.tabulator.on("dataProcessed", (data) => {
+            console.log(data)
             if (this.systemStore[this.assetStore].size > 0) {
                 let rows = []
                 for (let row of data) {
@@ -67,13 +63,7 @@
                         rows.push(row.id)
                     }
                 }
-                // let select = this.tabulator.selectRow(this.tabulator.getRows().filter(row => rows.includes(row.getData().id)))
-                console.log(this.tabulator.rowManager.rows)
-                let currentRows = this.tabulator.rowManager.getDisplayRows()
-                console.log(this.tabulator.rowManager.getDisplayRowIndex(currentRows[0]))
-                
-                console.log(this.tabulator.rowManager.findRow(currentRows[0]))
-                this.tabulator.selectRow(currentRows[0])
+                this.tabulator.selectRow(rows)
             }
         });
       //instantiate Tabulator when element is mounted
@@ -114,8 +104,8 @@
         },
         initializeTable: function() {
             this.tabulator = new Tabulator(this.$refs.table, {
-                debugEventsInternal:true,
-                debugEventsExternal:true,
+                // debugEventsInternal:true,
+                // debugEventsExternal:true,
                 index: "id",
                 ajaxURL: `${import.meta.env.VITE_API_ROOT}/api/data/${this.asset}`,
                 ajaxConfig:{
