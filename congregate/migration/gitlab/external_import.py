@@ -22,7 +22,7 @@ class ImportClient(BaseClass):
         self.projects = ProjectsApi()
         self.instance = InstanceApi()
 
-    def trigger_import_from_azure(self, pwn, dst_pwn, tn, project, dry_run=True):
+    def trigger_import_from_repo(self, pwn, dst_pwn, tn, project, dry_run=True):
         """
         Use the built-in GitLab importer to start a Azure Devops import.
 
