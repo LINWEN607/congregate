@@ -19,7 +19,7 @@ class UsersApi(GitLabApiWrapper):
         return self.api.generate_get_request(host, token, f"users/{uid}")
 
     def get_user_email(self, uid, host, token):
-        returned = self.get_user(uid, host, token).json() 
+        returned = self.get_user(uid, host, token).json()
         return returned.get("email", returned.get("public_email", ""))
 
     def get_current_user(self, host, token, headers=None):
@@ -57,6 +57,7 @@ class UsersApi(GitLabApiWrapper):
             :param: token: (str) Access token to GitLab instance
             :yield: Generator returning JSON of each result from GET /users
         """
+        # For future, as of 17.3, consider using '?humans=true' instead
         return self.api.list_all(host, token, "users?exclude_internal=true&without_project_bots=true")
 
     def create_user(self, host, token, data, message=None):

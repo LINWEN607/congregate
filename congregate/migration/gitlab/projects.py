@@ -12,6 +12,7 @@ from gitlab_ps_utils.misc_utils import get_dry_log, get_timedelta, \
     is_error_message_present, safe_json_response, strip_netloc, \
     get_decoded_string_from_b64_response_content, do_yml_sub, strip_scheme
 from gitlab_ps_utils.json_utils import json_pretty, read_json_file_into_object, write_json_to_file
+from gitlab_ps_utils.list_utils import remove_dupes
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.congregate_mdbc import mongo_connection, CongregateMongoConnector
 from congregate.migration.gitlab.api.projects import ProjectsApi
@@ -19,6 +20,7 @@ from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.users import UsersClient
+from congregate.migration.gitlab.contributor_retention import ContributorRetentionClient
 from congregate.migration.gitlab import constants
 from congregate.migration.mirror import MirrorClient
 from congregate.helpers.migrate_utils import get_dst_path_with_namespace,  get_full_path_with_parent_namespace, \
@@ -1037,6 +1039,45 @@ class ProjectsClient(BaseClass):
                            "message": "error", "exception": str(ex)}
         finally:
             return return_dict or {"id": import_id, "path": dst_path_with_namespace, "message": "success", "exception": None}
+
+    @mongo_connection
+    def list_staged_projects_contributors(self, dry_run=True, mongo=None):
+        start = time()
+        rotate_logs()
+        staged_projects = get_staged_projects()
+        dry_log = get_dry_log(dry_run)
+        open(f"{self.app_path}/data/staged_users.json", "w").close()
+        for sp in tqdm(staged_projects, total=len(staged_projects), colour=self.TANUKI, desc=self.DESC, unit=self.UNIT):
+            project_id = sp.get("id")
+            project_path = sp.get('path_with_namespace')
+            try:
+                c_retention = None
+                self.log.info(
+                    f"{dry_log}Listing project '{project_path}' contributors")
+                c_retention = ContributorRetentionClient(
+                    project_id, None, project_path, dry_run=self.dry_run)
+                if contributor_map := c_retention.build_map():
+                    authors = []
+                    for contributor, data in contributor_map.items():
+                        self.log.info(
+                            f"Retrieved contributor '{contributor}' from project '{project_path}'")
+                        authors.append(data)
+                    self.log.info(
+                        f"{dry_log}Appending project '{project_path}' contributors to file")
+                    if not dry_run:
+                        # mongo.insert_data(
+                        #     f"colaborators-{strip_netloc(self.config.source_host)}", data)
+                        # mongo.close_connection()
+                        with open(f"{self.app_path}/data/staged_users.json", "a") as f:
+                            json.dump(authors, f, indent=4)
+                else:
+                    self.log.info(
+                        f"No contributors found for project '{project_path}'")
+            except RequestException as re:
+                self.log.error(
+                    f"Failed to list project '{project_path}' contributors, with error:\n{re}")
+                continue
+        add_post_migration_stats(start, log=self.log)
 
 
 @shared_task(name='retrieve-projects')

@@ -8,8 +8,8 @@ from json import loads as json_loads
 from traceback import print_exc
 from requests.exceptions import RequestException
 
-from gitlab_ps_utils import json_utils, misc_utils
-from gitlab_ps_utils.json_utils import write_json_to_file
+from gitlab_ps_utils.misc_utils import safe_json_response, strip_netloc, get_dry_log
+from gitlab_ps_utils.json_utils import write_json_to_file, json_pretty
 from celery import shared_task
 from dacite import from_dict
 
@@ -148,7 +148,7 @@ class GitLabMigrateClient(MigrateClient):
             g for g in staged_groups if mig_utils.is_top_level_group(g)]
         staged_subgroups = [
             g for g in staged_groups if not mig_utils.is_top_level_group(g)]
-        dry_log = misc_utils.get_dry_log(self.dry_run)
+        dry_log = get_dry_log(self.dry_run)
         if staged_top_groups or (staged_subgroups and self.subgroups_only):
             mig_utils.validate_groups_and_projects(staged_groups)
             if self.stream_groups:
@@ -176,12 +176,12 @@ class GitLabMigrateClient(MigrateClient):
             if failed := mig_utils.get_failed_export_from_results(
                     export_results):
                 self.log.warning(
-                    f"SKIP: Groups that failed to export or already exist on destination:\n{json_utils.json_pretty(failed)}")
+                    f"SKIP: Groups that failed to export or already exist on destination:\n{json_pretty(failed)}")
 
             # Append total count of groups exported
             export_results.append(mig_utils.get_results(export_results))
             self.log.info(
-                f"### {dry_log}Group export results ###\n{json_utils.json_pretty(export_results)}")
+                f"### {dry_log}Group export results ###\n{json_pretty(export_results)}")
 
             # Filter out the failed ones
             staged_top_groups = mig_utils.get_staged_groups_without_failed_export(
@@ -207,7 +207,7 @@ class GitLabMigrateClient(MigrateClient):
             # Append Total : Successful count of group migrations
             import_results.append(mig_utils.get_results(import_results))
             self.log.info(
-                f"### {dry_log}Group import results ###\n{json_utils.json_pretty(import_results)}")
+                f"### {dry_log}Group import results ###\n{json_pretty(import_results)}")
             mig_utils.write_results_to_file(
                 import_results, result_type="group", log=self.log)
         else:
@@ -243,7 +243,7 @@ class GitLabMigrateClient(MigrateClient):
         # Append Total : Successful count of group migrations
         import_results.append(mig_utils.get_results(import_results))
         self.log.info(
-            f"### {dry_log}Group bulk import results ###\n{json_utils.json_pretty(import_results)}")
+            f"### {dry_log}Group bulk import results ###\n{json_pretty(import_results)}")
         mig_utils.write_results_to_file(
             import_results, result_type="group", log=self.log)
 
@@ -263,7 +263,7 @@ class GitLabMigrateClient(MigrateClient):
             data["entities"], result = self.groups.find_and_stage_group_bulk_entities(
                 groups)
             self.log.info(
-                f"{dry_log}Start bulk group import, with payload:\n{json_utils.json_pretty(data['entities'])} and destination state:\n{json_utils.json_pretty(result)}")
+                f"{dry_log}Start bulk group import, with payload:\n{json_pretty(data['entities'])} and destination state:\n{json_pretty(result)}")
 
             if data["entities"] and not self.dry_run:
                 bulk_import_resp = self.groups_api.bulk_group_import(
@@ -272,7 +272,7 @@ class GitLabMigrateClient(MigrateClient):
                     self.log.error(
                         f"Failed to trigger group bulk import, with response:\n{bulk_import_resp} - {bulk_import_resp.text}")
                 else:
-                    bid = misc_utils.safe_json_response(
+                    bid = safe_json_response(
                         bulk_import_resp).get("id")
                     imported = self.ie.wait_for_bulk_group_import(
                         bulk_import_resp, bid)
@@ -290,7 +290,7 @@ class GitLabMigrateClient(MigrateClient):
     def handle_exporting_groups(self, group):
         full_path = group["full_path"]
         gid = group["id"]
-        dry_log = misc_utils.get_dry_log(self.dry_run)
+        dry_log = get_dry_log(self.dry_run)
         filename = mig_utils.get_export_filename_from_namespace_and_name(
             full_path)
         result = {
@@ -323,7 +323,7 @@ class GitLabMigrateClient(MigrateClient):
                 full_path_with_parent_namespace: False
             }
             import_id = None
-            dry_log = misc_utils.get_dry_log(self.dry_run)
+            dry_log = get_dry_log(self.dry_run)
             dst_grp = self.groups.find_group_by_path(
                 self.config.destination_host, self.config.destination_token, full_path_with_parent_namespace)
             dst_gid = dst_grp.get("id") if dst_grp else None
@@ -383,7 +383,7 @@ class GitLabMigrateClient(MigrateClient):
                 dst_gid = dst_grp.get("id") if dst_grp else None
             if dst_gid:
                 self.log.info(
-                    f"{misc_utils.get_dry_log(self.dry_run)}Sub-group {full_path} (ID: {dst_gid}) found on destination")
+                    f"{get_dry_log(self.dry_run)}Sub-group {full_path} (ID: {dst_gid}) found on destination")
                 if not self.dry_run:
                     # Temporarily fixing group import subgroup visibility bug - https://gitlab.com/gitlab-org/gitlab/-/issues/405168
                     if dst_grp.get("visibility") != subgroup["visibility"]:
@@ -441,16 +441,16 @@ class GitLabMigrateClient(MigrateClient):
 
     def migrate_project_info(self):
         staged_projects = mig_utils.get_staged_projects()
-        dry_log = misc_utils.get_dry_log(self.dry_run)
+        dry_log = get_dry_log(self.dry_run)
         if staged_projects:
             mig_utils.validate_groups_and_projects(
                 staged_projects, are_projects=True)
             if user_projects := mig_utils.get_staged_user_projects(
                     staged_projects):
                 self.log.warning(
-                    f"USER projects staged ({len(user_projects)}):\n{json_utils.json_pretty(user_projects)}")
+                    f"USER projects staged ({len(user_projects)}):\n{json_pretty(user_projects)}")
             if not self.skip_project_export:
-                self.log.info("{}Exporting projects".format(dry_log))
+                self.log.info(f"{dry_log}Exporting projects")
                 export_results = list(er for er in self.multi.start_multi_process(
                     self.handle_exporting_projects, staged_projects, processes=self.processes))
 
@@ -460,12 +460,12 @@ class GitLabMigrateClient(MigrateClient):
                 if failed := mig_utils.get_failed_export_from_results(
                         export_results):
                     self.log.warning("SKIP: Projects that failed to export or already exist on destination:\n{}".format(
-                        json_utils.json_pretty(failed)))
+                        json_pretty(failed)))
 
                 # Append total count of projects exported
                 export_results.append(mig_utils.get_results(export_results))
                 self.log.info("### {0}Project export results ###\n{1}"
-                              .format(dry_log, json_utils.json_pretty(export_results)))
+                              .format(dry_log, json_pretty(export_results)))
 
                 # Filter out the failed ones
                 staged_projects = mig_utils.get_staged_projects_without_failed_export(
@@ -484,7 +484,7 @@ class GitLabMigrateClient(MigrateClient):
                 # append Total : Successful count of project imports
                 import_results.append(mig_utils.get_results(import_results))
                 self.log.info("### {0}Project import results ###\n{1}"
-                              .format(dry_log, json_utils.json_pretty(import_results)))
+                              .format(dry_log, json_pretty(import_results)))
                 mig_utils.write_results_to_file(import_results, log=self.log)
             else:
                 self.log.info(
@@ -496,7 +496,8 @@ class GitLabMigrateClient(MigrateClient):
         name = project["name"]
         namespace = project["namespace"]
         pid = project["id"]
-        dry_log = misc_utils.get_dry_log(self.dry_run)
+        project_path = project['path_with_namespace']
+        dry_log = get_dry_log(self.dry_run)
         filename = mig_utils.get_export_filename_from_namespace_and_name(
             namespace, name)
         result = {
@@ -508,11 +509,11 @@ class GitLabMigrateClient(MigrateClient):
                 self.log.info(
                     f"{dry_log}Contributor Retention is enabled. Adding all project contributors as project members")
                 c_retention = ContributorRetentionClient(
-                    pid, None, project['path_with_namespace'], dry_run=self.dry_run)
+                    pid, None, project_path, dry_run=self.dry_run)
                 c_retention.build_map()
                 c_retention.add_contributors_to_project()
             self.log.info(
-                f"{dry_log}Exporting project {project['path_with_namespace']} (ID: {pid}) as {filename}")
+                f"{dry_log}Exporting project {project_path} (ID: {pid}) as {filename}")
             result[filename] = ImportExportClient(src_host=src_host, src_token=src_token).export_project(
                 project, dry_run=self.dry_run)
             if self.retain_contributors:
@@ -576,7 +577,7 @@ class GitLabMigrateClient(MigrateClient):
                     self.projects_api.unarchive_project(
                         src_host, src_token, src_id)
                 if dst_pid:
-                    import_status = misc_utils.safe_json_response(self.projects_api.get_project_import_status(
+                    import_status = safe_json_response(self.projects_api.get_project_import_status(
                         dst_host, dst_token, dst_pid))
                     self.log.info(
                         f"Project {dst_pwn} (ID: {dst_pid}) found on destination, with import status: {import_status}")
@@ -586,7 +587,7 @@ class GitLabMigrateClient(MigrateClient):
                         result[dst_pwn] = dst_pid
                 else:
                     self.log.info(
-                        f"{misc_utils.get_dry_log(self.dry_run)}Project '{dst_pwn}' NOT found on destination, importing...")
+                        f"{get_dry_log(self.dry_run)}Project '{dst_pwn}' NOT found on destination, importing...")
                     ie_client = ImportExportClient(
                         dest_host=dst_host, dest_token=dst_token)
                     import_id = ie_client.import_project(
@@ -729,7 +730,7 @@ class GitLabMigrateClient(MigrateClient):
         self.remove_import_user(dst_id, host=dest_host, token=dest_token)
         if self.config.airgap:
             delete_project_features(src_id)
-        
+
         self.log.info(
             f"Completed migrating additional source project '{src_path}' (ID: {src_id}) GitLab features")
         return results
@@ -815,14 +816,14 @@ def post_migration_task(entity, dest_host, dest_token, mongo=None, dry_run=True)
                                      skip_groups=True, skip_project_import=True)
         entity = from_dict(data_class=BulkImportEntityStatus, data=entity)
         if entity.entity_type == "project":
-            project_col = f"projects-{misc_utils.strip_netloc(client.config.source_host)}"
+            project_col = f"projects-{strip_netloc(client.config.source_host)}"
             source_project = mongo.safe_find_one(project_col, {
                 'path_with_namespace': entity.source_full_path
             })
             return client.migrate_single_project_features(
                 source_project, entity.project_id, dest_host=dest_host, dest_token=dest_token)
         if entity.entity_type == "group":
-            group_col = f"groups-{misc_utils.strip_netloc(client.config.source_host)}"
+            group_col = f"groups-{strip_netloc(client.config.source_host)}"
             source_group = mongo.safe_find_one(group_col, {
                 'full_path': entity.source_full_path
             })
@@ -830,7 +831,8 @@ def post_migration_task(entity, dest_host, dest_token, mongo=None, dry_run=True)
                 return client.migrate_single_group_features(
                     source_group['id'], entity.namespace_id, entity.destination_full_path)
             else:
-                print(f"source_group was None. It could not be found in the {group_col} collection using the full_path of {entity.source_full_path}. entity object is {entity}")
+                print(
+                    f"source_group was None. It could not be found in the {group_col} collection using the full_path of {entity.source_full_path}. entity object is {entity}")
                 return False
     else:
         return False
