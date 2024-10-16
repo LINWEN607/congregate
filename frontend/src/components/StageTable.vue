@@ -1,13 +1,17 @@
 <template>
     <div id='stage-table'>
         <h2>Stage {{ capitalizedAssetName }}</h2>
+        <div id="table-stats">
+            <span>Total Selected: {{ totalSelectedCount }} </span>
+            <span v-if="pendingChanges"><b>Pending Changes</b></span>
+        </div>
         <div id="table-control">
             <button @click="selectAll()">Select All</button>
             <button @click="deselectAll()">Deselect All</button>
-            <input type="text" v-model="filterQuery">Filter
-            <span>Total Selected: {{ totalSelectedCount }}</span>
             <button v-on:click="stageData()" :id="asset"
                 class="stage_button">Stage {{ asset }}</button>
+            Filter <input type="text" v-model="filterQuery">
+            
         </div>
         <div ref="table" id = "staging-table"></div>
     </div>
@@ -17,6 +21,7 @@
   import axios from 'axios'
   import { mapStores } from 'pinia'
   import {TabulatorFull as Tabulator} from 'tabulator-tables';
+  import _ from 'lodash'
   import { useSystemStore } from '@/stores/system'
   
   export default {
@@ -32,35 +37,37 @@
     components: {},
     computed: {
         ...mapStores(useSystemStore),
-        // totalSelectedCount() {
-        //     console.log("Noticed an update")
-        //     return this.systemStore[this.assetStore].size
-        // }
+        pendingChanges() {
+            return !_.isEqual(this.totalSelectedCount, this.stagedDataFromMongo)
+        }
     },
     data () {
       return {
         tabulator: null, //variable to hold your table
         tableData: [],
         rows: [],
-        totalSelected: 0,
+        totalSelectedCount: 0,
         filterQuery: '',
-        capitalizedAssetName: ''
+        capitalizedAssetName: '',
+        stagedDataFromMongo: 0
       }
     },
     mounted: function () {
-        
-        // this.getData()
         this.initializeTable()
         this.tabulator.on("tableBuilt", () => {
             this.tabulator.setData(`${import.meta.env.VITE_API_ROOT}/api/data/${this.asset}`)
         })
         this.tabulator.on("rowSelected", (row) => {
             console.log("Updating store")
-            this.systemStore[this.addEvent](row._row.data.id)
+            this.systemStore[this.addEvent](row._row.data.id).then(() => {
+                this.totalSelectedCount = this.systemStore[this.assetStore].size
+            })
         })
         this.tabulator.on("rowDeselected", (row) => {
             console.log("Removing from store")
-            this.systemStore[this.removeEvent](row._row.data.id)
+            this.systemStore[this.removeEvent](row._row.data.id).then(() => {
+                this.totalSelectedCount = this.systemStore[this.assetStore].size
+            })
         })
         this.tabulator.on("dataProcessed", (data) => {
             console.log(data)
@@ -75,10 +82,7 @@
             }
         });
         this.capitalizedAssetName = this.asset[0].toUpperCase() + this.asset.slice(1)
-        // this.$emitter.on(`update${this.capitalizedAssetName}`, () => {
-        //     this.updateSelectedRowCount()
-        // })
-      //instantiate Tabulator when element is mounted
+        this.getStagedData()
     },
     watch: {
         filterQuery: function(val, oldVal) {
@@ -88,8 +92,7 @@
     },
     methods: {
         selectAll() {
-            // this.tabulator.selectRow()
-            this.tabulator.selectRow([1, 2, 3])
+            this.tabulator.selectRow()
         },
         deselectAll() {
             this.tabulator.deselectRow()
@@ -102,7 +105,6 @@
             for(var key in data){
                 if(data[key]) {
                     if(String(data[key]).includes(filterParams.value)){
-                        // console.log("Found match with " + filterParams.value + " and " + String(data[key]))
                         match = true;
                     }
                 }
@@ -116,8 +118,6 @@
         },
         initializeTable: function() {
             this.tabulator = new Tabulator(this.$refs.table, {
-                // debugEventsInternal:true,
-                // debugEventsExternal:true,
                 index: "id",
                 ajaxURL: `${import.meta.env.VITE_API_ROOT}/api/data/${this.asset}`,
                 ajaxConfig:{
@@ -140,7 +140,7 @@
                 paginationSize: 30,
                 paginationMode:"remote",
                 dataSendParams:{
-                    "size":"per_page", //change page request parameter to "pageNo"
+                    "size":"per_page",
                 },
                 dataLoader: true,
                 layout:"fitDataStretch"
@@ -158,30 +158,27 @@
             })
         },
         getStagedData: function () {
-            axios.get(`${import.meta.env.VITE_API_ROOT}/api/data/staged_${this.asset}`).then(response => {
+            axios.get(`${import.meta.env.VITE_API_ROOT}/api/data/staged/${this.asset}`).then(response => {
                 let ids = []
-                response.data.forEach(element => {
-                ids.push(element.id)
-                })
-                let table = this.$refs['projects-table']
+                console.log(response.data)
+                this.stagedDataFromMongo = response.data.length
+                if (this.systemStore[this.assetStore].size == 0) {
+                    response.data.forEach(element => {
+                        ids.push(element.id)
+                        this.systemStore[this.addEvent](element.id).then(() => {
+                            this.totalSelectedCount = this.systemStore[this.assetStore].size
+                        })
+                    })
+                    this.tabulator.selectRow(ids)
+                }
                 
-                this.$refs['projects-table'].rows.forEach((element, ind) => {
-                    if (ids.includes(element.id)) {
-                        console.log("updating projects table")
-                        table.$set(table.rows[ind], 'vgtSelected', true)
-                    }
-                })
             }).catch(function (error) {
                 console.log(error)
             })
         },
         stageData: function () {
-            if (this.tabulator.getSelectedData()) {
-                let ids = []
-                this.tabulator.getSelectedData().forEach(element => {
-                    ids.push(element.id)
-                })
-                axios.post(`${import.meta.env.VITE_API_ROOT}/api/stage/${this.asset}`, String(ids)).then(response => {
+            if (this.systemStore[this.assetStore]) {
+                axios.post(`${import.meta.env.VITE_API_ROOT}/api/stage/${this.asset}`, String(Array.from(this.systemStore[this.assetStore]))).then(response => {
                     console.log(response)
                     this.$emitter.emit('alert', {
                         'message': response.data,
@@ -204,8 +201,12 @@
 #staging-table {
 margin-bottom: 10%;
 }
-#table-control {
+#table-control, #table-stats {
 width: 100%;
 text-align: left;
+margin-bottom: 1%;
+}
+#table-control button {
+    margin-right: 1%;
 }
 </style>

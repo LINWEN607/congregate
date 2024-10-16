@@ -19,14 +19,19 @@ def get_data(file_name, sort_by=None):
     return data
 
 @mongo_connection
-def get_mongo_data(asset_type, per_page=50, page=1, sort_by=None, mongo=None):
+def get_mongo_data(asset_type, per_page=50, page=1, sort_by=None, projection=None, mongo=None):
     
     skip = per_page*page if page > 1 else 0
     data = None
     collection = f"{asset_type}-{strip_netloc(config.source_host)}"
     total_count = mongo.db[collection].count_documents({})
-    last_page = floor(total_count / per_page)
-    data = list(mongo.safe_find(collection, limit=per_page, skip=skip, projection={'_id': False}))
+    if per_page:
+        last_page = floor(total_count / per_page)
+    else:
+        last_page = 0
+    if not projection:
+        projection = {'_id': False}
+    data = list(mongo.safe_find(collection, limit=per_page, skip=skip, projection=projection))
     return {
         "last_page": last_page,
         "data": data
@@ -52,8 +57,16 @@ def get_counts(mongo=None):
     })
 
 @data_retrieval.route("/<name>")
-def load_stage_data(name):
+def load_data(name):
     page = int(request.args.get('page', 1))
     per_page = int(request.args.get('per_page', 50))
     data = get_mongo_data(name, per_page=per_page, page=page)
     return jsonify(data)
+
+@data_retrieval.route("/staged/<name>")
+def get_all_staged_data(name):
+    # Holding off pulling data from mongo
+    # data = get_mongo_data(name, per_page=0, page=0, projection={'_id': False, "id": True})
+    # as_list = [d['id'] for d in data['data']]
+    # return jsonify(as_list)
+    return jsonify(get_data(f"staged_{name}"))

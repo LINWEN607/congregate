@@ -19,31 +19,23 @@ export const useSystemStore = defineStore('system', {
         updateMigrationInProgress(state) {
             this.migrationInProgress = state
         },
-        stageProject(pid) {
-            this.stagedProjects.add(pid)
+        async stageProject(pid) {
+            await this.stagedProjects.add(pid)
         },
-        unstageProject(pid) {
-            this.stagedProjects.delete(pid)
+        async unstageProject(pid) {
+            await this.stagedProjects.delete(pid)
         },
-        stageGroup(gid) {
-            this.stagedGroups.add(gid)
+        async stageGroup(gid) {
+            await this.stagedGroups.add(gid)
         },
-        unstageGroup(gid) {
-            this.stagedGroups.delete(gid)
+        async unstageGroup(gid) {
+            await this.stagedGroups.delete(gid)
         },
-        stageUser(uid) {
-            this.stagedUsers.add(uid)
+        async stageUser(uid) {
+            await this.stagedUsers.add(uid)
         },
-        unstageUser(uid) {
-            this.stagedUsers.delete(uid)
+        async unstageUser(uid) {
+            await this.stagedUsers.delete(uid)
         }
-    },
-    getters: {
-        totalSelectedProjects: (state) => state.stagedProjects.size,
-        totalSelectedGroups: (state) => state.stagedGroups.size,
-        totalSelectedUsers: (state) => state.stagedUsers.size,
-        // totalAssetCount(asset) {
-        //     return this[asset].size
-        // }
     }
 })
