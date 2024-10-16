@@ -23,6 +23,7 @@ from congregate.migration.github.users import UsersClient as GitHubUsers
 
 from congregate.migration.ado.projects import ProjectsClient as AdoProjects
 from congregate.migration.ado.groups import GroupsClient as AdoGroups
+from congregate.migration.ado.users import UsersClient as AdoUsers
 
 from congregate.migration.jenkins.base import JenkinsClient as JenkinsData
 from congregate.migration.teamcity.base import TeamcityClient as TeamcityData
@@ -187,6 +188,12 @@ class ListClient(BaseClass):
             groups.retrieve_group_info(processes=self.processes)
             mongo.dump_collection_to_file(
                 g, f"{self.app_path}/data/groups.json")
+
+        if not self.skip_users:
+            users = AdoUsers()
+            users.retrieve_user_info(processes=self.processes)
+            mongo.dump_collection_to_file(
+                u, f"{self.app_path}/data/users.json")
 
         mongo.close_connection()
 
