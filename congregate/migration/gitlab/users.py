@@ -567,7 +567,7 @@ class UsersClient(BaseClass):
             for user in self.groups_api.get_all_group_members(
                     self.config.src_parent_id, host, token):
                 # Exclude bot users
-                if not "_bot_" in user.get("username", ""):
+                if not user.get("bot"):
                     users.append(safe_json_response(
                         self.users_api.get_user(user.get("id"), host, token)))
         else:

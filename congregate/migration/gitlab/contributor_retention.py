@@ -57,8 +57,8 @@ class ContributorRetentionClient(BaseClass):
                 self.log.error("Request failed")
 
     def add_contributor_to_map(self, author):
-        # If the author is not already a direct project member
-        if author['username'] not in self.members:
+        # If the author is not a bot and not already a direct project member
+        if not author['bot'] and author['username'] not in self.members:
             # extracting ID from GQL string 'gid://gitlab/user/<id>'
             author['id'] = author['id'].split("/")[-1]
             # Add the element/element note author to the contributor map
@@ -148,6 +148,7 @@ class ContributorRetentionClient(BaseClass):
                                     username
                                     publicEmail
                                     state
+                                    bot
                                 },
                                 commenters {
                                     nodes {
@@ -155,6 +156,7 @@ class ContributorRetentionClient(BaseClass):
                                         username
                                         publicEmail
                                         state
+                                        bot
                                     }
                                 }
                             }
