@@ -830,9 +830,8 @@ def post_migration_task(entity, dest_host, dest_token, mongo=None, dry_run=True)
             if source_group:
                 return client.migrate_single_group_features(
                     source_group['id'], entity.namespace_id, entity.destination_full_path)
-            else:
-                print(
-                    f"source_group was None. It could not be found in the {group_col} collection using the full_path of {entity.source_full_path}. entity object is {entity}")
-                return False
+            print(
+                f"source_group was None. It could not be found in the {group_col} collection using the full_path of {entity.source_full_path}. entity object is {entity}")
+            return False
     else:
         return False

@@ -1040,12 +1040,12 @@ class ProjectsClient(BaseClass):
         finally:
             return return_dict or {"id": import_id, "path": dst_path_with_namespace, "message": "success", "exception": None}
 
-    @mongo_connection
-    def list_staged_projects_contributors(self, dry_run=True, mongo=None):
+    def list_staged_projects_contributors(self, dry_run=True):
         start = time()
         rotate_logs()
         staged_projects = get_staged_projects()
         dry_log = get_dry_log(dry_run)
+        authors = []
         open(f"{self.app_path}/data/staged_users.json", "w").close()
         for sp in tqdm(staged_projects, total=len(staged_projects), colour=self.TANUKI, desc=self.DESC, unit=self.UNIT):
             project_id = sp.get("id")
@@ -1057,19 +1057,10 @@ class ProjectsClient(BaseClass):
                 c_retention = ContributorRetentionClient(
                     project_id, None, project_path, dry_run=self.dry_run)
                 if contributor_map := c_retention.build_map():
-                    authors = []
                     for contributor, data in contributor_map.items():
                         self.log.info(
                             f"Retrieved contributor '{contributor}' from project '{project_path}'")
                         authors.append(data)
-                    self.log.info(
-                        f"{dry_log}Appending project '{project_path}' contributors to file")
-                    if not dry_run:
-                        # mongo.insert_data(
-                        #     f"colaborators-{strip_netloc(self.config.source_host)}", data)
-                        # mongo.close_connection()
-                        with open(f"{self.app_path}/data/staged_users.json", "a") as f:
-                            json.dump(authors, f, indent=4)
                 else:
                     self.log.info(
                         f"No contributors found for project '{project_path}'")
@@ -1077,6 +1068,10 @@ class ProjectsClient(BaseClass):
                 self.log.error(
                     f"Failed to list project '{project_path}' contributors, with error:\n{re}")
                 continue
+        self.log.info(f"{dry_log}Saving {len(authors)} contributors to file")
+        if not dry_run:
+            with open(f"{self.app_path}/data/staged_users.json", "w") as f:
+                json.dump(remove_dupes(authors), f, indent=4)
         add_post_migration_stats(start, log=self.log)
 
 

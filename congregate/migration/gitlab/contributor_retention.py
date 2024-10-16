@@ -68,6 +68,7 @@ class ContributorRetentionClient(BaseClass):
                 author_email = self.users.get_user_email(
                     author['id'], self.config.source_host, self.config.source_token)
             author['email'] = author_email
+            author['state'] = 'blocked'
             self.contributor_map[author_email] = author
 
     def add_contributors_to_project(self):
