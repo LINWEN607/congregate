@@ -1043,36 +1043,42 @@ class ProjectsClient(BaseClass):
     def list_staged_projects_contributors(self, dry_run=True):
         start = time()
         rotate_logs()
+        contributors = []
         staged_projects = get_staged_projects()
-        dry_log = get_dry_log(dry_run)
-        authors = []
         open(f"{self.app_path}/data/staged_users.json", "w").close()
-        for sp in tqdm(staged_projects, total=len(staged_projects), colour=self.TANUKI, desc=self.DESC, unit=self.UNIT):
-            project_id = sp.get("id")
-            project_path = sp.get('path_with_namespace')
-            try:
-                c_retention = None
-                self.log.info(
-                    f"{dry_log}Listing project '{project_path}' contributors")
-                c_retention = ContributorRetentionClient(
-                    project_id, None, project_path, dry_run=self.dry_run)
-                if contributor_map := c_retention.build_map():
-                    for contributor, data in contributor_map.items():
-                        self.log.info(
-                            f"Retrieved contributor '{contributor}' from project '{project_path}'")
-                        authors.append(data)
-                else:
-                    self.log.info(
-                        f"No contributors found for project '{project_path}'")
-            except RequestException as re:
-                self.log.error(
-                    f"Failed to list project '{project_path}' contributors, with error:\n{re}")
-                continue
-        self.log.info(f"{dry_log}Saving {len(authors)} contributors to file")
+        for c in self.multi.start_multi_process(
+                self.list_project_contributors,
+                staged_projects,
+                processes=self.config.processes):
+            contributors.extend(c)
+        contributors = remove_dupes(contributors)
+        self.log.info(
+            f"{get_dry_log(dry_run)}Saving {len(contributors)} unique contributors to file")
         if not dry_run:
             with open(f"{self.app_path}/data/staged_users.json", "w") as f:
-                json.dump(remove_dupes(authors), f, indent=4)
+                json.dump(contributors, f, indent=4)
         add_post_migration_stats(start, log=self.log)
+
+    def list_project_contributors(self, staged_project):
+        contributors = []
+        project_id = staged_project.get("id")
+        project_path = staged_project.get('path_with_namespace')
+        try:
+            c_retention = None
+            c_retention = ContributorRetentionClient(
+                project_id, None, project_path)
+            if contributor_map := c_retention.build_map():
+                for contributor, data in contributor_map.items():
+                    self.log.info(
+                        f"Retrieved contributor '{contributor}' from project '{project_path}'")
+                    contributors.append(data)
+            else:
+                self.log.info(
+                    f"No contributors found for project '{project_path}'")
+        except RequestException as re:
+            self.log.error(
+                f"Failed to list project '{project_path}' contributors, with error:\n{re}")
+        return contributors
 
 
 @shared_task(name='retrieve-projects')
