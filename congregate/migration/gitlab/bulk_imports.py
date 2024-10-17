@@ -116,14 +116,25 @@ class BulkImportsClient(BaseGitLabClient):
         """
         config = BulkImportconfiguration(url=self.config.source_host, access_token=self.config.source_token)
         entities = []
-        for data in staged_data:
+        entity_paths = set()
+        sorted_staged_data = sorted(staged_data, key=lambda d: d['full_path'])
+        for data in sorted_staged_data:
             if entity_type == 'group':
-                # Skip subgroups since they will be included in the top level group payload
-                if len(data['full_path'].split("/")) == 1:
-                    entities.append(self.build_group_entity(data, skip_projects=skip_projects))
-                else:
-                    self.log.warn(f"Skipping subgroup {data['full_path']} due to already being included in its parent group")
+                levels = data['full_path'].split("/")
+                skip = False
+                rebuilt_path = levels[0]
+                for level in levels:
+                    if rebuilt_path in entity_paths:
+                        self.log.warning(f"Skipping entity {data['full_path']} due to parent group already present in staged data")
+                        skip = True
+                        break
+                    rebuilt_path += f"/{level}"
+                if skip:
+                    continue
+                entity_paths.add(data['full_path'])
+                entities.append(self.build_group_entity(data, skip_projects=skip_projects))
             elif entity_type == 'project':
+                entity_paths.add(data['path_with_namespace'])
                 entities.append(self.build_project_entity(data))
         return BulkImportPayload(configuration=config, entities=entities)
     
