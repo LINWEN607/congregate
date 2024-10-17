@@ -146,16 +146,16 @@ class ContributorRetentionClient(BaseClass):
                                 author{
                                     id
                                     username
+                                    name
                                     publicEmail
-                                    state
                                     bot
                                 },
                                 commenters {
                                     nodes {
                                         id
                                         username
+                                        name
                                         publicEmail
-                                        state
                                         bot
                                     }
                                 }
