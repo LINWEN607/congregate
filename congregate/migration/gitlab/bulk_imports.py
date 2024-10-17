@@ -2,7 +2,7 @@ from time import sleep
 from dacite import from_dict
 from celery import shared_task, chain
 from gitlab_ps_utils.misc_utils import safe_json_response
-from congregate.helpers.migrate_utils import get_project_dest_namespace
+from congregate.helpers.migrate_utils import get_project_dest_namespace, get_staged_projects
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.base_gitlab_client import BaseGitLabClient
 from congregate.migration.gitlab.api.bulk_imports import BulkImportApi
@@ -117,27 +117,43 @@ class BulkImportsClient(BaseGitLabClient):
         config = BulkImportconfiguration(url=self.config.source_host, access_token=self.config.source_token)
         entities = []
         entity_paths = set()
+        # Order the staged groups from topmost level down
         sorted_staged_data = sorted(staged_data, key=lambda d: d['full_path'])
+        # Get a list of namespaces where we have a subset of projects staged
+        subset_namespaces = self.subset_projects_staged()
         for data in sorted_staged_data:
             if entity_type == 'group':
-                levels = data['full_path'].split("/")
-                skip = False
-                rebuilt_path = levels[0]
-                for level in levels:
-                    if rebuilt_path in entity_paths:
-                        self.log.warning(f"Skipping entity {data['full_path']} due to parent group already present in staged data")
-                        skip = True
-                        break
-                    rebuilt_path += f"/{level}"
-                if skip:
+                # If a parent group is staged, skip adding this subgroup to the payload
+                if self.parent_group_exists(data['full_path'], entity_paths):
                     continue
                 entity_paths.add(data['full_path'])
-                entities.append(self.build_group_entity(data, skip_projects=skip_projects))
+                # If not all projects in this group are staged, add each individual project to the payload
+                # and skip migrating projects in the group entity
+                if subset_namespaces.get(data['full_path']) and skip_projects != True:
+                    entities.append(self.build_group_entity(data, skip_projects=True))
+                    for project in subset_namespaces[data['full_path']]:
+                        entities.append(self.build_project_entity(project))
+                else:
+                    entities.append(self.build_group_entity(data, skip_projects=skip_projects))
             elif entity_type == 'project':
-                entity_paths.add(data['path_with_namespace'])
                 entities.append(self.build_project_entity(data))
         return BulkImportPayload(configuration=config, entities=entities)
-    
+
+    def parent_group_exists(self, full_path, entity_paths):
+        """
+            Check if the a subgroup's parent group is already staged.
+
+            If so, skip the subgroup. If not, keep the subgroup
+        """
+        levels = full_path.split("/")
+        rebuilt_path = levels[0]
+        for level in levels:
+            if rebuilt_path in entity_paths:
+                self.log.warning(f"Skipping entity {full_path} due to parent group already present in staged data")
+                return True
+            rebuilt_path += f"/{level}"
+        return False
+
     def build_group_entity(self, group_data, skip_projects=False):
         """
             Build a single direct transfer group entity
@@ -167,6 +183,27 @@ class BulkImportsClient(BaseGitLabClient):
             # destination_name=project_data['name'],
             migrate_projects=None
         )
+    
+    def subset_projects_staged(self):
+        """
+            Checks to see if any subsets of group projects are staged
+            instead of the entire group and its projects
+        """
+        namespaces = {}
+        subsets = {}
+        groups_api = GroupsApi()
+        for project in get_staged_projects():
+            if namespaces.get(project['namespace']):
+                namespaces[project['namespace']].append(project)
+            else:
+                namespaces[project['namespace']] = [project]
+        for namespace, projects in namespaces.items():
+            found_group = safe_json_response(groups_api.get_group_by_full_path(namespace, self.config.source_host, self.config.source_token))
+            total_project_count = groups_api.get_all_group_projects_count(found_group['id'], self.config.source_host, self.config.source_token)
+            staged_count = len(projects)
+            if total_project_count > staged_count:
+                subsets[namespace] = projects
+        return subsets
 
 # 'self' is in the function parameters due to the use of the 'bind' parameter in the decorator
 # See https://docs.celeryq.dev/en/latest/userguide/tasks.html#bound-tasks for more information
