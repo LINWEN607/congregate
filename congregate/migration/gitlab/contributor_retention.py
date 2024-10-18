@@ -57,19 +57,23 @@ class ContributorRetentionClient(BaseClass):
                 self.log.error("Request failed")
 
     def add_contributor_to_map(self, author):
-        # If the author is not a bot and not already a direct project member
-        if not author['bot'] and author['username'] not in self.members:
-            # extracting ID from GQL string 'gid://gitlab/user/<id>'
-            author['id'] = author['id'].split("/")[-1]
-            # Add the element/element note author to the contributor map
-            if author.get('publicEmail'):
-                author_email = author['publicEmail']
-            else:
-                author_email = self.users.get_user_email(
-                    author['id'], self.config.source_host, self.config.source_token)
-            author['email'] = author_email
-            author['state'] = 'blocked'
-            self.contributor_map[author_email] = author
+        try:
+            # If the author is not a bot and not already a member
+            if not author['bot'] and author['username'] not in self.members:
+                # extracting ID from GQL string 'gid://gitlab/user/<id>'
+                author['id'] = author['id'].split('/')[-1]
+                # Add the element/element note author to the contributor map
+                if author.get('publicEmail'):
+                    author_email = author['publicEmail']
+                else:
+                    author_email = self.users.get_user_email(
+                        author['id'], self.config.source_host, self.config.source_token)
+                author['email'] = author_email
+                author['state'] = 'blocked'
+                self.contributor_map[author_email] = author
+        except KeyError as ke:
+            self.log.warning(
+                f"Failed to add contributor {author} to map, due to:\n{ke}")
 
     def add_contributors_to_project(self):
         '''

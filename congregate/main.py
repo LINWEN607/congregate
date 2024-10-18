@@ -13,16 +13,16 @@ Usage:
     congregate stage-users <users>... [--commit]
     congregate stage-wave <wave> [--commit] [--scm-source=hostname]
     congregate create-stage-wave-csv [--commit]
-    congregate migrate [--processes=<n>] [--reporting] [--skip-users] [--remove-members] [--sync-members] [--stream-groups] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostname] [--commit] [--reg-dry-run] [--group-structure] [--retain-contributors]
-    congregate rollback [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
+    congregate migrate [--commit] [--processes=<n>] [--reporting] [--skip-users] [--remove-members] [--sync-members] [--stream-groups] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostname] [--reg-dry-run] [--group-structure] [--retain-contributors]
+    congregate rollback [--commit] [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects]
     congregate ui
     congregate do-all [--commit]
     congregate do-all-users [--commit]
     congregate do-all-groups-and-projects [--commit]
     congregate search-for-staged-users [--table]
     congregate update-aws-creds
-    congregate update-parent-group-members [--access-level=<level>] [--add-members] [--commit]
-    congregate update-members-access-level [--current-level=<level>] [--target-level=<level>] [--skip-groups] [--skip-projects] [--commit]
+    congregate update-parent-group-members [--commit] [--access-level=<level>] [--add-members]
+    congregate update-members-access-level [--commit] [--current-level=<level>] [--target-level=<level>] [--skip-groups] [--skip-projects]
     congregate remove-inactive-users [--commit] [--membership]
     congregate get-total-count
     # TODO: Refactor, project name matching does not seem correct
