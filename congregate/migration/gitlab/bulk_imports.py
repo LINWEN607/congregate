@@ -146,12 +146,12 @@ class BulkImportsClient(BaseGitLabClient):
             If so, skip the subgroup. If not, keep the subgroup
         """
         levels = full_path.split("/")
-        rebuilt_path = levels[0]
+        rebuilt_path = []
         for level in levels:
-            if rebuilt_path in entity_paths:
+            rebuilt_path.append(level)
+            if "/".join(rebuilt_path) in entity_paths:
                 self.log.warning(f"Skipping entity {full_path} due to parent group already present in staged data")
                 return True
-            rebuilt_path += f"/{level}"
         return False
 
     def build_group_entity(self, group_data, skip_projects=False):
