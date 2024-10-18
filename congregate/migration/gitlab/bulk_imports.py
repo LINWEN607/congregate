@@ -141,7 +141,7 @@ class BulkImportsClient(BaseGitLabClient):
 
     def parent_group_exists(self, full_path, entity_paths):
         """
-            Check if the a subgroup's parent group is already staged.
+            Check if the subgroup's parent group is already staged.
 
             If so, skip the subgroup. If not, keep the subgroup
         """
