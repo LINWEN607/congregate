@@ -3,7 +3,14 @@
         <h2>Stage {{ capitalizedAssetName }}</h2>
         <div id="table-stats">
             <span>Total Selected: {{ totalSelectedCount }} </span>
-            <span v-if="pendingChanges"><b>Pending Changes</b></span>
+            <sub>
+            <details v-if="pendingChanges">
+                <summary>Pending Changes</summary>
+                <ul>Unstaged IDs:
+                    <li v-for="id in diffIds">{{ id }}</li>
+                </ul>
+            </details>
+            </sub>
         </div>
         <div id="table-control">
             <button @click="selectAll()">Select All</button>
@@ -38,7 +45,7 @@
     computed: {
         ...mapStores(useSystemStore),
         pendingChanges() {
-            return !_.isEqual(this.totalSelectedCount, this.stagedDataFromMongo)
+            return !_.isEqual(this.totalSelectedCount, this.stagedDataFromMongo.length)
         }
     },
     data () {
@@ -49,7 +56,8 @@
         totalSelectedCount: 0,
         filterQuery: '',
         capitalizedAssetName: '',
-        stagedDataFromMongo: 0
+        stagedDataFromMongo: [],
+        diffIds: []
       }
     },
     mounted: function () {
@@ -61,12 +69,14 @@
             console.log("Updating store")
             this.systemStore[this.addEvent](row._row.data.id).then(() => {
                 this.totalSelectedCount = this.systemStore[this.assetStore].size
+                this.diffIds = _.difference(Array.from(this.systemStore[this.assetStore]), this.stagedDataFromMongo)
             })
         })
         this.tabulator.on("rowDeselected", (row) => {
             console.log("Removing from store")
             this.systemStore[this.removeEvent](row._row.data.id).then(() => {
                 this.totalSelectedCount = this.systemStore[this.assetStore].size
+                this.diffIds = _.difference(Array.from(this.systemStore[this.assetStore]), this.stagedDataFromMongo)
             })
         })
         this.tabulator.on("dataProcessed", (data) => {
@@ -161,7 +171,7 @@
             axios.get(`${import.meta.env.VITE_API_ROOT}/api/data/staged/${this.asset}`).then(response => {
                 let ids = []
                 console.log(response.data)
-                this.stagedDataFromMongo = response.data.length
+                this.stagedDataFromMongo = response.data.map((d) => d.id)
                 if (this.systemStore[this.assetStore].size == 0) {
                     response.data.forEach(element => {
                         ids.push(element.id)
