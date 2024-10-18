@@ -4,6 +4,7 @@ from time import sleep
 from gitlab_ps_utils.misc_utils import is_error_message_present, safe_json_response
 from gitlab_ps_utils.dict_utils import dig
 from gitlab_ps_utils.json_utils import json_pretty
+from gitlab_ps_utils.string_utils import deobfuscate
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.migrate_utils import migration_dry_run, sanitize_project_path
@@ -21,6 +22,47 @@ class ImportClient(BaseClass):
         self.projects = ProjectsApi()
         self.instance = InstanceApi()
 
+    def trigger_import_from_repo(self, pwn, dst_pwn, tn, project, dry_run=True):
+        """
+        Use the built-in GitLab importer to start a Azure Devops import.
+
+            :param pwn: (str) Source path with namespace
+            :param dst_pwn: (str) Destination path with namespace
+            :param tn: (str) Full destination target namespace
+            :return: (dict) Successful or failed result data
+        """
+        azure_repo = project.get("path")
+        url = project.get("http_url_to_repo").rsplit("@")[1]
+        token = deobfuscate(self.config.source_token)
+        
+        data = {
+            "name": project.get("name"),
+            "namespace_id": self.config.dstn_parent_id,
+            "import_url": "https://"+ self.config.source_username+token+"@"+ url,
+            "initialize_with_readme": False
+        }
+
+
+        if not dry_run:
+            try:
+                resp = self.ext_import.import_from_azure(
+                    self.config.destination_host, self.config.destination_token, data)
+                error, resp = is_error_message_present(resp)
+                if error or not resp:
+                    error = resp.get("message")
+                    self.log.error(
+                        f"Repo {azure_repo} import to {tn} failed with response {resp} and error {error}")
+                    return self.get_failed_result(dst_pwn, error)
+                return self.get_result_data(dst_pwn, resp)
+            except ValueError as ve:
+                self.log.error(
+                    f"Failed to import repo {azure_repo} to {tn} due to {ve}")
+                return self.get_failed_result(dst_pwn)
+        else:
+            data.pop("personal_access_token", None)
+            migration_dry_run("project", data)
+            return self.get_failed_result(dst_pwn, data)
+        
     def trigger_import_from_bb_server(self, pwn, dst_pwn, tn, dry_run=True):
         """
         Use the built-in GitLab importer to start a BitBucket Server import.

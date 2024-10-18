@@ -4,7 +4,10 @@ export const useSystemStore = defineStore('system', {
     state: () => ({
         settings: {},
         listingInProgress: false,
-        migrationInProgress: false
+        migrationInProgress: false,
+        stagedProjects: new Set(),
+        stagedGroups: new Set(),
+        stagedUsers: new Set()
     }),
     actions: {
         updateSettings(settings) {
@@ -15,6 +18,24 @@ export const useSystemStore = defineStore('system', {
         },
         updateMigrationInProgress(state) {
             this.migrationInProgress = state
+        },
+        async stageProject(pid) {
+            await this.stagedProjects.add(pid)
+        },
+        async unstageProject(pid) {
+            await this.stagedProjects.delete(pid)
+        },
+        async stageGroup(gid) {
+            await this.stagedGroups.add(gid)
+        },
+        async unstageGroup(gid) {
+            await this.stagedGroups.delete(gid)
+        },
+        async stageUser(uid) {
+            await this.stagedUsers.add(uid)
+        },
+        async unstageUser(uid) {
+            await this.stagedUsers.delete(uid)
         }
     }
 })
