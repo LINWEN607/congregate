@@ -22,7 +22,7 @@ class MockRepositoriesApi():
             "webUrl": "https://dev.azure.com/gitlab-ps/Azure%20Bicep%20Workshop/_git/Azure%20Bicep%20Workshop",
             "isDisabled": False,
             "isInMaintenance": False
-    }
+        }
 
     def get_all_repositories(self):
         return {

@@ -182,7 +182,6 @@ class ListClient(BaseClass):
                 p, f"{self.app_path}/data/projects.json")
 
         # Find ADO projects with >1 repos ( = group in GitLab)
-
         if not self.skip_groups:
             groups = AdoGroups()
             groups.retrieve_group_info(processes=self.processes)

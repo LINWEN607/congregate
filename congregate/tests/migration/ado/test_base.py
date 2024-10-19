@@ -25,14 +25,29 @@ class BaseTests(unittest.TestCase):
     def test_slugify(self):
         self.assertEqual(self.api.slugify("Yet Another Repo"), "yet-another-repo")
 
-    def test_format_project(self):
-        
+    @patch('congregate.migration.ado.base.AzureDevOpsWrapper.add_team_members')
+    def test_format_project(self, mock_add_team_members):
+        mock_users = [
+            {
+                "id": "user1-id",
+                "username": "user1",
+                "name": "User One",
+                "email": "user1@example.com",
+                "state": "active"
+            },
+            {
+                "id": "user2-id",
+                "username": "user2",
+                "name": "User Two",
+                "email": "user2@example.com",
+                "state": "active"
+            }
+        ]
         # Test the formatting of project object based on project's mockAPI and repository's mockAPI
-
+        mock_add_team_members.return_value = mock_users
         project = self.mock_projects.get_single_project()
         repository = self.mock_repositories.get_single_repository()
         formatted_project = self.api.format_project(project, repository, 1, mongo=None)
-        
         expected_formatted_project = {
             "name": "Azure Bicep Workshop",
             "id": "b2071745-4b0b-4cde-a177-9422f7cbd811",
@@ -40,7 +55,20 @@ class BaseTests(unittest.TestCase):
             "path_with_namespace": "azure-bicep-workshop",
             "visibility": "private",
             "description": "",
-            "members": [],
+            "members": [{
+                    "id": "user1-id",
+                    "username": "user1",
+                    "name": "User One",
+                    "email": "user1@example.com",
+                    "state": "active"
+                },
+                {
+                    "id": "user2-id",
+                    "username": "user2",
+                    "name": "User Two",
+                    "email": "user2@example.com",
+                    "state": "active"
+                }],
             "http_url_to_repo": "https://gitlab-ps@dev.azure.com/gitlab-ps/Azure%20Bicep%20Workshop/_git/Azure%20Bicep%20Workshop",
             "ssh_url_to_repo": "git@ssh.dev.azure.com:v3/gitlab-ps/Azure%20Bicep%20Workshop/Azure%20Bicep%20Workshop",
             "namespace": {
@@ -51,7 +79,7 @@ class BaseTests(unittest.TestCase):
                 "path": "azure-bicep-workshop"
             }
         }
-        
+
         self.assertEqual(expected_formatted_project, formatted_project)
 
     @patch('congregate.migration.ado.api.repositories', new_callable=PropertyMock)
