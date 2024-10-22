@@ -62,6 +62,8 @@ class ListClient(BaseClass):
     def list_gitlab_data(self):
         """
             List the projects information, and Retrieve user info, group info from source instance.
+            File-based - Save all projects, groups, and users information into mongodb and json file.
+            Direct transfer - Save all projects, groups, and users information into mongodb only.
         """
         mongo, p, g, u = self.mongo_init()
         host = self.config.source_host
