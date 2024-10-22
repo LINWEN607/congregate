@@ -72,6 +72,7 @@ class ContributorRetentionClient(BaseClass):
                 # Required for list-staged-projects-contributors
                 author['public_email'] = author.pop('publicEmail', "")
                 author['email'] = author_email
+                author['public_email'] = author.pop('publicEmail', "")
                 author['state'] = 'blocked'
                 self.contributor_map[author_email] = author
         except KeyError as ke:
