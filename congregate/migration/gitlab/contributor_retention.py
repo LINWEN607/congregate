@@ -1,4 +1,6 @@
 import json
+from requests import Response
+
 from gitlab_ps_utils.dict_utils import dig, rewrite_list_into_dict
 from gitlab_ps_utils.api import GitLabApi
 from gitlab_ps_utils.misc_utils import safe_json_response, get_dry_log
@@ -83,11 +85,30 @@ class ContributorRetentionClient(BaseClass):
         '''
             Add contributors from contributor map to source project
         '''
+        dry_log = get_dry_log(self.dry_run)
+        host = self.config.source_host
+        token = self.config.source_token
         for contributor, data in self.contributor_map.items():
             new_member_payload = NewMember(user_id=data['id'], access_level=10)
             self.log.info(
-                f"{get_dry_log(self.dry_run)}Adding contributor '{contributor}' to project '{self.full_path}'")
+                f"{dry_log}Adding contributor '{contributor}' to project '{self.full_path}'")
+
+            # When to warn of public_email overwrite
+            pub_email = data.get("public_email")
+            email = data.get("email")
+            if pub_email and pub_email != email:
+                self.log.warning(
+                    f"Overwrite source user '{contributor}' public email '{pub_email}' -> '{email}'")
+            self.log.info(
+                f"{dry_log}Set source user '{contributor}' public email to '{email}'")
             if not self.dry_run:
+                # Set public_email
+                if pub_email != email:
+                    resp = self.users.modify_user(
+                        data.get("id"), host, token, {"public_email": email})
+                    if not isinstance(resp, Response) or resp.status_code != 200:
+                        self.log.error(
+                            f"Failed to set source user '{contributor}' public email to '{email}':\n{resp} - {resp.text}")
                 self.projects.add_member(
                     self.src_id, self.config.source_host, self.config.source_token, new_member_payload.to_dict())
 
@@ -106,6 +127,7 @@ class ContributorRetentionClient(BaseClass):
         '''
             Remove all contributors who were not originally members from the project
         '''
+        dry_log = get_dry_log(self.dry_run)
         if source:
             host = self.config.source_host
             token = self.config.source_token
@@ -117,6 +139,8 @@ class ContributorRetentionClient(BaseClass):
         for contributor, data in self.contributor_map.items():
             if data and source:
                 user = data
+                self.log.info(
+                    f"{dry_log}Unset source user '{contributor}' public email")
             elif data:
                 user = find_user_by_email_comparison_without_id(
                     data.get('email'))
@@ -125,9 +149,15 @@ class ContributorRetentionClient(BaseClass):
                     f"Missing contributor '{contributor}' mapping data '{data}'")
                 continue
             self.log.info(
-                f"{get_dry_log(self.dry_run)}Removing contributor '{contributor}' from project '{self.full_path}'")
+                f"{dry_log}Removing contributor '{contributor}' from project '{self.full_path}'")
             if user and not self.dry_run:
                 self.projects.remove_member(pid, user['id'], host, token)
+                if source:
+                    resp = self.users.modify_user(
+                        data.get("id"), host, token, {"public_email": ""})
+                    if not isinstance(resp, Response) or resp.status_code != 200:
+                        self.log.error(
+                            f"Failed to unset source user '{contributor}' public email:\n{resp} - {resp.text}")
 
     def get_members(self, asset_type):
         if is_dot_com(self.config.source_host):
