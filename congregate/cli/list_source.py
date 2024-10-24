@@ -43,7 +43,7 @@ class ListClient(BaseClass):
         skip_project_members=False,
         skip_ci=False,
         src_instances=False,
-        subset=False
+        subset=False,
     ):
         super().__init__()
         self.processes = processes
@@ -171,7 +171,7 @@ class ListClient(BaseClass):
                     mongo.dump_collection_to_file(p, f"{app}/data/{p}.json")
         mongo.close_connection()
 
-    def list_azure_devops_data(self): 
+    def list_azure_devops_data(self):
         mongo, p, g, u = self.mongo_init()
 
         # Find only projects with =<1 repo ( = project in GitLab)
@@ -291,9 +291,9 @@ class ListClient(BaseClass):
 
 @shared_task
 def list_data(partial=False, skip_users=False, skip_groups=False, skip_group_members=False,
-              skip_projects=False, skip_project_members=False, skip_ci=False, 
+              skip_projects=False, skip_project_members=False, skip_ci=False,
               src_instances=False, subset=False):
     client = ListClient(partial=partial, skip_users=skip_users, skip_groups=skip_groups, skip_group_members=skip_group_members,
-              skip_projects=skip_projects, skip_project_members=skip_project_members, skip_ci=skip_ci, 
-              src_instances=src_instances, subset=subset)
+                        skip_projects=skip_projects, skip_project_members=skip_project_members, skip_ci=skip_ci,
+                        src_instances=src_instances, subset=subset)
     return client.list_data()

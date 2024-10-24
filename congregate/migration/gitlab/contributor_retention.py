@@ -2,6 +2,7 @@ import json
 from gitlab_ps_utils.dict_utils import dig, rewrite_list_into_dict
 from gitlab_ps_utils.api import GitLabApi
 from gitlab_ps_utils.misc_utils import safe_json_response, get_dry_log
+from congregate.helpers.utils import is_dot_com
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.users import UsersApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
@@ -30,6 +31,7 @@ class ContributorRetentionClient(BaseClass):
     def build_map(self):
         for element in self.PROJECT_ELEMENTS:
             self.retrieve_contributors(element)
+        return self.contributor_map
 
     def retrieve_contributors(self, element):
         hasNextPage = True
@@ -55,18 +57,23 @@ class ContributorRetentionClient(BaseClass):
                 self.log.error("Request failed")
 
     def add_contributor_to_map(self, author):
-        # If the author is not already a direct project member
-        if author['username'] not in self.members:
-            # extracting ID from GQL string 'gid://gitlab/user/<id>'
-            author['id'] = author['id'].split("/")[-1]
-            # Add the element/element note author to the contributor map
-            if author.get('publicEmail'):
-                author_email = author['publicEmail']
-            else:
-                author_email = self.users.get_user_email(
-                    author['id'], self.config.source_host, self.config.source_token)
-            author['email'] = author_email
-            self.contributor_map[author_email] = author
+        try:
+            # If the author is not a bot and not already a member
+            if not author['bot'] and author['username'] not in self.members:
+                # extracting ID from GQL string 'gid://gitlab/user/<id>'
+                author['id'] = author['id'].split('/')[-1]
+                # Add the element/element note author to the contributor map
+                if author.get('publicEmail'):
+                    author_email = author['publicEmail']
+                else:
+                    author_email = self.users.get_user_email(
+                        author['id'], self.config.source_host, self.config.source_token)
+                author['email'] = author_email
+                author['state'] = 'blocked'
+                self.contributor_map[author_email] = author
+        except KeyError as ke:
+            self.log.warning(
+                f"Failed to add contributor {author} to map, due to:\n{ke}")
 
     def add_contributors_to_project(self):
         '''
@@ -119,10 +126,18 @@ class ContributorRetentionClient(BaseClass):
                 self.projects.remove_member(pid, user['id'], host, token)
 
     def get_members(self, asset_type):
-        if asset_type == 'project':
-            return rewrite_list_into_dict(list(self.projects.get_members(self.src_id, self.config.source_host, self.config.source_token)), "username")
-        if asset_type == 'group':
-            return rewrite_list_into_dict(list(self.groups.get_all_group_members(self.src_id, self.config.source_host, self.config.source_token)), "username")
+        if is_dot_com(self.config.source_host):
+            # All users listed on the top-level group
+            # rewrite_list_into_dict(list(self.projects.get_members_incl_inherited(self.config.src_parent_id, self.config.source_host, self.config.source_token)), "username")
+            with open(f"{self.app_path}/data/users.json", "r") as f:
+                return rewrite_list_into_dict(json.load(f), "username")
+        else:
+            # Both file-based and DT include both direct and inherited members
+            # Group owner or admin token required
+            if asset_type == 'project':
+                return rewrite_list_into_dict(list(self.projects.get_members_incl_inherited(self.src_id, self.config.source_host, self.config.source_token)), "username")
+            if asset_type == 'group':
+                return rewrite_list_into_dict(list(self.groups.get_all_group_members_incl_inherited(self.src_id, self.config.source_host, self.config.source_token)), "username")
         return []
 
     def generate_contributors_query(self, element, cursor):
@@ -135,13 +150,17 @@ class ContributorRetentionClient(BaseClass):
                                 author{
                                     id
                                     username
+                                    name
                                     publicEmail
+                                    bot
                                 },
                                 commenters {
                                     nodes {
                                         id
                                         username
+                                        name
                                         publicEmail
+                                        bot
                                     }
                                 }
                             }

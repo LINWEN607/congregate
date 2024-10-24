@@ -561,12 +561,13 @@ class UsersClient(BaseClass):
         return staged
 
     def retrieve_user_info(self, host, token, processes=None):
-        if self.config.src_parent_group_path:
+        # Always retrieve full user list when possible
+        if self.config.src_parent_group_path and is_dot_com(self.config.source_host):
             users = []
             for user in self.groups_api.get_all_group_members(
                     self.config.src_parent_id, host, token):
                 # Exclude bot users
-                if not "_bot_" in user.get("username", ""):
+                if not user.get("bot"):
                     users.append(safe_json_response(
                         self.users_api.get_user(user.get("id"), host, token)))
         else:
@@ -837,6 +838,9 @@ class UsersClient(BaseClass):
         if not isinstance(resp, Response) or resp.status_code != 201:
             self.log.error(
                 f"Failed to add email '{email}' to source user '{username}' (ID: {uid}):\n{resp} - {resp.text}")
+        else:
+            self.log.info(
+                f"Added email '{email}' to source user '{username}' (ID: {uid})")
 
 
 @shared_task(name='retrieve-user')
