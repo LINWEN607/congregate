@@ -168,6 +168,7 @@ class ImportClient(BaseClass):
         timeout = self.config.export_import_timeout
         imported, success = False, False
         while True:
+            self.log.info(f"host: {self.config.destination_host}, token: {self.config.destination_token}")
             project_statistics = safe_json_response(
                 self.projects.get_project_statistics(
                     full_path,
@@ -175,6 +176,7 @@ class ImportClient(BaseClass):
                     self.config.destination_token
                 )
             )
+            self.log.info(f"full_path: {full_path}, the project statistics: {project_statistics}")
             if project_statistics and project_statistics.get("data") is not None:
                 if project_statistics["data"].get("project") is not None:
                     # Main criterion
