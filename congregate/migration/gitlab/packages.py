@@ -6,10 +6,12 @@ from congregate.migration.gitlab.api.packages import PackagesApi
 from congregate.migration.gitlab.api.pypi import PyPiPackagesApi
 from congregate.migration.gitlab.api.maven import MavenPackagesApi
 from congregate.migration.gitlab.api.npm import NpmPackagesApi
+from congregate.migration.gitlab.api.helm import HelmPackagesApi
 from congregate.helpers.package_utils import generate_pypi_package_payload, generate_npm_package_payload, extract_pypi_package_metadata, extract_npm_package_metadata, get_pkg_data, generate_npm_json_data, generate_custom_npm_tarball_url, extract_pypi_wheel_metadata
 from congregate.migration.meta.api_models.pypi_package import PyPiPackage
 from congregate.migration.meta.api_models.npm_package import NpmPackage
 from congregate.migration.meta.api_models.maven_package import MavenPackage
+from congregate.migration.meta.api_models.helm_package import HelmPackage
 
 
 class PackagesClient(BaseClass):
@@ -18,13 +20,19 @@ class PackagesClient(BaseClass):
         self.pypi_packages = PyPiPackagesApi()
         self.maven_packages = MavenPackagesApi()
         self.npm_packages = NpmPackagesApi()
+        self.helm_packages = HelmPackagesApi()
         super().__init__()
 
     def migrate_project_packages(self, src_id, dest_id, project_name):
         results = []
         try:
             for package in self.packages.get_project_packages(self.config.source_host, self.config.source_token, src_id):
+                #PST - Log package type
+                
                 package_type = package.get('package_type')
+                self.log.info(
+                    f"Package Type:'{package_type}")
+                self.log
                 try:
                     if package_type == 'generic':
                         self.migrate_generic_packages(
@@ -38,6 +46,9 @@ class PackagesClient(BaseClass):
                     elif package_type == 'npm':
                         self.migrate_npm_packages(
                             src_id, dest_id, package, results)
+                    elif package_type == 'helm':
+                        self.migrate_helm_packages(
+                            src_id, dest_id, package, project_name, results)
                     else:
                         self.log.warning(
                             f"Skipping {package.get('name')}, type {package.get('package_type')} not supported")
@@ -278,6 +289,65 @@ class PackagesClient(BaseClass):
             # Uploading the data to the destination instance
             response = self.npm_packages.upload_npm_package(
                 self.config.destination_host, self.config.destination_token, dest_id, json_data, package_data)
+
+            # Handling response code
+            if response.status_code == 403:
+                self.log.info(
+                    f"Package '{package.file_name}' already exists in the destination instance. Skipping")
+            elif response.status_code != 200:
+                self.log.error(
+                    f"Failed to migrate package '{package.file_name}' file '{package_file['file_name']}':\n{response} - {response.text}")
+                migration_status = False
+            else:
+                self.log.info(
+                    f"Successfully migrated package '{package.file_name}' file '{package_file['file_name']}'")
+
+        results.append({'Migrated': migration_status, 'Package': artifact})
+
+    def migrate_helm_packages(self, src_id, dest_id, package, results):
+        """
+        Migrates a Helm package from source project to destination project.
+
+        Parameters:
+        - src_id: Identifier or path for the source project.
+        - dest_id: Identifier or path for the destination project.
+        - package: The package name to migrate.
+        - results: A dictionary to store the results of the migration.
+
+        This method updates the `package.json` of both projects and records the migration status.
+        """
+        version = package['version']
+        package_name = package['name']
+        artifact = self.format_artifact(package_name, version)
+
+        self.log.info(f"Attempting to download npm package: {artifact}")
+        migration_status = True
+
+        metadata = {}
+        for package_file in self.packages.get_package_files(self.config.source_host, self.config.source_token, src_id, package.get('id')):
+            file_name = package_file['file_name']
+
+            # Downloading the binary content file of the package
+            response = self.helm_packages.download_helm_project_package(
+                self.config.source_host, self.config.source_token, src_id, package_name, file_name)
+            file_content = response.content
+
+            # Download the package metadata (dists and versions)
+            response = self.helm_packages.download_helm_package_metadata(
+                self.config.source_host, self.config.source_token, src_id, package_name)
+            package_metadata_bytes = response.content
+
+
+            # Get the package dataclass
+            package = HelmPackage(
+                content=file_content,
+                file_name=file_name,
+                md5_digest=package_file['file_md5']
+            )
+
+            # Uploading the data to the destination instance
+            response = self.helm_packages.upload_helm_package(
+                self.config.destination_host, self.config.destination_token, dest_id, channel, json_data, package_data)
 
             # Handling response code
             if response.status_code == 403:
