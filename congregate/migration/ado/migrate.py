@@ -122,7 +122,7 @@ class AzureDevopsMigrateClient(MigrateClient):
                 "SKIP: No Azure Devops repos staged for migration")
 
     def import_azure_repo(self, project):
-        pwn = project.get("path_with_namespace")
+        pn = self.config.dstn_parent_group_path+"/"+project.get("namespace")
         dstn_pwn, tn = mig_utils.get_stage_wave_paths(project)
         host = self.config.destination_host
         token = self.config.destination_token
@@ -133,7 +133,7 @@ class AzureDevopsMigrateClient(MigrateClient):
                 result = self.ext_import.get_result_data(
                     dstn_pwn, {"id": dst_pid})
                 if self.only_post_migration_info:
-                    result = self.handle_bb_post_migration(
+                    result = self.handle_azure_post_migration(
                         result, dstn_pwn, project, dst_pid)
                 else:
                     self.log.warning(
@@ -141,7 +141,7 @@ class AzureDevopsMigrateClient(MigrateClient):
             # New import
             else:
                 result = self.ext_import.trigger_import_from_repo(
-                    pwn, dstn_pwn, tn, project, dry_run=self.dry_run)
+                    pn, dstn_pwn, tn, project, dry_run=self.dry_run)
                 result_response = result[dstn_pwn]["response"]
                 if (isinstance(result_response, dict)) and (project_id := result_response.get("id")):
                     full_path = result_response.get("path_with_namespace").strip("/")
