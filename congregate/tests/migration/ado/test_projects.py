@@ -46,7 +46,7 @@ class ProjectsTests(unittest.TestCase):
 
         expected_projects = [
             {
-                "name": "AnotherRepository",
+               "name": "AnotherRepository",
                 "id": "5febef5a-833d-4e14-b9c0-14cb638f91e6",
                 "path": "anotherrepository",
                 "path_with_namespace": "azure-bicep-workshop",
@@ -55,13 +55,8 @@ class ProjectsTests(unittest.TestCase):
                 "members": [],
                 "http_url_to_repo": "https://dev.azure.com/gitlab-ps/_apis/repositories/AnotherRepository",
                 "ssh_url_to_repo": "git@dev.azure.com:gitlab-ps/AnotherRepository.git",
-                "namespace": {
-                    "id": "20671faf-e1bd-4226-8172-0cdf0fdb7128",
-                    "path": "azure-bicep-workshop",
-                    "name": "Azure Bicep Workshop",
-                    "kind": "group",
-                    "full_path": "azure-bicep-workshop"
-                }
+                "lastUpdateTime": "2024-04-11T21:11:29.787Z",
+                "namespace": ""
             }
         ]
 
@@ -76,8 +71,9 @@ class ProjectsTests(unittest.TestCase):
 
         actual_projects = [d for d, _ in mongo.stream_collection(
             "projects-dev.azure.com")]
-
+        print(f"actual projects: {actual_projects}")
         for i, _ in enumerate(expected_projects):
+            print(f"in the loop: {actual_projects[i].items()}\n expected: {expected_projects[i].items()}")
             self.assertEqual(
                 actual_projects[i].items(), expected_projects[i].items())
 

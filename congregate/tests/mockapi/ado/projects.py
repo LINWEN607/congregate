@@ -8,7 +8,7 @@ class MockProjectsApi():
             "state": "wellFormed",
             "revision": 29,
             "visibility": "private",
-            "lastUpdateTime": "2024-04-11T21:11:29.787Z"
+            "lastUpdateTime": "2024-04-11T21:11:29.787Z",
         }
     
     def get_all_repositories(self):
