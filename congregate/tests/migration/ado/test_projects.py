@@ -43,21 +43,6 @@ class ProjectsTests(unittest.TestCase):
 
         mock_get_all_repositories.return_value = self.mock_projects.get_all_repositories()
 
-<<<<<<< HEAD
-        expected_projects = [
-            {
-               "name": "AnotherRepository",
-                "id": "5febef5a-833d-4e14-b9c0-14cb638f91e6",
-                "path": "anotherrepository",
-                "path_with_namespace": "azure-bicep-workshop",
-                "visibility": "private",
-                "description": "",
-                "members": [],
-                "http_url_to_repo": "https://dev.azure.com/gitlab-ps/_apis/repositories/AnotherRepository",
-                "ssh_url_to_repo": "git@dev.azure.com:gitlab-ps/AnotherRepository.git",
-                "lastUpdateTime": "2024-04-11T21:11:29.787Z",
-                "namespace": ""
-=======
         expected_projects = [{
             'name': 'eShopOnWeb',
             'id': '06b48f27-94eb-4229-abd8-ca6be39b4c48',
@@ -74,7 +59,6 @@ class ProjectsTests(unittest.TestCase):
                 'name': 'eShopOnWeb',
                 'kind': 'group',
                 'full_path': 'eshoponweb'
->>>>>>> d27680ac172743f97a4421f2c791d30fb0153b1f
             }
         }]
 
