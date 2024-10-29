@@ -75,7 +75,6 @@ class ProjectsTests(unittest.TestCase):
             "projects-dev.azure.com")]
         print(actual_projects)
         for i, _ in enumerate(expected_projects):
-            print(f"in the loop: {actual_projects[i].items()}\n expected: {expected_projects[i].items()}")
             self.assertEqual(
                 actual_projects[i].items(), expected_projects[i].items())
 
