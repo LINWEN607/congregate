@@ -634,7 +634,7 @@ class UsersClient(BaseClass):
                 self.log.info(
                     f"Blocking user {user_data['username']} email {user_data['email']} (status: {block_response})")
                 if isinstance(block_response, Response) and block_response.status_code == 201:
-                    self.add_blocked_user_admin_note(user_creation_data)
+                    self.add_blocked_user_admin_note(user_creation_data, user_data.get('state'))
                 else:
                     self.log.error(
                         f"Failed to block user {user_data}, with response:\n{block_response} - {block_response.text}")
@@ -645,11 +645,11 @@ class UsersClient(BaseClass):
                 f"Failed request to block user {user_data}, with error:\n{e}")
             return None
 
-    def add_blocked_user_admin_note(self, user):
+    def add_blocked_user_admin_note(self, user, original_state):
         host = self.config.destination_host
         user_msg = f"blocked user {user['email']}' (ID: {user['id']}) Admin note"
         data = {
-            "note": f"User blocked as part of {'GitLab PS' if is_dot_com(host) else ''} user migration from {self.config.source_host}"}
+            "note": f"User blocked as part of {'GitLab PS' if is_dot_com(host) else ''} user migration from {self.config.source_host}. Original state on source was [{original_state}]"}
         self.log.info(f"Add {user_msg}")
         try:
             resp = self.users_api.modify_user(
