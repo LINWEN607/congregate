@@ -58,7 +58,7 @@ class ProjectsTests(unittest.TestCase):
                 'path': 'eshoponweb',
                 'name': 'eShopOnWeb',
                 'kind': 'group',
-                'full_path': 'eshoponweb'
+                'full_path': ''
             }
         }]
 
@@ -73,11 +73,7 @@ class ProjectsTests(unittest.TestCase):
 
         actual_projects = [d for d, _ in mongo.stream_collection(
             "projects-dev.azure.com")]
-<<<<<<< HEAD
-        print(f"actual projects: {actual_projects}")
-=======
         print(actual_projects)
->>>>>>> d27680ac172743f97a4421f2c791d30fb0153b1f
         for i, _ in enumerate(expected_projects):
             print(f"in the loop: {actual_projects[i].items()}\n expected: {expected_projects[i].items()}")
             self.assertEqual(
