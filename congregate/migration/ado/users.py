@@ -1,14 +1,14 @@
-from gitlab_ps_utils.misc_utils import strip_netloc, is_error_message_present
+from gitlab_ps_utils.misc_utils import strip_netloc
 
 from congregate.migration.ado.api.users import UsersApi
-# from congregate.migration.ado.api.base import AzureDevOpsApiWrapper
 from congregate.migration.ado.base import AzureDevOpsWrapper
+from congregate.helpers.base_class import BaseClass
+from congregate.helpers.congregate_mdbc import mongo_connection
 
-from congregate.helpers.congregate_mdbc import CongregateMongoConnector
 
-
-class UsersClient(AzureDevOpsWrapper):
+class UsersClient(BaseClass):
     def __init__(self):
+        self.base_api = AzureDevOpsWrapper()
         self.users_api = UsersApi()
         super().__init__()
 
@@ -16,20 +16,16 @@ class UsersClient(AzureDevOpsWrapper):
         """
         List and transform all Azure DevOps user to GitLab user metadata
         """
-        self.multi.start_multi_process_stream_with_args(
-            self.handle_retrieving_users, self.users_api.get_all_users(), processes=processes, nestable=True)
+        # self.multi.start_multi_process_stream_with_args(
+        #     self.handle_retrieving_user, self.users_api.get_all_users(), processes=processes, nestable=True)
+        for user in self.users_api.get_all_users():
+            self.handle_retrieving_user(user)
 
-    def handle_retrieving_users(self, user, mongo=None):
-        error, resp = is_error_message_present(user)
-        if resp and not error:
-            # mongo should be set to None unless this function is being used in a
-            # unit test
-            if not mongo:
-                mongo = CongregateMongoConnector()
-            if formatted_user := self.format_user(user):
-                mongo.insert_data(
-                    f"users-{strip_netloc(self.config.source_host)}",
-                    formatted_user)
-            mongo.close_connection()
+    @mongo_connection
+    def handle_retrieving_user(self, user, mongo=None):
+        if user:
+            mongo.insert_data(
+                f"users-{strip_netloc(self.config.source_host)}",
+                self.base_api.format_user(user))
         else:
-            self.log.error(resp)
+            self.log.error("Failed to retrieve user information")

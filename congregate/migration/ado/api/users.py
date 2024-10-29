@@ -11,7 +11,7 @@ class UsersApi():
 
         Core REST API: https://learn.microsoft.com/en-us/rest/api/azure/devops/graph/users/get?view=azure-devops-rest-7.1&tabs=HTTP
         """
-        return self.api.generate_request_url(f"/_apis/graph/users/{descriptor}", sub_api="vssps")
+        return self.api.generate_get_request(f"_apis/graph/users/{descriptor}", sub_api="vssps")
 
     def get_all_users(self):
         """
@@ -46,3 +46,4 @@ class UsersApi():
             "subjectTypes": "aad,msa"
         }
         return self.api.list_all("_apis/graph/users", sub_api="vssps", params=params)
+
