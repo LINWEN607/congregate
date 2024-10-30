@@ -96,8 +96,15 @@
     },
     watch: {
         filterQuery: function(val, oldVal) {
-            console.log("Attempting to apply filter")
-            this.tabulator.setFilter(this.matchAny, {value: val})
+            setTimeout(() => {
+                if (val == this.filterQuery) {
+                    /* 
+                    The '*' and 'like' get stripped out when we make the request.
+                    They need to exist here so tabulator can build out the initial filter object
+                    */
+                    this.tabulator.setFilter("*", "like", val)
+                }
+            }, 500)
         }
     },
     methods: {
@@ -106,21 +113,6 @@
         },
         deselectAll() {
             this.tabulator.deselectRow()
-        },
-        matchAny(data, filterParams){
-            //data - the data for the row being filtered
-            //filterParams - params object passed to the filter
-
-            var match = false;
-            for(var key in data){
-                if(data[key]) {
-                    if(String(data[key]).includes(filterParams.value)){
-                        match = true;
-                    }
-                }
-            }
-
-            return match;
         },
         updateSelectedRowCount() {
             this.totalSelected = this.assetStore.size
@@ -151,9 +143,23 @@
                 paginationMode:"remote",
                 dataSendParams:{
                     "size":"per_page",
+                    "filter": "filter_by"
                 },
                 dataLoader: true,
-                layout:"fitDataStretch"
+                layout:"fitDataStretch",
+                filterMode:"remote",
+                // Replace the 'filter_by' object with just the filter term 
+                // since we are doing a multi-column partial word search
+                ajaxURLGenerator:function(url, config, params){
+                    if ('filter_by' in params) {
+                        if ((params.filter_by.length) > 0) {
+                            let filterValue = params.filter_by[0].value
+                            params.filter_by = filterValue
+                        }
+                    }
+                    let queryString = new URLSearchParams(params).toString()
+                    return url + "?" + queryString;
+                },
             })
         },
         getData: function () {
