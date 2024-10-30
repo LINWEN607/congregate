@@ -1,4 +1,5 @@
 from time import sleep
+from typing import Tuple
 from dacite import from_dict
 from celery import shared_task, chain
 from gitlab_ps_utils.misc_utils import safe_json_response
@@ -19,23 +20,13 @@ class BulkImportsClient(BaseGitLabClient):
                          dest_host=dest_host, dest_token=dest_token)
         self.bulk_import = BulkImportApi()
 
-    def trigger_bulk_import(self, payload: BulkImportPayload, dry_run=True):
+    def trigger_bulk_import(self, payload: BulkImportPayload, dry_run=True) -> Tuple[int, dict, str]:
         if not dry_run:
             import_response = self.bulk_import.start_new_bulk_import(self.dest_host, self.dest_token, payload.to_dict())
-            total_entity_count = 0
-            for entity in payload.entities:
-                if entity.source_type == 'group_entity':
-                    total_entity_count += self.calculate_entity_count(entity.source_full_path)
-                else:
-                    total_entity_count += 1
             if import_response.status_code in [200, 201, 202]:
-                import_response = import_response.json()
-                self.log.info(f"Successfully triggered bulk import request with response: {import_response}")
-                self.log.info(f"total entity count: {total_entity_count}")
-                while len(list(self.bulk_import.get_bulk_import_entities(self.dest_host, self.dest_token, import_response.get('id')))) >= total_entity_count:
-                    self.log.debug(f"Waiting to see all {total_entity_count} entities populated.")
-                    sleep(self.config.poll_interval)          
-                return (import_response.get('id'), list(self.bulk_import.get_bulk_import_entities(self.dest_host, self.dest_token, import_response.get('id'))), None)
+                import_response_json = import_response.json()
+                self.log.info(f"Successfully triggered bulk import request with response: {import_response_json}")
+                return (import_response_json.get('id'), None, import_response.text)
             else:
                 return (None, None, import_response.text)
         else:
@@ -219,18 +210,32 @@ def kick_off_bulk_import(self, payload, dry_run=True):
     payload = from_dict(data_class=BulkImportPayload, data=payload)
     dt_client = BulkImportsClient(payload.configuration.url, payload.configuration.access_token)
     dt_id, dt_entities, errors = dt_client.trigger_bulk_import(payload, dry_run=dry_run)
-    if dt_id and dt_entities:
+    if dt_id:
         # Kick off overall watch job
         watch_status = watch_import_status.delay(dt_client.config.destination_host, dt_client.config.destination_token, dt_id)
         entity_ids = []
-        for entity in dt_entities:
-            # Chain together watching the status of a specific entity
-            # and then once that job completes, trigger post migration tasks
-            res = chain(
-                watch_import_entity_status.s(dt_client.config.destination_host, dt_client.config.destination_token, entity), 
-                post_migration_task.s(dt_client.config.destination_host, dt_client.config.destination_token, dry_run=dry_run)
-            ).apply_async(queue='celery')
-            entity_ids.append(res.id)
+        processed_entities = set()
+        imported_entities = list(dt_client.bulk_import.get_bulk_import_entities(dt_client.config.destination_host, dt_client.config.destination_token, dt_id))
+        while len(processed_entities) < len(imported_entities):
+            dt_client.log.info(f"Total processed entities: {len(processed_entities)}, Total discovered entities: {len(imported_entities)}")
+            for entity in imported_entities:
+                entity_id = entity.get('id')
+                if entity_id not in processed_entities:
+                    dt_client.log.debug(f"Need to process entity {entity}")
+                    # Chain together watching the status of a specific entity
+                    # and then once that job completes, trigger post migration tasks
+                    res = chain(
+                        watch_import_entity_status.s(dt_client.config.destination_host, dt_client.config.destination_token, entity), 
+                        post_migration_task.s(dt_client.config.destination_host, dt_client.config.destination_token, dry_run=dry_run)
+                    ).apply_async(queue='celery')
+                    dt_client.log.debug(f"Task response: {res}")
+                    entity_ids.append(res.id)
+                    processed_entities.add(entity_id)
+                else:
+                    dt_client.log.info(f"Entity {entity.get('id')} is already in the queue")
+            dt_client.log.info("Waiting for all entities to be populated")
+            sleep(dt_client.config.poll_interval)
+            imported_entities = list(dt_client.bulk_import.get_bulk_import_entities(dt_client.config.destination_host, dt_client.config.destination_token, dt_id))
         return {
             'status': 'triggered direct transfer jobs',
             'overall_status_id': watch_status.id,
