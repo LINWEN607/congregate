@@ -82,21 +82,19 @@ class UsersClient(BaseClass):
             # Use the Namespaces API to get the namespace by the full path (username in this case)
             response = self.namespaces_api.get_namespace_by_full_path(username, self.config.destination_host, self.config.destination_token)
             if response.status_code == 200:
-                namespace_data = safe_json_response(response)
-                if namespace_data is None:
-                    self.log.error(f"Received invalid JSON response for namespace: '{username}'")
-                    return None  # Return None if response was invalid
+                if namespace_data := safe_json_response(response):
 
-                # Check if the returned namespace is of type 'group'
-                if namespace_data.get('kind') == 'group':
-                    return True
-                else:
+                    # Check if the returned namespace is of type 'group'
+                    if namespace_data.get('kind') == 'group':
+                        return True
                     return False  # Valid response, but not a group
-            else:
-                 # Log the HTTP status code and response message for troubleshooting
-                self.log.error(f"Failed to check namespace for user '{old_user}', "
-                            f"HTTP {response.status_code}: {response.text}")
-                return False
+                self.log.error(f"Received invalid JSON response for namespace: '{username}'")
+                return None  # Return None if response was invalid
+
+            # Log the HTTP status code and response message for troubleshooting
+            self.log.error(f"Failed to check namespace for user '{old_user}', "
+                        f"HTTP {response.status_code}: {response.text}")
+            return False
         except HTTPError as http_err:
             self.log.error(f"HTTP error occurred while checking group namespace for user '{old_user}': {http_err}")
         except RequestException as re:
