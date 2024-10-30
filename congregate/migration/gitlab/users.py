@@ -1,7 +1,7 @@
 import os
 import sys
 from requests import Response
-from requests.exceptions import RequestException
+from requests.exceptions import RequestException, HTTPError
 from pandas import DataFrame, Series, set_option
 from dacite import from_dict
 from celery import shared_task
@@ -18,6 +18,7 @@ from congregate.migration.gitlab import constants
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.users import UsersApi
+from congregate.migration.gitlab.api.namespaces import NamespacesApi
 from congregate.migration.meta.api_models.users import UserPayload
 
 
@@ -26,6 +27,7 @@ class UsersClient(BaseClass):
         self.groups_api = GroupsApi()
         self.users_api = UsersApi()
         self.projects_api = ProjectsApi()
+        self.namespaces_api = NamespacesApi()
         super().__init__()
         self.sso_hash_map = self.generate_hash_map()
 
@@ -67,30 +69,30 @@ class UsersClient(BaseClass):
         self.log.warning(
             f"Username '{username}' exists as a group name, for user:\n{old_user}")
         return True
-
+        
     def is_username_group_name(self, username, old_user):
         """
-        Check if a username exists as a group namespace
+        Check if a username exists as a group namespace by querying the Namespaces API.
         :param old_user: The source user we are trying to create a new user for
         :return: True if the username from old_user exists as a group namespace
-                None signifies "we don't know. do what you will."
-                else False
+                 None signifies "we don't know. do what you will."
+                 else False
         """
         try:
-            for g in self.groups_api.search_for_group(
-                    username, host=self.config.destination_host, token=self.config.destination_token):
-                is_error, resp = is_error_message_present(g)
-                if is_error:
-                    self.log.warning(
-                        f"Is '{username}' a group namespace lookup failed for group:\n{resp}")
-                elif resp.get("full_path") and str(resp["full_path"]).lower() == username.lower():
-                    # We found a match, so user=group namespace
-                    return True
-            return False
+            # Use the Namespaces API to get the namespace by the full path (username in this case)
+            response = self.namespaces_api.get_namespace_by_full_path(username, self.config.destination_host, self.config.destination_token)
+            if response.status_code == 200:
+                return safe_json_response(response).get('kind') == 'group'
+            else:
+                return False
+        except HTTPError as http_err:
+            self.log.error(f"HTTP error occurred while checking group namespace for user '{old_user}': {http_err}")
         except RequestException as re:
-            self.log.error(
-                f"Failed checking username '{username}' is not group namespace for user:\n{old_user}\n{re}")
-            return None
+            self.log.error(f"Request failed while checking group namespace for user '{old_user}': {re}")
+        except Exception as err:
+            self.log.error(f"An error occurred: {err}")
+
+        return None
 
     def user_email_exists(self, email):
         if email:
