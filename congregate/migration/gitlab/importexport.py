@@ -329,7 +329,7 @@ class ImportExportClient(BaseGitLabClient):
             # Check if the download directory exists before attempting to access it
             download_dir = f"{self.config.filesystem_path}/downloads"
             if not check_download_directory(download_dir):
-                print(f"Error: The download directory '{download_dir}' does not exist. "
+                self.log.error(f"Error: The download directory '{download_dir}' does not exist. "
                     "Please create the directory and try again.")
                 os.killpg(os.getpgid(os.getpid()), signal.SIGKILL)
             resp = None
@@ -447,7 +447,7 @@ class ImportExportClient(BaseGitLabClient):
             # Check if the download directory exists before attempting to access it
             download_dir = f"{self.config.filesystem_path}/downloads"
             if not check_download_directory(download_dir):
-                print(f"Error: The download directory '{download_dir}' does not exist. "
+                self.log.error(f"Error: The download directory '{download_dir}' does not exist. "
                     "Please create the directory and try again.")
                 os.killpg(os.getpgid(os.getpid()), signal.SIGKILL)
             token = self.config.destination_token
