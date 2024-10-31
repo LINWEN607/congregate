@@ -1,113 +1,43 @@
 <template>
-  <div class="groups">
-    <h2>Stage Groups</h2>
-    <div class="table">
-        <vue-good-table
-            ref="groups-table"
-            id="groups-table"
-            :columns="columns"
-            :rows="rows"
-            :search-options="{ enabled: true }"
-            :select-options="{ enabled: true }"
-            :pagination-options="{ enabled: true, perPage: 25 }"
-            :line-numbers="true"
-        />
-    </div>
-    <Footer msg="Stage" asset="stage-groups"/>
-  </div>
+  <StageTable 
+    asset="groups" 
+    :columns="columns" 
+    addEvent="stageGroup" 
+    removeEvent="unstageGroup" 
+    assetStore="stagedGroups"
+    storeGetter="totalSelectedGroups"
+  />
 </template>
 
 <script>
-import 'vue-good-table/dist/vue-good-table.css'
-import { VueGoodTable } from 'vue-good-table'
-import Footer from '@/components/Footer.vue'
-import axios from 'axios'
+import StageTable from '@/components/StageTable.vue'
 
 export default {
   name: 'Groups',
   components: {
-    VueGoodTable,
-    Footer
+    StageTable
   },
   data () {
     return {
       columns: [
         {
-          label: 'ID',
+          title: 'ID',
           field: 'id',
           type: 'number'
         },
         {
-          label: 'Name',
+          title: 'Name',
           field: 'name'
         },
         {
-          label: 'Visibility',
+          title: 'Visibility',
           field: 'visibility'
         },
         {
-          label: 'Full Path',
+          title: 'Full Path',
           field: 'full_path'
         }
       ],
-      rows: []
-    }
-  },
-  mounted: function () {
-    this.getData()
-    this.$emitter.on('stage-groups', event => {
-      this.stageData()
-    })
-  },
-  beforeDestroy: function() {
-    this.$emitter.off('stage-groups')
-  },
-  methods: {
-    getData: function () {
-      axios.get(`${import.meta.env.VITE_API_ROOT}/api/data/groups`).then(response => {
-        this.rows = response.data
-        this.getStagedData()
-      }).catch(function (error) {
-        console.log(error)
-      })
-    },
-    getStagedData: function () {
-      axios.get(`${import.meta.env.VITE_API_ROOT}/api/data/staged_groups`).then(response => {
-        var ids = []
-        response.data.forEach(element => {
-          ids.push(element.id)
-        })
-        let table = this.$refs['groups-table']
-        this.$refs['groups-table'].rows.forEach((element, ind) => {
-          if (ids.includes(element.id)) {
-            console.log("updating group table")
-            table.$set(table.rows[ind], 'vgtSelected', true)
-          }
-        })
-      }).catch(function (error) {
-        console.log(error)
-      })
-    },
-    stageData: function () {
-      if (this.$refs['groups-table'].selectedRows) {
-        let ids = []
-        this.$refs['groups-table'].selectedRows.forEach(element => {
-          ids.push(element.id)
-        })
-        axios.post(`${import.meta.env.VITE_API_ROOT}/api/stage/groups`, String(ids)).then(response => {
-          console.log(response)
-          this.$emitter.emit('alert', {
-            'message': response.data,
-            'messageType': 'done'
-          })
-        }).catch(response => {
-          console.log(response)
-          this.$emitter.emit('alert', {
-            'message': 'Unable to stage groups',
-            'messageType': 'error'
-          })
-        })
-      }
     }
   }
 }

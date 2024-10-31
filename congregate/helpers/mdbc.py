@@ -111,7 +111,8 @@ class MongoConnector(BaseClass):
         try:
             try:
                 return self.db[collection].find_one(query, **kwargs)
-            except TypeError:
+            except TypeError as e:
+                self.log.warning(f"Unable to process original Mongo query due to [{e}]")
                 return self.db[collection].find_one(query)
         except errors.OperationFailure as e:
             # Condition for mongomock testing. Hints are not supported in
@@ -133,7 +134,8 @@ class MongoConnector(BaseClass):
         try:
             try:
                 return self.db[collection].find(query, **kwargs)
-            except TypeError:
+            except TypeError as e:
+                self.log.warning(f"Unable to process original Mongo query due to [{e}]")
                 return self.db[collection].find(query)
         except errors.OperationFailure as e:
             # Condition for mongomock testing. Hints are not supported in

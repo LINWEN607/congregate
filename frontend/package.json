@@ -11,11 +11,12 @@
   "dependencies": {
     "axios": "^0.21.1",
     "chokidar": "^3.5.1",
+    "lodash": "^4.17.21",
     "mitt": "^3.0.0",
     "pinia": "^2.1.7",
+    "tabulator-tables": "^6.3.0",
     "toaster-js": "^2.2.3",
     "vue": "^2.6.13",
-    "vue-good-table": "^2.21.10",
     "vue-router": "^3.5.1",
     "yargs-parser": "^20.2.9"
   },

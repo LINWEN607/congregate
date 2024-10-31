@@ -7,6 +7,8 @@ from gitlab_ps_utils.dict_utils import dig
 
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.ado.api.repositories import RepositoriesApi
+from congregate.migration.ado.api.users import UsersApi
+from congregate.migration.ado.api.teams import TeamsApi
 
 
 class AzureDevOpsWrapper(BaseClass):
@@ -14,13 +16,23 @@ class AzureDevOpsWrapper(BaseClass):
     def __init__(self, subset=False):
         self.subset = subset
         self.repositories_api = RepositoriesApi()
+        self.users_api = UsersApi()
+        self.teams_api = TeamsApi()
         self.skip_group_members = False
         self.skip_project_members = False
         super().__init__()
 
     def slugify(self, text):
         return re.sub(r'\s+', '-', re.sub(r'[^\w\s-]', '', text.lower())).strip('-')
-    
+
+    def create_valid_username(self, input_string):
+        lowercase_string = input_string.lower()
+        dotted_string = lowercase_string.replace(' ', '.')
+        valid_username = re.sub(r'[^a-z.]', '', dotted_string)
+        valid_username = valid_username.strip('.')
+        valid_username = re.sub(r'\.+', '.', valid_username)
+        return valid_username
+
     def format_project(self, project, repository, count, mongo):
         path_with_namespace = self.slugify(project["name"])
         if count > 1:
@@ -33,7 +45,7 @@ class AzureDevOpsWrapper(BaseClass):
             "path_with_namespace": path_with_namespace,
             "visibility": project["visibility"],
             "description": project.get("description", ""),
-            "members": [],
+            "members": [] if self.subset else self.add_team_members([], project),
             "http_url_to_repo": repository["remoteUrl"],
             "ssh_url_to_repo": repository["sshUrl"],
             "namespace": {
@@ -53,7 +65,7 @@ class AzureDevOpsWrapper(BaseClass):
             "full_path": self.slugify(project["name"]),
             "visibility": project["visibility"],
             "description": project.get("description", ""),
-            "members": [],
+            "members": [] if self.subset else self.add_team_members([], project),
             "projects": [] if self.subset else self.add_project_repos([], project, mongo)
         }
 
@@ -72,3 +84,27 @@ class AzureDevOpsWrapper(BaseClass):
             self.log.error(
                 f"Failed to GET repos from project '{project}', with error:\n{re}")
             return None
+
+    def format_user(self, user):
+        return {
+            "id": user["descriptor"],
+            "username": self.create_valid_username(user["displayName"]),
+            "name": user["displayName"],
+            "email": user["mailAddress"].lower(),
+            "state": "active"
+        }
+
+    def add_team_members(self, users, project):
+        users = []
+        teams = self.teams_api.get_teams(project["id"]).json().get("value", [])
+        if not teams:
+            self.log.warning(f"Project {project['name']} has no teams")
+            return users
+        for team in teams:
+            members = self.teams_api.get_team_members(project["id"], team["id"]).json().get("value", [])
+            for member in members:
+                user_descriptor = member["identity"]["descriptor"]
+                user_data = self.users_api.get_user(user_descriptor)
+                if user_data:
+                    users.append(self.format_user(user_data.json()))
+        return users
