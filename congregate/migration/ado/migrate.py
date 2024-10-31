@@ -180,7 +180,11 @@ class AzureDevopsMigrateClient(MigrateClient):
         self.branches.set_branch(
             path_with_namespace, pid, project.get("default_branch"))
 
+        # Pull Requests migration
+        
+        self.azure_projects_client.migrate_pull_requests(project, pid)
+
         # Remove import user; SKIP if removing all other members
-        if not self.remove_members:
-            self.remove_import_user(pid)
+        # if not self.remove_members:
+        #     self.remove_import_user(pid)
         return result

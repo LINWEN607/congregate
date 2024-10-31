@@ -4,6 +4,8 @@ from congregate.migration.ado.api.base import AzureDevOpsApiWrapper
 from congregate.migration.ado.base import AzureDevOpsWrapper
 from congregate.migration.ado.api.projects import ProjectsApi
 from congregate.migration.ado.api.repositories import RepositoriesApi
+from congregate.migration.ado.api.pull_requests import PullRequestsApi
+from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.congregate_mdbc import mongo_connection
 
@@ -14,6 +16,8 @@ class ProjectsClient(BaseClass):
         self.base_api = AzureDevOpsWrapper()
         self.projects_api = ProjectsApi()
         self.repositories_api = RepositoriesApi()
+        self.pull_requests_api = PullRequestsApi()
+        self.merge_requests_api = MergeRequestsApi()
         super().__init__()
 
     def retrieve_project_info(self, processes=None):
@@ -33,3 +37,37 @@ class ProjectsClient(BaseClass):
             if repository:
                 formatted_project = self.base_api.format_project(project, repository, count, mongo)
                 mongo.insert_data(collection_name, formatted_project)
+
+    def migrate_pull_requests(self, source_project, dstn_project_id, dry_run=False):
+        if not dry_run:
+            self.log.info(f"Migrating pull requests for project {source_project.get('project_id')}")
+            try:
+                count=0
+                for pr in self.pull_requests_api.get_all_pull_requests(project_id=source_project.get("project_id"), repository_id=source_project.get("id")):
+                    # Convert Azure DevOps PR to GitLab MR format
+                    count+=1
+                    mr_data = {
+                        'source_branch': pr['sourceRefName'].replace("refs/heads/", ""),
+                        'target_branch': pr['targetRefName'].replace("refs/heads/", ""),
+                        'title': pr['title'],
+                        'description': pr['description'],
+                        'state': self.pull_request_status(pr)
+                    }
+                    self.merge_requests_api.create_merge_request(self.config.destination_host, self.config.destination_token, dstn_project_id, mr_data)
+                self.log.info(f"Successfully migrated {count} pull requests for {source_project.get('project_id')}")
+            except Exception as e:
+                self.log.error(f"Error migrating pull requests for {source_project.get('project_id')}: {str(e)}")
+        else:
+            self.log.info(f"Dry run: Skipping pull requests migration for {source_project.get('project_id')}")
+
+    def pull_request_status(self, pr):
+        # ADO: https://learn.microsoft.com/en-us/rest/api/azure/devops/git/pull-requests/get-pull-request-by-id?view=azure-devops-rest-7.1&tabs=HTTP#pullrequeststatus
+        # GitLab: https://docs.gitlab.com/ee/api/merge_requests.html#list-merge-requests
+        if pr["status"] == "active":
+            return "opened"
+        elif pr["status"] == "completed":
+            return "merged"
+        elif pr["status"] == "abandoned":
+            return "closed"
+        else:
+            return "unknown"
