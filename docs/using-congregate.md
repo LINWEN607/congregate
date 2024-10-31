@@ -40,7 +40,8 @@
 
 **Note: This full setup is optional. For most users, the Quick Start guide provides all necessary steps.**
 
-Follow the steps [here](./setup-dev-env.md) for a full guide on how to setup a test environment with a source, destination and congregate system to test congregate functionality.
+- For Developers, follow the steps [here](./setup-dev-env.md) for a full guide on how to setup a test environment with a source, destination and congregate system to test congregate functionality. 
+- For users who require a robust, production-ready setup beyond the Quick Start, follow the [End-User Setup Documentation](./full_setup.md)
 
 <!--
 1. Download and install docker, podman, or any other application that can run docker containers
