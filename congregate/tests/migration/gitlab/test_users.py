@@ -16,6 +16,7 @@ from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.users import UsersClient
 from congregate.migration.gitlab.api.groups import GroupsApi
+from congregate.migration.gitlab.api.namespaces import NamespacesApi
 from congregate.migration.gitlab.keys import KeysClient
 from congregate.helpers.congregate_mdbc import CongregateMongoConnector
 from congregate.migration.meta.api_models.users import UserPayload
@@ -764,10 +765,13 @@ class UsersTests(unittest.TestCase):
            new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, 'destination_token',
                   new_callable=PropertyMock)
-    @patch.object(GroupsApi, "search_for_group")
+    @patch.object(NamespacesApi, "get_namespace_by_full_path")
     def test_is_username_group_path_not_found(
-            self, group_api, dest_token, dest_host):
-        group_api.return_value = [{"full_path": "subgroup/xyz"}]
+            self, namespace_api, dest_token, dest_host):
+        mock_response = MagicMock()
+        mock_response.status_code = 404
+        mock_response.json.return_value = {"kind": "group", "full_path": "subgroup/xyz"}
+        namespace_api.return_value = mock_response
         dest_host.return_value = "https://gitlabdestination.com"
         dest_token.return_value = "token"
         response = self.users.is_username_group_name(
@@ -778,10 +782,13 @@ class UsersTests(unittest.TestCase):
            new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, 'destination_token',
                   new_callable=PropertyMock)
-    @patch.object(GroupsApi, "search_for_group")
+    @patch.object(NamespacesApi, "get_namespace_by_full_path")
     def test_is_username_group_path_found(
-            self, group_api, dest_token, dest_host):
-        group_api.return_value = [{"full_path": "abc"}]
+            self, namespace_api, dest_token, dest_host):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"kind": "group", "full_path": "abc"}
+        namespace_api.return_value = mock_response
         dest_host.return_value = "https://gitlabdestination.com"
         dest_token.return_value = "token"
         response = self.users.is_username_group_name(
@@ -792,10 +799,13 @@ class UsersTests(unittest.TestCase):
            new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, 'destination_token',
                   new_callable=PropertyMock)
-    @patch.object(GroupsApi, "search_for_group")
+    @patch.object(NamespacesApi, "get_namespace_by_full_path")
     def test_is_username_group_path_found_ignore_case(
-            self, group_api, dest_token, dest_host):
-        group_api.return_value = [{"full_path": "ABC"}]
+            self, namespace_api, dest_token, dest_host):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"kind": "group", "full_path": "ABC"}
+        namespace_api.return_value = mock_response
         dest_host.return_value = "https://gitlabdestination.com"
         dest_token.return_value = "token"
         response = self.users.is_username_group_name(
@@ -806,10 +816,10 @@ class UsersTests(unittest.TestCase):
            new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, 'destination_token',
                   new_callable=PropertyMock)
-    @patch.object(GroupsApi, "search_for_group")
+    @patch.object(NamespacesApi, "get_namespace_by_full_path")
     def test_is_username_group_name_error_assumes_none(
-            self, group_api, dest_token, dest_host):
-        group_api.side_effect = RequestException("API call failed")
+            self, namespace_api, dest_token, dest_host):
+        namespace_api.side_effect = RequestException("API call failed")
         dest_host.return_value = "https://gitlabdestination.com"
         dest_token.return_value = "token"
         response = self.users.is_username_group_name(

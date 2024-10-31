@@ -51,6 +51,7 @@ export default {
     this.$emitter.on('check-jobs', () => {
       this.getJobsByStatus()
     })
+    this.getJobsByStatus()
   },
   methods: {
     getJobsByStatus: function() {

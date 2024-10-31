@@ -35,6 +35,7 @@ class UserPayload():
     private_profile: Optional[bool] = False
     commit_email: Optional[str] = ""
     note: Optional[str] = ""
+
     # POST fields
     extern_uid: Optional[str] = ""
     provider: Optional[str] = ""

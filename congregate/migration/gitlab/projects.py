@@ -12,6 +12,7 @@ from gitlab_ps_utils.misc_utils import get_dry_log, get_timedelta, \
     is_error_message_present, safe_json_response, strip_netloc, \
     get_decoded_string_from_b64_response_content, do_yml_sub, strip_scheme
 from gitlab_ps_utils.json_utils import json_pretty, read_json_file_into_object, write_json_to_file
+from gitlab_ps_utils.list_utils import remove_dupes
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.congregate_mdbc import mongo_connection, CongregateMongoConnector
 from congregate.migration.gitlab.api.projects import ProjectsApi
@@ -19,6 +20,7 @@ from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.groups import GroupsClient
 from congregate.migration.gitlab.users import UsersClient
+from congregate.migration.gitlab.contributor_retention import ContributorRetentionClient
 from congregate.migration.gitlab import constants
 from congregate.migration.mirror import MirrorClient
 from congregate.helpers.migrate_utils import get_dst_path_with_namespace,  get_full_path_with_parent_namespace, \
@@ -1037,6 +1039,46 @@ class ProjectsClient(BaseClass):
                            "message": "error", "exception": str(ex)}
         finally:
             return return_dict or {"id": import_id, "path": dst_path_with_namespace, "message": "success", "exception": None}
+
+    def list_staged_projects_contributors(self, dry_run=True):
+        start = time()
+        rotate_logs()
+        contributors = []
+        staged_projects = get_staged_projects()
+        open(f"{self.app_path}/data/staged_users.json", "w").close()
+        for c in self.multi.start_multi_process(
+                self.list_project_contributors,
+                staged_projects,
+                processes=self.config.processes):
+            contributors.extend(c)
+        contributors = remove_dupes(contributors)
+        self.log.info(
+            f"{get_dry_log(dry_run)}Saving {len(contributors)} unique contributors to file")
+        if not dry_run:
+            with open(f"{self.app_path}/data/staged_users.json", "w") as f:
+                json.dump(contributors, f, indent=4)
+        add_post_migration_stats(start, log=self.log)
+
+    def list_project_contributors(self, staged_project):
+        contributors = []
+        project_id = staged_project.get("id")
+        project_path = staged_project.get('path_with_namespace')
+        try:
+            c_retention = None
+            c_retention = ContributorRetentionClient(
+                project_id, None, project_path)
+            if contributor_map := c_retention.build_map():
+                for contributor, data in contributor_map.items():
+                    self.log.info(
+                        f"Retrieved contributor '{contributor}' from project '{project_path}'")
+                    contributors.append(data)
+            else:
+                self.log.info(
+                    f"No contributors found for project '{project_path}'")
+        except RequestException as re:
+            self.log.error(
+                f"Failed to list project '{project_path}' contributors, with error:\n{re}")
+        return contributors
 
 
 @shared_task(name='retrieve-projects')

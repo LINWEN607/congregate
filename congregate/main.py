@@ -13,16 +13,16 @@ Usage:
     congregate stage-users <users>... [--commit]
     congregate stage-wave <wave> [--commit] [--scm-source=hostname]
     congregate create-stage-wave-csv [--commit]
-    congregate migrate [--processes=<n>] [--reporting] [--skip-users] [--remove-members] [--sync-members] [--stream-groups] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostname] [--commit] [--reg-dry-run] [--group-structure] [--retain-contributors]
-    congregate rollback [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
+    congregate migrate [--commit] [--processes=<n>] [--reporting] [--skip-users] [--remove-members] [--sync-members] [--stream-groups] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostname] [--reg-dry-run] [--group-structure] [--retain-contributors]
+    congregate rollback [--commit] [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects]
     congregate ui
     congregate do-all [--commit]
     congregate do-all-users [--commit]
     congregate do-all-groups-and-projects [--commit]
     congregate search-for-staged-users [--table]
     congregate update-aws-creds
-    congregate update-parent-group-members [--access-level=<level>] [--add-members] [--commit]
-    congregate update-members-access-level [--current-level=<level>] [--target-level=<level>] [--skip-groups] [--skip-projects] [--commit]
+    congregate update-parent-group-members [--commit] [--access-level=<level>] [--add-members]
+    congregate update-members-access-level [--commit] [--current-level=<level>] [--target-level=<level>] [--skip-groups] [--skip-projects]
     congregate remove-inactive-users [--commit] [--membership]
     congregate get-total-count
     # TODO: Refactor, project name matching does not seem correct
@@ -70,6 +70,7 @@ Usage:
     congregate align-user-mapping-emails [--commit]
     congregate create-staged-projects-structure [--commit] [--disable-cicd]
     congregate create-staged-projects-fork-relation [--commit]
+    congregate list-staged-projects-contributors [--commit]
     congregate -h | --help
     congregate -v | --version
 
@@ -211,6 +212,7 @@ Commands:
     align-user-mapping-emails               Add new email to source users based on 'user_mapping_by_<field>.json' src:dest primary/public email mapping file.
     create-staged-projects-structure        Create empty project structures on GitLab destination for staged projects. Optionally, disable CI/CD on creation.
     create-staged-projects-fork-relation    Create a forked from/to relation between (group) projects on destination, based on staged projects. Assumes fork and forked project have already been migrated.
+    list-staged-projects-contributors       List all non-member contributors for all staged projects and save to file. GitLab ONLY.
 """
 
 import os
@@ -374,7 +376,7 @@ def main():
                     skip_project_members=arguments["--skip-project-members"],
                     skip_ci=arguments["--skip-ci"],
                     src_instances=SRC_INSTANCES,
-                    subset=arguments["--subset"]
+                    subset=arguments["--subset"],
                 )
                 list_client.list_data()
                 add_post_migration_stats(start, log=log)
@@ -740,6 +742,8 @@ def main():
                 projects.create_staged_projects_fork_relation(dry_run=DRY_RUN)
             if arguments["url-rewrite-only"]:
                 projects.perform_url_rewrite_only(dry_run=DRY_RUN)
+            if arguments["list-staged-projects-contributors"]:
+                projects.list_staged_projects_contributors(dry_run=DRY_RUN)
 
 
 if __name__ == "__main__":

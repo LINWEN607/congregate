@@ -605,4 +605,4 @@ class Config(BaseConfig):
 
     @property
     def ado_api_version(self):
-        return self.prop("SOURCE", "api_version", default="7.0")
+        return self.prop("SOURCE", "api_version", default="7.0-preview")

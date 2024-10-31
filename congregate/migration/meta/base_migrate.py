@@ -238,11 +238,6 @@ class MigrateClient(BaseClass):
             user_data = self.users.generate_user_data(user)
             self.log.warning(
                 f"Could not create user. User may exist with a different primary email. Check previous logs warnings. Userdata follows:\n{user_data}")
-            # Return the "original" new_user setting
-            return {
-                "email": email,
-                "id": None
-            }
 
     def align_users_with_state_mismatch(self, old_user, new_user):
         """
@@ -278,11 +273,6 @@ class MigrateClient(BaseClass):
             user_data = self.users.generate_user_data(user)
             self.log.warning(
                 f"Could not create user. User may exist with a different primary email. Check previous logs warnings. Userdata follows:\n{user_data}")
-            # Return the "original" new_user setting
-            return {
-                "email": email,
-                "id": None
-            }
 
     def disable_shared_ci(self, path, pid):
         # Disable Auto DevOps
@@ -383,6 +373,9 @@ class MigrateClient(BaseClass):
             if not isinstance(resp, Response) or resp.status_code not in [204, 404]:
                 self.log.error(
                     f"Failed to remove import user (ID: {import_uid}) from {gl_type} (ID: {dst_id}):\n{resp}")
+            else:
+                self.log.info(
+                    f"Successfully removed import user (ID: {import_uid}) from {gl_type} (ID: {dst_id})")
         except RequestException as re:
             self.log.error(
                 f"Failed to remove import user (ID: {import_uid}) from {gl_type} (ID: {dst_id}), with error:\n{re}")

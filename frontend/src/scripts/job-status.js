@@ -4,7 +4,8 @@ export const listJobs = [
     'congregate.cli.list_source.list_data',
     'traverse-groups',
     'retrieve-projects',
-    'retrieve-user'
+    'retrieve-user',
+    'list-data'
 ]
 
 export const migrateJobs = [

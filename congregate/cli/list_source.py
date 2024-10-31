@@ -23,6 +23,7 @@ from congregate.migration.github.users import UsersClient as GitHubUsers
 
 from congregate.migration.ado.projects import ProjectsClient as AdoProjects
 from congregate.migration.ado.groups import GroupsClient as AdoGroups
+from congregate.migration.ado.users import UsersClient as AdoUsers
 
 from congregate.migration.jenkins.base import JenkinsClient as JenkinsData
 from congregate.migration.teamcity.base import TeamcityClient as TeamcityData
@@ -42,7 +43,7 @@ class ListClient(BaseClass):
         skip_project_members=False,
         skip_ci=False,
         src_instances=False,
-        subset=False
+        subset=False,
     ):
         super().__init__()
         self.processes = processes
@@ -170,7 +171,7 @@ class ListClient(BaseClass):
                     mongo.dump_collection_to_file(p, f"{app}/data/{p}.json")
         mongo.close_connection()
 
-    def list_azure_devops_data(self): 
+    def list_azure_devops_data(self):
         mongo, p, g, u = self.mongo_init()
 
         # Find only projects with =<1 repo ( = project in GitLab)
@@ -181,12 +182,17 @@ class ListClient(BaseClass):
                 p, f"{self.app_path}/data/projects.json")
 
         # Find ADO projects with >1 repos ( = group in GitLab)
-
         if not self.skip_groups:
             groups = AdoGroups()
             groups.retrieve_group_info(processes=self.processes)
             mongo.dump_collection_to_file(
                 g, f"{self.app_path}/data/groups.json")
+
+        if not self.skip_users:
+            users = AdoUsers()
+            users.retrieve_user_info(processes=self.processes)
+            mongo.dump_collection_to_file(
+                u, f"{self.app_path}/data/users.json")
 
         mongo.close_connection()
 
@@ -285,9 +291,9 @@ class ListClient(BaseClass):
 
 @shared_task
 def list_data(partial=False, skip_users=False, skip_groups=False, skip_group_members=False,
-              skip_projects=False, skip_project_members=False, skip_ci=False, 
+              skip_projects=False, skip_project_members=False, skip_ci=False,
               src_instances=False, subset=False):
     client = ListClient(partial=partial, skip_users=skip_users, skip_groups=skip_groups, skip_group_members=skip_group_members,
-              skip_projects=skip_projects, skip_project_members=skip_project_members, skip_ci=skip_ci, 
-              src_instances=src_instances, subset=subset)
+                        skip_projects=skip_projects, skip_project_members=skip_project_members, skip_ci=skip_ci,
+                        src_instances=src_instances, subset=subset)
     return client.list_data()
