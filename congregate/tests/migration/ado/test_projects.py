@@ -58,7 +58,7 @@ class ProjectsTests(unittest.TestCase):
                 'path': 'eshoponweb',
                 'name': 'eShopOnWeb',
                 'kind': 'group',
-                'full_path': 'eshoponweb'
+                'full_path': ''
             }
         }]
 

@@ -61,7 +61,7 @@ class AzureDevopsMigrateClient(MigrateClient):
         dry_log = misc_utils.get_dry_log(self.dry_run)
 
         # Migrate users
-        self.migrate_user_info()
+        # self.migrate_user_info()
 
         # Migrate Azure projects as GL groups
         # self.migrate_azure_project_info(dry_log)
@@ -122,7 +122,10 @@ class AzureDevopsMigrateClient(MigrateClient):
                 "SKIP: No Azure Devops repos staged for migration")
 
     def import_azure_repo(self, project):
-        pwn = project.get("path_with_namespace")
+        if project.get("namespace"):
+            pn = self.config.dstn_parent_group_path+"/"+project.get("namespace")
+        else:
+            pn = self.config.dstn_parent_group_path
         dstn_pwn, tn = mig_utils.get_stage_wave_paths(project)
         host = self.config.destination_host
         token = self.config.destination_token
@@ -133,7 +136,7 @@ class AzureDevopsMigrateClient(MigrateClient):
                 result = self.ext_import.get_result_data(
                     dstn_pwn, {"id": dst_pid})
                 if self.only_post_migration_info:
-                    result = self.handle_bb_post_migration(
+                    result = self.handle_azure_post_migration(
                         result, dstn_pwn, project, dst_pid)
                 else:
                     self.log.warning(
@@ -141,10 +144,10 @@ class AzureDevopsMigrateClient(MigrateClient):
             # New import
             else:
                 result = self.ext_import.trigger_import_from_repo(
-                    pwn, dstn_pwn, tn, project, dry_run=self.dry_run)
+                    pn, dstn_pwn, tn, project, dry_run=self.dry_run)
                 result_response = result[dstn_pwn]["response"]
                 if (isinstance(result_response, dict)) and (project_id := result_response.get("id")):
-                    full_path = result_response.get("name_with_namespace").strip("/")
+                    full_path = result_response.get("path_with_namespace").strip("/")
                     success = self.ext_import.wait_for_project_to_import(
                         full_path)
                     if success:
