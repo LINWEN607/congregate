@@ -149,7 +149,7 @@ class UsersApi(GitLabApiWrapper):
         """
         Blocks the specified user. Available only for admin.
 
-        GitLab API Doc: https://docs.gitlab.com/ee/api/users.html#block-user
+        GitLab API Doc: https://docs.gitlab.com/ee/api/user_moderation.html#block-a-user
 
             :param: host: (str) GitLab host URL
             :param: token: (str) Access token to GitLab instance
@@ -159,6 +159,21 @@ class UsersApi(GitLabApiWrapper):
         if not message:
             message = f"Blocking user {uid}"
         return self.api.generate_post_request(host, token, f"users/{uid}/block", data=None)
+
+    def unblock_user(self, host, token, uid, message=None):
+        """
+        Unblocks the specified user. Available only for admin.
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/user_moderation.html#unblock-a-user
+
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :param: uid: (int) GitLab user ID
+            :return: 201 OK / 404 User Not Found / 403 Forbidden
+        """
+        if not message:
+            message = f"Unblocking user {uid}"
+        return self.api.generate_post_request(host, token, f"users/{uid}/unblock", data=None)
 
     def get_all_user_contribution_events(self, uid, host, token):
         """
