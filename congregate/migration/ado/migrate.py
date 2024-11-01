@@ -61,7 +61,7 @@ class AzureDevopsMigrateClient(MigrateClient):
         dry_log = misc_utils.get_dry_log(self.dry_run)
 
         # Migrate users
-        # self.migrate_user_info()
+        self.migrate_user_info()
 
         # Migrate Azure projects as GL groups
         # self.migrate_azure_project_info(dry_log)
@@ -181,7 +181,6 @@ class AzureDevopsMigrateClient(MigrateClient):
             path_with_namespace, pid, project.get("default_branch"))
 
         # Pull Requests migration
-        
         self.azure_projects_client.migrate_pull_requests(project, pid)
 
         # Remove import user; SKIP if removing all other members
