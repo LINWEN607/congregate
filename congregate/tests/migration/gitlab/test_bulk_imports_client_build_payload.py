@@ -1,9 +1,10 @@
-import pytest
 from unittest import TestCase
 from unittest.mock import Mock, patch
+
+import pytest
+
 from congregate.migration.gitlab.bulk_imports import BulkImportsClient
 from congregate.migration.meta.api_models.bulk_import import BulkImportPayload
-from congregate.migration.meta.api_models.bulk_import_entity import BulkImportEntity
 
 
 @pytest.mark.unit_test
@@ -14,6 +15,7 @@ class TestBulkImportsClientBuildPayload(TestCase):
         client.config = Mock()
         client.config.source_host = "https://source.gitlab.com"
         client.config.source_token = "test-token"
+        client.config.dstn_parent_id = 42
         client.config.dstn_parent_group_path = "destination-group"
         client.log = Mock()
         return client
@@ -57,7 +59,8 @@ class TestBulkImportsClientBuildPayload(TestCase):
                 assert len(result.entities) == 1
                 assert result.entities[0].source_type == "group_entity"
                 assert result.entities[0].source_full_path == "group1"
-                assert result.entities[0].destination_namespace == ""
+                assert result.entities[0].destination_namespace == "destination-group"
+                assert result.entities[0].destination_name == "Group 1"
 
     def test_build_payload_project_entity(self):
         client = self.client()
@@ -76,7 +79,8 @@ class TestBulkImportsClientBuildPayload(TestCase):
             assert len(result.entities) == 1
             assert result.entities[0].source_type == "project_entity"
             assert result.entities[0].source_full_path == "group1/project1"
-            assert result.entities[0].destination_namespace == "group1"
+            assert result.entities[0].destination_namespace == "destination-group/group1"
+            assert result.entities[0].destination_name == "Project 1"
 
     def test_build_payload_with_subset_projects(self):
         client = self.client()
