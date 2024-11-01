@@ -59,7 +59,7 @@ class TestBulkImportsClientBuildPayload(TestCase):
                 assert len(result.entities) == 1
                 assert result.entities[0].source_type == "group_entity"
                 assert result.entities[0].source_full_path == "group1"
-                assert result.entities[0].destination_namespace == "destination-group"
+                assert result.entities[0].destination_namespace == ""
                 assert result.entities[0].destination_name == "Group 1"
 
     def test_build_payload_project_entity(self):
@@ -74,13 +74,14 @@ class TestBulkImportsClientBuildPayload(TestCase):
         }]
 
         with patch.object(client, 'subset_projects_staged', return_value={}):
-            result = client.build_payload(staged_data, "project")
+            with patch.object(client, 'parent_group_exists', return_value=False):
+                result = client.build_payload(staged_data, "project")
 
-            assert len(result.entities) == 1
-            assert result.entities[0].source_type == "project_entity"
-            assert result.entities[0].source_full_path == "group1/project1"
-            assert result.entities[0].destination_namespace == "destination-group/group1"
-            assert result.entities[0].destination_name == "Project 1"
+                assert len(result.entities) == 1
+                assert result.entities[0].source_type == "project_entity"
+                assert result.entities[0].source_full_path == "group1/project1"
+                assert result.entities[0].destination_namespace == "group1"
+                assert result.entities[0].destination_name == "Project 1"
 
     def test_build_payload_with_subset_projects(self):
         client = self.client()

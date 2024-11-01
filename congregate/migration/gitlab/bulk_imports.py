@@ -217,8 +217,7 @@ class BulkImportsClient(BaseGitLabClient):
             source_type="project_entity",
             source_full_path=project_data['path_with_namespace'],
             destination_slug=project_data['path'],
-            destination_namespace=get_project_dest_namespace(
-                project_data, group_path=self.config.dstn_parent_group_path),
+            destination_namespace=get_project_dest_namespace(project_data),
             destination_name=project_data['name'],
         )
 
