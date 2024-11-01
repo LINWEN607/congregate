@@ -1,4 +1,4 @@
-import json
+import json, os, signal
 from re import sub
 from urllib.parse import quote, quote_plus
 from time import sleep
@@ -20,7 +20,7 @@ from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.namespaces import NamespacesApi
 from congregate.helpers.migrate_utils import get_project_dest_namespace, is_user_project, get_user_project_namespace, \
     get_export_filename_from_namespace_and_name, get_dst_path_with_namespace, get_full_path_with_parent_namespace, \
-    is_loc_supported, check_is_project_or_group_for_logging, migration_dry_run
+    is_loc_supported, check_is_project_or_group_for_logging, migration_dry_run, check_download_directory
 
 
 class ImportExportClient(BaseGitLabClient):
@@ -326,6 +326,12 @@ class ImportExportClient(BaseGitLabClient):
                     import_response = self.aws.copy_from_s3_and_import(
                         name, namespace, downloaded_filename)
         elif self.config.location == "filesystem":
+            # Check if the download directory exists before attempting to access it
+            download_dir = f"{self.config.filesystem_path}/downloads"
+            if not check_download_directory(download_dir):
+                self.log.error(f"Error: The download directory '{download_dir}' does not exist. "
+                    "Please create the directory and try again.")
+                os.killpg(os.getpgid(os.getpid()), signal.SIGKILL)
             resp = None
             self.log.info(
                 "Importing project {0} from filesystem to {1}".format(name, namespace))
@@ -438,6 +444,12 @@ class ImportExportClient(BaseGitLabClient):
             self.log.warning(
                 "NOTICE: Group export does not yet support (AWS/S3) user attributes")
         elif self.config.location == "filesystem":
+            # Check if the download directory exists before attempting to access it
+            download_dir = f"{self.config.filesystem_path}/downloads"
+            if not check_download_directory(download_dir):
+                self.log.error(f"Error: The download directory '{download_dir}' does not exist. "
+                    "Please create the directory and try again.")
+                os.killpg(os.getpgid(os.getpid()), signal.SIGKILL)
             token = self.config.destination_token
             with open("%s/downloads/%s" % (self.config.filesystem_path, filename), "rb") as f:
                 data = {
