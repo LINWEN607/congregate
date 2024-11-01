@@ -5,6 +5,7 @@ from congregate.migration.gitlab.bulk_imports import BulkImportsClient
 from congregate.migration.meta.api_models.bulk_import import BulkImportPayload
 from congregate.migration.meta.api_models.bulk_import_entity import BulkImportEntity
 
+
 @pytest.mark.unit_test
 class TestBulkImportsClientBuildPayload(TestCase):
 
@@ -21,7 +22,7 @@ class TestBulkImportsClientBuildPayload(TestCase):
         client = self.client()
         """Test handling of invalid entity type"""
         result = client.build_payload([], "invalid_type")
-        
+
         assert result is None
         client.log.error.assert_called_once_with(
             "Unknown entity type invalid_type provided for staged data"
@@ -33,7 +34,7 @@ class TestBulkImportsClientBuildPayload(TestCase):
         """Test building payload with empty staged data"""
         with patch.object(client, 'subset_projects_staged', return_value={}):
             result = client.build_payload([], "group")
-            
+
             assert isinstance(result, BulkImportPayload)
             assert len(result.entities) == 0
             assert result.configuration.url == "https://source.gitlab.com"
@@ -48,15 +49,15 @@ class TestBulkImportsClientBuildPayload(TestCase):
             'path': 'group1',
             'name': 'Group 1'
         }]
-        
+
         with patch.object(client, 'subset_projects_staged', return_value={}):
             with patch.object(client, 'parent_group_exists', return_value=False):
                 result = client.build_payload(staged_data, "group")
-                
+
                 assert len(result.entities) == 1
                 assert result.entities[0].source_type == "group_entity"
                 assert result.entities[0].source_full_path == "group1"
-                assert result.entities[0].destination_namespace == "destination-group"
+                assert result.entities[0].destination_namespace == ""
 
     def test_build_payload_project_entity(self):
         client = self.client()
@@ -68,13 +69,14 @@ class TestBulkImportsClientBuildPayload(TestCase):
             'name': 'Project 1',
             'namespace': 'group1'
         }]
-        
+
         with patch.object(client, 'subset_projects_staged', return_value={}):
             result = client.build_payload(staged_data, "project")
-            
+
             assert len(result.entities) == 1
             assert result.entities[0].source_type == "project_entity"
             assert result.entities[0].source_full_path == "group1/project1"
+            assert result.entities[0].destination_namespace == "group1"
 
     def test_build_payload_with_subset_projects(self):
         client = self.client()
@@ -84,7 +86,7 @@ class TestBulkImportsClientBuildPayload(TestCase):
             'path': 'group1',
             'name': 'Group 1'
         }]
-        
+
         subset_projects = {
             'group1': [{
                 'path_with_namespace': 'group1/project1',
@@ -93,11 +95,11 @@ class TestBulkImportsClientBuildPayload(TestCase):
                 'namespace': 'group1'
             }]
         }
-        
+
         with patch.object(client, 'subset_projects_staged', return_value=subset_projects):
             with patch.object(client, 'parent_group_exists', return_value=False):
                 result = client.build_payload(staged_data, "group")
-                
+
                 assert len(result.entities) == 2
                 assert result.entities[0].source_type == "group_entity"
                 assert result.entities[0].migrate_projects is False
@@ -105,7 +107,7 @@ class TestBulkImportsClientBuildPayload(TestCase):
 
     def test_build_payload_skip_subgroup(self):
         client = self.client()
- 
+
         """Test building payload with subgroup that should be skipped"""
         staged_data = [
             {
@@ -114,9 +116,9 @@ class TestBulkImportsClientBuildPayload(TestCase):
                 'name': 'Subgroup 1'
             }
         ]
-        
+
         with patch.object(client, 'subset_projects_staged', return_value={}):
             with patch.object(client, 'parent_group_exists', return_value=True):
                 result = client.build_payload(staged_data, "group")
-                
+
                 assert len(result.entities) == 0

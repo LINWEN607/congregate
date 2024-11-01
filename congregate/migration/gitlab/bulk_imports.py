@@ -195,12 +195,14 @@ class BulkImportsClient(BaseGitLabClient):
 
             Note: this currently doesn't work with stage wave
         """
+        namespace = get_full_path_with_parent_namespace(
+            group_data['full_path'])
         return BulkImportEntity(
             source_type="group_entity",
             source_full_path=group_data['full_path'],
             destination_slug=group_data['path'],
-            destination_namespace=get_full_path_with_parent_namespace(
-                group_data['full_path']),
+            destination_namespace=namespace.rsplit(
+                "/", 1)[0] if "/" in namespace else "",
             destination_name=group_data['name'],
             migrate_projects=(not skip_projects),
         )
