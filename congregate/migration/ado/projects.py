@@ -5,18 +5,21 @@ from congregate.migration.ado.base import AzureDevOpsWrapper
 from congregate.migration.ado.api.projects import ProjectsApi
 from congregate.migration.ado.api.repositories import RepositoriesApi
 from congregate.migration.ado.api.pull_requests import PullRequestsApi
+from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.congregate_mdbc import mongo_connection
 
 
 class ProjectsClient(BaseClass):
-    def __init__(self):
+    def __init__(self, subset=False):
+        self.subset = subset
         self.api = AzureDevOpsApiWrapper()
         self.base_api = AzureDevOpsWrapper()
         self.projects_api = ProjectsApi()
         self.repositories_api = RepositoriesApi()
         self.pull_requests_api = PullRequestsApi()
+        self.users_api = UsersApi()
         self.merge_requests_api = MergeRequestsApi()
         super().__init__()
 
@@ -51,7 +54,8 @@ class ProjectsClient(BaseClass):
                         'target_branch': pr['targetRefName'].replace("refs/heads/", ""),
                         'title': pr['title'],
                         'description': pr['description'],
-                        'state': self.pull_request_status(pr)
+                        'state': self.pull_request_status(pr),
+                        'assignee_ids': [] if self.subset else self.add_assignee_ids([], source_project)
                     }
                     self.merge_requests_api.create_merge_request(self.config.destination_host, self.config.destination_token, dstn_project_id, mr_data)
                 self.log.info(f"Successfully migrated {count} pull requests for {source_project.get('project_id')}")
@@ -71,3 +75,11 @@ class ProjectsClient(BaseClass):
             return "closed"
         else:
             return "unknown"
+
+    def add_assignee_ids(self, assignee_ids, source_project):
+        assignee_ids = []
+        for username in source_project["members"]:
+            user_email = username["email"]
+            for user in self.users_api.search_for_user_by_email(self.config.destination_host, self.config.destination_token, user_email):
+                assignee_ids.append(user.get("id"))
+        return assignee_ids
