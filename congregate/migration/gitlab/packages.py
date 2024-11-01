@@ -12,6 +12,7 @@ from congregate.migration.meta.api_models.pypi_package import PyPiPackage
 from congregate.migration.meta.api_models.npm_package import NpmPackage
 from congregate.migration.meta.api_models.maven_package import MavenPackage
 from congregate.migration.meta.api_models.helm_package import HelmPackage
+import requests
 
 
 class PackagesClient(BaseClass):
@@ -31,7 +32,7 @@ class PackagesClient(BaseClass):
                 
                 package_type = package.get('package_type')
                 self.log.info(
-                    f"Package Type:'{package_type}")
+                    f"Package Type:{package_type}")
                 self.log
                 try:
                     if package_type == 'generic':
@@ -48,7 +49,7 @@ class PackagesClient(BaseClass):
                             src_id, dest_id, package, results)
                     elif package_type == 'helm':
                         self.migrate_helm_packages(
-                            src_id, dest_id, package, project_name, results)
+                            src_id, dest_id, package, results)
                     else:
                         self.log.warning(
                             f"Skipping {package.get('name')}, type {package.get('package_type')} not supported")
@@ -319,46 +320,28 @@ class PackagesClient(BaseClass):
         version = package['version']
         package_name = package['name']
         artifact = self.format_artifact(package_name, version)
+        channel = 'stable'
 
-        self.log.info(f"Attempting to download npm package: {artifact}")
+        self.log.info(f"Attempting to download Helm package: {artifact}")
         migration_status = True
 
         metadata = {}
         for package_file in self.packages.get_package_files(self.config.source_host, self.config.source_token, src_id, package.get('id')):
             file_name = package_file['file_name']
-
-            # Downloading the binary content file of the package
-            response = self.helm_packages.download_helm_project_package(
-                self.config.source_host, self.config.source_token, src_id, package_name, file_name)
-            file_content = response.content
-
-            # Download the package metadata (dists and versions)
-            response = self.helm_packages.download_helm_package_metadata(
-                self.config.source_host, self.config.source_token, src_id, package_name)
-            package_metadata_bytes = response.content
-
-
-            # Get the package dataclass
-            package = HelmPackage(
-                content=file_content,
-                file_name=file_name,
-                md5_digest=package_file['file_md5']
-            )
-
-            # Uploading the data to the destination instance
-            response = self.helm_packages.upload_helm_package(
-                self.config.destination_host, self.config.destination_token, dest_id, channel, json_data, package_data)
-
+            response = self.helm_packages.transfer_helm_package(self.config.source_host, self.config.destination_host, 
+                                                                self.config.source_token, self.config.destination_token, 
+                                                                src_id, dest_id, 
+                                                                self.config.src_helm_export_user, self.config.dstn_helm_import_user, file_name)
             # Handling response code
             if response.status_code == 403:
                 self.log.info(
-                    f"Package '{package.file_name}' already exists in the destination instance. Skipping")
-            elif response.status_code != 200:
+                    f"Package '{file_name}' already exists in the destination instance. Skipping")
+            elif response.status_code != 201:
                 self.log.error(
-                    f"Failed to migrate package '{package.file_name}' file '{package_file['file_name']}':\n{response} - {response.text}")
+                    f"Failed to migrate package '{file_name}':\n{response} - {response.text} - {response.url}")
                 migration_status = False
             else:
                 self.log.info(
-                    f"Successfully migrated package '{package.file_name}' file '{package_file['file_name']}'")
+                    f"Successfully migrated package '{file_name}'")
 
         results.append({'Migrated': migration_status, 'Package': artifact})
