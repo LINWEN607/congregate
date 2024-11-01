@@ -42,7 +42,7 @@ class GroupsClient(BaseClass):
             # Save all group projects ID references as part of group metadata
             # Only list direct projects to avoid overhead
             group["projects"] = []
-            for project in self.groups_api.get_all_group_projects(gid, host, token, include_subgroups=False, with_shared=False):
+            for project in self.groups_api.get_all_group_projects(gid, host, token):
                 pid = project.get("id")
                 group["projects"].append(pid)
                 for k in constants.PROJECT_KEYS_TO_IGNORE:
@@ -293,7 +293,7 @@ def traverse_groups_task(host, token, group, mongo=None):
         # Save all group projects ID references as part of group metadata
         # Only list direct projects to avoid overhead
         group["projects"] = []
-        for project in gc.groups_api.get_all_group_projects(gid, host, token, include_subgroups=False, with_shared=False):
+        for project in gc.groups_api.get_all_group_projects(gid, host, token):
             pid = project.get("id")
             group["projects"].append(pid)
             for k in constants.PROJECT_KEYS_TO_IGNORE:
