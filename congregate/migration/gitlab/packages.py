@@ -2,6 +2,7 @@ from pathlib import Path
 from traceback import print_exc
 from requests.exceptions import RequestException
 from congregate.helpers.base_class import BaseClass
+from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.packages import PackagesApi
 from congregate.migration.gitlab.api.pypi import PyPiPackagesApi
 from congregate.migration.gitlab.api.maven import MavenPackagesApi
@@ -22,6 +23,7 @@ class PackagesClient(BaseClass):
         self.maven_packages = MavenPackagesApi()
         self.npm_packages = NpmPackagesApi()
         self.helm_packages = HelmPackagesApi()
+        self.users = UsersApi()
         super().__init__()
 
     def migrate_project_packages(self, src_id, dest_id, project_name):
@@ -31,8 +33,6 @@ class PackagesClient(BaseClass):
                 #PST - Log package type
                 
                 package_type = package.get('package_type')
-                self.log.info(
-                    f"Package Type:{package_type}")
                 self.log
                 try:
                     if package_type == 'generic':
@@ -324,14 +324,15 @@ class PackagesClient(BaseClass):
 
         self.log.info(f"Attempting to download Helm package: {artifact}")
         migration_status = True
-
+        src_user = self.users.get_current_user(self.config.source_host, self.config.source_token)
+        dst_user = self.users.get_current_user(self.config.destination_host, self.config.destination_token)
         metadata = {}
         for package_file in self.packages.get_package_files(self.config.source_host, self.config.source_token, src_id, package.get('id')):
             file_name = package_file['file_name']
             response = self.helm_packages.transfer_helm_package(self.config.source_host, self.config.destination_host, 
                                                                 self.config.source_token, self.config.destination_token, 
                                                                 src_id, dest_id, 
-                                                                self.config.src_helm_export_user, self.config.dstn_helm_import_user, file_name)
+                                                                src_user, dst_user, file_name)
             # Handling response code
             if response.status_code == 403:
                 self.log.info(

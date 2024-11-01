@@ -162,13 +162,6 @@ def generate_config():
                 config.set("SOURCE", "src_parent_group_path", "")
                 print(
                     f"WARNING: Source group not found. Please enter 'src_parent_group_id' and 'src_parent_group_path' manually (in {config_path})")
-        src_helm_import_user = input(
-            "Are you Migrating Helm Repositoris (Default: 'No')?")
-        if src_helm_import_user.lower() in ["yes", "y"]:
-            config.set("SOURCE", "src_helm_export_user", input(
-                "Source Helm export user:"))
-            config.set("DESTINATION", "dstn_helm_import_user", input(
-                "Destination Helm import user:"))
         
 
         # GitLab source/destination instance registry configuration

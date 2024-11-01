@@ -137,11 +137,6 @@ class Config(BaseConfig):
         """
         return self.prop_int(
             "DESTINATION", "ldap_group_link_group_access", default=0)
-    
-    @property
-    def dstn_helm_import_user(self):
-        return self.prop("DESTINATION", "dstn_helm_import_user",
-                         default=None)
 
 # SOURCE
     def list_multiple_source_config(self, source_options):
@@ -200,11 +195,6 @@ class Config(BaseConfig):
     @property
     def source_registry(self):
         return self.prop("SOURCE", "src_registry_url")
-    
-    @property
-    def src_helm_export_user(self):
-        return self.prop("SOURCE", "src_helm_export_user",
-                         default=None)
 
 # CI_SOURCE
     def list_ci_source_config(self, ci_source_options):
