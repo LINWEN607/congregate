@@ -12,7 +12,6 @@ from congregate.helpers.package_utils import generate_pypi_package_payload, gene
 from congregate.migration.meta.api_models.pypi_package import PyPiPackage
 from congregate.migration.meta.api_models.npm_package import NpmPackage
 from congregate.migration.meta.api_models.maven_package import MavenPackage
-from congregate.migration.meta.api_models.helm_package import HelmPackage
 import requests
 
 

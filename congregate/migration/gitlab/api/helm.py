@@ -1,7 +1,6 @@
 from copy import deepcopy as copy
 from urllib.parse import quote_plus
 from congregate.migration.gitlab.api.base_api import GitLabApiWrapper
-from congregate.migration.meta.api_models.helm_package_data import HelmPackageData
 import requests
 
 class HelmPackagesApi(GitLabApiWrapper):
