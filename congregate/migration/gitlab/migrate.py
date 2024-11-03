@@ -507,7 +507,7 @@ class GitLabMigrateClient(MigrateClient):
         }
         try:
             c_retention = None
-            if self.retain_contributors:
+            if self.retain_contributors and not self.config.direct_transfer:
                 self.log.info(
                     f"{dry_log}Contributor Retention is enabled. Adding all project contributors as project members")
                 c_retention = ContributorRetentionClient(
@@ -518,7 +518,7 @@ class GitLabMigrateClient(MigrateClient):
                 f"{dry_log}Exporting project {project_path} (ID: {pid}) as {filename}")
             result[filename] = ImportExportClient(src_host=src_host, src_token=src_token).export_project(
                 project, dry_run=self.dry_run)
-            if self.retain_contributors:
+            if self.retain_contributors and not self.config.direct_transfer:
                 self.log.info(
                     f"{dry_log}Contributor Retention is enabled. Project export is complete Removing all project contributors from members")
                 c_retention.remove_contributors_from_project(source=True)
@@ -721,7 +721,7 @@ class GitLabMigrateClient(MigrateClient):
             self.projects.migrate_gitlab_variable_replace_ci_yml(dst_id)
 
         c_retention = None
-        if self.retain_contributors:
+        if self.retain_contributors and not self.config.direct_transfer:
             self.log.info(
                 f"Contributor Retention is enabled. Project {project['path_with_namespace']} has been imported so removing all project contributors as project members")
             c_retention = ContributorRetentionClient(
