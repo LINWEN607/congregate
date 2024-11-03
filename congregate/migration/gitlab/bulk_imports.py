@@ -117,8 +117,15 @@ class BulkImportsClient(BaseGitLabClient):
         config = BulkImportconfiguration(url=self.config.source_host, access_token=self.config.source_token)
         entities = []
         entity_paths = set()
-        # Order the staged groups from topmost level down
-        sorted_staged_data = sorted(staged_data, key=lambda d: d['full_path'])
+        if entity_type== 'group':
+            # Order the staged groups from topmost level down
+            sorted_staged_data = sorted(staged_data, key=lambda d: d['full_path'])
+        elif entity_type== 'project':
+            # Similar sort for projects
+            sorted_staged_data = sorted(staged_data, key=lambda d: d['path_with_namespace'])
+        else:
+            self.log.error(f"Unknown entity type {entity_type} provided for staged data")
+            return None
         # Get a list of namespaces where we have a subset of projects staged
         subset_namespaces = self.subset_projects_staged()
         for data in sorted_staged_data:

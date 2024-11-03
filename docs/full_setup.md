@@ -100,14 +100,14 @@ congregate init
 
 Modify the configuration file (`/opt/congregate/data/congregate.conf`) using [`congregate.conf.template`](congregate.conf.template) as a guide.
 
+**NOTE:** All secrets (PATs, S3 keys) must be obfuscated in your `congregate.conf` configuration file. Use `./congregate.sh obfuscate`.
+
 ```bash
 congregate validate-config   # DEPRECATED command: 'congregate configure'
 congregate list
 ```
 
 To enable Slack alerting via [Incoming Webhooks](https://api.slack.com/messaging/webhooks), configure the `slack_url`. This way the `ERROR` and `WARNING` logs will be also sent to a dedicated Slack channel.
-
-All secrets (PATs, S3 keys) are obfuscated in your `congregate.conf` configuration file.
 
 With Congregate configured and projects, groups, and users retrieved, you should be ready to use the tool or test your changes.
 

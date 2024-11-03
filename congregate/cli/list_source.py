@@ -182,7 +182,6 @@ class ListClient(BaseClass):
                 p, f"{self.app_path}/data/projects.json")
 
         # Find ADO projects with >1 repos ( = group in GitLab)
-
         if not self.skip_groups:
             groups = AdoGroups()
             groups.retrieve_group_info(processes=self.processes)
@@ -247,10 +246,10 @@ class ListClient(BaseClass):
             f"Listing data from {src_type} source type - {self.config.source_host}")
         # In case one skips users/groups/projects on first list
         self.initialize_list_files()
-        if src_type == "bitbucket server":
-            self.list_bitbucket_data()
-        elif src_type == "gitlab":
+        if src_type == "gitlab":
             self.list_gitlab_data()
+        elif src_type == "bitbucket server":
+            self.list_bitbucket_data()
         elif src_type == "github":
             self.list_github_data()
         elif src_type == "azure devops":

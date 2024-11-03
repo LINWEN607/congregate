@@ -24,7 +24,7 @@ This runbook covers the process of migrating a wave of **groups and projects** f
 ### Pre-migration checklist
 
 * PSE conducting the migration:
-  * [ ] Acquires a Github Org personal access token with owner privileges. [Reference link](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens)
+  * [ ] Acquires an obfuscated (`./congregate.sh obfuscate`) Github Org personal access token with owner privileges. [Reference link](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens)
     * [ ] Steps:
       * [ ] In the upper-right corner of any page, click your profile photo, then click **Settings**.
       * [ ] In the left sidebar, click **Developer settings**.
@@ -33,7 +33,7 @@ This runbook covers the process of migrating a wave of **groups and projects** f
         * Under **Token name**, enter a name for the token.
         * Under **Expiration**, select an expiration for the token.
         * Optionally, under **Description**, add a note to describe the purpose of the token.
-  * [ ] Acquires an Admin token for Gitlab.com by raising an _Issue_ in [Access request](https://gitlab.com/gitlab-com/team-member-epics/access-requests) and choose the template _Access Change Request_
+  * [ ] Acquires an obfuscated (`./congregate.sh obfuscate`) GitLab.com Admin token with `api` scope by raising an _Issue_ in [Access request](https://gitlab.com/gitlab-com/team-member-epics/access-requests) and choosing template _Access Change Request_
   * [ ] Configures Congregate to migrate from a GitHub.com to GitLab.com
     * [ ] Inspects and validates configured values in `data/congregate.conf`
       * **Tip:** Run `congregate validate-config` to ensure Congregate is configured properly

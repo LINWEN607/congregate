@@ -16,7 +16,7 @@ from gitlab_ps_utils import json_utils, misc_utils, string_utils, dict_utils
 
 import congregate.helpers.migrate_utils as mig_utils
 from congregate.migration.meta.constants import EXT_CI_SOURCE_CLASSES
-from congregate.helpers.utils import rotate_logs
+from congregate.helpers.utils import rotate_logs, is_dot_com
 from congregate.helpers.reporting import Reporting
 from congregate.cli.stage_projects import ProjectStageCLI
 from congregate.helpers.base_class import BaseClass
@@ -180,7 +180,8 @@ class MigrateClient(BaseClass):
         }
         old_user = {
             "email": email,
-            "id": user.get("id")
+            "id": user.get("id"),
+            "state": state
         }
         try:
             if not self.only_post_migration_info:
@@ -201,13 +202,13 @@ class MigrateClient(BaseClass):
                     # NOTE: Persist 'inactive' user state regardless of domain
                     # and creation status.
                     if user_data.get("state").lower() in self.INACTIVE:
-                        self.users.block_user(user_data)
+                        self.users.change_user_state(user_data)
                     new_user = self.users.handle_user_creation_status(
                         response, user_data)
             if not self.dry_run and self.config.source_type == "gitlab":
-                self.gl_user_creation(new_user, old_user, email, user)
+                self.gl_post_user_creation(new_user, old_user, email, user)
             if not self.dry_run and self.config.source_type == "bitbucket server":
-                self.bb_user_creation(new_user, username, email, user)
+                self.bb_post_user_creation(new_user, username, email, user)
         except RequestException as e:
             self.log.error(
                 f"Failed to create user {user_data}, with error:\n{e}")
@@ -217,7 +218,7 @@ class MigrateClient(BaseClass):
             self.log.error(print_exc(e))
         return new_user
 
-    def gl_user_creation(self, new_user, old_user, email, user):
+    def gl_post_user_creation(self, new_user, old_user, email, user):
         if new_user:
             found_user = new_user if new_user.get(
                 "id") is not None else mig_utils.find_user_by_email_comparison_without_id(email)
@@ -232,17 +233,30 @@ class MigrateClient(BaseClass):
                 else:
                     self.log.warning(
                         f"SKIP: Not migrating SSH & GPG keys for user: {email}")
+                self.align_users_with_state_mismatch(old_user, new_user)
         else:
             user_data = self.users.generate_user_data(user)
             self.log.warning(
                 f"Could not create user. User may exist with a different primary email. Check previous logs warnings. Userdata follows:\n{user_data}")
-            # Return the "original" new_user setting
-            return {
-                "email": email,
-                "id": None
-            }
 
-    def bb_user_creation(self, new_user, old_user, email, user):
+    def align_users_with_state_mismatch(self, old_user, new_user):
+        """
+            Align existing users with state mismatch.
+            E.g. "inactive" on source and "active" on destination or the opposite.
+            Currently handling only 2 cases:
+                1. When source is "inactive" and destination is "active" - block destination user
+                2. When source is "active" and destination is "inactive" - unblock destination user
+            Currently handled only for dot-com.
+        """
+        old_state = old_user.get("state")
+        new_state = new_user.get("state")
+        if is_dot_com(self.config.destination_host) and self.config.align_users_with_state_mismatch and old_state != new_state:
+            if old_state == "active" and new_state in self.INACTIVE:
+                self.users.change_user_state(new_user, block=False)
+            elif old_state in self.INACTIVE and new_state == "active":
+                self.users.change_user_state(new_user)
+
+    def bb_post_user_creation(self, new_user, old_user, email, user):
         if new_user:
             found_user = new_user if new_user.get(
                 "id") is not None else mig_utils.find_user_by_email_comparison_without_id(email)
@@ -259,11 +273,6 @@ class MigrateClient(BaseClass):
             user_data = self.users.generate_user_data(user)
             self.log.warning(
                 f"Could not create user. User may exist with a different primary email. Check previous logs warnings. Userdata follows:\n{user_data}")
-            # Return the "original" new_user setting
-            return {
-                "email": email,
-                "id": None
-            }
 
     def disable_shared_ci(self, path, pid):
         # Disable Auto DevOps
@@ -298,9 +307,9 @@ class MigrateClient(BaseClass):
                 f"{dry_log}Removing staged users on destination (hard_delete={self.hard_delete})")
             self.users.delete_users(
                 dry_run=self.dry_run, hard_delete=self.hard_delete)
-            
+
         # Unarchive previously active projects on source during rollback
-        if self.config.archive_logic and (not self.skip_projects or not self.skip_groups):    
+        if self.config.archive_logic and (not self.skip_projects or not self.skip_groups):
             self.log.info(
                 f"{dry_log}Unarchiving previously active projects on source due to rollback")
             self.projects.update_staged_projects_archive_state(

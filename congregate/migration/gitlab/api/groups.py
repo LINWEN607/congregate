@@ -107,6 +107,36 @@ class GroupsApi(GitLabApiWrapper):
                 member["id"], host, token)
             yield member
 
+    def get_all_group_members_incl_inherited(self, gid, host, token):
+        """
+        Gets a list of group members viewable by the authenticated user, including inherited members through ancestor groups
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/members.html#list-all-members-of-a-group-or-project-including-inherited-and-invited-members
+
+            :param: gid: (int) GitLab group ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /groups/:id/members/all
+        """
+        for member in self.api.list_all(host, token, f"groups/{gid}/members/all"):
+            yield self.users.get_user(member["id"], host, token).json()
+
+    def get_all_group_billable_members(self, gid, host, token):
+        """
+        Gets a list of group members that count as billable. The list includes members in subgroups and projects.
+
+        This API endpoint works on top-level groups only. It does not work on subgroups.
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/members.html#list-all-billable-members-of-a-group
+
+            :param: gid: (int) GitLab group ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /groups/:id/billable_members
+        """
+        for member in self.api.list_all(host, token, f"groups/{gid}/billable_members"):
+            yield self.users.get_user(member["id"], host, token).json()
+
     def update_member_access_level(self, host, token, gid, mid, level, message=None):
         """
         Updates the access_level of a group member.
@@ -256,22 +286,6 @@ class GroupsApi(GitLabApiWrapper):
             :yield: Response object containing the response to GET /bulk_imports/:bid/entities
         """
         return self.api.list_all(host, token, f"bulk_imports/{bid}/entities")
-
-    def get_all_group_members_incl_inherited(self, gid, host, token):
-        """
-        Gets a list of group members viewable by the authenticated user, including inherited members through ancestor groups
-
-        GitLab API Doc: https://docs.gitlab.com/ee/api/members.html#list-all-members-of-a-group-or-project-including-inherited-and-invited-members
-
-            :param: gid: (int) GitLab group ID
-            :param: host: (str) GitLab host URL
-            :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /groups/:id/members/all
-        """
-        for member in self.api.list_all(host, token, f"groups/{gid}/members/all"):
-            member["email"] = self.users.get_user_email(
-                member["id"], host, token)
-            yield member
 
     def get_all_group_issue_boards(self, gid, host, token):
         """
