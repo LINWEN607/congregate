@@ -58,17 +58,14 @@ def filter_results(asset_type, collection, filter, mongo=None):
         This returns all documents in a collection and only includes the fields we want to filter against.
         Once we have the results, we do a basic 'term in key-value' check and append the _id to filtered_results
     """
-    projection = {}
-    fields = []
+    asset_type_fields = {
+        "projects": PROJECT_SEARCH_KEYS,
+        "users": USER_SEARCH_KEYS,
+        "groups": GROUP_SEARCH_KEYS,
+    }
+    fields = asset_type_fields.get(asset_type, [])
+    projection = {field: True for field in fields}
     filtered_results = set()
-    if asset_type == "projects":
-        fields = PROJECT_SEARCH_KEYS
-    elif asset_type == "users":
-        fields = USER_SEARCH_KEYS
-    elif asset_type == "groups":
-        fields = GROUP_SEARCH_KEYS
-    for field in fields:
-        projection[field] = True
     for result in list(mongo.safe_find(collection, projection=projection)):
         for val in result.values():
             if filter.lower() in str(val).lower():
