@@ -95,7 +95,6 @@ def get_counts(mongo=None):
 
 @data_retrieval.route("/<name>")
 def load_data(name):
-    print(request.args)
     page = int(request.args.get('page', 1))
     per_page = int(request.args.get('per_page', 50))
     filter = request.args.get('filter_by', '')
