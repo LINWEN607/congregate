@@ -605,9 +605,7 @@ class ConfigTests(unittest.TestCase):
             "src_parent_group_id":"0",\
             "src_parent_group_path":"source_group_full_path",\
             "src_registry_url":"source_registry_url",\
-            "src_helm_export_user": "src_helm_export_user",\
             "dstn_registry_url":"destination_registry_url",\
-            "dstn_helm_import_user":"dstn_helm_import_user",\
             "location":"aws",\
             "s3_name":"s3_name",\
             "s3_region":"us-east-1",\
@@ -651,9 +649,7 @@ class ConfigTests(unittest.TestCase):
             "src_parent_group_id":"0",\
             "src_parent_group_path":"source_group_full_path",\
             "src_registry_url":"source_registry_url",\
-            "src_helm_export_user": "src_helm_export_user",\
             "dstn_registry_url":"destination_registry_url",\
-            "dstn_helm_import_user":"dstn_helm_import_user",\
             "location":"aws",\
             "s3_name":"s3_name",\
             "s3_region":"us-east-1",\
