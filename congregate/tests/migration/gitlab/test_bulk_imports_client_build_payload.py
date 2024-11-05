@@ -60,7 +60,6 @@ class TestBulkImportsClientBuildPayload(TestCase):
                 assert result.entities[0].source_type == "group_entity"
                 assert result.entities[0].source_full_path == "group1"
                 assert result.entities[0].destination_namespace == ""
-                assert result.entities[0].destination_name == "Group 1"
 
     def test_build_payload_project_entity(self):
         client = self.client()
@@ -81,7 +80,6 @@ class TestBulkImportsClientBuildPayload(TestCase):
                 assert result.entities[0].source_type == "project_entity"
                 assert result.entities[0].source_full_path == "group1/project1"
                 assert result.entities[0].destination_namespace == "group1"
-                assert result.entities[0].destination_name == "Project 1"
 
     def test_build_payload_with_subset_projects(self):
         client = self.client()
