@@ -29,10 +29,7 @@ class PackagesClient(BaseClass):
         results = []
         try:
             for package in self.packages.get_project_packages(self.config.source_host, self.config.source_token, src_id):
-                #PST - Log package type
-                
                 package_type = package.get('package_type')
-                self.log
                 try:
                     if package_type == 'generic':
                         self.migrate_generic_packages(
