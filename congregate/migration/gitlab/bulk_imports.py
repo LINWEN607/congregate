@@ -189,7 +189,6 @@ class BulkImportsClient(BaseGitLabClient):
             destination_slug=group_data['path'],
             destination_namespace=namespace.rsplit(
                 "/", 1)[0] if "/" in namespace else "",
-            destination_name=group_data['name'],
             migrate_projects=(not skip_projects),
         )
 
@@ -204,7 +203,6 @@ class BulkImportsClient(BaseGitLabClient):
             source_full_path=project_data['path_with_namespace'],
             destination_slug=project_data['path'],
             destination_namespace=get_project_dest_namespace(project_data),
-            destination_name=project_data['name'],
         )
 
     def subset_projects_staged(self):
