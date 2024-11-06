@@ -687,15 +687,14 @@ class ProjectsClient(BaseClass):
                 self.log.info(
                     f"{get_dry_log(dry_run)}Create destination project {dst_pid} pull mirror from '{mirror_path}'")
                 if not dry_run:
-                    # self.mirror.mirror_repo(sp, dst_pid, dry_run=dry_run)
                     mirror_data = {
                         "mirror": True,
                         "mirror_trigger_builds": False,
                         "import_url": f"{strip_scheme(src_host)}://{username}:{src_token}@{strip_netloc(src_host)}/{mirror_path}.git",
                         "only_mirror_protected_branches": protected_only
                     }
-                    if not self.create_and_start_pull_mirror(dst_pid, mirror_path, mirror_data, force):
-                        continue
+                    self.create_and_start_pull_mirror(
+                        dst_pid, mirror_path, mirror_data, force)
             else:
                 self.log.error(
                     f"Failed to setup destination project {dst_pid} pull mirroring from '{mirror_path}' with user '{username}'")
@@ -710,8 +709,7 @@ class ProjectsClient(BaseClass):
             if resp.status_code != 201:
                 self.log.error(
                     f"Failed to create project {dst_pid} pull mirror from '{mirror_path}':\n{resp} - {resp.text}")
-                return False
-            if force:
+            elif force:
                 self.log.info(
                     f"Start pull mirror for destination project {dst_pid} from '{mirror_path}'")
                 resp = self.projects_api.start_pull_mirror(
@@ -719,12 +717,9 @@ class ProjectsClient(BaseClass):
                 if resp.status_code != 201:
                     self.log.error(
                         f"Failed to start pull mirror for destination project {dst_pid} from '{mirror_path}':\n{resp} - {resp.text}")
-                    return False
-            return True
         except RequestException as re:
             self.log.error(
                 f"Failed to create destination project {dst_pid} pull mirror from  '{mirror_path}':\n{re}")
-            return False
 
     def delete_all_pull_mirrors(self, dry_run=True):
         ids = self.get_new_ids()
