@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
+
 @dataclass
-class BulkImportconfiguration:
+class BulkImportConfiguration:
     url: str
     access_token: str

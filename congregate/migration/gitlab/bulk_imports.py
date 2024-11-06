@@ -10,7 +10,7 @@ from congregate.migration.gitlab.api.bulk_imports import BulkImportApi
 from congregate.migration.gitlab.migrate import post_migration_task
 from congregate.migration.meta.api_models.bulk_import import BulkImportPayload
 from congregate.migration.meta.api_models.bulk_import_entity import BulkImportEntity
-from congregate.migration.meta.api_models.bulk_import_configuration import BulkImportconfiguration
+from congregate.migration.meta.api_models.bulk_import_configuration import BulkImportConfiguration
 from congregate.migration.meta.api_models.bulk_import_entity_status import BulkImportEntityStatus
 from congregate.migration.meta.data_models.dry_run import DryRunData
 
@@ -31,28 +31,27 @@ class BulkImportsClient(BaseGitLabClient):
                     f"Successfully triggered bulk import request with response: {import_response_json}")
                 return (import_response_json.get('id'), None, import_response.text)
             return (None, None, import_response.text)
-        else:
-            dry_run_data = []
-            for entity in payload.entities:
-                if entity.source_type == 'group_entity':
-                    drd = self.get_all_group_paths(entity)
-                    dry_run_data.append(drd.to_dict())
-                elif entity.source_type == 'project_entity':
-                    drd = DryRunData(entity=entity)
-                    dry_run_data.append(drd.to_dict())
-            return (None, dry_run_data, None)
+        dry_run_data = []
+        for entity in payload.entities:
+            if entity.source_type == 'group_entity':
+                drd = self.get_all_group_paths(entity)
+                dry_run_data.append(drd.to_dict())
+            elif entity.source_type == 'project_entity':
+                drd = DryRunData(entity=entity)
+                dry_run_data.append(drd.to_dict())
+        return (None, dry_run_data, None)
 
-    def poll_import_status(self, id):
+    def poll_import_status(self, dt_id):
         while True:
-            if resp := safe_json_response(self.bulk_import.get_bulk_import_status(self.dest_host, self.dest_token, id)):
+            if resp := safe_json_response(self.bulk_import.get_bulk_import_status(self.dest_host, self.dest_token, dt_id)):
                 if resp.get('status') == 'finished':
-                    self.log.info(f'Bulk import {id} finished')
+                    self.log.info(f'Bulk import {dt_id} finished')
                     return True
                 if resp.get('status') == 'failed':
                     self.log.error(
-                        f"Bulk import {id} failed. Refer to Congregate and GitLab logs for more information")
+                        f"Bulk import {dt_id} failed. Refer to Congregate and GitLab logs for more information")
                     return False
-                self.log.info(f'Bulk import {id} still in progress')
+                self.log.info(f'Bulk import {dt_id} still in progress')
                 sleep(self.config.poll_interval)
 
     def poll_single_entity_status(self, entity) -> BulkImportEntityStatus:
@@ -121,18 +120,18 @@ class BulkImportsClient(BaseGitLabClient):
         """
             Build out the direct transfer API payload based on the staged data
         """
-        config = BulkImportconfiguration(
+        config = BulkImportConfiguration(
             url=self.config.source_host, access_token=self.config.source_token)
         entities = []
         entity_paths = set()
         if entity_type == 'group':
             # Order the staged groups from topmost level down
             sorted_staged_data = sorted(
-                staged_data, key=lambda d: d['full_path'])
+                staged_data, key=lambda d: d['full_path'].count('/'))
         elif entity_type == 'project':
             # Similar sort for projects
             sorted_staged_data = sorted(
-                staged_data, key=lambda d: d['path_with_namespace'])
+                staged_data, key=lambda d: d['path_with_namespace'].count('/'))
         else:
             self.log.error(
                 f"Unknown entity type {entity_type} provided for staged data")
@@ -147,7 +146,7 @@ class BulkImportsClient(BaseGitLabClient):
                 entity_paths.add(data['full_path'])
                 # If not all projects in this group are staged, add each individual project to the payload
                 # and skip migrating projects in the group entity
-                if subset_namespaces.get(data['full_path']) and skip_projects != True:
+                if subset_namespaces.get(data['full_path']) and not skip_projects:
                     entities.append(self.build_group_entity(
                         data, skip_projects=True))
                     for project in subset_namespaces[data['full_path']]:
@@ -282,10 +281,10 @@ def kick_off_bulk_import(self, payload, dry_run=True):
 
 
 @shared_task(name='watch-import-status')
-def watch_import_status(dest_host: str, dest_token: str, id: int):
+def watch_import_status(dest_host: str, dest_token: str, dt_id: int):
     client = BulkImportsClient(
         src_host=None, src_token=None, dest_host=dest_host, dest_token=dest_token)
-    return client.poll_import_status(id)
+    return client.poll_import_status(dt_id)
 
 
 @shared_task(name='watch-import-entity-status')
