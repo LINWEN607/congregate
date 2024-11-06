@@ -164,7 +164,7 @@ class BulkImportsClient(BaseGitLabClient):
 
             If so, skip the subgroup. If not, keep the subgroup
         """
-        return full_path.rsplit("/", 1)[0] in entity_paths
+        return any(full_path.startswith(parent + '/') for parent in entity_paths)
 
     def build_group_entity(self, group_data, skip_projects=False):
         """
