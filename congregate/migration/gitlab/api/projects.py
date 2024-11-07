@@ -250,8 +250,9 @@ class ProjectsApi(GitLabApiWrapper):
             :return: Response object containing the response to PUT /projects/:pid
         """
         if not message:
-            data.pop("import_url", None)
-            message = f"Editing project {pid} with payload {str(data)}"
+            audit_data = data.copy()
+            audit_data.pop("import_url", None)
+            message = f"Editing project {pid} with payload {str(audit_data)}"
         return self.api.generate_put_request(host, token, f"projects/{pid}", json.dumps(data), description=message)
 
     def start_pull_mirror(self, host, token, pid, data=None):
