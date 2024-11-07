@@ -674,7 +674,7 @@ class ProjectsClient(BaseClass):
                     self.log.error(e)
             return ids
 
-    def pull_mirror_staged_projects(self, protected_only=False, force=False, dry_run=True):
+    def pull_mirror_staged_projects(self, protected_only=False, force=False, overwrite=False, dry_run=True):
         start = time()
         rotate_logs()
         staged_projects = get_staged_projects()
@@ -682,44 +682,47 @@ class ProjectsClient(BaseClass):
         src_token = self.config.source_token
         username = self.config.mirror_username
         for sp in tqdm(staged_projects, total=len(staged_projects), colour=self.TANUKI, desc=self.DESC, unit=self.UNIT):
-            dst_pid, mirror_path = self.find_mirror_project(sp)
-            if dst_pid and mirror_path and username:
+            mirror_pid, mirror_path = self.find_mirror_project(sp)
+            sp_path = sp.get('path_with_namespace')
+            sp_id = sp.get('id')
+            if mirror_pid and mirror_path and username:
                 self.log.info(
-                    f"{get_dry_log(dry_run)}Create destination project {dst_pid} pull mirror from '{mirror_path}'")
+                    f"{get_dry_log(dry_run)}Create destination project '{mirror_path}' ({mirror_pid}) pull mirror from '{sp_path}' ({sp_id})")
                 if not dry_run:
                     mirror_data = {
                         "mirror": True,
                         "mirror_trigger_builds": False,
-                        "import_url": f"{strip_scheme(src_host)}://{username}:{src_token}@{strip_netloc(src_host)}/{mirror_path}.git",
-                        "only_mirror_protected_branches": protected_only
+                        "import_url": f"{strip_scheme(src_host)}://{username}:{src_token}@{strip_netloc(src_host)}/{sp_path}.git",
+                        "only_mirror_protected_branches": protected_only,
+                        "mirror_overwrites_diverged_branches": overwrite,
                     }
                     self.create_and_start_pull_mirror(
-                        dst_pid, mirror_path, mirror_data, force)
+                        mirror_pid, mirror_path, mirror_data, force)
             else:
                 self.log.error(
-                    f"Failed to setup destination project {dst_pid} pull mirroring from '{mirror_path}' with user '{username}'")
+                    f"Failed to setup destination project '{mirror_path}' ({mirror_pid}) pull mirror from '{sp_path}' ({sp_id}) with source user '{username}'")
         add_post_migration_stats(start, log=self.log)
 
-    def create_and_start_pull_mirror(self, dst_pid, mirror_path, mirror_data, force):
+    def create_and_start_pull_mirror(self, mirror_pid, mirror_path, mirror_data, force):
         dst_host = self.config.destination_host
         dst_token = self.config.destination_token
         try:
             resp = self.projects_api.edit_project(
-                dst_host, dst_token, dst_pid, json.dumps(mirror_data))
+                dst_host, dst_token, mirror_pid, json.dumps(mirror_data))
             if resp.status_code != 201:
                 self.log.error(
-                    f"Failed to create project {dst_pid} pull mirror from '{mirror_path}':\n{resp} - {resp.text}")
+                    f"Failed to create project '{mirror_path}' ({mirror_pid}) pull mirror:\n{resp} - {resp.text}")
             elif force:
                 self.log.info(
-                    f"Start pull mirror for destination project {dst_pid} from '{mirror_path}'")
+                    f"Start destination project '{mirror_path}' ({mirror_pid}) pull mirror")
                 resp = self.projects_api.start_pull_mirror(
-                    dst_host, dst_token, dst_pid)
+                    dst_host, dst_token, mirror_pid)
                 if resp.status_code != 201:
                     self.log.error(
-                        f"Failed to start pull mirror for destination project {dst_pid} from '{mirror_path}':\n{resp} - {resp.text}")
+                        f"Failed to start destination project '{mirror_path}' ({mirror_pid}) pull mirror:\n{resp} - {resp.text}")
         except RequestException as re:
             self.log.error(
-                f"Failed to create destination project {dst_pid} pull mirror from  '{mirror_path}':\n{re}")
+                f"Failed to create destination project '{mirror_path}' ({mirror_pid}) pull mirror:\n{re}")
 
     def delete_all_pull_mirrors(self, dry_run=True):
         ids = self.get_new_ids()
@@ -900,26 +903,27 @@ class ProjectsClient(BaseClass):
             self.log.error(f"Missing project {project} push mirror {url}")
 
     def find_mirror_project(self, staged_project):
-        """Validate push mirror source and destination project"""
+        """Validate pull/push mirror source and destination project"""
         try:
             orig_path = get_dst_path_with_namespace(
                 staged_project, mirror=True)
             orig_pid = self.find_project_by_path(
                 self.config.source_host, self.config.source_token, orig_path)
             if not orig_pid:
-                self.log.error(f"SKIP: Original project {orig_path} NOT found")
+                self.log.error(
+                    f"SKIP: Original project '{orig_path}' NOT found")
                 return (False, False)
             mirror_path = get_dst_path_with_namespace(staged_project)
             mirror_pid = self.find_project_by_path(
                 self.config.destination_host, self.config.destination_token, mirror_path)
             if not mirror_pid:
                 self.log.error(
-                    f"SKIP: Mirror project {mirror_path} (source ID: {orig_pid}) NOT found")
-                return (orig_pid, False)
-            return (orig_pid, mirror_path)
+                    f"SKIP: Mirror project '{mirror_path}' NOT found")
+                return (mirror_pid, False)
+            return (mirror_pid, mirror_path)
         except RequestException as re:
             self.log.error(
-                f"Failed to find project {orig_path} and/or push mirror, with error:\n{re}")
+                f"Failed to find staged project '{staged_project.get('path_with_namespace')}' original and/or mirror project:\n{re}")
             return (False, False)
 
     def delete_staged_projects_push_mirrors(self, remove_all=False, dry_run=True):

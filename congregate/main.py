@@ -32,7 +32,7 @@ Usage:
     congregate remove-users-from-parent-group [--commit]
     congregate migrate-variables-in-stage [--commit]
     congregate migrate-linked-issues [--commit]
-    congregate pull-mirror-staged-projects [--commit] [--protected-only] [--force]
+    congregate pull-mirror-staged-projects [--commit] [--protected-only] [--force] [--overwrite]
     congregate push-mirror-staged-projects [--disabled] [--keep_div_refs] [--force] [--commit]
     congregate toggle-staged-projects-push-mirror [--disable] [--commit]
     congregate verify-staged-projects-push-mirror [--disabled] [--keep_div_refs]
@@ -498,7 +498,7 @@ def main():
                 projects.delete_all_pull_mirrors(dry_run=DRY_RUN)
             if arguments["pull-mirror-staged-projects"]:
                 projects.pull_mirror_staged_projects(
-                    protected_only=arguments["--protected-only"], force=arguments["--force"], dry_run=DRY_RUN)
+                    protected_only=arguments["--protected-only"], force=arguments["--force"], overwrite=arguments["--overwrite"], dry_run=DRY_RUN)
             if arguments["push-mirror-staged-projects"]:
                 projects.push_mirror_staged_projects(
                     disabled=arguments["--disabled"], keep_div_refs=arguments["--keep_div_refs"], force=arguments["--force"], dry_run=DRY_RUN)

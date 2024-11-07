@@ -3,6 +3,7 @@ from urllib.parse import quote_plus
 from congregate.migration.gitlab.api.base_api import GitLabApiWrapper
 from congregate.migration.gitlab.api.users import UsersApi
 
+
 class ProjectsApi(GitLabApiWrapper):
     def __init__(self):
         super().__init__()
@@ -191,7 +192,7 @@ class ProjectsApi(GitLabApiWrapper):
         if not message:
             message = f"Unarchiving project {pid}"
         return self.api.generate_post_request(host, token, f"projects/{pid}/unarchive", {}, description=message)
-    
+
     def get_project_archive_state(self, host, token, pid):
         """
         Retrieves the archive state of the project.
@@ -249,6 +250,7 @@ class ProjectsApi(GitLabApiWrapper):
             :return: Response object containing the response to PUT /projects/:pid
         """
         if not message:
+            data.pop("import_url", None)
             message = f"Editing project {pid} with payload {str(data)}"
         return self.api.generate_put_request(host, token, f"projects/{pid}", json.dumps(data), description=message)
 
@@ -256,7 +258,7 @@ class ProjectsApi(GitLabApiWrapper):
         """
         Start the pull mirroring process for a Project
 
-        GitLab API doc: https://docs.gitlab.com/ee/api/projects.html
+        GitLab API doc: https://docs.gitlab.com/ee/api/project_pull_mirroring.html#start-the-pull-mirroring-process-for-a-project
 
             :param: pid: (int) GitLab project ID
             :return: Response object containing the response to PUT /projects/:pid/mirror/pull
@@ -1103,7 +1105,7 @@ class ProjectsApi(GitLabApiWrapper):
         if not message:
             message = f"Creating new environment for project {pid} with payload {str(data)}"
         return self.api.generate_post_request(host, token, f"projects/{pid}/environments", json.dumps(data), description=message)
-    
+
     def create_protected_environment(self, host, token, pid, data, message=None):
         """
         Creates a new protected environment
@@ -1120,7 +1122,7 @@ class ProjectsApi(GitLabApiWrapper):
         if not message:
             message = f"Creating new protected environment for project {pid} with payload {json.dumps(data)}"
         return self.api.generate_post_request(host, token, f"projects/{pid}/protected_environments", json.dumps(data), description=message)
-    
+
     def update_protected_environment(self, host, token, pid, data, name, message=None):
         """
         Creates a new protected environment
