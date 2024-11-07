@@ -708,7 +708,7 @@ class ProjectsClient(BaseClass):
         dst_token = self.config.destination_token
         try:
             resp = self.projects_api.edit_project(
-                dst_host, dst_token, mirror_pid, json.dumps(mirror_data))
+                dst_host, dst_token, mirror_pid, mirror_data)
             if resp.status_code != 201:
                 self.log.error(
                     f"Failed to create project '{mirror_path}' ({mirror_pid}) pull mirror:\n{resp} - {resp.text}")
