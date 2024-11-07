@@ -280,7 +280,7 @@ class ProjectsTests(unittest.TestCase):
         mock_get_path.side_effect = [
             "pmm-demo/spring-app-secure-2", "pmm-demo/spring-app-secure-2"]
         self.assertTupleEqual(self.projects.find_mirror_project(
-            self.mock_projects.get_staged_group_project()), (1, False))
+            self.mock_projects.get_staged_group_project()), (None, False))
 
     @patch("congregate.helpers.migrate_utils.get_dst_path_with_namespace")
     @patch.object(ProjectsClient, "find_project_by_path")
@@ -291,7 +291,7 @@ class ProjectsTests(unittest.TestCase):
         mock_get_path.side_effect = [
             "pmm-demo/spring-app-secure-2", "pmm-demo/spring-app-secure-2"]
         self.assertTupleEqual(self.projects.find_mirror_project(
-            self.mock_projects.get_staged_group_project()), (1, "pmm-demo/spring-app-secure-2"))
+            self.mock_projects.get_staged_group_project()), (2, "pmm-demo/spring-app-secure-2"))
 
     @patch("congregate.helpers.migrate_utils.get_dst_path_with_namespace")
     @patch.object(ProjectsClient, "find_project_by_path")
