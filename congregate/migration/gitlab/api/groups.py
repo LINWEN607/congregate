@@ -353,7 +353,7 @@ class GroupsApi(GitLabApiWrapper):
             message = "Adding group hook"
         return self.api.generate_post_request(host, token, f"groups/{gid}/hooks", json.dumps(data), description=message)
 
-    def get_all_group_projects(self, gid, host, token, include_subgroups=True, with_shared=True):
+    def get_all_group_projects(self, gid, host, token, include_subgroups=False, with_shared=False):
         """
         Get a list of projects in this group
 
@@ -368,7 +368,7 @@ class GroupsApi(GitLabApiWrapper):
         """
         return self.api.list_all(host, token, f"groups/{gid}/projects?include_subgroups={include_subgroups}&with_shared={with_shared}")
 
-    def get_all_group_projects_count(self, gid, host, token, include_subgroups=True, with_shared=False):
+    def get_all_group_projects_count(self, gid, host, token, include_subgroups=False, with_shared=False):
         """
         Get a total count of projects in this group
 

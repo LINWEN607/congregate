@@ -63,7 +63,7 @@ class ProjectsClient(BaseClass):
                 self.multi.start_multi_process_stream_with_args(
                     self.handle_retrieving_project,
                     self.groups_api.get_all_group_projects(
-                        self.config.src_parent_id, host, token, with_shared=False),
+                        self.config.src_parent_id, host, token, include_subgroups=True),
                     host,
                     token,
                     processes=processes)
