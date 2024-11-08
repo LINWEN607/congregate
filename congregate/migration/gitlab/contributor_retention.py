@@ -68,6 +68,9 @@ class ContributorRetentionClient(BaseClass):
                 else:
                     author_email = self.users.get_user_email(
                         author['id'], self.config.source_host, self.config.source_token)
+
+                # Required for list-staged-projects-contributors
+                author['public_email'] = author.pop('publicEmail', "")
                 author['email'] = author_email
                 author['state'] = 'blocked'
                 self.contributor_map[author_email] = author

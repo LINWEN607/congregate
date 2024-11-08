@@ -786,7 +786,10 @@ class UsersClient(BaseClass):
             # Assume primary email matches on dest
             email = su.get("email")
             su_pub_email = su.get("public_email")
-            set_email = su_pub_email if hide else email
+            if is_dot_com(host):
+                set_email = "" if hide else email
+            else:
+                set_email = su_pub_email if hide else email
             try:
                 # Look up user on source
                 user = find_user_by_email_comparison_without_id(
