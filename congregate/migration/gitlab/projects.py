@@ -709,7 +709,7 @@ class ProjectsClient(BaseClass):
         try:
             resp = self.projects_api.edit_project(
                 dst_host, dst_token, mirror_pid, mirror_data)
-            if resp.status_code != 201:
+            if resp.status_code != 200:
                 self.log.error(
                     f"Failed to create project '{mirror_path}' ({mirror_pid}) pull mirror:\n{resp} - {resp.text}")
             elif force:
