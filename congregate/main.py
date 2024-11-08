@@ -128,6 +128,7 @@ Arguments:
     disable                                 Disable staged project push mirror
     keep_div_refs                           Set keep_divergent_refs to True (False by default) and avoid overwriting changes on the mirror repo
     force                                   Immediately trigger push mirroring with a repo change e.g. new branch
+    overwrite                               DESTRUCTIVE: Overwrites pull mirrored branches on destination that have diverged from source. Therefore, recommended to make change in new branches on destination instead.
     name                                    Project branch name
     all                                     Include all listed objects.
     bb-projects                             Target BitBucket repo branches from a project level
