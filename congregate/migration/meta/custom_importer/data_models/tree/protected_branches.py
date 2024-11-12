@@ -1,4 +1,4 @@
-
+from typing import Optional
 from dataclasses import dataclass, asdict
 from gitlab_ps_utils.dict_utils import strip_none
                     
@@ -19,15 +19,15 @@ from gitlab_ps_utils.dict_utils import strip_none
 @dataclass
 class ProtectedBranches:
     
-    allow_force_push: bool
-    code_owner_approval_required: bool
-    created_at: str
-    merge_access_levels: list
-    name: str
-    project_id: int
-    push_access_levels: list
-    unprotect_access_levels: list
-    updated_at: str
+    allow_force_push: Optional[bool] = None
+    code_owner_approval_required: Optional[bool] = None
+    created_at: Optional[str] = None
+    merge_access_levels: Optional[list] = []
+    name: Optional[str] = None
+    project_id: Optional[int] = None
+    push_access_levels: Optional[list] = []
+    unprotect_access_levels: Optional[list] = []
+    updated_at: Optional[str] = None
 
     def to_dict(self):
         return strip_none(asdict(self))

@@ -1,4 +1,4 @@
-
+from typing import Optional
 from dataclasses import dataclass, asdict
 from gitlab_ps_utils.dict_utils import strip_none
                     
@@ -21,17 +21,17 @@ from gitlab_ps_utils.dict_utils import strip_none
 @dataclass
 class Labels:
     
-    color: str
-    created_at: str
-    description: str
-    group_id: int | None = None
-    priorities: list
-    project_id: int
-    template: bool
-    textColor: str
-    title: str
-    type: str
-    updated_at: str
+    color: Optional[str] = None
+    created_at: Optional[str] = None
+    description: Optional[str] = None
+    group_id: Optional[int] = None
+    priorities: Optional[list] = []
+    project_id: Optional[int] = None
+    template: Optional[bool] = None
+    textColor: Optional[str] = None
+    title: Optional[str] = None
+    type: Optional[str] = None
+    updated_at: Optional[str] = None
 
     def to_dict(self):
         return strip_none(asdict(self))

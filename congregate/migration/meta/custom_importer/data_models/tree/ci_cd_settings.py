@@ -1,4 +1,4 @@
-
+from typing import Optional
 from dataclasses import dataclass, asdict
 from gitlab_ps_utils.dict_utils import strip_none
                     
@@ -12,9 +12,9 @@ from gitlab_ps_utils.dict_utils import strip_none
 
 @dataclass
 class CiCdSettings:
-    default_git_depth: int
-    group_runners_enabled: bool
-    runner_token_expiration_interval: int | None = None
+    default_git_depth: Optional[int] = None
+    group_runners_enabled: Optional[bool] = None
+    runner_token_expiration_interval: Optional[int] = None
 
     def to_dict(self):
         return strip_none(asdict(self))

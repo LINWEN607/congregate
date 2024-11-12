@@ -1,36 +1,36 @@
-
+from typing import Optional
 from dataclasses import dataclass, asdict
 from gitlab_ps_utils.dict_utils import strip_none
                     
 
 @dataclass
 class CommitNotes:
-    attachment: list
-    author: list
-    author_id: int
+    attachment: Optional[list] = []
+    author: Optional[list] = []
+    author_id: Optional[int] = None
     change_position: None | str
-    commit_id: str
+    commit_id: Optional[str] = None
     confidential: None | bool
-    created_at: str
-    discussion_id: str
-    events: list
-    id: int
-    imported_from: str
-    internal: bool
-    last_edited_at: str
+    created_at: Optional[str] = None
+    discussion_id: Optional[str] = None
+    events: Optional[list] = []
+    id: Optional[int] = None
+    imported_from: Optional[str] = None
+    internal: Optional[bool] = None
+    last_edited_at: Optional[str] = None
     line_code: None | str
-    note: str
-    noteable_type: str
+    note: Optional[str] = None
+    noteable_type: Optional[str] = None
     original_position: None | str
     position: None | str
-    project_id: int
+    project_id: Optional[int] = None
     resolved_at: None | str
     resolved_by_id: None | int
     resolved_by_push: None | bool
     st_diff: None | str
-    system: bool
+    system: Optional[bool] = None
     type: None | str
-    updated_at: str
+    updated_at: Optional[str] = None
     updated_by_id: None | int
 
     def to_dict(self):

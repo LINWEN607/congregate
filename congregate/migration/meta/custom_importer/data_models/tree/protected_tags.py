@@ -1,4 +1,4 @@
-
+from typing import Optional
 from dataclasses import dataclass, asdict
 from gitlab_ps_utils.dict_utils import strip_none
                     
@@ -14,11 +14,11 @@ from gitlab_ps_utils.dict_utils import strip_none
 
 @dataclass
 class ProtectedTags:
-    create_access_levels: list
-    created_at: str
-    name: str
-    project_id: int
-    updated_at: str
+    create_access_levels: Optional[list] = []
+    created_at: Optional[str] = None
+    name: Optional[str] = None
+    project_id: Optional[int] = None
+    updated_at: Optional[str] = None
 
     def to_dict(self):
         return strip_none(asdict(self))

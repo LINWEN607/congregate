@@ -1,4 +1,4 @@
-
+from typing import Optional
 from dataclasses import dataclass, asdict
 from gitlab_ps_utils.dict_utils import strip_none
                     
@@ -92,53 +92,52 @@ from gitlab_ps_utils.dict_utils import strip_none
 
 @dataclass
 class MergeRequests:
-    
-    allow_maintainer_to_push: bool
-    approvals: list
-    approvals_before_merge: int | None = None
-    author_id: int
-    award_emoji: list
-    created_at: str
-    description: str
-    diff_head_sha: str
-    discussion_locked: bool | None = None
-    draft: bool
-    events: list
-    iid: int
-    in_progress_merge_commit_sha: str | None = None
-    label_links: list
-    last_edited_at: str | None = None
-    last_edited_by_id: int | None = None
-    lock_version: int
-    merge_commit_sha: str | None = None
-    merge_error: str | None = None
-    merge_params: dict
-    merge_ref_sha: str | None = None
-    merge_request_assignees: list
-    merge_request_diff: dict
-    merge_request_reviewers: list
-    merge_status: str
-    merge_user_id: int | None = None
-    metrics: dict
-    notes: list
-    rebase_commit_sha: str | None = None
-    resource_label_events: list
-    resource_milestone_events: list
-    resource_state_events: list
-    source_branch: str
-    source_branch_sha: str
-    source_project_id: int
-    squash: bool
-    squash_commit_sha: str | None = None
-    state: str
-    target_branch: str
-    target_branch_sha: str
-    target_project_id: int
-    time_estimate: int
-    timelogs: list
-    title: str
-    updated_at: str
-    updated_by_id: int | None = None
+    allow_maintainer_to_push: Optional[bool] = None
+    approvals: Optional[list] = []
+    approvals_before_merge: Optional[str] = None
+    author_id: Optional[str] = None
+    award_emoji: Optional[list] = []
+    created_at: Optional[str] = None
+    description: Optional[str] = None
+    diff_head_sha: Optional[str] = None
+    discussion_locked: Optional[bool] = None
+    draft: Optional[bool] = None
+    events: Optional[list] = []
+    iid: Optional[str] = None
+    in_progress_merge_commit_sha: Optional[str] = None
+    label_links: Optional[list] = []
+    last_edited_at: Optional[str] = None
+    last_edited_by_id: Optional[str] = None
+    lock_version: Optional[str] = None
+    merge_commit_sha: Optional[str] = None
+    merge_error: Optional[str] = None
+    merge_params: Optional[dict] = {}
+    merge_ref_sha: Optional[str] = None
+    merge_request_assignees: Optional[list] = []
+    merge_request_diff: Optional[dict] = {}
+    merge_request_reviewers: Optional[list] = []
+    merge_status: Optional[str] = None
+    merge_user_id: Optional[str] = None
+    metrics: Optional[dict] = {}
+    notes: Optional[list] = []
+    rebase_commit_sha: Optional[str] = None
+    resource_label_events: Optional[list] = []
+    resource_milestone_events: Optional[list] = []
+    resource_state_events: Optional[list] = []
+    source_branch: Optional[str] = None
+    source_branch_sha: Optional[str] = None
+    source_project_id: Optional[str] = None
+    squash: Optional[bool] = None
+    squash_commit_sha: Optional[str] = None
+    state: Optional[str] = None
+    target_branch: Optional[str] = None
+    target_branch_sha: Optional[str] = None
+    target_project_id: Optional[str] = None
+    time_estimate: Optional[str] = None
+    timelogs: Optional[list] =[]
+    title: Optional[str] = None
+    updated_at: Optional[str] = None
+    updated_by_id: Optional[str] = None
 
     def to_dict(self):
         return strip_none(asdict(self))
