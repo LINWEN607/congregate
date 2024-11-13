@@ -166,7 +166,7 @@ class GroupsApi(GitLabApiWrapper):
         """
         return self.api.list_all(host, token, f"groups/{gid}/subgroups")
 
-    def delete_group(self, gid, host, token):
+    def delete_group(self, gid, host, token, full_path=None, permanent=False):
         """
         Removes group with all projects inside
 
@@ -177,7 +177,11 @@ class GroupsApi(GitLabApiWrapper):
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing a 202 (Accepted) or 404 (Group not found) from DELETE /groups/:id
         """
-        return self.api.generate_delete_request(host, token, f"groups/{gid}")
+        message = f"Deleting destination group {gid})"
+        if permanent and full_path:
+            message += f" '{full_path}' permanently"
+            return self.api.generate_delete_request(host, token, f"groups/{gid}?&full_path={quote_plus(full_path)}&permanently_remove=true", description=message)
+        return self.api.generate_delete_request(host, token, f"groups/{gid}", description=message)
 
     def remove_member(self, gid, uid, host, token):
         """

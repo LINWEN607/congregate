@@ -50,7 +50,8 @@ class MigrateClient(BaseClass):
         subgroups_only=False,
         scm_source=None,
         group_structure=False,
-        retain_contributors=False
+        retain_contributors=False,
+        permanent=False,
     ):
         self.users = UsersClient()
         self.users_api = UsersApi()
@@ -80,8 +81,9 @@ class MigrateClient(BaseClass):
         self.scm_source = scm_source
         self.group_structure = group_structure
         self.retain_contributors = retain_contributors
+        self.permanent = permanent
 
-    # keep for overriden function but reuse functionality from the various migrate_from_* functions
+    # keep for overridden function but reuse functionality from the various migrate_from_* functions
     def migrate(self):
         raise NotImplementedError
 
@@ -294,13 +296,14 @@ class MigrateClient(BaseClass):
             self.log.info(
                 f"{dry_log}Removing staged groups{'' if self.skip_projects else ' and projects'} on destination")
             self.groups.delete_groups(
-                dry_run=self.dry_run, skip_projects=self.skip_projects)
+                dry_run=self.dry_run, skip_projects=self.skip_projects, permanent=self.permanent)
 
         # Remove only projects
         if not self.skip_projects:
             self.log.info(
                 f"{dry_log}Removing staged projects on destination")
-            self.projects.delete_projects(dry_run=self.dry_run)
+            self.projects.delete_projects(
+                dry_run=self.dry_run, permanent=self.permanent)
 
         if not self.skip_users:
             self.log.info(

@@ -3,7 +3,7 @@ import base64
 from os.path import dirname
 import datetime
 from sqlite3 import DataError
-from time import time
+from time import time, sleep
 from requests.exceptions import RequestException
 from tqdm import tqdm
 from celery import shared_task
@@ -135,33 +135,49 @@ class ProjectsClient(BaseClass):
                 return project.get("id")
         return None
 
-    def delete_projects(self, dry_run=True):
+    def delete_projects(self, dry_run=True, permanent=False):
         staged_projects = get_staged_projects()
-        host = self.config.destination_host
-        token = self.config.destination_token
         for sp in tqdm(staged_projects, total=len(staged_projects), colour=self.TANUKI, desc=self.DESC, unit=self.UNIT):
             # GitLab.com destination instances have a parent group
             path_with_namespace, _ = get_stage_wave_paths(sp)
             self.log.info(
-                f"{get_dry_log(dry_run)}Removing project '{path_with_namespace}' on destination")
+                f"{get_dry_log(dry_run)}Deleting project '{path_with_namespace}' on destination")
             try:
                 resp = self.projects_api.get_project_by_path_with_namespace(
-                    path_with_namespace, host, token)
+                    path_with_namespace, self.config.destination_host, self.config.destination_token)
                 if resp.status_code != 200:
                     self.log.warning(
                         f"Project '{path_with_namespace}' does not exist: {resp} - {resp.text})")
                 elif not dry_run:
-                    project = safe_json_response(resp)
-                    if get_timedelta(
-                            project["created_at"]) < self.config.max_asset_expiration_time:
-                        self.projects_api.delete_project(
-                            host, token, project["id"])
-                    else:
-                        self.log.warning(
-                            f"SKIP: project '{project['name_with_namespace']}' was created {self.config.max_asset_expiration_time} hours ago")
+                    self.delete_project(
+                        resp, path_with_namespace, permanent=permanent)
             except RequestException as re:
                 self.log.error(
-                    f"Failed to remove project '{path_with_namespace}' on destination:\n{re}")
+                    f"Failed to delete project '{path_with_namespace}' on destination:\n{re}")
+
+    def delete_project(self, resp, path_with_namespace, permanent=False):
+        host = self.config.destination_host
+        token = self.config.destination_token
+        exp_time = self.config.max_asset_expiration_time
+        project = safe_json_response(resp)
+        if get_timedelta(project.get("created_at", exp_time)) < exp_time:
+            pid = project["id"]
+            resp = self.projects_api.delete_project(host, token, pid)
+            if resp.status_code not in [200, 202, 204]:
+                self.log.error(
+                    f"Failed to delete project '{path_with_namespace}' on destination:\n{resp} - {resp.text}")
+            elif permanent:
+                if deleted_path_json := safe_json_response(self.projects_api.get_project(pid, host, token)):
+                    # Allow time for project to rename and archive as part of soft deletion
+                    sleep(5)
+                    resp = self.projects_api.delete_project(host, token, pid, full_path=deleted_path_json.get(
+                        "path_with_namespace"), permanent=permanent)
+                    if resp.status_code not in [200, 202, 204]:
+                        self.log.error(
+                            f"Failed to permanently delete project '{path_with_namespace}' on destination:\n{resp} - {resp.text}")
+        else:
+            self.log.warning(
+                f"SKIP: project '{path_with_namespace}' was created {exp_time} hours ago")
 
     def count_unarchived_projects(self, local=False):
         unarchived_user_projects = []

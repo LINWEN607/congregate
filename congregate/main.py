@@ -14,7 +14,7 @@ Usage:
     congregate stage-wave <wave> [--commit] [--scm-source=hostname]
     congregate create-stage-wave-csv [--commit]
     congregate migrate [--commit] [--processes=<n>] [--reporting] [--skip-users] [--remove-members] [--sync-members] [--stream-groups] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostname] [--reg-dry-run] [--group-structure] [--retain-contributors]
-    congregate rollback [--commit] [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects]
+    congregate rollback [--commit] [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--permanent]
     congregate ui
     congregate do-all [--commit]
     congregate do-all-users [--commit]
@@ -87,7 +87,8 @@ Arguments:
     skip-users                              Stage: Skip staging users; Migrate: Skip migrating users; Rollback: Remove only groups and projects.
     remove-members                          Remove all members of created (GitHub) or imported (GitLab) groups. Skip adding any members of BitBucket Server repos and projects.
     sync-members                            Align group members list between source and destination by adding missing members on destination.
-    hard-delete                             Remove user contributions and solely owned groups
+    hard-delete                             DESTRUCTIVE: Remove user contributions and solely owned groups
+    permanent                               DESTRUCTIVE: Permanently delete group and/or project. Otherwise, by default, scheduled for deletion
     stream-groups                           Streamed approach of migrating staged groups in bulk
     skip-groups                             Rollback: Remove only users and projects
     skip-group-members                      Add empty list instead of listing GitLab group members. Skip saving BBS project user groups as GL group members.
@@ -448,7 +449,8 @@ def main():
                     skip_users=SKIP_USERS,
                     hard_delete=arguments["--hard-delete"],
                     skip_groups=SKIP_GROUPS,
-                    skip_projects=SKIP_PROJECTS
+                    skip_projects=SKIP_PROJECTS,
+                    permanent=arguments["--permanent"],
                 )
                 migrate.rollback()
 

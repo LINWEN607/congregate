@@ -209,7 +209,7 @@ class ProjectsApi(GitLabApiWrapper):
         response.raise_for_status()
         return True
 
-    def delete_project(self, host, token, pid):
+    def delete_project(self, host, token, pid, full_path=None, permanent=False):
         """
         Removes a project including all associated resources
 
@@ -220,7 +220,10 @@ class ProjectsApi(GitLabApiWrapper):
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing a 202 (Accepted) or 404 (Project not found) from DELETE /projects/:pid
         """
-        message = f"Deleting project {pid}"
+        message = f"Deleting destination project {pid})"
+        if permanent and full_path:
+            message += f" '{full_path}' permanently"
+            return self.api.generate_delete_request(host, token, f"projects/{pid}?&full_path={quote_plus(full_path)}&permanently_remove=true", description=message)
         return self.api.generate_delete_request(host, token, f"projects/{pid}", description=message)
 
     def add_shared_group(self, host, token, pid, data=None, message=None):
