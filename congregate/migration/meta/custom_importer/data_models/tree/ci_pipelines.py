@@ -15,7 +15,7 @@ class CiPipelines:
     finished_at: Optional[str] = None
     iid: Optional[int] = None
     lock_version: Optional[int] = None
-    merge_request: Optional[dict] = field(default_factory=dict)
+    merge_request: Optional[dict] = field(default_factory={})
     project_id: Optional[int] = None
     protected: Optional[bool] = None
     ref: Optional[str] = None

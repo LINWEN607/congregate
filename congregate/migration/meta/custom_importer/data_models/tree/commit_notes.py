@@ -5,15 +5,15 @@ from gitlab_ps_utils.dict_utils import strip_none
 
 @dataclass
 class CommitNotes:
-    attachment: Optional[List] = field(default_factory=[])
-    author: Optional[List] = field(default_factory=[])
+    attachment: Optional[List] = field(default_factory=list)
+    author: Optional[List] = field(default_factory=list)
     author_id: Optional[int] = None
     change_position: Optional[str] = None
     commit_id: Optional[str] = None
     confidential: Optional[bool] = None
     created_at: Optional[str] = None
     discussion_id: Optional[str] = None
-    events: Optional[List] = field(default_factory=[])
+    events: Optional[List] = field(default_factory=list)
     id: Optional[int] = None
     imported_from: Optional[str] = None
     internal: Optional[bool] = None

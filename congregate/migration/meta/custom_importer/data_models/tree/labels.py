@@ -9,7 +9,7 @@ class Labels:
     created_at: Optional[str] = None
     description: Optional[str] = None
     group_id: Optional[int] = None
-    priorities: Optional[list] = field(default_factory=[])
+    priorities: Optional[list] = field(default_factory=list)
     project_id: Optional[int] = None
     template: Optional[bool] = None
     textColor: Optional[str] = None

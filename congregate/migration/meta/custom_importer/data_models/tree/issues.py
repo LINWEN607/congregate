@@ -15,7 +15,7 @@ class Issues:
     description: str
     state: str
     iid: int
-    notes: List[Note] = field(default_factory=[])
+    notes: List[Note] = field(default_factory=list)
 
     # Optional and present in import_export.yml
     confidential: bool = False

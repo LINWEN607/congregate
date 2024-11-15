@@ -9,7 +9,7 @@ class Boards:
     group_id: Optional[int] = None
     hide_backlog_list: Optional[bool] = None
     hide_closed_list: Optional[bool] = None
-    lists: Optional[List] = field(default_factory=[])
+    lists: Optional[List] = field(default_factory=list)
     name: Optional[str] = None
     project_id: Optional[int] = None
     updated_at: Optional[str] = None

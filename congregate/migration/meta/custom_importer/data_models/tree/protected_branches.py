@@ -8,11 +8,11 @@ class ProtectedBranches:
     allow_force_push: Optional[bool] = None
     code_owner_approval_required: Optional[bool] = None
     created_at: Optional[str] = None
-    merge_access_levels: Optional[List] = field(default_factory=[])
+    merge_access_levels: Optional[List] = field(default_factory=list)
     name: Optional[str] = None
     project_id: Optional[int] = None
-    push_access_levels: Optional[List] = field(default_factory=[])
-    unprotect_access_levels: Optional[List] = field(default_factory=[])
+    push_access_levels: Optional[List] = field(default_factory=list)
+    unprotect_access_levels: Optional[List] = field(default_factory=list)
     updated_at: Optional[str] = None
 
     def to_dict(self):

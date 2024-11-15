@@ -7,8 +7,8 @@ class Releases:
     author_id: Optional[int] = None
     created_at: Optional[str] = None
     description: Optional[str] = None
-    links: Optional[List] = field(default_factory=[])
-    milestone_releases: Optional[List] = field(default_factory=[])
+    links: Optional[List] = field(default_factory=list)
+    milestone_releases: Optional[List] = field(default_factory=list)
     name: Optional[str] = None
     project_id: Optional[int] = None
     released_at: Optional[str] = None

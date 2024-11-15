@@ -4,17 +4,76 @@ Utility functions for building a custom project export
 
 import os
 import tempfile
+import tarfile
 from json import dumps
+from dataclasses import fields
 from git import Repo, GitCommandError
 from congregate.migration.gitlab.api.instance import InstanceApi
 from congregate.migration.meta.custom_importer.data_models.project_export import ProjectExport, ApprovalRules, \
     AutoDevops, CiCdSettings, CiPipelines, CommitNotes, ContainerExpirationPolicy, Issues, Labels, MergeRequests, \
     ProjectFeatures, ProjectMembers, ProtectedBranches, ProtectedTags, PushRule, Releases, SecuritySetting, UserContributions
+from congregate.migration.meta.custom_importer.data_models.project import Project
 
 
 class ExportBuilder():
-    def __init__(self):
+    def __init__(self, project_name, clone_url):
         self.export_dir = tempfile.TemporaryDirectory()
+        self.tree_path = os.path.join(self.export_dir.name, 'tree')
+        os.makedirs(self.tree_path, exist_ok=True)
+        self.project_path = os.path.join(self.export_dir.name, 'tree', 'project')
+        os.makedirs(self.project_path, exist_ok=True)
+        self.clone_url = clone_url
+        self.project_name = project_name
+
+    def build_export(self, tree_export: ProjectExport, project_metadata: Project, host, token):
+        """
+        Build a custom project export.
+
+        This method creates a directory structure for the project export, including
+        the project bundle, tree directory, snippets directory, and uploads directory.
+        It also creates various NDJSON files containing the exported project data.
+
+        :param tree_export: ProjectExport object containing the exported project data
+        :param project_metadata: Project object containing the project metadata
+        :param host: The GitLab host URL
+        :param token: The access token for authentication
+        """
+        # Create git bundle
+        git_bundle_path = self.create_git_bundle(self.project_name, self.export_dir.name, self.clone_url)
+        if git_bundle_path:
+            print(f"Created Git bundle at {git_bundle_path}")
+        else:
+            print(f"Failed to create Git bundle for {self.project_name}")
+            raise
+
+        # Create snippets directory
+        os.makedirs(os.path.join(self.export_dir.name, 'snippets'), exist_ok=True)
+
+        # Create uploads directory
+        os.makedirs(os.path.join(self.export_dir.name, 'uploads'), exist_ok=True)
+
+        # Create GITLAB_VERSION and GITLAB_REVISION files
+        self.write_to_file('GITLAB_VERSION', self.get_gitlab_version(host, token))
+        self.write_to_file('GITLAB_REVISION', self.get_gitlab_revision(host, token))
+
+        # Create VERSION file
+        self.write_to_file('VERSION', '0.2.4')
+        
+        # Create project.json
+        self.write_to_file('project.json', dumps(project_metadata.to_dict()), root=self.tree_path)
+        
+        # Create empty lfs objects json file. We can handle LFS objects after import
+        self.write_to_file('lfs_objects.json', '{}')
+        
+        # Create the tree directory
+        self.create_tree_files(tree_export)
+
+    def create_export_tar_gz(self, output_path, project_name):
+        with tarfile.open(f"{output_path}/{project_name}.tar.gz", mode="w:gz") as tar:
+            for f in os.listdir(self.export_dir.name):
+                print(f)
+                tar.add(os.path.join(self.export_dir.name, f), arcname=f)
+            # tar.add(self.export_dir.name,arcname=os.path.basename(self.export_dir.name))
 
     def get_gitlab_version(self, host, token):
         """
@@ -46,7 +105,7 @@ class ExportBuilder():
         :param token: The access token for authentication
         :return: True if the bundle was created successfully, False otherwise
         """
-        cwd = os.getcwd()
+        # cwd = os.getcwd()
         try:
             # Create a temporary directory for cloning
             with tempfile.TemporaryDirectory() as temp_dir:
@@ -55,7 +114,7 @@ class ExportBuilder():
                                        'GIT_SSL_NO_VERIFY': '1'})
 
                 # Create the bundle
-                bundle_path = f"{cwd}/{output_path}/project.bundle"
+                bundle_path = f"{output_path}/project.bundle"
                 repo.git.bundle('create', bundle_path, '--all')
 
             return bundle_path
@@ -67,7 +126,22 @@ class ExportBuilder():
         except Exception as e:
             print(f"Error creating Git bundle for {project_path}: {str(e)}")
             return False
-    
+        
+    def create_tree_files(self, export: ProjectExport):
+        """
+        Create tree files for the project export.
+
+        This method creates various NDJSON files containing the exported project data.
+        Each file corresponds to a specific aspect of the project, such as approval rules,
+        CI/CD settings, issues, merge requests, etc.
+
+        :param export: ProjectExport object containing the exported project data
+        """
+        export_path = self.project_path
+        for field in fields(export):
+            # Create NDJSON files for each component of the export
+            self.create_tree_ndjson(getattr(export, field.name), f"{export_path}/{field.name}.ndjson")
+
     def create_tree_ndjson(self, data, output_path):
         """
         Write tree data to an ndjson file
@@ -80,3 +154,8 @@ class ExportBuilder():
                     f.write(f"{dumps(item.to_dict())}\n")
             else:
                 f.write('null')
+
+    def write_to_file(self, file_path, data, root=None):
+        base_path = self.export_dir.name if not root else root
+        with open(base_path + "/" + file_path, "w") as f:
+            f.write(data)
