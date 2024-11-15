@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List, Optional
 
 from congregate.migration.meta.custom_importer.data_models.tree.approval_rules import ApprovalRules
@@ -26,16 +26,16 @@ class ProjectExport:
     approval_rules: Optional[ApprovalRules] = None
     auto_devops: Optional[AutoDevops] = None
     ci_cd_settings: Optional[CiCdSettings] = None
-    ci_pipelines: Optional[List[CiPipelines]] = []
-    commit_notes: Optional[List[CommitNotes]] = []
+    ci_pipelines: Optional[List[CiPipelines]] = field(default_factory=[])
+    commit_notes: Optional[List[CommitNotes]] = field(default_factory=[])
     container_expiration_policy: Optional[ContainerExpirationPolicy] = None
-    issues: Optional[List[Issues]] = []
-    labels: Optional[List[Labels]] = []
-    merge_requests: Optional[List[MergeRequests]] = []
-    project_members: Optional[List[ProjectMembers]] = []
-    protected_branches: Optional[List[ProtectedBranches]] = []
-    protected_tags: Optional[List[ProtectedTags]] = []
+    issues: Optional[List[Issues]] = field(default_factory=[])
+    labels: Optional[List[Labels]] = field(default_factory=[])
+    merge_requests: Optional[List[MergeRequests]] = field(default_factory=[])
+    project_members: Optional[List[ProjectMembers]] = field(default_factory=[])
+    protected_branches: Optional[List[ProtectedBranches]] = field(default_factory=[])
+    protected_tags: Optional[List[ProtectedTags]] = field(default_factory=[])
     push_rule: Optional[PushRule] = None
-    releases: Optional[List[Releases]] = None
+    releases: Optional[List[Releases]] = field(default_factory=[])
     security_setting: Optional[SecuritySetting] = None
     user_contributions: Optional[UserContributions] = None

@@ -1,37 +1,37 @@
-from typing import Optional
-from dataclasses import dataclass, asdict
+from typing import Optional, List
+from dataclasses import dataclass, asdict, field
 from gitlab_ps_utils.dict_utils import strip_none
                     
 
 @dataclass
 class CommitNotes:
-    attachment: Optional[list] = []
-    author: Optional[list] = []
+    attachment: Optional[List] = field(default_factory=[])
+    author: Optional[List] = field(default_factory=[])
     author_id: Optional[int] = None
-    change_position: None | str
+    change_position: Optional[str] = None
     commit_id: Optional[str] = None
-    confidential: None | bool
+    confidential: Optional[bool] = None
     created_at: Optional[str] = None
     discussion_id: Optional[str] = None
-    events: Optional[list] = []
+    events: Optional[List] = field(default_factory=[])
     id: Optional[int] = None
     imported_from: Optional[str] = None
     internal: Optional[bool] = None
     last_edited_at: Optional[str] = None
-    line_code: None | str
+    line_code: Optional[str] = None
     note: Optional[str] = None
     noteable_type: Optional[str] = None
-    original_position: None | str
-    position: None | str
+    original_position: Optional[str] = None
+    position: Optional[str] = None
     project_id: Optional[int] = None
-    resolved_at: None | str
-    resolved_by_id: None | int
-    resolved_by_push: None | bool
-    st_diff: None | str
+    resolved_at: Optional[str] = None
+    resolved_by_id: Optional[int] = None
+    resolved_by_push: Optional[bool] = None
+    st_diff: Optional[str] = None
     system: Optional[bool] = None
-    type: None | str
+    type: Optional[str] = None
     updated_at: Optional[str] = None
-    updated_by_id: None | int
+    updated_by_id: Optional[int] = None
 
     def to_dict(self):
         return strip_none(asdict(self))

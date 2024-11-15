@@ -1,30 +1,14 @@
-from typing import Optional
-from dataclasses import dataclass, asdict
+from typing import Optional, List
+from dataclasses import dataclass, asdict, field
 from gitlab_ps_utils.dict_utils import strip_none
                     
-'''
-{
-    "author_id": "<class 'int'>",
-    "created_at": "<class 'str'>",
-    "description": "<class 'str'>",
-    "links": "<class 'list'>",
-    "milestone_releases": "<class 'list'>",
-    "name": "<class 'str'>",
-    "project_id": "<class 'int'>",
-    "released_at": "<class 'str'>",
-    "sha": "<class 'str'>",
-    "tag": "<class 'str'>",
-    "updated_at": "<class 'str'>"
-}             
-'''
-
 @dataclass
 class Releases:
     author_id: Optional[int] = None
     created_at: Optional[str] = None
     description: Optional[str] = None
-    links: Optional[list] = []
-    milestone_releases: Optional[list] = []
+    links: Optional[List] = field(default_factory=[])
+    milestone_releases: Optional[List] = field(default_factory=[])
     name: Optional[str] = None
     project_id: Optional[int] = None
     released_at: Optional[str] = None

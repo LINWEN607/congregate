@@ -4,6 +4,7 @@ Utility functions for building a custom project export
 
 import os
 import tempfile
+from json import dumps
 from git import Repo, GitCommandError
 from congregate.migration.gitlab.api.instance import InstanceApi
 from congregate.migration.meta.custom_importer.data_models.project_export import ProjectExport, ApprovalRules, \
@@ -13,7 +14,7 @@ from congregate.migration.meta.custom_importer.data_models.project_export import
 
 class ExportBuilder():
     def __init__(self):
-        pass
+        self.export_dir = tempfile.TemporaryDirectory()
 
     def get_gitlab_version(self, host, token):
         """
@@ -45,6 +46,7 @@ class ExportBuilder():
         :param token: The access token for authentication
         :return: True if the bundle was created successfully, False otherwise
         """
+        cwd = os.getcwd()
         try:
             # Create a temporary directory for cloning
             with tempfile.TemporaryDirectory() as temp_dir:
@@ -53,7 +55,7 @@ class ExportBuilder():
                                        'GIT_SSL_NO_VERIFY': '1'})
 
                 # Create the bundle
-                bundle_path = os.path.join(output_path, "project.bundle")
+                bundle_path = f"{cwd}/{output_path}/project.bundle"
                 repo.git.bundle('create', bundle_path, '--all')
 
             return bundle_path
@@ -65,3 +67,16 @@ class ExportBuilder():
         except Exception as e:
             print(f"Error creating Git bundle for {project_path}: {str(e)}")
             return False
+    
+    def create_tree_ndjson(self, data, output_path):
+        """
+        Write tree data to an ndjson file
+        """
+        with open(output_path, "w") as f:
+            if isinstance(data, dict):
+                f.write(f"{dumps(item.to_dict())}\n")
+            elif isinstance(data, list):
+                for item in data:
+                    f.write(f"{dumps(item.to_dict())}\n")
+            else:
+                f.write('null')

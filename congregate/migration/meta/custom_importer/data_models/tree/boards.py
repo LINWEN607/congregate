@@ -1,5 +1,5 @@
-from typing import Optional
-from dataclasses import dataclass, asdict
+from typing import Optional, List
+from dataclasses import dataclass, asdict, field
 from gitlab_ps_utils.dict_utils import strip_none
                     
 
@@ -9,7 +9,7 @@ class Boards:
     group_id: Optional[int] = None
     hide_backlog_list: Optional[bool] = None
     hide_closed_list: Optional[bool] = None
-    lists: Optional[list] = []
+    lists: Optional[List] = field(default_factory=[])
     name: Optional[str] = None
     project_id: Optional[int] = None
     updated_at: Optional[str] = None

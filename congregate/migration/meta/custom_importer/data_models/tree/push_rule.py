@@ -2,25 +2,6 @@ from typing import Optional
 from dataclasses import dataclass, asdict
 from gitlab_ps_utils.dict_utils import strip_none
                     
-'''
-{
-    "author_email_regex": "<class 'NoneType'>",
-    "branch_name_regex": "<class 'NoneType'>",
-    "commit_committer_check": "<class 'NoneType'>",
-    "commit_message_negative_regex": "<class 'NoneType'>",
-    "commit_message_regex": "<class 'NoneType'>",
-    "deny_delete_tag": "<class 'NoneType'>",
-    "file_name_regex": "<class 'NoneType'>",
-    "is_sample": "<class 'bool'>",
-    "max_file_size": "<class 'int'>",
-    "member_check": "<class 'bool'>",
-    "prevent_secrets": "<class 'bool'>",
-    "regexp_uses_re2": "<class 'bool'>",
-    "reject_non_dco_commits": "<class 'NoneType'>",
-    "reject_unsigned_commits": "<class 'NoneType'>"
-}             
-'''
-
 @dataclass
 class PushRule:
     author_email_regex: Optional[str] = None

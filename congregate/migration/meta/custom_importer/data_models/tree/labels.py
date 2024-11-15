@@ -1,23 +1,7 @@
 from typing import Optional
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from gitlab_ps_utils.dict_utils import strip_none
                     
-'''
-{
-    "color": "<class 'str'>",
-    "created_at": "<class 'str'>",
-    "description": "<class 'str'>",
-    "group_id": "<class 'NoneType'>",
-    "priorities": "<class 'list'>",
-    "project_id": "<class 'int'>",
-    "template": "<class 'bool'>",
-    "textColor": "<class 'str'>",
-    "title": "<class 'str'>",
-    "type": "<class 'str'>",
-    "updated_at": "<class 'str'>"
-}             
-'''
-
 @dataclass
 class Labels:
     
@@ -25,7 +9,7 @@ class Labels:
     created_at: Optional[str] = None
     description: Optional[str] = None
     group_id: Optional[int] = None
-    priorities: Optional[list] = []
+    priorities: Optional[list] = field(default_factory=[])
     project_id: Optional[int] = None
     template: Optional[bool] = None
     textColor: Optional[str] = None

@@ -1,5 +1,5 @@
-from typing import Optional
-from dataclasses import dataclass, asdict
+from typing import Optional, List
+from dataclasses import dataclass, asdict, field
 from gitlab_ps_utils.dict_utils import strip_none
                     
 
@@ -15,14 +15,14 @@ class CiPipelines:
     finished_at: Optional[str] = None
     iid: Optional[int] = None
     lock_version: Optional[int] = None
-    merge_request: Optional[dict] = {}
+    merge_request: Optional[dict] = field(default_factory=dict)
     project_id: Optional[int] = None
     protected: Optional[bool] = None
     ref: Optional[str] = None
     sha: Optional[str] = None
     source: Optional[str] = None
     source_sha: Optional[str] = None
-    stages: Optional[list] = []
+    stages: Optional[List[dict]] = field(default_factory=list)
     started_at: Optional[str] = None
     status: Optional[str] = None
     tag: Optional[bool] = None
