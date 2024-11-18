@@ -5,8 +5,7 @@ from requests.exceptions import RequestException, HTTPError
 from pandas import DataFrame, Series, set_option
 from dacite import from_dict
 from celery import shared_task
-from gitlab_ps_utils.misc_utils import get_dry_log, get_timedelta, is_error_message_present, \
-    safe_json_response, strip_netloc
+from gitlab_ps_utils.misc_utils import get_dry_log, get_timedelta, safe_json_response, strip_netloc
 from gitlab_ps_utils.json_utils import json_pretty, read_json_file_into_object, write_json_to_file
 from gitlab_ps_utils.dict_utils import rewrite_list_into_dict, rewrite_json_list_into_dict
 
@@ -69,7 +68,7 @@ class UsersClient(BaseClass):
         self.log.warning(
             f"Username '{username}' exists as a group name, for user:\n{old_user}")
         return True
-        
+
     def is_username_group_name(self, username, old_user):
         """
         Check if a username exists as a group namespace by querying the Namespaces API.
@@ -80,7 +79,8 @@ class UsersClient(BaseClass):
         """
         try:
             # Use the Namespaces API to get the namespace by the full path (username in this case)
-            response = self.namespaces_api.get_namespace_by_full_path(username, self.config.destination_host, self.config.destination_token)
+            response = self.namespaces_api.get_namespace_by_full_path(
+                username, self.config.destination_host, self.config.destination_token)
             if response.status_code == 200:
                 if namespace_data := safe_json_response(response):
 
@@ -88,17 +88,20 @@ class UsersClient(BaseClass):
                     if namespace_data.get('kind') == 'group':
                         return True
                     return False  # Valid response, but not a group
-                self.log.error(f"Received invalid JSON response for namespace: '{username}'")
+                self.log.error(
+                    f"Received invalid JSON response for namespace: '{username}'")
                 return None  # Return None if response was invalid
 
             # Log the HTTP status code and response message for troubleshooting
             self.log.error(f"Failed to check namespace for user '{old_user}', "
-                        f"HTTP {response.status_code}: {response.text}")
+                           f"HTTP {response.status_code}: {response.text}")
             return False
         except HTTPError as http_err:
-            self.log.error(f"HTTP error occurred while checking group namespace for user '{old_user}': {http_err}")
+            self.log.error(
+                f"HTTP error occurred while checking group namespace for user '{old_user}': {http_err}")
         except RequestException as re:
-            self.log.error(f"Request failed while checking group namespace for user '{old_user}': {re}")
+            self.log.error(
+                f"Request failed while checking group namespace for user '{old_user}': {re}")
         except Exception as err:
             self.log.error(f"An error occurred: {err}")
 
@@ -633,28 +636,33 @@ class UsersClient(BaseClass):
                 "If both 'reset_password' and 'force_random_password' are False, the 'password' field has to be set")
         return user_model.to_dict()
 
-    def block_user(self, user_data):
+    def change_user_state(self, user_data, block=True):
+        host = self.config.destination_host
+        token = self.config.destination_token
         try:
             response = find_user_by_email_comparison_without_id(
                 user_data["email"])
-            user_creation_data = self.get_user_creation_id_and_email(response)
-            if user_creation_data:
-                block_response = self.users_api.block_user(
-                    self.config.destination_host,
-                    self.config.destination_token,
-                    user_creation_data["id"])
-                self.log.info(
-                    f"Blocking user {user_data['username']} email {user_data['email']} (status: {block_response})")
-                if isinstance(block_response, Response) and block_response.status_code == 201:
-                    self.add_blocked_user_admin_note(user_creation_data, user_data.get('state'))
+            if user_creation_data := self.get_user_creation_id_and_email(response):
+                text = "Block" if block else "Unblock"
+                user_id = user_creation_data["id"]
+                if block:
+                    response = self.users_api.block_user(host, token, user_id)
+                    if isinstance(response, Response) and response.status_code == 201:
+                        self.add_blocked_user_admin_note(
+                            user_creation_data, user_data.get('state'))
+                    else:
+                        self.log.error(
+                            f"Failed to {text} user {user_data}, with response:\n{response} - {response.text}")
                 else:
-                    self.log.error(
-                        f"Failed to block user {user_data}, with response:\n{block_response} - {block_response.text}")
-                return block_response
+                    response = self.users_api.unblock_user(
+                        host, token, user_id)
+                self.log.info(
+                    f"{text} user '{user_data['username']}' email {user_data['email']} (status: {response})")
+                return response
             return None
         except RequestException as e:
             self.log.error(
-                f"Failed request to block user {user_data}, with error:\n{e}")
+                f"Failed request to {text} user {user_data}, with error:\n{e}")
             return None
 
     def add_blocked_user_admin_note(self, user, original_state):

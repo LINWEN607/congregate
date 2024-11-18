@@ -1,5 +1,5 @@
 import sys
-import os
+import os, signal
 import errno
 import json
 
@@ -496,3 +496,9 @@ def toggle_maintenance_mode(
         if not dry_run:
             instance_api.change_application_settings(
                 host, token, data)
+
+def check_download_directory(directory_path):
+    """
+    Check if the download directory exists.
+    """
+    return os.path.isdir(directory_path)

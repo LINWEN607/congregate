@@ -174,6 +174,8 @@ class BaseStageClass(BaseClass):
                     obj["default_branch"] = branch
             if self.config.source_type == "bitbucket server":
                 obj["groups"] = project["groups"]
+            if self.config.source_type == "azure devops":
+                obj["project_id"] = project["namespace"]["id"]
             return obj
         except KeyError:
             self.log.error(
