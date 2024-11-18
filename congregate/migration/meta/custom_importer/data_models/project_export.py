@@ -28,7 +28,7 @@ class ProjectExport:
 
     # Optional, but common components from other sources
     issues: Optional[List[Issues]] = field(default_factory=list)
-    boaards: Optional[List[Boards]] = field(default_factory=list)
+    boards: Optional[List[Boards]] = field(default_factory=list)
     labels: Optional[List[Labels]] = field(default_factory=list)
     merge_requests: Optional[List[MergeRequests]] = field(default_factory=list)
 
