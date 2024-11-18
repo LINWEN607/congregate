@@ -1,0 +1,149 @@
+from copy import deepcopy as copy
+from gitlab_ps_utils.dict_utils import dig
+from gitlab_ps_utils.json_utils import json_pretty
+from gitlab_ps_utils.string_utils import deobfuscate
+from congregate.migration.meta.custom_importer.export_builder import ExportBuilder
+from congregate.migration.meta.custom_importer.data_models.tree.merge_requests import MergeRequests
+from congregate.migration.meta.custom_importer.data_models.tree.project_members import ProjectMembers
+from congregate.migration.meta.custom_importer.data_models.project_export import ProjectExport
+from congregate.migration.meta.custom_importer.data_models.project import Project
+from congregate.migration.meta.custom_importer.data_models.tree.note import Note
+from congregate.migration.meta.custom_importer.data_models.tree.note_author import NoteAuthor
+from congregate.migration.meta.custom_importer.data_models.tree.system_note_metadata import SystemNoteMetadata
+from congregate.migration.ado.api.projects import ProjectsApi
+from congregate.migration.ado.api.repositories import RepositoriesApi
+from congregate.migration.ado.api.pull_requests import PullRequestsApi
+from congregate.migration.ado.api.teams import TeamsApi
+
+
+class AdoExportBuilder(ExportBuilder):
+    def __init__(self, source_project):
+        self.source_project = source_project
+        self.projects_api = ProjectsApi()
+        self.repositories_api = RepositoriesApi()
+        self.pull_requests_api = PullRequestsApi()
+        self.teams_api = TeamsApi()
+        self.project_id = source_project['namespace']['id']
+        self.repository_id = source_project['id']
+        self.source_project = source_project
+        self.members_map = {}
+        self.project_metadata = Project(description=source_project['description'])
+        super().__init__(project_name=source_project['name'], clone_url=None)
+        # self.clone_url = self.source_project['http_url_to_repo']
+        self.clone_url = self.build_clone_url(self.source_project)
+        print(self.clone_url)
+        self.git_env = {
+            'GIT_SSL_NO_VERIFY': '1',
+            'GIT_ASKPASS': 'echo'
+        }
+    
+    def build_ado_data(self):
+        merge_requests = self.build_merge_requests()
+        return ProjectExport(
+            project_members=self.build_project_members(),
+            merge_requests=merge_requests
+        )
+
+    def build_merge_requests(self):
+        merge_requests = []
+        for pr in self.pull_requests_api.get_all_pull_requests(project_id=self.project_id, repository_id=self.repository_id):
+            # Convert Azure DevOps PR to GitLab MR format
+            # print(json_pretty(pr))
+            pr_id = pr['pullRequestId']
+            merge_requests.append(MergeRequests(
+                iid=pr_id,
+                source_branch=pr['sourceRefName'].replace("refs/heads/", ""),
+                target_branch=pr['targetRefName'].replace("refs/heads/", ""),
+                title=pr['title'],
+                description=pr['description'],
+                state=self.pull_request_status(pr),
+                draft=pr['isDraft'],
+                created_at=pr['creationDate'],
+                updated_at=pr.get('lastMergeSourceUpdateTime'),
+                # merged_at=dig(pr, 'lastMergeCommit', 'committer', 'date') if pr.get('lastMergeCommit') else None,
+                # closed_at=pr.get('lastMergeTargetUpdateTime') if pr.get('lastMergeCommit') else None,
+                # notes=self.build_mr_notes(pr_id),
+                notes=[],
+                author_id=self.get_new_member_id(pr['createdBy']['id'])
+            ))
+        return merge_requests
+    
+    def build_project_members(self):
+        project_members = []
+        for team in self.teams_api.get_teams(self.project_id):
+            for member in self.teams_api.get_team_members(self.project_id, team["id"]):
+                project_members.append(ProjectMembers(
+                    access_level=self.convert_access_level(member.get('accessLevel')),
+                    user_id=member.get('id'),
+                    # username=member.get('uniqueName'),
+                    # name=member.get('displayName'),
+                    expires_at=None  # ADO doesn't have an expiration concept for project members
+                ))
+        return project_members
+
+    def convert_access_level(self, ado_access_level):
+        # ADO access levels: https://learn.microsoft.com/en-us/azure/devops/organizations/security/access-levels?view=azure-devops
+
+        # Convert ADO access levels to GitLab access levels
+        if ado_access_level == 'Stakeholder':
+            return 10  # Guest
+        elif ado_access_level == 'Basic':
+            return 30  # Developer
+        elif ado_access_level == 'Visual Studio Subscriber':
+            return 40  # Maintainer
+        elif ado_access_level == 'Advanced':
+            return 50  # Owner
+        else:
+            return 20  # Reporter (default)
+
+    def pull_request_status(self, pr):
+        # ADO: https://learn.microsoft.com/en-us/rest/api/azure/devops/git/pull-requests/get-pull-request-by-id?view=azure-devops-rest-7.1&tabs=HTTP#pullrequeststatus
+        # GitLab: https://docs.gitlab.com/ee/api/merge_requests.html#list-merge-requests
+        if pr["status"] == "active":
+            return "opened"
+        elif pr["status"] == "completed":
+            return "merged"
+        elif pr["status"] == "abandoned":
+            return "closed"
+        else:
+            return "unknown"
+
+    def add_assignee_ids(self, assignee_ids, source_project):
+        assignee_ids = []
+        for username in source_project["members"]:
+            assignee_ids.append(self.get_new_member_id(username.get("id")))
+        return assignee_ids
+
+    def add_to_members_map(self, member):
+        member_copy = copy(member)
+        guid = member['id']
+        member_copy['id'] = len(self.members_map.keys()+1)
+        self.members_map[guid] = member_copy
+    
+    def get_new_member_id(self, guid):
+        return dig(self.members_map, guid, 'id')
+
+    def build_clone_url(self, source_project):
+        clone_url = source_project['http_url_to_repo']
+        decoded_token = deobfuscate(self.config.source_token)
+        print(decoded_token)
+        return clone_url.replace("@", f"{decoded_token}@")
+        # protocol = clone_url.split("://")[0]
+        # without_http = clone_url.split("@")[-1]
+        # return f"{protocol}://{without_http}"
+    
+    def build_mr_notes(self, pr_id):
+        notes = []
+        for thread in self.pull_requests_api.get_all_pull_request_threads(project_id=self.project_id, repository_id=self.repository_id, pull_request_id=pr_id):
+            for comment in thread['comments']:
+                notes.append(Note(
+                    note=comment['content'],
+                    author_id=self.get_new_member_id(comment['author']['id']),
+                    project_id=1,
+                    created_at=comment['publishedDate'],
+                    noteable_type="MergeRequest",
+                    author=NoteAuthor(
+                        name=comment['author']['displayName']
+                    )
+                ))
+        return notes

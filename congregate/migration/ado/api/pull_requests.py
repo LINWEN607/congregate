@@ -23,3 +23,20 @@ class PullRequestsApi():
             "status": "all"
         }
         return self.api.list_all(f"{project_id}/_apis/git/repositories/{repository_id}/pullrequests", params=params)
+
+    def get_all_pull_request_threads(self, project_id, repository_id, pull_request_id):
+        """
+        Retrieve all threads for a pull request.
+
+        Core REST API: https://learn.microsoft.com/en-us/rest/api/azure/devops/git/pull-request-threads/list?view=azure-devops-rest-7.1
+        """
+        return self.api.list_all(f"{project_id}/_apis/git/repositories/{repository_id}/pullrequests/{pull_request_id}/threads")
+    
+    def get_all_pull_request_thread_comments(self, project_id, repository_id, pull_request_id, thread_id):
+        """
+        Retrieve all comments for a thread.
+
+        Core REST API: https://learn.microsoft.com/en-us/rest/api/azure/devops/git/comments/list?view=azure-devops-rest-7.1
+        """
+        return self.api.list_all(f"{project_id}/_apis/git/repositories/{repository_id}/pullrequests/{pull_request_id}/threads/{thread_id}/comments")
+

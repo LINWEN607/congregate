@@ -1,5 +1,5 @@
 '''
-Utility functions for building a custom project export
+Utility class for building a custom project export
 '''
 
 import os
@@ -8,6 +8,7 @@ import tarfile
 from json import dumps
 from dataclasses import fields
 from git import Repo, GitCommandError
+from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.api.instance import InstanceApi
 from congregate.migration.meta.custom_importer.data_models.project_export import ProjectExport, ApprovalRules, \
     AutoDevops, CiCdSettings, CiPipelines, CommitNotes, ContainerExpirationPolicy, Issues, Labels, MergeRequests, \
@@ -15,8 +16,9 @@ from congregate.migration.meta.custom_importer.data_models.project_export import
 from congregate.migration.meta.custom_importer.data_models.project import Project
 
 
-class ExportBuilder():
-    def __init__(self, project_name, clone_url):
+class ExportBuilder(BaseClass):
+    def __init__(self, project_name, clone_url, git_env=None):
+        super().__init__()
         self.export_dir = tempfile.TemporaryDirectory()
         self.tree_path = os.path.join(self.export_dir.name, 'tree')
         os.makedirs(self.tree_path, exist_ok=True)
@@ -24,8 +26,9 @@ class ExportBuilder():
         os.makedirs(self.project_path, exist_ok=True)
         self.clone_url = clone_url
         self.project_name = project_name
+        self.git_env = git_env
 
-    def build_export(self, tree_export: ProjectExport, project_metadata: Project, host, token):
+    def build_export(self, tree_export: ProjectExport, project_metadata: Project):
         """
         Build a custom project export.
 
@@ -53,8 +56,8 @@ class ExportBuilder():
         os.makedirs(os.path.join(self.export_dir.name, 'uploads'), exist_ok=True)
 
         # Create GITLAB_VERSION and GITLAB_REVISION files
-        self.write_to_file('GITLAB_VERSION', self.get_gitlab_version(host, token))
-        self.write_to_file('GITLAB_REVISION', self.get_gitlab_revision(host, token))
+        self.write_to_file('GITLAB_VERSION', self.get_gitlab_version(self.config.destination_host, self.config.destination_token))
+        self.write_to_file('GITLAB_REVISION', self.get_gitlab_revision(self.config.destination_host, self.config.destination_token))
 
         # Create VERSION file
         self.write_to_file('VERSION', '0.2.4')
@@ -106,12 +109,15 @@ class ExportBuilder():
         :return: True if the bundle was created successfully, False otherwise
         """
         # cwd = os.getcwd()
+        if not self.git_env:
+            self.git_env = {
+                'GIT_SSL_NO_VERIFY': '1'
+            }
         try:
             # Create a temporary directory for cloning
             with tempfile.TemporaryDirectory() as temp_dir:
                 # Clone the repository
-                repo = Repo.clone_from(clone_url, temp_dir, env={
-                                       'GIT_SSL_NO_VERIFY': '1'})
+                repo = Repo.clone_from(clone_url, temp_dir, env=self.git_env)
 
                 # Create the bundle
                 bundle_path = f"{output_path}/project.bundle"
@@ -157,5 +163,7 @@ class ExportBuilder():
 
     def write_to_file(self, file_path, data, root=None):
         base_path = self.export_dir.name if not root else root
+        print(data)
         with open(base_path + "/" + file_path, "w") as f:
             f.write(data)
+    
