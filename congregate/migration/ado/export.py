@@ -1,7 +1,11 @@
+import re
+import os
 from copy import deepcopy as copy
+from pathlib import Path
 from gitlab_ps_utils.dict_utils import dig
 from gitlab_ps_utils.json_utils import json_pretty
 from gitlab_ps_utils.string_utils import deobfuscate
+from gitlab_ps_utils.misc_utils import safe_json_response
 from congregate.migration.meta.custom_importer.export_builder import ExportBuilder
 from congregate.migration.meta.custom_importer.data_models.tree.merge_requests import MergeRequests
 from congregate.migration.meta.custom_importer.data_models.tree.project_members import ProjectMembers
@@ -10,6 +14,9 @@ from congregate.migration.meta.custom_importer.data_models.project import Projec
 from congregate.migration.meta.custom_importer.data_models.tree.note import Note
 from congregate.migration.meta.custom_importer.data_models.tree.author import Author
 from congregate.migration.meta.custom_importer.data_models.tree.system_note_metadata import SystemNoteMetadata
+from congregate.migration.meta.custom_importer.data_models.tree.merge_request_diff_file import MergeRequestDiffFile
+from congregate.migration.meta.custom_importer.data_models.tree.merge_request_commit import MergeRequestCommit
+from congregate.migration.meta.custom_importer.data_models.tree.merge_request_diff import MergeRequestDiff
 from congregate.migration.ado.api.projects import ProjectsApi
 from congregate.migration.ado.api.repositories import RepositoriesApi
 from congregate.migration.ado.api.pull_requests import PullRequestsApi
@@ -50,6 +57,10 @@ class AdoExportBuilder(ExportBuilder):
             # Convert Azure DevOps PR to GitLab MR format
             # print(json_pretty(pr))
             pr_id = pr['pullRequestId']
+            merge_request_commits = self.build_mr_diff_commits(pr_id)
+            start_sha = merge_request_commits[-1].sha
+            target_sha = dig(pr, 'lastMergeSourceCommit', 'commitId')
+            merge_request_diffs = self.build_mr_diff_files(start_sha, target_sha)
             merge_requests.append(MergeRequests(
                 author=Author(name=dig(pr, 'createdBy', 'displayName')),
                 iid=pr_id,
@@ -67,6 +78,22 @@ class AdoExportBuilder(ExportBuilder):
                 updated_at=pr.get('lastMergeSourceUpdateTime'),
                 source_project_id=1,
                 target_project_id=1,
+                merge_request_diff=MergeRequestDiff(
+                    state='collected' if len(merge_request_diffs) > 0 else 'empty',
+                    created_at=pr['creationDate'],
+                    updated_at=pr.get('lastMergeSourceUpdateTime', pr['creationDate']),
+                    head_commit_sha=dig(pr, 'lastMergeSourceCommit', 'commitId') if self.pull_request_status(pr) == 'opened' else None,
+                    base_commit_sha=dig(pr, 'lastMergeTargetCommit', 'commitId'),
+                    start_commit_sha=dig(pr, 'lastMergeSourceCommit', 'commitId') if self.pull_request_status(pr) == 'opened' else None,
+                    commits_count=len(merge_request_commits),
+                    real_size=str(len(merge_request_diffs)),
+                    files_count=len(merge_request_diffs),
+                    sorted=True,
+                    diff_type='regular',
+                    merge_request_diff_commits=merge_request_commits,
+                    merge_request_diff_files=merge_request_diffs
+                ),
+                
                 # merged_at=dig(pr, 'lastMergeCommit', 'committer', 'date') if pr.get('lastMergeCommit') else None,
                 # closed_at=pr.get('lastMergeTargetUpdateTime') if pr.get('lastMergeCommit') else None,
                 # notes=self.build_mr_notes(pr_id),
@@ -160,8 +187,56 @@ class AdoExportBuilder(ExportBuilder):
                 ))
         return notes
 
-    def build_mr_diff_commits(self):
-        pass
+    def build_mr_diff_commits(self, pr_id):
+        commits = []
+        count = 0
+        for commit in self.pull_requests_api.get_all_pull_request_commits(self.project_id, self.repository_id, pr_id):
+            commits.append(MergeRequestCommit(
+                authored_date=dig(commit, 'author', 'date'),
+                committed_date=dig(commit, 'committer', 'date'),
+                commit_author=Author(
+                    name=dig(commit, 'author', 'name'),
+                    email=dig(commit, 'author', 'email'),
+                ),
+                committer=Author(
+                    name=dig(commit, 'committer', 'name'),
+                    email=dig(commit, 'committer', 'email'),
+                ),
+                relative_order=count,
+                sha=commit['commitId'],
+                message=commit['comment']
+            ))
+            count += 1
+        return commits
 
-    def build_mr_diff_files(self):
-        pass
+    def build_mr_diff_files(self, source_sha, target_sha):
+        diff_files = []
+        count = 0
+        req = self.pull_requests_api.get_pull_request_diffs(self.project_name, self.repository_id, source_sha, target_sha)
+        print(req.text)
+        if diffs := safe_json_response(req):
+            print(diffs.get('changes'))
+            for change in diffs.get('changes', []):
+                filename = dig(change, 'item', 'path', default='').lstrip('/')
+                print(self.repo.working_dir)
+                git_diff = self.repo.git.diff(source_sha, target_sha, '--', f"{filename}")
+                diff_string = '@@' + '@@'.join(git_diff.split('@@')[1:])
+                mode = re.search(r'100755|100644|100755', git_diff).group(0)
+                print("got here")
+                diff_files.append(MergeRequestDiffFile(
+                    relative_order=count,
+                    utf8_diff=diff_string,
+                    old_path=filename,
+                    new_path=filename,
+                    renamed_file=False,
+                    deleted_file=False,
+                    too_large=False,
+                    binary=True if Path(filename).suffix in ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.bmp', '.webp'] else False,
+                    encoded_file_path=False,
+                    new_file=True if change.get('changeType') == 'add' else False,
+                    a_mode=mode,
+                    b_mode=mode
+                ))
+                count += 1
+        return diff_files
+        

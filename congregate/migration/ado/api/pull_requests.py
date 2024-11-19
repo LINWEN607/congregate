@@ -39,4 +39,22 @@ class PullRequestsApi():
         Core REST API: https://learn.microsoft.com/en-us/rest/api/azure/devops/git/comments/list?view=azure-devops-rest-7.1
         """
         return self.api.list_all(f"{project_id}/_apis/git/repositories/{repository_id}/pullrequests/{pull_request_id}/threads/{thread_id}/comments")
+    
+    def get_all_pull_request_commits(self, project_id, repository_id, pull_request_id):
+        """
+        Retrieve all commits for a pull request.
+
+        Core REST API: https://learn.microsoft.com/en-us/rest/api/azure/devops/git/pull-request-commits/get-pull-request-commits?view=azure-devops-rest-7.1
+        """
+        return self.api.list_all(f"{project_id}/_apis/git/repositories/{repository_id}/pullrequests/{pull_request_id}/commits")
+    
+    def get_pull_request_diffs(self, project_id, repository_id, source_sha, target_sha):
+        """
+        Retrieve all diffs for a pull request.
+
+        Core REST API: https://learn.microsoft.com/en-us/rest/api/azure/devops/git/pull-request-commits/get-pull-request-commits?view=azure-devops-rest-7.1
+        """
+        return self.api.generate_get_request(f"{project_id}/_apis/git/repositories/{repository_id}/diffs/commits?baseVersion={source_sha}&baseVersionType=commit&targetVersion={target_sha}&targetVersionType=commit&api-version=7.1")
+
+
 

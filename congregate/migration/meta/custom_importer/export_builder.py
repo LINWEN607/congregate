@@ -45,7 +45,7 @@ class ExportBuilder(BaseClass):
         # Create git bundle
         if self.repo is None:
             self.repo = self.clone_repo(self.project_path, self.export_dir.name, self.clone_url)
-        git_bundle_path = self.create_git_bundle(self.project_name, self.export_dir.name, self.clone_url)
+        git_bundle_path = self.create_git_bundle(self.project_name, self.export_dir.name)
         if git_bundle_path:
             print(f"Created Git bundle at {git_bundle_path}")
         else:
@@ -136,13 +136,29 @@ class ExportBuilder(BaseClass):
     def clone_repo(self, project_path, clone_url) -> Repo:
         if not self.git_env:
             self.git_env = {
-                'GIT_SSL_NO_VERIFY': '1'
+                'GIT_SSL_NO_VERIFY': '1',
+                'pull.rebase': 'false'
             }
         try:
             # Create a temporary directory for cloning
-            with tempfile.TemporaryDirectory() as temp_dir:
-                # Clone the repository
-                repo = Repo.clone_from(clone_url, temp_dir, env=self.git_env)
+            # with tempfile.TemporaryDirectory() as temp_dir:
+            temp_dir = f'repos/{project_path}'
+            # Clone the repository
+            repo = Repo.clone_from(clone_url, temp_dir, env=self.git_env)
+            repo.git.pull('--all')
+            default_branch = repo.git.branch('--show-current')
+            for branch in repo.git.branch('-a').split('\n'):
+                name = branch.lstrip('*').lstrip().split('->')[0].rstrip().split('remotes/origin/')[-1]
+                if name != 'HEAD':
+                    print(f"Checking out {name}")
+                    repo.git.checkout(name, '-f')
+                    repo.git.pull('origin', name)
+            for tag in repo.tags:
+                print(f"Checking out {tag.name}")
+                repo.git.checkout(tag.name, '-f')
+                repo.git.pull('origin', tag.name)
+            print(f"Checking out default branch '{default_branch}'")
+            repo.git.checkout(default_branch)
             return repo
 
         except GitCommandError as e:

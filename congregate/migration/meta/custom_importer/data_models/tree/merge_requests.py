@@ -3,7 +3,6 @@ from dataclasses import dataclass, asdict, field
 from gitlab_ps_utils.dict_utils import strip_none
 from congregate.migration.meta.custom_importer.data_models.tree.author import Author
 from congregate.migration.meta.custom_importer.data_models.tree.system_note_metadata import SystemNoteMetadata
-from congregate.migration.meta.custom_importer.data_models.tree.merge_request_commit import MergeRequestCommit
 from congregate.migration.meta.custom_importer.data_models.tree.merge_request_diff import MergeRequestDiff
                     
 @dataclass
@@ -20,8 +19,7 @@ class MergeRequests:
     target_project_id: str
     title: str
     created_at: str
-    merge_request_diff_commits: List[MergeRequestCommit] = field(default_factory=list)
-    merge_request_diff_files: List[MergeRequestDiff] = field(default_factory=list)
+    merge_request_diff: MergeRequestDiff
 
     # Optional
     system_note_metadata: Optional[SystemNoteMetadata] = None
