@@ -55,7 +55,6 @@ class AdoExportBuilder(ExportBuilder):
         merge_requests = []
         for pr in self.pull_requests_api.get_all_pull_requests(project_id=self.project_id, repository_id=self.repository_id):
             # Convert Azure DevOps PR to GitLab MR format
-            # print(json_pretty(pr))
             pr_id = pr['pullRequestId']
             merge_request_commits = self.build_mr_diff_commits(pr_id)
             start_sha = merge_request_commits[-1].sha
@@ -93,7 +92,6 @@ class AdoExportBuilder(ExportBuilder):
                     merge_request_diff_commits=merge_request_commits,
                     merge_request_diff_files=merge_request_diffs
                 ),
-                
                 # merged_at=dig(pr, 'lastMergeCommit', 'committer', 'date') if pr.get('lastMergeCommit') else None,
                 # closed_at=pr.get('lastMergeTargetUpdateTime') if pr.get('lastMergeCommit') else None,
                 notes=self.build_mr_notes(pr_id),
@@ -164,11 +162,7 @@ class AdoExportBuilder(ExportBuilder):
     def build_clone_url(self, source_project):
         clone_url = source_project['http_url_to_repo']
         decoded_token = deobfuscate(self.config.source_token)
-        print(decoded_token)
         return clone_url.replace("@", f"{decoded_token}@")
-        # protocol = clone_url.split("://")[0]
-        # without_http = clone_url.split("@")[-1]
-        # return f"{protocol}://{without_http}"
     
     def build_mr_notes(self, pr_id):
         notes = []
@@ -214,16 +208,12 @@ class AdoExportBuilder(ExportBuilder):
         diff_files = []
         count = 0
         req = self.pull_requests_api.get_pull_request_diffs(self.project_name, self.repository_id, source_sha, target_sha)
-        print(req.text)
         if diffs := safe_json_response(req):
-            print(diffs.get('changes'))
             for change in diffs.get('changes', []):
                 filename = dig(change, 'item', 'path', default='').lstrip('/')
-                print(self.repo.working_dir)
                 git_diff = self.repo.git.diff(source_sha, target_sha, '--', f"{filename}")
                 diff_string = '@@' + '@@'.join(git_diff.split('@@')[1:])
                 mode = re.search(r'100755|100644|100755', git_diff).group(0)
-                print("got here")
                 diff_files.append(MergeRequestDiffFile(
                     relative_order=count,
                     utf8_diff=diff_string,

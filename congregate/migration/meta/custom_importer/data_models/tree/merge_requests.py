@@ -19,6 +19,7 @@ class MergeRequests:
     target_project_id: str
     title: str
     created_at: str
+    updated_at: str
     merge_request_diff: MergeRequestDiff
 
     # Optional
@@ -57,7 +58,6 @@ class MergeRequests:
     state: Optional[str] = None
     time_estimate: Optional[str] = None
     timelogs: Optional[List] = field(default_factory=list)
-    updated_at: Optional[str] = None
     updated_by_id: Optional[str] = None
 
     def to_dict(self):

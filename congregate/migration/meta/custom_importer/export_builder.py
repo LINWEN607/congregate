@@ -77,9 +77,7 @@ class ExportBuilder(BaseClass):
     def create_export_tar_gz(self, output_path, project_name):
         with tarfile.open(f"{output_path}/{project_name}.tar.gz", mode="w:gz") as tar:
             for f in os.listdir(self.export_dir.name):
-                print(f)
                 tar.add(os.path.join(self.export_dir.name, f), arcname=f)
-            # tar.add(self.export_dir.name,arcname=os.path.basename(self.export_dir.name))
 
     def get_gitlab_version(self, host, token):
         """
@@ -150,14 +148,11 @@ class ExportBuilder(BaseClass):
             for branch in repo.git.branch('-a').split('\n'):
                 name = branch.lstrip('*').lstrip().split('->')[0].rstrip().split('remotes/origin/')[-1]
                 if name != 'HEAD':
-                    print(f"Checking out {name}")
                     repo.git.checkout(name, '-f')
                     repo.git.pull('origin', name)
             for tag in repo.tags:
-                print(f"Checking out {tag.name}")
                 repo.git.checkout(tag.name, '-f')
                 repo.git.pull('origin', tag.name)
-            print(f"Checking out default branch '{default_branch}'")
             repo.git.checkout(default_branch)
             return repo
 
@@ -199,7 +194,6 @@ class ExportBuilder(BaseClass):
 
     def write_to_file(self, file_path, data, root=None):
         base_path = self.export_dir.name if not root else root
-        print(data)
         with open(base_path + "/" + file_path, "w") as f:
             f.write(data)
     
