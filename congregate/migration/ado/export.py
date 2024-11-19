@@ -96,8 +96,7 @@ class AdoExportBuilder(ExportBuilder):
                 
                 # merged_at=dig(pr, 'lastMergeCommit', 'committer', 'date') if pr.get('lastMergeCommit') else None,
                 # closed_at=pr.get('lastMergeTargetUpdateTime') if pr.get('lastMergeCommit') else None,
-                # notes=self.build_mr_notes(pr_id),
-                notes=[],
+                notes=self.build_mr_notes(pr_id),
                 author_id=self.get_new_member_id(pr['createdBy'])
             ))
         return merge_requests
@@ -177,13 +176,15 @@ class AdoExportBuilder(ExportBuilder):
             for comment in thread['comments']:
                 notes.append(Note(
                     note=comment['content'],
-                    author_id=self.get_new_member_id(comment['author']['id']),
+                    author_id=self.get_new_member_id(comment['author']),
                     project_id=1,
                     created_at=comment['publishedDate'],
+                    updated_at=comment['publishedDate'],
                     noteable_type="MergeRequest",
                     author=Author(
                         name=comment['author']['displayName']
-                    )
+                    ),
+                    system_note_metadata=self.generate_system_metadata(comment)
                 ))
         return notes
 
@@ -239,4 +240,21 @@ class AdoExportBuilder(ExportBuilder):
                 ))
                 count += 1
         return diff_files
-        
+    
+    def generate_system_metadata(self, comment):
+        if comment['commentType'] != 'text':
+            action = None
+            commit_count = None
+            content = comment['content']
+            if any(x in content for x in ['as a reviewer', 'required reviewer', 'from the reviewers']):
+                action = 'reviewer'
+            elif 'reference' in content:
+                action = 'commit'
+                commit_count = 1
+            return SystemNoteMetadata(
+                created_at=comment['publishedDate'],
+                updated_at=comment['publishedDate'],
+                commit_count=commit_count,
+                action=action,
+            )
+        return None
