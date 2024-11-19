@@ -1,13 +1,13 @@
 from dataclasses import dataclass, asdict, field
 from typing import Optional, List
-from congregate.migration.meta.custom_importer.data_models.tree.note_author import NoteAuthor
+from congregate.migration.meta.custom_importer.data_models.tree.author import Author
 from congregate.migration.meta.custom_importer.data_models.tree.system_note_metadata import SystemNoteMetadata
 
 
 @dataclass
 class Note:
     note: str
-    author: NoteAuthor
+    author: Author
     noteable_type: str
     author_id: int
     created_at: str

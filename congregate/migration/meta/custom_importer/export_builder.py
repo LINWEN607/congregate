@@ -27,6 +27,7 @@ class ExportBuilder(BaseClass):
         self.clone_url = clone_url
         self.project_name = project_name
         self.git_env = git_env
+        self.repo = None
 
     def build_export(self, tree_export: ProjectExport, project_metadata: Project):
         """
@@ -42,6 +43,8 @@ class ExportBuilder(BaseClass):
         :param token: The access token for authentication
         """
         # Create git bundle
+        if self.repo is None:
+            self.repo = self.clone_repo(self.project_path, self.export_dir.name, self.clone_url)
         git_bundle_path = self.create_git_bundle(self.project_name, self.export_dir.name, self.clone_url)
         if git_bundle_path:
             print(f"Created Git bundle at {git_bundle_path}")
@@ -98,7 +101,7 @@ class ExportBuilder(BaseClass):
         """
         return InstanceApi().get_version(host, token).json()['revision']
 
-    def create_git_bundle(self, project_path, output_path, clone_url):
+    def create_git_bundle(self, project_path, output_path):
         """
         Create a Git bundle for a project repository.
 
@@ -114,16 +117,33 @@ class ExportBuilder(BaseClass):
                 'GIT_SSL_NO_VERIFY': '1'
             }
         try:
+            if self.repo:
+                # Create the bundle
+                bundle_path = f"{output_path}/project.bundle"
+                self.repo.git.bundle('create', bundle_path, '--all')
+
+                return bundle_path
+            raise Exception("No repo cloned")
+
+        except GitCommandError as e:
+            print(
+                f"Git command error while creating bundle for {project_path}: {str(e)}")
+            return False
+        except Exception as e:
+            print(f"Error creating Git bundle for {project_path}: {str(e)}")
+            return False
+    
+    def clone_repo(self, project_path, clone_url) -> Repo:
+        if not self.git_env:
+            self.git_env = {
+                'GIT_SSL_NO_VERIFY': '1'
+            }
+        try:
             # Create a temporary directory for cloning
             with tempfile.TemporaryDirectory() as temp_dir:
                 # Clone the repository
                 repo = Repo.clone_from(clone_url, temp_dir, env=self.git_env)
-
-                # Create the bundle
-                bundle_path = f"{output_path}/project.bundle"
-                repo.git.bundle('create', bundle_path, '--all')
-
-            return bundle_path
+            return repo
 
         except GitCommandError as e:
             print(

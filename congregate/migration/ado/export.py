@@ -8,7 +8,7 @@ from congregate.migration.meta.custom_importer.data_models.tree.project_members 
 from congregate.migration.meta.custom_importer.data_models.project_export import ProjectExport
 from congregate.migration.meta.custom_importer.data_models.project import Project
 from congregate.migration.meta.custom_importer.data_models.tree.note import Note
-from congregate.migration.meta.custom_importer.data_models.tree.note_author import NoteAuthor
+from congregate.migration.meta.custom_importer.data_models.tree.author import Author
 from congregate.migration.meta.custom_importer.data_models.tree.system_note_metadata import SystemNoteMetadata
 from congregate.migration.ado.api.projects import ProjectsApi
 from congregate.migration.ado.api.repositories import RepositoriesApi
@@ -31,7 +31,7 @@ class AdoExportBuilder(ExportBuilder):
         super().__init__(project_name=source_project['name'], clone_url=None)
         # self.clone_url = self.source_project['http_url_to_repo']
         self.clone_url = self.build_clone_url(self.source_project)
-        print(self.clone_url)
+        self.repo = self.clone_repo(self.project_path, self.clone_url)
         self.git_env = {
             'GIT_SSL_NO_VERIFY': '1',
             'GIT_ASKPASS': 'echo'
@@ -51,20 +51,27 @@ class AdoExportBuilder(ExportBuilder):
             # print(json_pretty(pr))
             pr_id = pr['pullRequestId']
             merge_requests.append(MergeRequests(
+                author=Author(name=dig(pr, 'createdBy', 'displayName')),
                 iid=pr_id,
                 source_branch=pr['sourceRefName'].replace("refs/heads/", ""),
                 target_branch=pr['targetRefName'].replace("refs/heads/", ""),
+                source_branch_sha=dig(pr, 'lastMergeSourceCommit', 'commitId') if self.pull_request_status(pr) == 'opened' else None,
+                target_branch_sha=dig(pr, 'lastMergeTargetCommit', 'commitId'),
+                merge_commit_sha=dig(pr, 'lastMergeCommit', 'commitId'),
+                squash_commit_sha=dig(pr, 'lastMergeCommit', 'commitId') if pr.get('mergeStrategy') == 'squash' else None,
                 title=pr['title'],
                 description=pr['description'],
                 state=self.pull_request_status(pr),
                 draft=pr['isDraft'],
                 created_at=pr['creationDate'],
                 updated_at=pr.get('lastMergeSourceUpdateTime'),
+                source_project_id=1,
+                target_project_id=1,
                 # merged_at=dig(pr, 'lastMergeCommit', 'committer', 'date') if pr.get('lastMergeCommit') else None,
                 # closed_at=pr.get('lastMergeTargetUpdateTime') if pr.get('lastMergeCommit') else None,
                 # notes=self.build_mr_notes(pr_id),
                 notes=[],
-                author_id=self.get_new_member_id(pr['createdBy']['id'])
+                author_id=self.get_new_member_id(pr['createdBy'])
             ))
         return merge_requests
     
@@ -117,11 +124,16 @@ class AdoExportBuilder(ExportBuilder):
     def add_to_members_map(self, member):
         member_copy = copy(member)
         guid = member['id']
-        member_copy['id'] = len(self.members_map.keys()+1)
+        member_copy['id'] = len(self.members_map.keys())+1
         self.members_map[guid] = member_copy
     
-    def get_new_member_id(self, guid):
-        return dig(self.members_map, guid, 'id')
+    def get_new_member_id(self, member):
+        if mid := dig(self.members_map, member['id'], 'id'):
+            return mid
+        else:
+            self.add_to_members_map(member)
+            return self.get_new_member_id(member)
+
 
     def build_clone_url(self, source_project):
         clone_url = source_project['http_url_to_repo']
@@ -142,8 +154,14 @@ class AdoExportBuilder(ExportBuilder):
                     project_id=1,
                     created_at=comment['publishedDate'],
                     noteable_type="MergeRequest",
-                    author=NoteAuthor(
+                    author=Author(
                         name=comment['author']['displayName']
                     )
                 ))
         return notes
+
+    def build_mr_diff_commits(self):
+        pass
+
+    def build_mr_diff_files(self):
+        pass
