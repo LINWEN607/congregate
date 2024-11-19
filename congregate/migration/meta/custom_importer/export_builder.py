@@ -5,14 +5,13 @@ Utility class for building a custom project export
 import os
 import tempfile
 import tarfile
+from shutil import rmtree
 from json import dumps
 from dataclasses import fields
 from git import Repo, GitCommandError
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.api.instance import InstanceApi
-from congregate.migration.meta.custom_importer.data_models.project_export import ProjectExport, ApprovalRules, \
-    AutoDevops, CiCdSettings, CiPipelines, CommitNotes, ContainerExpirationPolicy, Issues, Labels, MergeRequests, \
-    ProjectFeatures, ProjectMembers, ProtectedBranches, ProtectedTags, PushRule, Releases, SecuritySetting, UserContributions
+from congregate.migration.meta.custom_importer.data_models.project_export import ProjectExport
 from congregate.migration.meta.custom_importer.data_models.project import Project
 
 
@@ -138,11 +137,10 @@ class ExportBuilder(BaseClass):
                 'pull.rebase': 'false'
             }
         try:
-            # Create a temporary directory for cloning
-            # with tempfile.TemporaryDirectory() as temp_dir:
-            temp_dir = f'repos/{project_path}'
+            os.makedirs('repos', exist_ok=True)
+            repos_dir = f'repos/{project_path}'
             # Clone the repository
-            repo = Repo.clone_from(clone_url, temp_dir, env=self.git_env)
+            repo = Repo.clone_from(clone_url, repos_dir, env=self.git_env)
             repo.git.pull('--all')
             default_branch = repo.git.branch('--show-current')
             for branch in repo.git.branch('-a').split('\n'):
@@ -196,4 +194,7 @@ class ExportBuilder(BaseClass):
         base_path = self.export_dir.name if not root else root
         with open(base_path + "/" + file_path, "w") as f:
             f.write(data)
+
+    def delete_cloned_repo(self):
+        rmtree(f'repos/{self.project_path}')
     
