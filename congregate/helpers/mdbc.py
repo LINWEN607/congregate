@@ -95,6 +95,8 @@ class MongoConnector(BaseClass):
     def ingest_json_file_into_mongo(self, file_path, collection=None):
         if not collection:
             collection = (search(r"(.+\/)(.+)\.json", file_path)).group(2)
+        self.log.info(
+            f"Inserting '{file_path}' into '{collection}' collection")
         for data in read_json_file_into_object(file_path):
             self.insert_data(
                 f"{collection}-{strip_netloc(self.config.source_host)}", data)
