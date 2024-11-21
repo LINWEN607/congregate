@@ -1,17 +1,3 @@
-## 
-
-## 
-
-![][image1]
-
-## 
-
-## 
-
-## 
-
-## 
-
 # Migration Planning and Expectations
 
 Revision 1.2
@@ -20,7 +6,7 @@ Revision.date 02.28.2024
 
 Prepared by GitLab Professional Services
 
-## 
+## ToC
 
 [Migration Process Overview	4](#migration-process-overview)
 
@@ -171,8 +157,6 @@ Prepared by GitLab Professional Services
 [FAQ	23](#faq)
 
 [Links	23](#links)
-
-# 
 
 # Migration Process Overview {#migration-process-overview}
 
