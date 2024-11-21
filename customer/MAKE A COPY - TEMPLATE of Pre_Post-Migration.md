@@ -220,7 +220,7 @@ Decide what should be done with the source instance(s). Will they be retired, le
 | Communicate End of Migration Wave | Customer Product Owners and GitLab PM |
 | Migration Wave User Acceptance Testing | Customer Migration Team, Product Developers,  and Product SMEs |
 
-# Pre and Post Migration Considerations {#pre-and-post-migration-considerations}
+# Pre and Post Migration Considerations
 
 ## General
 
