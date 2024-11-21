@@ -1,3 +1,5 @@
+![][image1]
+
 # Migration Planning and Expectations
 
 Revision 1.2
@@ -8,25 +10,25 @@ Prepared by GitLab Professional Services
 
 ## ToC
 
-[Migration Process Overview	4](#migration-process-overview)
+[Migration Process Overview](#migration-process-overview)
 
-[Phase 1 \- Planning	5](#phase-1---planning)
+[Phase 1 - Planning](#phase-1---planning)
 
-[Audience	5](#audience)
+[Audience](#audience-audience-1)
 
-[Common Tasks	5](#common-tasks)
+[Common Tasks](#common-tasks)
 
-[DRI	5](#dri)
+[DRI](#dri)
 
-[Phase 2 \- Setup	6](#phase-2---setup)
+[Phase 2 - Setup](#phase-2---setup)
 
-[Audience	6](#audience-1)
+[Audience](#audience-audience-1)
 
-[Common Tasks	6](#common-tasks-1)
+[Common Tasks](#common-tasks-1)
 
-[DRI	6](#dri-1)
+[DRI](#dri-1)
 
-[Phase 3 \- Pilot Migrations	7](#phase-3---pilot-migrations)
+[Phase 3 - Pilot Migrations	7](#phase-3---pilot-migrations)
 
 [Audience	7](#audience-2)
 
@@ -34,7 +36,7 @@ Prepared by GitLab Professional Services
 
 [DRI	7](#dri-2)
 
-[Phase 4 \- Main Migrations	8](#phase-4---main-migrations)
+[Phase 4 - Main Migrations	8](#phase-4---main-migrations)
 
 [Audience	8](#audience-3)
 
@@ -42,7 +44,7 @@ Prepared by GitLab Professional Services
 
 [DRI	8](#dri-3)
 
-[Phase 5 \- Wrap Up	9](#phase-5---wrap-up)
+[Phase 5 - Wrap Up	9](#phase-5---wrap-up)
 
 [Audience	9](#audience-4)
 
@@ -54,7 +56,7 @@ Prepared by GitLab Professional Services
 
 [General	10](#general)
 
-[Pre-Migration \- Developers	10](#pre-migration---developers)
+[Pre-Migration - Developers	10](#pre-migration---developers)
 
 [Familiarize Themselves with GitLab	10](#familiarize-themselves-with-gitlab)
 
@@ -76,7 +78,7 @@ Prepared by GitLab Professional Services
 
 [Provide Feedback	11](#provide-feedback)
 
-[Pre Migration \- System	11](#pre-migration---system)
+[Pre Migration - System	11](#pre-migration---system)
 
 [Identification of resources	12](#identification-of-resources)
 
@@ -92,7 +94,7 @@ Prepared by GitLab Professional Services
 
 [Repositories	13](#repositories)
 
-[Pre Migration \- Schedule and Planning	13](#pre-migration)
+[Pre Migration - Schedule and Planning	13](#pre-migration)
 
 [Customer Coordinator	14](#customer-coordinator)
 
@@ -102,7 +104,7 @@ Prepared by GitLab Professional Services
 
 [Post Migration	14](#post-migration)
 
-[Projects \- Developers	15](#projects---developers)
+[Projects - Developers	15](#projects---developers)
 
 [Project Owners and Maintainers	16](#project-owners-and-maintainers)
 
@@ -158,7 +160,7 @@ Prepared by GitLab Professional Services
 
 [Links	23](#links)
 
-# Migration Process Overview {#migration-process-overview}
+# Migration Process Overview
 
 The Migration Process Overview is intended to be a high level outline, describing the process to plan, execute, and report on a migration. For the majority of migration cases, [Congregate](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate) will be used to orchestrate migrations in waves. Some tasks will need to happen infrequently, others every wave, some multiple times per wave. Project migrations should start with a small number in the Phase 1 Pilot Migrations and then start ramping up in the Phase 4 Main Migrations as issues are addressed.
 
@@ -168,17 +170,15 @@ This guide is based on years of experience migrating customers' valuable data en
 
 Below is what a project’s general timeline might look like. Phase 3 and 4 timelines can be adjusted by the number of projects, and any end user feedback that needs to be incorporated into the migration process.
 
-## 
-
-## Phase 1 \- Planning {#phase-1---planning}
+## Phase 1 - Planning
 
 Work with stakeholders to verify requirements and scope, identify concerns, rough draft schedules, and approved communication plans. These communication plans might include items such as feedback loops, error handling, end user onboarding, end user expectations, and risk management.
 
 General steps for this phase include; Generate the Source and Destination admin tokens. Setup the Migration VM with Congregate modifying the congregate.conf file as appropriate. Identify projects to participate in Phase 3 Pilot Migrations, suggesting that there are no more than 20 projects representing a wide range of use cases, such as larger or smaller projects, projects with pipelines, users that are knowledgeable and not knowledgeable about GitLab. Generate the migration schedule and waves thinking through dependencies.
 
-If any existing projects have pipelines, GitLab-Runner requirements should be identified and planned to be dealt with preferably in Phase 2 \- Setup or Phase 3 \- Pilot Migrations.
+If any existing projects have pipelines, GitLab-Runner requirements should be identified and planned to be dealt with preferably in Phase 2 - Setup or Phase 3 - Pilot Migrations.
 
-### Audience {#audience}
+### Audience
 
 * Customer Migration Team  
 * Customer Product Owners  
@@ -198,15 +198,15 @@ If any existing projects have pipelines, GitLab-Runner requirements should be id
 | Identify GitLab-Runner Requirements | Customer Migration Team and GitLab PSE |
 | Identity networking/firewall requirements for migration systems | Customer Migration Team, Customer Network Team, and GitLab PSE |
 
-## Phase 2 \- Setup {#phase-2---setup}
+## Phase 2 - Setup
 
 Verify Congregate configuration is correct, and can access Source and Destination instances.  This can be accomplished by creating a Destination group/subgroup, and migrating a small/simple existing project from Source to Destination.
 
 It is recommended to migrate or pre-provision all users via SCIM or SAML JIT as a first step.  This will enable user attribution. It is also recommended to migrate the group structure without projects first. This will reduce time spent for later migrations and enable user attribution. If SCIM is being used on the destination, user migration is not necessary, but can still be helpful. If users are migrated before SCIM is implemented, avatars and user ssh keys will be migrated. Then when SCIM is implemented, migrated users will be associated with the new SCIM user, assuming emails match. User Migration and attribution can be a fairly in depth topic, start reading about preparing users for migration [here](https://docs.gitlab.com/ee/user/group/import/index.html#prepare-user-accounts). Migrating users and groups should not impact any existing work, and can be done during work hours.
 
-If any GitLab-Runner requirements were identified during Phase 1 \- Planning, they should be implemented at this time.
+If any GitLab-Runner requirements were identified during Phase 1 - Planning, they should be implemented at this time.
 
-### Audience {#audience-1}
+### Audience
 
 * Customer Migration Team  
 * Customer Infrastructure Team  
@@ -220,9 +220,7 @@ If any GitLab-Runner requirements were identified during Phase 1 \- Planning, th
 | Migrate Sample Project to Test Group | Customer Migration, Infrastructure Team, and GitLab PSE |
 | Migrate Users and Groups | Customer Migration Team and GitLab PSE |
 
-## 
-
-## Phase 3 \- Pilot Migrations {#phase-3---pilot-migrations}
+## Phase 3 - Pilot Migrations
 
 Work with identified Pilot Migration teams to migrate their projects during identified migration windows. If there are concerns about the teams being able to still work, consider migrating to a test group/subgroup first, so migrated projects can be tested without affecting day to day operations. Test the migrated projects by running User Acceptance on them. Possible items to check for User Acceptance could include issues, merge requests, merge request approval rules, repository commits, branches, etc. If any problems arise, fix the problem, and roll the fixes into the procedure. Once everything has been approved and demonstrated that work can continue, delete the group/subgroup, and migrate the projects to their normal home.
 
@@ -246,7 +244,7 @@ To help identify Pilot Projects, the Pilot Projects should be selected to identi
 | Communicate End of Pilot Migration | Customer Product Owners and GitLab PM |
 | User Acceptance Testing | Customer Migration Team and Product SMEs |
 
-## Phase 4 \- Main Migrations {#phase-4---main-migrations}
+## Phase 4 - Main Migrations {#phase-4---main-migrations}
 
 At this point, most problems should have been identified and fixed. Due to this feedback, migrations can start ramping up to larger collections of projects. Following the schedule identified in Phase 1, start performing migration waves during identified migration windows, adjusting schedule as necessary. If certain projects fail to migrate during the window, communicate the failure, and move the project to a later wave while troubleshooting is performed.
 
@@ -271,7 +269,7 @@ At this point, most problems should have been identified and fixed. Due to this 
 
 ## 
 
-## Phase 5 \- Wrap Up {#phase-5---wrap-up}
+## Phase 5 - Wrap Up {#phase-5---wrap-up}
 
 All automatic migrations should have happened by this point. Any projects not migrated by now, are considered failed automatic project migrations, and should be handled manually. Usually the number of failed projects in this phase is significantly small. Extra effort should be taken to identify why the projects are failing, and addressed as appropriate.
 
@@ -308,7 +306,7 @@ This general document will highlight standardized suggestions towards what the u
 
 Note: These instructions primarily focus on GitLab-\>GitLab or GitHub-\>GitLab migrations using the "API methods"; Direct Transfer for GitLab to GitLab or the GitHub importer. "Migrations" using GEO replication or Backup/Restore methods have different concerns and will be covered in a separate document.
 
-## Pre-Migration \- Developers {#pre-migration---developers}
+## Pre-Migration - Developers {#pre-migration---developers}
 
 Before a migration, individual engineers can take several steps to prepare themselves for the transition. Here's a list of actions they should consider:
 
@@ -354,7 +352,7 @@ Throughout the migration process, share feedback with project managers, administ
 
 By proactively taking these steps, individual engineers can better prepare themselves for a smooth and successful migration, minimizing disruptions to their workflows and projects.
 
-## Pre Migration \- System {#pre-migration---system}
+## Pre Migration - System {#pre-migration---system}
 
 The first piece that should always be considered is the list of items migrated and not migrated. 
 
@@ -496,7 +494,7 @@ After migration there are things that engineers can do to validate the system. A
 
 **Note**: not all features are available during all migrations. Check the links above if there are questions or discrepancies.
 
-### Projects \- Developers {#projects---developers}
+### Projects - Developers {#projects---developers}
 
 As waves of migration are being completed, individual users should be testing their allocated projects as per the notice from their lead. 
 
@@ -506,12 +504,12 @@ To test connectivity, Read & Write modes should be in scope. Test these with the
   * git remote-ls \<REPO\_URL\>  
 * WRITE:  
   * cd \<MIGRATED\_CLONED\_REPO\_FOLDER\>   
-  * git remote \-v  
+  * git remote -v  
   * *Take a screenshot of your current remote url setting.*  
   * git set-url origin git://\<REPO\_URL\>  
-  * git checkout \-b migr-write-test  
+  * git checkout -b migr-write-test  
   * echo “foo\_bar” \> testfile.dat  
-  * git push \--set-upstream origin migr-write-test  
+  * git push --set-upstream origin migr-write-test  
 * GitLab will provide a quick link to create a Merge Request:  
   * ...  
     remote: To create a merge request for my-new-branch, visit:
@@ -538,7 +536,7 @@ To test connectivity, Read & Write modes should be in scope. Test these with the
 * Review and adjust project level permissions, including Enable project-level shared runners (default: true) and AutoDevOps (default: true)  
 * Register any local runners that will be used for CI jobs  
 * Adjust group and project permissions, if applicable. Note: All groups and projects are set to private upon import (unless the group imports into a parent group and inherits its visibility), regardless of their setting in the source instance.  
-* If migrating to GitLab.com, update any project, group, and system hooks that point to localhost or a private instance \- GitLab.com will see them as invalid and fail to create them  
+* If migrating to GitLab.com, update any project, group, and system hooks that point to localhost or a private instance - GitLab.com will see them as invalid and fail to create them  
 * Update any CI jobs, CI/CD variables, and hooks that point to the source system url; for GL-\>GL migrations, relative paths used in CI jobs to point to other projects should be fine, but any absolute paths/full urls will need to be updated to point to the projects at the destination instance url  
 * Verify dependency chains (build order) of projects  
 * Secrets (tokens) that may be present in certain features, e.g. hooks, are not exposed in the API response and therefore not migrated. Those individual features have to be newly created  
