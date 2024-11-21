@@ -429,6 +429,36 @@ class MigrateClient(BaseClass):
             self.log.info(
                 f"Members added to destination group '{full_path}' ({dst_gid}):\n{result}")
         return result
+    
+    def share_groups_with_groups(self, src_gid, dst_gid):
+        source_group_response = self.groups_api.get_group(
+                src_gid, self.config.source_host, self.config.source_token)
+        source_group = misc_utils.safe_json_response(source_group_response)
+        shared_with_groups = source_group.get('shared_with_groups', [])
+        result = {}
+
+        # Migrate shared group memberships
+        for shared_group in shared_with_groups:
+            shared_group_full_path = shared_group['group_full_path']
+            shared_group_full_path_with_parent_namespace = mig_utils.get_full_path_with_parent_namespace(shared_group_full_path)
+            shared_group_id = self.groups.find_group_id_by_path(
+                        self.config.destination_host, self.config.destination_token, shared_group_full_path_with_parent_namespace)
+            data={
+                'group_id': shared_group_id,
+                'group_access': shared_group.get('group_access_level'),
+                'expires_at': shared_group.get('expires_at')
+            }
+
+            # Share the destination group with the shared group in the destination
+            share_response = self.groups_api.share_group(self.config.destination_host, self.config.destination_token, dst_gid, data=data)
+
+            if share_response.status_code == 201:
+                self.log.info(f"Successfully shared group '{shared_group_id}' with group ID '{dst_gid}' ")
+                result[shared_group_id] = True
+            else:
+                self.log.error(f"Failed to share group '{shared_group_id}' with group ID '{dst_gid}' : {share_response.content}")
+                result[shared_group_id] = False
+        return result
 
     def migrate_external_group(self, group):
         result = False

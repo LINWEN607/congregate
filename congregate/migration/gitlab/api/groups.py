@@ -356,6 +356,21 @@ class GroupsApi(GitLabApiWrapper):
         if not message:
             message = "Adding group hook"
         return self.api.generate_post_request(host, token, f"groups/{gid}/hooks", json.dumps(data), description=message)
+    
+    def share_group(self, host, token, gid, data, message=None):
+        """
+        Share groups with groups
+
+        GitLab API doc: https://docs.gitlab.com/ee/api/groups.html#share-groups-with-groups
+
+            :param: id: (int/string) The ID or URL-encoded path of the group
+            :param: gid: (int) The ID of the group to share with
+            :param: data: (dict) Object containing the various data required for sharing a group. Refer to the link above for specific examples
+            :return: Response object containing the response to POST /groups/:id/share
+        """
+        if not message:
+            message = f"Sharing source group '{data}' with destination group id '{gid}' "
+        return self.api.generate_post_request(host, token, f"groups/{gid}/share", json.dumps(data), description=message)
 
     def get_all_group_projects(self, gid, host, token, include_subgroups=False, with_shared=False):
         """
