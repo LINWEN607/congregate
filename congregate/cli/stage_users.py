@@ -32,8 +32,7 @@ class UserStageCLI(BaseStageClass):
     def build_staging_data(self, users_to_stage):
         users = self.open_users_file()
         if list(filter(None, users_to_stage)):
-            if users_to_stage[0] in ["all", "."] or len(
-                    users_to_stage) == len(users):
+            if users_to_stage[0] in ["all", "."]:
                 for u in users:
                     self.log.info(
                         f"Staging user '{u['email']}' (ID: {u['id']}) [{len(self.staged_users)}/{len(users)}]")
