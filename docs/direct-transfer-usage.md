@@ -13,13 +13,15 @@ You can do the following actions in the UI when Direct Transfer is enabled in `c
 - Run a full migration
 - Review non-sensitive information in the `congregate.conf` file
 
+**Note:** When Direct Transfer is enabled in Congregate, listing and migrating are managed through a Celery task queue. Currently the CLI does not directly connect to Celery so one needs to trigger the listing from the UI.
+
 ### List Data
 
 Navigate to the home page of Congregate and click the "list data" button. 
 
 <img src="../img/list-screenshot.png"/>
 
-Note: This does not do a `DRY_RUN` like we have in the CLI. It automatically pulls from the source and updates Mongo and the various metadata JSON files
+**Note:** This does not do a `DRY_RUN` like we have in the CLI. It automatically pulls from the source and updates Mongo and the various metadata JSON files
 
 ### Stage Data
 
