@@ -3,6 +3,12 @@ from gitlab_ps_utils.dict_utils import strip_none
 
 @dataclass
 class MergeRequestDiffFile:
+    '''
+        Dataclass for importing any merge/pull request diffs from another source instance
+
+        This is a subset of the MergeRequestDiff Dataclass and is needed for displaying diffs in the UI
+        You only need the overall diffs for this dataclass, not a diff per commit in the MR
+    '''
     relative_order: int
     new_file: bool
     renamed_file: bool

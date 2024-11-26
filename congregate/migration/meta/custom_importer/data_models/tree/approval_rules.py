@@ -4,7 +4,9 @@ from gitlab_ps_utils.dict_utils import strip_none
 
 @dataclass
 class ApprovalRules:
-    
+    '''
+        Dataclass for handling any MR approval rules
+    '''
     applies_to_all_protected_branches: Optional[bool] = None
     approval_project_rules_protected_branches: Optional[List[dict]] = field(default_factory=list)
     approval_project_rules_users: Optional[List[dict]] = field(default_factory=list)

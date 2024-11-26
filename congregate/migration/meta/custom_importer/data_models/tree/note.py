@@ -6,6 +6,12 @@ from congregate.migration.meta.custom_importer.data_models.tree.system_note_meta
 
 @dataclass
 class Note:
+    '''
+        Dataclass for importing any notes from another source instance
+
+        Notes in GitLab are any comments in a merge request, issue, commit, or snippet
+    '''
+
     note: str
     author: Author
     noteable_type: str

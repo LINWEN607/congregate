@@ -1,24 +1,15 @@
 from typing import Optional
 from dataclasses import dataclass, asdict
 from gitlab_ps_utils.dict_utils import strip_none
-                    
-'''
-{
-    "cadence": "<class 'str'>",
-    "created_at": "<class 'str'>",
-    "enabled": "<class 'bool'>",
-    "keep_n": "<class 'int'>",
-    "name_regex": "<class 'str'>",
-    "name_regex_keep": "<class 'NoneType'>",
-    "next_run_at": "<class 'str'>",
-    "older_than": "<class 'str'>",
-    "project_id": "<class 'int'>",
-    "updated_at": "<class 'str'>"
-}             
-'''
 
 @dataclass
 class ContainerExpirationPolicy:
+    '''
+        Dataclass for importing any container expiration policies from another source instance
+
+        This dataclass is only applicable when migrating container registry data from a system
+        that uses an existing container registry with an expiration policy
+    '''
     cadence: Optional[str] = None
     created_at: Optional[str] = None
     enabled: Optional[bool] = None

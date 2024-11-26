@@ -436,6 +436,9 @@ class GitLabMigrateClient(MigrateClient):
         if self.sync_members and not self.remove_members:
             results["members_added"] = self.add_group_members(
                 src_gid, dst_gid, full_path)
+            
+        # Add group members to groups
+        results["shared_with_groups"] = self.share_groups_with_groups(src_gid, dst_gid)
 
         return results
 

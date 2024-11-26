@@ -5,6 +5,12 @@ from gitlab_ps_utils.dict_utils import strip_none
 
 @dataclass
 class CommitNotes:
+    '''
+        Dataclass for importing any commit notes from another source instance
+
+        Commit notes are any comments applied to a specific commit.
+    '''
+
     attachment: Optional[List] = field(default_factory=list)
     author: Optional[List] = field(default_factory=list)
     author_id: Optional[int] = None

@@ -29,6 +29,7 @@
 [DESTINATION]
 ### General configuration for GitLab server
 dstn_hostname = hostname
+### base64 encoded with `./congregate.sh obfuscate`
 dstn_access_token = *****
 import_user_id = 0
 # shared_runners_enabled = False
@@ -82,6 +83,7 @@ import_user_id = 0
 ### This configuration is considered when the source is a GitLab server
 src_type = GitLab
 src_hostname = source_hostname
+### base64 encoded with `./congregate.sh obfuscate`
 src_access_token = *****
 # src_tier = core
 # src_parent_group_id = 0

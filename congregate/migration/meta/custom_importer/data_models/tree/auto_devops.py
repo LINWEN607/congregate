@@ -1,12 +1,10 @@
 
-from dataclasses import dataclass, asdict
-from gitlab_ps_utils.dict_utils import strip_none
-                    
-'''
-{}             
-'''
+from dataclasses import dataclass
 
 @dataclass
 class AutoDevops:
+    '''
+        Currently unused dataclass, but it exists in a standard project export
+    '''
     pass
                     

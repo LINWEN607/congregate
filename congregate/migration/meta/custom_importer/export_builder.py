@@ -1,7 +1,3 @@
-'''
-Utility class for building a custom project export
-'''
-
 import os
 import tempfile
 import tarfile
@@ -13,10 +9,23 @@ from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.api.instance import InstanceApi
 from congregate.migration.meta.custom_importer.data_models.project_export import ProjectExport
 from congregate.migration.meta.custom_importer.data_models.project import Project
+from congregate.helpers.migrate_utils import get_export_filename_from_namespace_and_name
 
 
 class ExportBuilder(BaseClass):
-    def __init__(self, project_name, clone_url, git_env=None):
+    '''
+        Utility class for building a custom project export
+
+        This class handles the final construction of the project export with functions to:
+
+        - Clone the git repo
+        - Create a git repo bundle
+        - Create the project export structure
+        - Convert all tree dataclasses into ndjson files
+        - Build the packaged tar.gz file
+    '''
+
+    def __init__(self, project, clone_url, git_env=None):
         super().__init__()
         self.export_dir = tempfile.TemporaryDirectory()
         self.tree_path = os.path.join(self.export_dir.name, 'tree')
@@ -24,7 +33,7 @@ class ExportBuilder(BaseClass):
         self.project_path = os.path.join(self.export_dir.name, 'tree', 'project')
         os.makedirs(self.project_path, exist_ok=True)
         self.clone_url = clone_url
-        self.project_name = project_name
+        self.project = project
         self.git_env = git_env
         self.repo = None
 
@@ -44,11 +53,11 @@ class ExportBuilder(BaseClass):
         # Create git bundle
         if self.repo is None:
             self.repo = self.clone_repo(self.project_path, self.export_dir.name, self.clone_url)
-        git_bundle_path = self.create_git_bundle(self.project_name, self.export_dir.name)
+        git_bundle_path = self.create_git_bundle(self.project, self.export_dir.name)
         if git_bundle_path:
-            print(f"Created Git bundle at {git_bundle_path}")
+            self.log.info(f"Created Git bundle at {git_bundle_path}")
         else:
-            print(f"Failed to create Git bundle for {self.project_name}")
+            self.log.error(f"Failed to create Git bundle for {self.project['name']}")
             raise
 
         # Create snippets directory
@@ -73,8 +82,10 @@ class ExportBuilder(BaseClass):
         # Create the tree directory
         self.create_tree_files(tree_export)
 
-    def create_export_tar_gz(self, output_path, project_name):
-        with tarfile.open(f"{output_path}/{project_name}.tar.gz", mode="w:gz") as tar:
+    def create_export_tar_gz(self):
+        filename = get_export_filename_from_namespace_and_name(
+                self.project['path'], self.project['name'])
+        with tarfile.open(f"{self.config.filesystem_path}/downloads/{filename}", mode="w:gz") as tar:
             for f in os.listdir(self.export_dir.name):
                 tar.add(os.path.join(self.export_dir.name, f), arcname=f)
 
@@ -123,11 +134,11 @@ class ExportBuilder(BaseClass):
             raise Exception("No repo cloned")
 
         except GitCommandError as e:
-            print(
+            self.log.error(
                 f"Git command error while creating bundle for {project_path}: {str(e)}")
             return False
         except Exception as e:
-            print(f"Error creating Git bundle for {project_path}: {str(e)}")
+            self.log.error(f"Error creating Git bundle for {project_path}: {str(e)}")
             return False
     
     def clone_repo(self, project_path, clone_url) -> Repo:
@@ -155,11 +166,11 @@ class ExportBuilder(BaseClass):
             return repo
 
         except GitCommandError as e:
-            print(
+            self.log.error(
                 f"Git command error while creating bundle for {project_path}: {str(e)}")
             return False
         except Exception as e:
-            print(f"Error creating Git bundle for {project_path}: {str(e)}")
+            self.log.error(f"Error creating Git bundle for {project_path}: {str(e)}")
             return False
         
     def create_tree_files(self, export: ProjectExport):

@@ -5,6 +5,11 @@ from congregate.migration.meta.custom_importer.data_models.tree.author import Au
 
 @dataclass
 class MergeRequestCommit:
+    '''
+        Dataclass for importing any merge/pull request commits from another source instance
+
+        This is a subset of the MergeRequestDiff Dataclass and is needed for displaying commits in the UI
+    '''
     authored_date: str
     committed_date: str
     relative_order: int

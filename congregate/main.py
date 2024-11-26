@@ -14,7 +14,7 @@ Usage:
     congregate stage-wave <wave> [--commit] [--scm-source=hostname]
     congregate create-stage-wave-csv [--commit]
     congregate migrate [--commit] [--processes=<n>] [--reporting] [--skip-users] [--remove-members] [--sync-members] [--stream-groups] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostname] [--reg-dry-run] [--group-structure] [--retain-contributors]
-    congregate rollback [--commit] [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects]
+    congregate rollback [--commit] [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--permanent]
     congregate ui
     congregate do-all [--commit]
     congregate do-all-users [--commit]
@@ -32,7 +32,7 @@ Usage:
     congregate remove-users-from-parent-group [--commit]
     congregate migrate-variables-in-stage [--commit]
     congregate migrate-linked-issues [--commit]
-    congregate pull-mirror-staged-projects [--commit]
+    congregate pull-mirror-staged-projects [--commit] [--protected-only] [--force] [--overwrite]
     congregate push-mirror-staged-projects [--disabled] [--keep_div_refs] [--force] [--commit]
     congregate toggle-staged-projects-push-mirror [--disable] [--commit]
     congregate verify-staged-projects-push-mirror [--disabled] [--keep_div_refs]
@@ -87,7 +87,8 @@ Arguments:
     skip-users                              Stage: Skip staging users; Migrate: Skip migrating users; Rollback: Remove only groups and projects.
     remove-members                          Remove all members of created (GitHub) or imported (GitLab) groups. Skip adding any members of BitBucket Server repos and projects.
     sync-members                            Align group members list between source and destination by adding missing members on destination.
-    hard-delete                             Remove user contributions and solely owned groups
+    hard-delete                             DESTRUCTIVE: Remove user contributions and solely owned groups
+    permanent                               DESTRUCTIVE: Permanently delete group and/or project. Otherwise, by default, scheduled for deletion
     stream-groups                           Streamed approach of migrating staged groups in bulk
     skip-groups                             Rollback: Remove only users and projects
     skip-group-members                      Add empty list instead of listing GitLab group members. Skip saving BBS project user groups as GL group members.
@@ -128,6 +129,7 @@ Arguments:
     disable                                 Disable staged project push mirror
     keep_div_refs                           Set keep_divergent_refs to True (False by default) and avoid overwriting changes on the mirror repo
     force                                   Immediately trigger push mirroring with a repo change e.g. new branch
+    overwrite                               DESTRUCTIVE: Overwrites pull mirrored branches on destination that have diverged from source. Therefore, recommended to make change in new branches on destination instead.
     name                                    Project branch name
     all                                     Include all listed objects.
     bb-projects                             Target BitBucket repo branches from a project level
@@ -169,7 +171,7 @@ Commands:
     remove-users-from-parent-group          Remove all users with at most Reporter access from the parent group.
     migrate-variables-in-stage              Migrate CI variables for staged projects.
     migrate-linked-issues                   Migrate Linked items in issues for staged projects.
-    pull-mirror-staged-projects             Set up project pull mirroring for staged projects.
+    pull-mirror-staged-projects             Create and start project pull mirroring for staged projects.
     push-mirror-staged-projects             Set up and enable (by default) project push mirroring for staged projects.
                                                 Assuming both the mirrored repo and empty project structure (create-staged-projects-structure) for mirroring already exist on destination.
                                                 NOTE: Destination instance only mirroring.
@@ -447,7 +449,8 @@ def main():
                     skip_users=SKIP_USERS,
                     hard_delete=arguments["--hard-delete"],
                     skip_groups=SKIP_GROUPS,
-                    skip_projects=SKIP_PROJECTS
+                    skip_projects=SKIP_PROJECTS,
+                    permanent=arguments["--permanent"],
                 )
                 migrate.rollback()
 
@@ -497,7 +500,8 @@ def main():
             if arguments["delete-all-staged-projects-pull-mirrors"]:
                 projects.delete_all_pull_mirrors(dry_run=DRY_RUN)
             if arguments["pull-mirror-staged-projects"]:
-                projects.pull_mirror_staged_projects(dry_run=DRY_RUN)
+                projects.pull_mirror_staged_projects(
+                    protected_only=arguments["--protected-only"], force=arguments["--force"], overwrite=arguments["--overwrite"], dry_run=DRY_RUN)
             if arguments["push-mirror-staged-projects"]:
                 projects.push_mirror_staged_projects(
                     disabled=arguments["--disabled"], keep_div_refs=arguments["--keep_div_refs"], force=arguments["--force"], dry_run=DRY_RUN)

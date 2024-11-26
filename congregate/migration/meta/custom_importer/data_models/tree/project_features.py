@@ -3,6 +3,13 @@ from dataclasses import dataclass, asdict
 
 @dataclass
 class ProjectFeatures:
+    '''
+        Dataclass covering any GitLab-specific project features
+
+        This is fairly GitLab-specific, but if the source instance has similar settings,
+        use this dataclass to translate them into the GitLab project
+    '''
+
     analytics_access_level: Optional[int] = None
     builds_access_level: Optional[int] = None
     container_registry_access_level: Optional[int] = None

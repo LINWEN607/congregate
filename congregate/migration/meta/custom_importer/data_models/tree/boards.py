@@ -5,6 +5,9 @@ from gitlab_ps_utils.dict_utils import strip_none
 
 @dataclass
 class Boards:
+    '''
+        Dataclass for importing any issues boards
+    '''
     created_at: Optional[str] = None
     group_id: Optional[int] = None
     hide_backlog_list: Optional[bool] = None

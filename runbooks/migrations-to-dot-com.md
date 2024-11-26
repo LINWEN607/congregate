@@ -83,8 +83,8 @@ Copy the following data and add subsequent rows for single group migration
 
 PSE conducting the migration:
 
-* [ ] Acquires a GitLab source instance personal access token with admin privileges (top right icon _Your user Avatar -\> Edit Profile -\> Access Tokens_)
-* [ ] Acquires an Admin token for Gitlab.com by raising an _Issue_ in [Access request](https://gitlab.com/gitlab-com/team-member-epics/access-requests) and choose the template _Access Change Request_
+* [ ] Acquires an obfuscated (`./congregate.sh obfuscate`) GitLab source instance personal access token with admin privileges and `api` scope (top right icon _Your user Avatar -\> Edit Profile -\> Access Tokens_)
+* [ ] Acquires an obfuscated (`./congregate.sh obfuscate`) GitLab.com Admin token with `api` scope by raising an _Issue_ in [Access request](https://gitlab.com/gitlab-com/team-member-epics/access-requests) and choosing template _Access Change Request_
 * [ ] Configures Congregate to migrate from a GitLab instance to gitlab.com
   * [ ] Inspects and validates configured values in `data/congregate.conf`
     * **Tip:** Run `./congregate.sh validate-config`  to ensure Congregate is configured properly

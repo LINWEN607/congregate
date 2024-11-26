@@ -7,6 +7,10 @@ from congregate.migration.meta.custom_importer.data_models.tree.note import Note
 
 @dataclass
 class Issues:
+    '''
+        Dataclass for importing any issues/tickets from another source instance
+    '''
+
     # Required
     title: str
     author_id: int

@@ -1,5 +1,6 @@
 import json
 from requests.exceptions import RequestException
+from tqdm import tqdm
 from gitlab_ps_utils.misc_utils import get_timedelta, safe_json_response, strip_netloc
 from gitlab_ps_utils.list_utils import remove_dupes
 from gitlab_ps_utils.json_utils import json_pretty
@@ -42,7 +43,7 @@ class GroupsClient(BaseClass):
             # Save all group projects ID references as part of group metadata
             # Only list direct projects to avoid overhead
             group["projects"] = []
-            for project in self.groups_api.get_all_group_projects(gid, host, token, include_subgroups=False, with_shared=False):
+            for project in self.groups_api.get_all_group_projects(gid, host, token):
                 pid = project.get("id")
                 group["projects"].append(pid)
                 for k in constants.PROJECT_KEYS_TO_IGNORE:
@@ -114,54 +115,64 @@ class GroupsClient(BaseClass):
         # Recursively look for any nested projects
         if group["projects"]:
             return True
-        else:
-            subgroups = self.groups_api.get_all_subgroups(
-                group["id"],
+        subgroups = self.groups_api.get_all_subgroups(
+            group["id"],
+            self.config.destination_host,
+            self.config.destination_token)
+        for sg in subgroups:
+            resp = self.groups_api.get_group(
+                sg["id"],
                 self.config.destination_host,
                 self.config.destination_token)
-            for sg in subgroups:
-                resp = self.groups_api.get_group(
-                    sg["id"],
-                    self.config.destination_host,
-                    self.config.destination_token)
-                return self.is_group_non_empty(resp.json())
+            return self.is_group_non_empty(resp.json())
 
-    def delete_groups(self, dry_run=True, skip_projects=False):
-        for sg in get_staged_groups():
+    def delete_groups(self, dry_run=True, skip_projects=False, permanent=False):
+        staged_groups = get_staged_groups()
+        for sg in tqdm(staged_groups, total=len(staged_groups), colour=self.TANUKI, desc=self.DESC, unit=self.UNIT):
             # GitLab.com destination instances have a parent group
             dest_full_path = get_full_path_with_parent_namespace(
                 sg["full_path"])
-            self.log.info("Removing group {}".format(dest_full_path))
-            resp = self.groups_api.get_group_by_full_path(
-                dest_full_path,
-                self.config.destination_host,
-                self.config.destination_token)
-            if resp is not None:
+            self.log.info(f"Deleting group '{dest_full_path}'")
+            try:
+                resp = self.groups_api.get_group_by_full_path(
+                    dest_full_path,
+                    self.config.destination_host,
+                    self.config.destination_token)
                 if resp.status_code != 200:
-                    self.log.info("Group {0} does not exist (status: {1})".format(
-                        dest_full_path, resp.status_code))
+                    self.log.info(
+                        f"Group '{dest_full_path}' does not exist: {resp} - {resp.text})")
                 elif skip_projects and self.is_group_non_empty(resp.json()):
                     self.log.info(
-                        "SKIP: Non-empty group {}".format(dest_full_path))
+                        f"SKIP: Non-empty group '{dest_full_path}'")
                 elif not dry_run:
-                    group = resp.json()
-                    try:
-                        if group.get("created_at", None):
-                            if get_timedelta(
-                                    group["created_at"]) < self.config.max_asset_expiration_time:
-                                self.groups_api.delete_group(
-                                    group["id"],
-                                    self.config.destination_host,
-                                    self.config.destination_token)
-                            else:
-                                self.log.info("Ignoring {0}. Group existed before {1} hours".format(
-                                    group["full_path"], self.config.max_asset_expiration_time))
-                    except RequestException as re:
-                        self.log.error(
-                            "Failed to remove group\n{0}\nwith error:\n{1}".format(json_pretty(sg), re))
-            else:
+                    self.delete_group(resp, dest_full_path,
+                                      permanent=permanent)
+            except RequestException as re:
                 self.log.error(
-                    "Failed to GET group {} by full_path".format(dest_full_path))
+                    f"Failed to delete group \n{json_pretty(sg)}\nwith error:\n{re}")
+
+    def delete_group(self, resp, dest_full_path, permanent=False):
+        host = self.config.destination_host
+        token = self.config.destination_token
+        exp_time = self.config.max_asset_expiration_time
+        group = safe_json_response(resp)
+        if get_timedelta(group.get("created_at", exp_time)) < exp_time:
+            gid = group["id"]
+            resp = self.groups_api.delete_group(
+                gid, host, token)
+            if resp.status_code not in [200, 202, 204]:
+                self.log.error(
+                    f"Failed to delete group '{dest_full_path}' on destination:\n{resp} - {resp.text}")
+            elif permanent:
+                if deleted_path_json := safe_json_response(self.groups_api.get_group(gid, host, token)):
+                    resp = self.groups_api.delete_group(gid, host, token, full_path=deleted_path_json.get(
+                        "full_path"), permanent=permanent)
+                    if resp.status_code not in [200, 202, 204]:
+                        self.log.error(
+                            f"Failed to permanently delete group '{dest_full_path}' on destination:\n{resp} - {resp.text}")
+        else:
+            self.log.info(
+                f"SKIP: group '{dest_full_path}' was created {exp_time} hours ago")
 
     def validate_staged_groups_schema(self):
         staged_groups = get_staged_groups()
@@ -293,7 +304,7 @@ def traverse_groups_task(host, token, group, mongo=None):
         # Save all group projects ID references as part of group metadata
         # Only list direct projects to avoid overhead
         group["projects"] = []
-        for project in gc.groups_api.get_all_group_projects(gid, host, token, include_subgroups=False, with_shared=False):
+        for project in gc.groups_api.get_all_group_projects(gid, host, token):
             pid = project.get("id")
             group["projects"].append(pid)
             for k in constants.PROJECT_KEYS_TO_IGNORE:

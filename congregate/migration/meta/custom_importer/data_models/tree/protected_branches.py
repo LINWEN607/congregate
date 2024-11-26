@@ -4,6 +4,9 @@ from gitlab_ps_utils.dict_utils import strip_none
                     
 @dataclass
 class ProtectedBranches:
+    '''
+        Dataclass for any protected branches of a project
+    '''
     
     allow_force_push: Optional[bool] = None
     code_owner_approval_required: Optional[bool] = None

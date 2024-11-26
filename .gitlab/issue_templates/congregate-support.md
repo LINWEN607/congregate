@@ -33,3 +33,4 @@ redact any confidential information as necessary
 -->
 
 /label ~"congregate::support"
+/assign @gitlab-org/professional-services-automation/tools/migration 

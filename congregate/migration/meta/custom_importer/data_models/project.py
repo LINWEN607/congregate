@@ -3,6 +3,11 @@ from dataclasses import dataclass, asdict
 
 @dataclass
 class Project:
+    '''
+        Dataclass that represents what will go into the project.json file in the export
+
+        This can be left completely default
+    '''
     
     description: Optional[str] = None
     visibility_level: Optional[int] = 0

@@ -312,6 +312,7 @@ check ldap compose yaml:
     - !reference [.test-job, before_script]
   script:
     - poetry run aws ec2 terminate-instances --instance-ids $(cat $INSTANCE_ID_FILE)
+  allow_failure: true
   tags:
     - congregate-auto-scale-runner
 

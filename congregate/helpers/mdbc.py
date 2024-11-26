@@ -4,6 +4,7 @@ from re import search
 from pymongo import MongoClient, errors, DESCENDING
 from gitlab_ps_utils.json_utils import stream_json_yield_to_file, read_json_file_into_object
 from gitlab_ps_utils.file_utils import find_files_in_folder
+from gitlab_ps_utils.misc_utils import strip_netloc
 from congregate.helpers.base_class import BaseClass
 
 
@@ -36,7 +37,7 @@ class MongoConnector(BaseClass):
 
     def create_unique_index(self, collection, key):
         return self.db[collection].create_index(key, unique=True)
-    
+
     def create_collection_with_unique_index(self, collection, key):
         try:
             self.db.validate_collection(collection)
@@ -94,8 +95,11 @@ class MongoConnector(BaseClass):
     def ingest_json_file_into_mongo(self, file_path, collection=None):
         if not collection:
             collection = (search(r"(.+\/)(.+)\.json", file_path)).group(2)
+        self.log.info(
+            f"Inserting '{file_path}' into '{collection}' collection")
         for data in read_json_file_into_object(file_path):
-            self.insert_data(collection, data)
+            self.insert_data(
+                f"{collection}-{strip_netloc(self.config.source_host)}", data)
 
     def re_ingest_into_mongo(self, asset_type):
         for found_file in find_files_in_folder(
@@ -112,7 +116,8 @@ class MongoConnector(BaseClass):
             try:
                 return self.db[collection].find_one(query, **kwargs)
             except TypeError as e:
-                self.log.warning(f"Unable to process original Mongo query due to [{e}]")
+                self.log.warning(
+                    f"Unable to process original Mongo query due to [{e}]")
                 return self.db[collection].find_one(query)
         except errors.OperationFailure as e:
             # Condition for mongomock testing. Hints are not supported in
@@ -135,7 +140,8 @@ class MongoConnector(BaseClass):
             try:
                 return self.db[collection].find(query, **kwargs)
             except TypeError as e:
-                self.log.warning(f"Unable to process original Mongo query due to [{e}]")
+                self.log.warning(
+                    f"Unable to process original Mongo query due to [{e}]")
                 return self.db[collection].find(query)
         except errors.OperationFailure as e:
             # Condition for mongomock testing. Hints are not supported in
@@ -185,6 +191,7 @@ class MongoConnector(BaseClass):
             d[new] = d.pop(old)
         return d
 
+
 def mongo_connection(func):
     '''
         Decorator function to open and close a MongoDB connection
@@ -198,4 +205,3 @@ def mongo_connection(func):
             mongo.close_connection()
             return retval
     return wrapper
-

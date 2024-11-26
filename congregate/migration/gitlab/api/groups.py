@@ -107,6 +107,36 @@ class GroupsApi(GitLabApiWrapper):
                 member["id"], host, token)
             yield member
 
+    def get_all_group_members_incl_inherited(self, gid, host, token):
+        """
+        Gets a list of group members viewable by the authenticated user, including inherited members through ancestor groups
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/members.html#list-all-members-of-a-group-or-project-including-inherited-and-invited-members
+
+            :param: gid: (int) GitLab group ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /groups/:id/members/all
+        """
+        for member in self.api.list_all(host, token, f"groups/{gid}/members/all"):
+            yield self.users.get_user(member["id"], host, token).json()
+
+    def get_all_group_billable_members(self, gid, host, token):
+        """
+        Gets a list of group members that count as billable. The list includes members in subgroups and projects.
+
+        This API endpoint works on top-level groups only. It does not work on subgroups.
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/members.html#list-all-billable-members-of-a-group
+
+            :param: gid: (int) GitLab group ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Generator returning JSON of each result from GET /groups/:id/billable_members
+        """
+        for member in self.api.list_all(host, token, f"groups/{gid}/billable_members"):
+            yield self.users.get_user(member["id"], host, token).json()
+
     def update_member_access_level(self, host, token, gid, mid, level, message=None):
         """
         Updates the access_level of a group member.
@@ -136,7 +166,7 @@ class GroupsApi(GitLabApiWrapper):
         """
         return self.api.list_all(host, token, f"groups/{gid}/subgroups")
 
-    def delete_group(self, gid, host, token):
+    def delete_group(self, gid, host, token, full_path=None, permanent=False):
         """
         Removes group with all projects inside
 
@@ -147,7 +177,11 @@ class GroupsApi(GitLabApiWrapper):
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing a 202 (Accepted) or 404 (Group not found) from DELETE /groups/:id
         """
-        return self.api.generate_delete_request(host, token, f"groups/{gid}")
+        message = f"Deleting destination group {gid})"
+        if permanent and full_path:
+            message += f" '{full_path}' permanently"
+            return self.api.generate_delete_request(host, token, f"groups/{gid}?&full_path={quote_plus(full_path)}&permanently_remove=true", description=message)
+        return self.api.generate_delete_request(host, token, f"groups/{gid}", description=message)
 
     def remove_member(self, gid, uid, host, token):
         """
@@ -257,22 +291,6 @@ class GroupsApi(GitLabApiWrapper):
         """
         return self.api.list_all(host, token, f"bulk_imports/{bid}/entities")
 
-    def get_all_group_members_incl_inherited(self, gid, host, token):
-        """
-        Gets a list of group members viewable by the authenticated user, including inherited members through ancestor groups
-
-        GitLab API Doc: https://docs.gitlab.com/ee/api/members.html#list-all-members-of-a-group-or-project-including-inherited-and-invited-members
-
-            :param: gid: (int) GitLab group ID
-            :param: host: (str) GitLab host URL
-            :param: token: (str) Access token to GitLab instance
-            :yield: Generator returning JSON of each result from GET /groups/:id/members/all
-        """
-        for member in self.api.list_all(host, token, f"groups/{gid}/members/all"):
-            member["email"] = self.users.get_user_email(
-                member["id"], host, token)
-            yield member
-
     def get_all_group_issue_boards(self, gid, host, token):
         """
         Lists Issue Boards in the given group
@@ -338,8 +356,23 @@ class GroupsApi(GitLabApiWrapper):
         if not message:
             message = "Adding group hook"
         return self.api.generate_post_request(host, token, f"groups/{gid}/hooks", json.dumps(data), description=message)
+    
+    def share_group(self, host, token, gid, data, message=None):
+        """
+        Share groups with groups
 
-    def get_all_group_projects(self, gid, host, token, include_subgroups=True, with_shared=True):
+        GitLab API doc: https://docs.gitlab.com/ee/api/groups.html#share-groups-with-groups
+
+            :param: id: (int/string) The ID or URL-encoded path of the group
+            :param: gid: (int) The ID of the group to share with
+            :param: data: (dict) Object containing the various data required for sharing a group. Refer to the link above for specific examples
+            :return: Response object containing the response to POST /groups/:id/share
+        """
+        if not message:
+            message = f"Sharing source group '{data}' with destination group id '{gid}' "
+        return self.api.generate_post_request(host, token, f"groups/{gid}/share", json.dumps(data), description=message)
+
+    def get_all_group_projects(self, gid, host, token, include_subgroups=False, with_shared=False):
         """
         Get a list of projects in this group
 
@@ -354,7 +387,7 @@ class GroupsApi(GitLabApiWrapper):
         """
         return self.api.list_all(host, token, f"groups/{gid}/projects?include_subgroups={include_subgroups}&with_shared={with_shared}")
 
-    def get_all_group_projects_count(self, gid, host, token, include_subgroups=True, with_shared=False):
+    def get_all_group_projects_count(self, gid, host, token, include_subgroups=False, with_shared=False):
         """
         Get a total count of projects in this group
 

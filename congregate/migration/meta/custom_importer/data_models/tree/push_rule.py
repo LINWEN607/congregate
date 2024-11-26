@@ -4,6 +4,11 @@ from gitlab_ps_utils.dict_utils import strip_none
                     
 @dataclass
 class PushRule:
+    '''
+        Dataclass for any push rules of a project
+
+        Push rules may vary across source instances so this may not be applicable to your use case
+    '''
     author_email_regex: Optional[str] = None
     branch_name_regex: Optional[str] = None
     commit_committer_check: Optional[bool] = None

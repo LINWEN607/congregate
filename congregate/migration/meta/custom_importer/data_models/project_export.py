@@ -23,6 +23,12 @@ from congregate.migration.meta.custom_importer.data_models.tree.boards import Bo
 
 @dataclass
 class ProjectExport:
+    '''
+        Main dataclass for building out the content in the project tree folder
+
+        This will pull all the data together and eventually turn into several ndjson files
+    '''
+
     # Required
     project_members: List[ProjectMembers]
 

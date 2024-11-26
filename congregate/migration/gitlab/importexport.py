@@ -1,4 +1,6 @@
-import json, os, signal
+import json
+import os
+import signal
 from re import sub
 from urllib.parse import quote, quote_plus
 from time import sleep
@@ -256,30 +258,30 @@ class ImportExportClient(BaseGitLabClient):
                 while (ns := self.namespaces_api.get_namespace_by_full_path(
                         dest_namespace, self.dest_host, self.dest_token)).status_code != 200:
                     self.log.info(
-                        f"Waited {total_time}/{timeout} seconds to create {dest_namespace} for project {name}")
+                        f"Waited {total_time}/{timeout} seconds to create '{dest_namespace}' for project '{name}'")
                     total_time += wait_time
                     sleep(wait_time)
                     if total_time > timeout:
                         self.log.error(
-                            f"Time limit exceeded waiting for project {name} to import to {dest_namespace}, with response:\n{import_response}")
+                            f"Time limit exceeded waiting for project '{name}' to import to '{dest_namespace}', with response:\n{import_response}")
                         return None
                 ns_id = ns.json().get('id')
                 import_response = self.attempt_import(
                     filename, name, path, ns_id, override_params, members)
             elif import_response.status_code == 422:
                 self.log.error(
-                    f"Project {name} failed to import to {dest_namespace}, due to:\n{import_response.text}")
+                    f"Project '{name}' failed to import to '{dest_namespace}', due to:\n{import_response.text}")
                 return None
             elif import_response.status_code == 400:
                 self.log.error(
-                    f"Project {name} failed to import to {dest_namespace}, due to:\n{import_response.text}\n\t"
+                    f"Project '{name}' failed to import to '{dest_namespace}', due to:\n{import_response.text}\n\t"
                     "Double check your path. If your path seems correct, make sure you can manually create a project in the GL instance UI under the path")
                 return None
             import_id = self.get_import_id_from_response(
                 import_response, filename, name, path, dest_namespace, override_params, members)
         else:
             self.log.info(
-                f"{dry}Outputing project {name} (file: {filename}) migration data to dry_run_project_migration.json")
+                f"{dry}Outputing project '{name}' (file: {filename}) migration data to dry_run_project_migration.json")
             migration_dry_run("project", {
                 "filename": filename,
                 "name": name,
@@ -330,7 +332,7 @@ class ImportExportClient(BaseGitLabClient):
             download_dir = f"{self.config.filesystem_path}/downloads"
             if not check_download_directory(download_dir):
                 self.log.error(f"Error: The download directory '{download_dir}' does not exist. "
-                    "Please create the directory and try again.")
+                               "Please create the directory and try again.")
                 os.killpg(os.getpgid(os.getpid()), signal.SIGKILL)
             resp = None
             self.log.info(
@@ -448,7 +450,7 @@ class ImportExportClient(BaseGitLabClient):
             download_dir = f"{self.config.filesystem_path}/downloads"
             if not check_download_directory(download_dir):
                 self.log.error(f"Error: The download directory '{download_dir}' does not exist. "
-                    "Please create the directory and try again.")
+                               "Please create the directory and try again.")
                 os.killpg(os.getpgid(os.getpid()), signal.SIGKILL)
             token = self.config.destination_token
             with open("%s/downloads/%s" % (self.config.filesystem_path, filename), "rb") as f:
@@ -499,30 +501,31 @@ class ImportExportClient(BaseGitLabClient):
                 text = import_response.text
                 if import_response.status_code == 429:
                     self.log.info(
-                        f"Re-importing project {name} to {dst_namespace}, waiting {self.COOL_OFF_MINUTES} minutes due to:\n{text}")
+                        f"Re-importing project '{name}' to '{dst_namespace}', waiting {self.COOL_OFF_MINUTES} minutes due to:\n{text}")
                     sleep(self.COOL_OFF_MINUTES * 60)
                 # Assuming Default deletion adjourned period (Admin -> Settings
                 # -> General -> Visibility and access controls) is 0
                 elif import_response.status_code in [409, 400]:
                     if total_time > timeout:
                         self.log.error(
-                            f"Time limit exceeded waiting for project {name} to delete from {dst_namespace}, with response:\n{text}")
+                            f"Time limit exceeded waiting for project '{name}' to delete from '{dst_namespace}', with response:\n{text}")
                         return None
                     self.log.info(
-                        f"Waited {total_time}/{timeout} seconds for project {name} to delete from {dst_namespace} before re-importing:\n{text}")
+                        f"Waited {total_time}/{timeout} seconds for project '{name}' to delete from '{dst_namespace}' before re-importing:\n{text}")
                     total_time += wait_time
                     sleep(wait_time)
                 elif import_response.status_code == 500:
                     if retry:
                         self.log.info(
-                            f"Attempting to delete project {name} from {dst_namespace}, before re-importing, due to:\n{text}")
+                            f"Attempting to delete project '{name}' from '{dst_namespace}', before re-importing, due to:\n{text}")
+                        # Using project path instead of ID
                         self.projects_api.delete_project(
                             host, token, quote_plus(dst_namespace + "/" + path))
                         sleep(wait_time)
                         retry = False
                     else:
                         self.log.error(
-                            f"Skipping project {name} due to multiple 500 errors")
+                            f"Skipping project '{name}' due to multiple 500 errors")
                         break
                 import_response = self.attempt_import(
                     filename, name, path, dst_namespace, override_params, members)
@@ -537,7 +540,7 @@ class ImportExportClient(BaseGitLabClient):
                         "import_status") if status_json else None
                     if state == "finished":
                         self.log.info(
-                            f"Project {name} successfully imported to {dst_namespace}, with import status:\n{json_pretty(status_json)}")
+                            f"Project '{name}' successfully imported to '{dst_namespace}', with import status:\n{json_pretty(status_json)}")
                         with open(f"{self.app_path}/data/logs/import_failed_relations.json", "a") as f:
                             json.dump({status_json.get("path_with_namespace"): status_json.get(
                                 "failed_relations")}, f, indent=4)

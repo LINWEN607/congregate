@@ -4,6 +4,11 @@ from gitlab_ps_utils.dict_utils import strip_none
                     
 @dataclass
 class ProjectMembers:
+    '''
+        Dataclass for any members of a project
+
+        This is a required dataclass for a project export
+    '''
     
     access_level: Optional[int] = None
     created_at: Optional[str] = None

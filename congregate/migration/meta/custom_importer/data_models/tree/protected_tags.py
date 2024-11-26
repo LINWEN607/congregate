@@ -4,6 +4,9 @@ from gitlab_ps_utils.dict_utils import strip_none
                     
 @dataclass
 class ProtectedTags:
+    '''
+        Dataclass for any protected tags of a project
+    '''
     create_access_levels: Optional[List] = field(default_factory=list)
     created_at: Optional[str] = None
     name: Optional[str] = None

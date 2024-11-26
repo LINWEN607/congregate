@@ -7,6 +7,10 @@ from congregate.migration.meta.custom_importer.data_models.tree.merge_request_di
                     
 @dataclass
 class MergeRequests:
+    '''
+        Dataclass for importing any merge/pull requests from another source instance
+    '''
+
     # Required
     author: Author
     author_id: int

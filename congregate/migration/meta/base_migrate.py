@@ -50,7 +50,8 @@ class MigrateClient(BaseClass):
         subgroups_only=False,
         scm_source=None,
         group_structure=False,
-        retain_contributors=False
+        retain_contributors=False,
+        permanent=False,
     ):
         self.users = UsersClient()
         self.users_api = UsersApi()
@@ -80,8 +81,9 @@ class MigrateClient(BaseClass):
         self.scm_source = scm_source
         self.group_structure = group_structure
         self.retain_contributors = retain_contributors
+        self.permanent = permanent
 
-    # keep for overriden function but reuse functionality from the various migrate_from_* functions
+    # keep for overridden function but reuse functionality from the various migrate_from_* functions
     def migrate(self):
         raise NotImplementedError
 
@@ -294,13 +296,14 @@ class MigrateClient(BaseClass):
             self.log.info(
                 f"{dry_log}Removing staged groups{'' if self.skip_projects else ' and projects'} on destination")
             self.groups.delete_groups(
-                dry_run=self.dry_run, skip_projects=self.skip_projects)
+                dry_run=self.dry_run, skip_projects=self.skip_projects, permanent=self.permanent)
 
         # Remove only projects
         if not self.skip_projects:
             self.log.info(
                 f"{dry_log}Removing staged projects on destination")
-            self.projects.delete_projects(dry_run=self.dry_run)
+            self.projects.delete_projects(
+                dry_run=self.dry_run, permanent=self.permanent)
 
         if not self.skip_users:
             self.log.info(
@@ -425,6 +428,36 @@ class MigrateClient(BaseClass):
                 host, token, dst_gid, members)
             self.log.info(
                 f"Members added to destination group '{full_path}' ({dst_gid}):\n{result}")
+        return result
+    
+    def share_groups_with_groups(self, src_gid, dst_gid):
+        source_group_response = self.groups_api.get_group(
+                src_gid, self.config.source_host, self.config.source_token)
+        source_group = misc_utils.safe_json_response(source_group_response)
+        shared_with_groups = source_group.get('shared_with_groups', [])
+        result = {}
+
+        # Migrate shared group memberships
+        for shared_group in shared_with_groups:
+            shared_group_full_path = shared_group['group_full_path']
+            shared_group_full_path_with_parent_namespace = mig_utils.get_full_path_with_parent_namespace(shared_group_full_path)
+            shared_group_id = self.groups.find_group_id_by_path(
+                        self.config.destination_host, self.config.destination_token, shared_group_full_path_with_parent_namespace)
+            data={
+                'group_id': shared_group_id,
+                'group_access': shared_group.get('group_access_level'),
+                'expires_at': shared_group.get('expires_at')
+            }
+
+            # Share the destination group with the shared group in the destination
+            share_response = self.groups_api.share_group(self.config.destination_host, self.config.destination_token, dst_gid, data=data)
+
+            if share_response.status_code == 201:
+                self.log.info(f"Successfully shared group '{shared_group_id}' with group ID '{dst_gid}' ")
+                result[shared_group_id] = True
+            else:
+                self.log.error(f"Failed to share group '{shared_group_id}' with group ID '{dst_gid}' : {share_response.content}")
+                result[shared_group_id] = False
         return result
 
     def migrate_external_group(self, group):

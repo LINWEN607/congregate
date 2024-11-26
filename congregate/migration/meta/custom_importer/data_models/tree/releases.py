@@ -4,6 +4,10 @@ from gitlab_ps_utils.dict_utils import strip_none
                     
 @dataclass
 class Releases:
+    '''
+        Dataclass for any releases of a project
+    '''
+    
     author_id: Optional[int] = None
     created_at: Optional[str] = None
     description: Optional[str] = None

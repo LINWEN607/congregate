@@ -5,6 +5,11 @@ from gitlab_ps_utils.dict_utils import strip_none
 
 @dataclass
 class CiPipelines:
+    '''
+        Dataclass for importing any CI/CD pipelines from another source instance
+
+        This dataclass is completely optional
+    '''
     
     before_sha: Optional[str] = None
     committed_at: Optional[str] = None

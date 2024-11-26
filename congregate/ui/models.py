@@ -1,5 +1,5 @@
 import json
-from math import floor
+from math import ceil
 from flask import jsonify, Blueprint, request
 from gitlab_ps_utils.misc_utils import strip_netloc
 from congregate.helpers.utils import get_congregate_path
@@ -27,13 +27,13 @@ def get_mongo_data(asset_type, per_page=50, page=1, sort_by=None, projection=Non
     """
         Retrieves data from mongo based on parameters supplied by the UI
     """
-    skip = per_page*page if page > 1 else 0
+    skip = per_page*(page-1) if page > 1 else 0
     data = None
     query = None
     collection = f"{asset_type}-{strip_netloc(config.source_host)}"
     total_count = mongo.db[collection].count_documents({})
     if per_page:
-        last_page = floor(total_count / per_page)
+        last_page = ceil(total_count / per_page)
     else:
         last_page = 0
     if not projection:
@@ -41,7 +41,7 @@ def get_mongo_data(asset_type, per_page=50, page=1, sort_by=None, projection=Non
         projection = {'_id': False}
     if filter:
         if matching_ids := filter_results(asset_type, collection, filter):
-            last_page = floor(len(matching_ids) / per_page)
+            last_page = ceil(len(matching_ids) / per_page)
             query = {"_id": {"$in": matching_ids}}
     data = list(mongo.safe_find(collection, limit=per_page, skip=skip, projection=projection, query=query))
     return {

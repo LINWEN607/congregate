@@ -4,7 +4,9 @@ from gitlab_ps_utils.dict_utils import strip_none
                     
 @dataclass
 class Labels:
-    
+    '''
+        Dataclass for importing any labels from another source instance
+    '''
     color: Optional[str] = None
     created_at: Optional[str] = None
     description: Optional[str] = None
