@@ -124,7 +124,7 @@ class ReposTests(unittest.TestCase):
 
         mongo = CongregateMongoConnector(client=mongomock.MongoClient)
         for project in listed_project:
-            self.repos.handle_retrieving_repos(project, mongo=mongo)
+            self.repos.handle_retrieving_repos(False, project, mongo=mongo)
 
         actual_repos = [d for d, _ in mongo.stream_collection(
             "projects-bitbucket.company.com")]
@@ -276,7 +276,7 @@ class ReposTests(unittest.TestCase):
 
         mongo = CongregateMongoConnector(client=mongomock.MongoClient)
         for project in listed_project:
-            self.repos.handle_retrieving_repos(project, mongo=mongo)
+            self.repos.handle_retrieving_repos(False, project, mongo=mongo)
 
         actual_repos = [d for d, _ in mongo.stream_collection(
             "projects-bitbucket.company.com")]
