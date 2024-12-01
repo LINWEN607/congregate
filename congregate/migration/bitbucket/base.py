@@ -64,7 +64,7 @@ class BitBucketServer(BaseClass):
     def is_user_needed(self, user):
         return user.get("slug", "").lower() not in self.config.users_to_ignore
 
-    def format_project(self, project, mongo, skip_archived_projects):
+    def format_project(self, project, mongo, skip_archived_projects=False):
         self.project_groups = {}
         return {
             "name": project["name"],
@@ -108,7 +108,7 @@ class BitBucketServer(BaseClass):
                     f"Unable to find project {project_key} user group {group_name} or the group is empty")
         return users
 
-    def add_project_repos(self, repos, project_key, mongo, skip_archived_projects):
+    def add_project_repos(self, repos, project_key, mongo, skip_archived_projects=False):
         try:
             for repo in self.projects_api.get_all_project_repos(project_key):
                 # Save all project repos ID references as part of group metadata

@@ -28,7 +28,7 @@ class ProjectsClient(BitBucketServer):
             self.multi.start_multi_process_stream_with_args(
                 self.handle_retrieving_projects, self.projects_api.get_all_projects(), skip_archived_projects, processes=processes, nestable=True)
 
-    def handle_projects_subset(self, project, skip_archived_projects, project_key=None):
+    def handle_projects_subset(self, project, skip_archived_projects=False, project_key=None):
         # e.g. https://www.bitbucketserverexample.com/projects/TEST"
         project_key = project_key or project.split("/")[4]
         try:
@@ -38,7 +38,7 @@ class ProjectsClient(BitBucketServer):
             self.log.error(
                 f"Failed to GET project '{project_key}', with error:\n{re}")
 
-    def handle_retrieving_projects(self, skip_archived_projects, project, mongo=None):
+    def handle_retrieving_projects(self, skip_archived_projects=False, project=None, mongo=None):
         error, resp = is_error_message_present(project)
         if resp and not error:
             # mongo should be set to None unless this function is being used in a
