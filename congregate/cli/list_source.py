@@ -44,6 +44,7 @@ class ListClient(BaseClass):
         skip_ci=False,
         src_instances=False,
         subset=False,
+        skip_archived_projects=False,
     ):
         super().__init__()
         self.processes = processes
@@ -56,6 +57,7 @@ class ListClient(BaseClass):
         self.skip_ci = skip_ci
         self.src_instances = src_instances
         self.subset = subset
+        self.skip_archived_projects = skip_archived_projects
 
     def list_gitlab_data(self):
         """
@@ -110,7 +112,7 @@ class ListClient(BaseClass):
             projects = BitBucketProjects(subset=self.subset)
             if not self.skip_group_members:
                 projects.set_user_groups(user_groups)
-            projects.retrieve_project_info(processes=self.processes)
+            projects.retrieve_project_info(processes=self.processes, skip_archived_projects=self.skip_archived_projects)
             mongo.dump_collection_to_file(
                 g, f"{self.app_path}/data/groups.json")
             # Save listed BB Server parent projects
@@ -121,7 +123,7 @@ class ListClient(BaseClass):
             repos = BitBucketRepos(subset=self.subset)
             if not self.skip_project_members:
                 repos.set_user_groups(user_groups)
-            repos.retrieve_repo_info(processes=self.processes)
+            repos.retrieve_repo_info(processes=self.processes, skip_archived_projects=self.skip_archived_projects)
             mongo.dump_collection_to_file(
                 p, f"{self.app_path}/data/projects.json")
             # Save listed BB Server parent projects

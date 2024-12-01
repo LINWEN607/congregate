@@ -64,7 +64,7 @@ class BitBucketServer(BaseClass):
     def is_user_needed(self, user):
         return user.get("slug", "").lower() not in self.config.users_to_ignore
 
-    def format_project(self, project, mongo):
+    def format_project(self, project, mongo, skip_archived_projects):
         self.project_groups = {}
         return {
             "name": project["name"],
@@ -75,7 +75,7 @@ class BitBucketServer(BaseClass):
             "description": project.get("description", ""),
             "members": self.add_project_users([], project["key"]),
             "groups": self.project_groups,
-            "projects": [] if self.subset else self.add_project_repos([], project["key"], mongo)
+            "projects": [] if self.subset else self.add_project_repos([], project["key"], mongo, skip_archived_projects)
         }
 
     def determine_visibility(self, is_public):
@@ -108,14 +108,14 @@ class BitBucketServer(BaseClass):
                     f"Unable to find project {project_key} user group {group_name} or the group is empty")
         return users
 
-    def add_project_repos(self, repos, project_key, mongo):
+    def add_project_repos(self, repos, project_key, mongo, skip_archived_projects):
         try:
             for repo in self.projects_api.get_all_project_repos(project_key):
                 # Save all project repos ID references as part of group metadata
                 repos.append(repo.get("id"))
                 mongo.insert_data(
                     f"projects-{strip_netloc(self.config.source_host)}",
-                    self.format_repo(repo))
+                    self.format_repo(repo, skip_archived_projects))
             # Remove duplicate entries
             return list(set(repos))
         except RequestException as re:
@@ -123,33 +123,38 @@ class BitBucketServer(BaseClass):
                 f"Failed to GET repos from project '{project_key}', with error:\n{re}")
             return None
 
-    def format_repo(self, repo, project=False):
+    def format_repo(self, repo, skip_archived_projects=False, project=False):
         """
         Format public and project repos.
         Leave project repo members empty ([]) as they are retrieved during staging.
         """
         repo_path = dig(repo, 'project', 'key')
         self.repo_groups = {}
-        return {
-            "id": repo["id"],
-            "path": repo["slug"],
-            "name": repo["name"],
-            "archived": repo.get("archived", False),
-            "namespace": {
-                "id": dig(repo, 'project', 'id'),
-                "path": repo_path,
-                "name": dig(repo, 'project', 'name'),
-                "kind": "group",
-                "full_path": dig(repo, 'project', 'key')
-            },
-            "path_with_namespace": f"{repo_path}/{repo.get('slug')}",
-            "visibility": "public" if repo.get("public") else "private",
-            "description": repo.get("description", ""),
-            "members": [] if project else self.add_repo_users([], repo_path, repo.get("slug")),
-            "groups": self.repo_groups,
-            "default_branch": self.get_default_branch(repo_path, repo["slug"]),
-            "http_url_to_repo": self.get_http_url_to_repo(repo)
-        }
+        # skip archived projects if the flag is present
+        if skip_archived_projects and repo.get("archived", False):
+            self.log.info(f"Repo {repo['name']} skipped because it is archived")
+            return {}
+        else:
+            return {
+                "id": repo["id"],
+                "path": repo["slug"],
+                "name": repo["name"],
+                "archived": repo.get("archived", False),
+                "namespace": {
+                    "id": dig(repo, 'project', 'id'),
+                    "path": repo_path,
+                    "name": dig(repo, 'project', 'name'),
+                    "kind": "group",
+                    "full_path": dig(repo, 'project', 'key')
+                },
+                "path_with_namespace": f"{repo_path}/{repo.get('slug')}",
+                "visibility": "public" if repo.get("public") else "private",
+                "description": repo.get("description", ""),
+                "members": [] if project else self.add_repo_users([], repo_path, repo.get("slug")),
+                "groups": self.repo_groups,
+                "default_branch": self.get_default_branch(repo_path, repo["slug"]),
+                "http_url_to_repo": self.get_http_url_to_repo(repo)
+            }
 
     def add_repo_users(self, users, project_key, repo_slug):
         for user in self.repos_api.get_all_repo_users(

@@ -17,28 +17,28 @@ class ProjectsClient(BitBucketServer):
     def set_user_groups(self, groups):
         self.user_groups = groups
 
-    def retrieve_project_info(self, processes=None):
+    def retrieve_project_info(self, processes=None, skip_archived_projects=False):
         if self.subset:
             subset_path = check_list_subset_input_file_path()
             self.log.info(
                 f"Listing subset of {self.config.source_host} projects from '{subset_path}'")
             self.multi.start_multi_process_stream_with_args(
-                self.handle_projects_subset, get_subset_list(), processes=processes, nestable=True)
+                self.handle_projects_subset, get_subset_list(), skip_archived_projects, processes=processes, nestable=True)
         else:
             self.multi.start_multi_process_stream_with_args(
-                self.handle_retrieving_projects, self.projects_api.get_all_projects(), processes=processes, nestable=True)
+                self.handle_retrieving_projects, self.projects_api.get_all_projects(), skip_archived_projects, processes=processes, nestable=True)
 
-    def handle_projects_subset(self, project, project_key=None):
+    def handle_projects_subset(self, project, skip_archived_projects, project_key=None):
         # e.g. https://www.bitbucketserverexample.com/projects/TEST"
         project_key = project_key or project.split("/")[4]
         try:
             project_json = self.projects_api.get_project(project_key)
-            self.handle_retrieving_projects(project_json)
+            self.handle_retrieving_projects(project_json, skip_archived_projects)
         except RequestException as re:
             self.log.error(
                 f"Failed to GET project '{project_key}', with error:\n{re}")
 
-    def handle_retrieving_projects(self, project, mongo=None):
+    def handle_retrieving_projects(self, skip_archived_projects, project, mongo=None):
         error, resp = is_error_message_present(project)
         if resp and not error:
             # mongo should be set to None unless this function is being used in a
@@ -47,7 +47,7 @@ class ProjectsClient(BitBucketServer):
                 mongo = CongregateMongoConnector()
             mongo.insert_data(
                 f"groups-{strip_netloc(self.config.source_host)}",
-                self.format_project(resp, mongo))
+                self.format_project(resp, mongo, skip_archived_projects))
             mongo.close_connection()
         else:
             self.log.error(resp)

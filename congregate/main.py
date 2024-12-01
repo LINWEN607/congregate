@@ -4,7 +4,7 @@ Copyright (c) 2022 - GitLab
 
 Usage:
     congregate init
-    congregate list [--processes=<n>] [--partial] [--skip-users] [--skip-groups] [--skip-group-members] [--skip-projects] [--skip-project-members] [--skip-ci] [--src-instances] [--subset]
+    congregate list [--processes=<n>] [--partial] [--skip-users] [--skip-groups] [--skip-group-members] [--skip-projects] [--skip-project-members] [--skip-ci] [--src-instances] [--subset] [--skip-archived-projects]
     congregate configure # Deprecated. Manually create config file and validate it by running 'congregate validate-config'
     congregate validate-config
     congregate generate-reporting
@@ -95,6 +95,7 @@ Arguments:
     skip-group-export                       Skip exporting groups from source instance
     skip-group-import                       Skip importing groups to destination instance
     skip-projects                           Rollback: Remove only users and empty groups
+    skip-archived-projects                  Skip archived projects (Bitbucket only right now)
     skip-project-members                    Add empty list instead of listing GitLab project members. Skip saving BBS repo user groups as GL project members.
     skip-project-export                     Skips the project export and assumes that the project file is already ready
                                                 for rewrite. Currently does NOT work for exports through filesystem-aws
@@ -379,6 +380,7 @@ def main():
                     skip_ci=arguments["--skip-ci"],
                     src_instances=SRC_INSTANCES,
                     subset=arguments["--subset"],
+                    skip_archived_projects=arguments["--skip-archived-projects"],
                 )
                 list_client.list_data()
                 add_post_migration_stats(start, log=log)
