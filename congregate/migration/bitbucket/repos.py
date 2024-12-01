@@ -59,7 +59,7 @@ class ReposClient(BitBucketServer):
         if resp and not error:
             if project_key and project_key not in self.unique_projects:
                 self.handle_retrieving_repo_parent_project(
-                    resp.get("slug"), project_key)
+                    resp.get("slug"), project_key, skip_archived_projects)
 
             # mongo should be set to None unless this function is being used in a unit test
             if not mongo:
@@ -71,14 +71,14 @@ class ReposClient(BitBucketServer):
         else:
             self.log.error(resp)
 
-    def handle_retrieving_repo_parent_project(self, repo_slug, project_key, mongo=None):
+    def handle_retrieving_repo_parent_project(self, repo_slug, project_key, skip_archived_projects, mongo=None):
         if project := self.list_repo_parent_project(repo_slug, project_key):
             # mongo should be set to None unless this function is being used in a unit test
             if not mongo:
                 mongo = CongregateMongoConnector()
             mongo.insert_data(
                 f"groups-{strip_netloc(self.config.source_host)}",
-                self.format_project(project, mongo))
+                self.format_project(project, mongo, skip_archived_projects))
             mongo.close_connection()
 
     def list_repo_parent_project(self, repo_slug, project_key):
