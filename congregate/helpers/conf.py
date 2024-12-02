@@ -196,6 +196,35 @@ class Config(BaseConfig):
     def source_registry(self):
         return self.prop("SOURCE", "src_registry_url")
 
+# AWS CodeCommit
+    @property
+    def src_aws_access_key_id(self):
+        return self.prop("SOURCE", "src_aws_access_key_id")
+
+    @property
+    def src_aws_secret_access_key(self):
+        return self.prop("SOURCE", "src_aws_secret_access_key")
+    
+    @property
+    def src_aws_codecommit_username(self):
+        return self.prop("SOURCE", "src_aws_codecommit_username")
+    
+    @property
+    def src_aws_codecommit_password(self):
+        return self.prop("SOURCE", "src_aws_codecommit_password")
+
+    @property
+    def src_aws_region(self):
+        return self.prop("SOURCE", "src_aws_region")
+    
+    @property
+    def src_aws_session_token(self):
+        return self.prop("SOURCE", "src_aws_session_token")
+    
+    @property
+    def src_aws_region(self):
+        return self.prop("SOURCE", "src_aws_region")    
+
 # CI_SOURCE
     def list_ci_source_config(self, ci_source_options):
         """

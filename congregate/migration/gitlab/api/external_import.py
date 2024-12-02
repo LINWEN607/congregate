@@ -68,3 +68,30 @@ class ImportApi(GitLabApiWrapper):
             dumps(data),
             description=message
         ).json()
+        
+        
+    def import_from_codecommit(self, host, token, data, message=None):
+        """
+        Import your projects from AWS CodeCommit to GitLab via the API
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/projects.html#create-project
+
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :param: data: (str) Relevant data for the export (see docs above)
+            :return: Response object containing the response to POST /import/bitbucket_server
+
+        """
+        if not message:
+            audit_data = data.copy()
+            audit_data.pop("personal_access_token", None)
+            audit_data.pop("import_url", None)
+            message = f"Triggering import from CodeCommit with payload {audit_data}"
+        result_from_post_request = self.api.generate_post_request(
+            host,
+            token,
+            "projects",
+            dumps(data),
+            description=message
+        ).json()
+        return result_from_post_request

@@ -30,6 +30,9 @@ from congregate.migration.teamcity.base import TeamcityClient as TeamcityData
 
 from congregate.helpers.congregate_mdbc import CongregateMongoConnector
 
+from congregate.migration.codecommit.api.base import CodeCommitApiWrapper
+from congregate.migration.codecommit.projects import ProjectsClient as CodeCommitProjects
+from congregate.migration.codecommit.groups import GroupsClient as CodeCommitGroups
 
 class ListClient(BaseClass):
     def __init__(
@@ -217,6 +220,38 @@ class ListClient(BaseClass):
             data.retrieve_jobs_with_scm_info(i)
             mongo.dump_collection_to_file(
                 collection_name, f"{self.app_path}/data/teamcity-{i}.json")
+            
+    
+
+    def list_codecommit_data(self):
+        """
+        List data from AWS CodeCommit using the provided API wrapper.
+        Fetch repository metadata and save it in the same structure as other sources.
+        """
+        self.log.info("Starting to list repositories from AWS CodeCommit...")
+        try:
+            # Initialize CodeCommit API wrapper
+            mongo, p, g, u = self.mongo_init()
+            projects = CodeCommitProjects()
+            projects.retrieve_project_info()
+            mongo.dump_collection_to_file(
+                p, f"{self.app_path}/data/projects.json")
+            
+            if not self.skip_groups:
+                groups = CodeCommitGroups()
+                groups.retrieve_group_info(processes=self.processes)
+                mongo.dump_collection_to_file(
+                    g, f"{self.app_path}/data/groups.json")
+
+
+            mongo.close_connection()
+            
+            
+            self.log.info(f"CodeCommit repositories listed successfully in")
+        except Exception as e:
+            self.log.error(f"Error listing CodeCommit repositories: {e}")
+            raise
+
 
     def write_empty_file(self, filename):
         """
@@ -254,6 +289,8 @@ class ListClient(BaseClass):
             self.list_github_data()
         elif src_type == "azure devops":
             self.list_azure_devops_data()
+        elif src_type == "codecommit":
+            self.list_codecommit_data()
         else:
             self.log.warning(
                 f"Cannot list from {src_type} source type - {self.config.source_host}")

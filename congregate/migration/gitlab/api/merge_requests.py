@@ -1,3 +1,4 @@
+import json
 from congregate.migration.gitlab.api.base_api import GitLabApiWrapper
 
 
@@ -213,3 +214,18 @@ class MergeRequestsApi(GitLabApiWrapper):
             :yield: Generator returning JSON of each result from GET /projects/:id/merge_requests/:merge_request_iid/approval_rules
         """
         return self.api.list_all(host, token, "projects/%d/merge_requests/%d/approval_rules" % (project_id, mr_iid))
+
+    def create_merge_request(self, host, token, project_id, data):
+            """
+            Create merge request using data payload.
+
+            GitLab API Doc: https://docs.gitlab.com/ee/api/merge_requests.html#create-mr
+
+            :parma: host: (str) GitLab host URL
+            :parma: token: (str) Access token to GitLab instance
+            :parma: project_id: (int) GitLab Project ID
+            :parma: data: (dict) Data to be posted
+            :yield: Response object containing the response to POST /projects/:id/merge_requests
+
+            """
+            return self.api.generate_post_request(host, token, f"projects/{project_id}/merge_requests", data=json.dumps(data))
