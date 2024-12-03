@@ -35,15 +35,20 @@ class AdoExportBuilder(ExportBuilder):
         self.source_project = source_project
         self.members_map = {}
         self.project_metadata = Project(description=source_project['description'])
-        # project_name = source_project['name']
         super().__init__(source_project, clone_url=None)
-        # self.clone_url = self.source_project['http_url_to_repo']
         self.clone_url = self.build_clone_url(self.source_project)
         self.repo = self.clone_repo(self.project_path, self.clone_url)
         self.git_env = {
             'GIT_SSL_NO_VERIFY': '1',
             'GIT_ASKPASS': 'echo'
         }
+    
+    def create(self):
+        tree = self.build_ado_data()
+        self.build_export(tree, self.project_metadata)
+        filename = self.create_export_tar_gz()
+        self.delete_cloned_repo()
+        return filename
     
     def build_ado_data(self):
         merge_requests = self.build_merge_requests()

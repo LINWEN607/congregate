@@ -473,9 +473,9 @@ class ImportExportClient(BaseGitLabClient):
 
     def get_override_params(self, project):
         return {
-            "description": project["description"],
+            "description": project.get("description", ''),
             "shared_runners_enabled": self.config.shared_runners_enabled,
-            "archived": project["archived"]
+            "archived": project.get("archived", False)
         }
 
     def get_full_path(self, url):
