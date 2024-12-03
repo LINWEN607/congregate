@@ -35,7 +35,8 @@ class AdoExportBuilder(ExportBuilder):
         self.source_project = source_project
         self.members_map = {}
         self.project_metadata = Project(description=source_project['description'])
-        super().__init__(project_name=source_project['name'], clone_url=None)
+        # project_name = source_project['name']
+        super().__init__(source_project, clone_url=None)
         # self.clone_url = self.source_project['http_url_to_repo']
         self.clone_url = self.build_clone_url(self.source_project)
         self.repo = self.clone_repo(self.project_path, self.clone_url)
@@ -207,7 +208,7 @@ class AdoExportBuilder(ExportBuilder):
     def build_mr_diff_files(self, source_sha, target_sha):
         diff_files = []
         count = 0
-        req = self.pull_requests_api.get_pull_request_diffs(self.project_name, self.repository_id, source_sha, target_sha)
+        req = self.pull_requests_api.get_pull_request_diffs(self.project, self.repository_id, source_sha, target_sha)
         if diffs := safe_json_response(req):
             for change in diffs.get('changes', []):
                 filename = dig(change, 'item', 'path', default='').lstrip('/')
