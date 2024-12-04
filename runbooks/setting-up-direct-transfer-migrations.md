@@ -113,7 +113,7 @@ After ensuring the permissions are set, follow the initialization steps to:
     supervisorctl status
     ```
 
-#### Example configuration for direct transfer migrations (when using the supplied docker-compose.yml file)
+#### Example (minimal) configuration for direct transfer migrations (when using the supplied docker-compose.yml file)
 
 ```bash
 [SOURCE]
@@ -121,10 +121,18 @@ src_hostname = https://<gitlab-source>
 src_access_token = <base64-encoded-token>
 src_type = GitLab
 
+# Optional
+src_parent_group_id = <group-id>
+src_parent_group_path = <full-group-path>
+
 [DESTINATION]
 dstn_hostname = https://<gitlab-destination>
 dstn_access_token = <base64-encoded-token>
 import_user_id = <id-corresponding-to-the-owner-of-the-token>
+
+# Optional
+dstn_parent_group_id = <group-id>
+dstn_parent_group_path = <full-group-path>
 
 [APP]
 mongo_host = congregate_mongo
@@ -132,7 +140,7 @@ redis_host = redis
 direct_transfer = true
 ```
 
-**NOTE:** If you are familiar with using file-based export/import for migrating data from one GitLab instance to another, you will notice the `[EXPORT]` section is completely omitted from this configuration.
+**NOTE:** If you are familiar with using file-based export/import for migrating data from one GitLab instance to another, you will notice the `[EXPORT]` section is completely omitted from this configuration. For more (Optional) configuration items, e.g. source and destination parent group 👆, see [`congregate.conf` template](/congregate.conf.template).
 
 ### Troubleshooting Supervisorctl
 
