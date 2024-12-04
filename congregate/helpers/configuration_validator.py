@@ -80,7 +80,7 @@ class ConfigurationValidator(Config):
         if self.source_type == 'azure devops':
             obfuscated = False
         src_token = self.prop("SOURCE", "src_access_token",
-                            default=None, obfuscated=obfuscated)
+                              default=None, obfuscated=obfuscated)
         if self.src_token_validated_in_session:
             return src_token
         self.src_token_validated_in_session = self.validate_src_token(
@@ -169,7 +169,7 @@ class ConfigurationValidator(Config):
                 "is_admin") if self.source_type == "gitlab" else True
             if not is_admin:
                 print(
-                    "Destination token is currently assigned to a standard user. Some API endpoints may not behave correctly")
+                    "Destination token is currently assigned to a non-admin user. Some API endpoints (e.g. users) may be forbidden")
             return True
         return True
 
@@ -192,11 +192,11 @@ class ConfigurationValidator(Config):
         user = safe_json_response(
             self.users.get_current_user(self.source_host, token))
         is_error, user = is_error_message_present(user)
-        if not user.get("is_admin"):
-            print("Source token is currently assigned to a standard user. Some API endpoints may not behave correctly")
         if not user or is_error:
             raise ConfigurationException(
                 "source_token", msg=f"{msg}{json_pretty(user)}")
+        if not user.get("is_admin"):
+            print("Source token is currently assigned to a non-admin user. Some API endpoints (e.g. users) may be forbidden")
 
     def validate_src_token_github(self, user, msg, token):
         gh_dot_com = is_github_dot_com(self.source_host)
