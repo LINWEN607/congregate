@@ -105,7 +105,7 @@ Arguments:
     only-post-migration-info                Skips migrating all content except for post-migration information. Use when import is handled outside of congregate
     subgroups-only                          Expects that only sub-groups are staged and that their parent groups already exist on destination
     reg-dry-run                             If registry migration is configured, instead of doing the actual migration, write the tags to the logs for use in the brute force migration. Can also be useful when renaming targets
-    retain-contributors                     Searches a project for all contributors to a project and adds them as members before exporting the project. Only works in GitLab file-based migrations
+    retain-contributors                     Searches a project for all contributors to a project and adds them as members before exporting the project. Only required for GitLab file-based migrations.
     group-structure                         Let the GitHub and BitBucket Server importers create the missing sub-group layers.
     access-level                            Update parent group level user permissions (None/Minimal/Guest/Reporter/Developer/Maintainer/Owner).
     current-level                           Current destination group/project members access level.

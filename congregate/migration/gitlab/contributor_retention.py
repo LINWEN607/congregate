@@ -1,4 +1,6 @@
 import json
+from requests import Response
+
 from gitlab_ps_utils.dict_utils import dig, rewrite_list_into_dict
 from gitlab_ps_utils.api import GitLabApi
 from gitlab_ps_utils.misc_utils import safe_json_response, get_dry_log
@@ -72,6 +74,7 @@ class ContributorRetentionClient(BaseClass):
                 # Required for list-staged-projects-contributors
                 author['public_email'] = author.pop('publicEmail', "")
                 author['email'] = author_email
+                author['public_email'] = author.pop('publicEmail', "")
                 author['state'] = 'blocked'
                 self.contributor_map[author_email] = author
         except KeyError as ke:
@@ -82,13 +85,29 @@ class ContributorRetentionClient(BaseClass):
         '''
             Add contributors from contributor map to source project
         '''
+        dry_log = get_dry_log(self.dry_run)
         for contributor, data in self.contributor_map.items():
             new_member_payload = NewMember(user_id=data['id'], access_level=10)
             self.log.info(
-                f"{get_dry_log(self.dry_run)}Adding contributor '{contributor}' to project '{self.full_path}'")
+                f"{dry_log}Adding contributor '{contributor}' to project '{self.full_path}'")
+            self.log.info(
+                f"{dry_log}Set source user '{contributor}' public email'")
             if not self.dry_run:
                 self.projects.add_member(
                     self.src_id, self.config.source_host, self.config.source_token, new_member_payload.to_dict())
+                # Set public_email field
+                self.update_contributor_public_email(
+                    contributor, data, hide=False)
+
+    def update_contributor_public_email(self, contributor, data, hide=True):
+        new_value = "" if hide else data.get("email")
+        self.log.info(
+            f"Updating source user '{contributor}' public email to '{new_value}'")
+        resp = self.users.modify_user(
+            data.get("id"), self.config.source_host, self.config.source_token, {"public_email": new_value})
+        if not isinstance(resp, Response) or resp.status_code != 200:
+            self.log.error(
+                f"Failed to update source user '{contributor}' public email to '{new_value}':\n{resp} - {resp.text}")
 
     # Currently not used
     def add_contributors_to_group(self):
@@ -105,6 +124,7 @@ class ContributorRetentionClient(BaseClass):
         '''
             Remove all contributors who were not originally members from the project
         '''
+        dry_log = get_dry_log(self.dry_run)
         if source:
             host = self.config.source_host
             token = self.config.source_token
@@ -116,6 +136,8 @@ class ContributorRetentionClient(BaseClass):
         for contributor, data in self.contributor_map.items():
             if data and source:
                 user = data
+                self.log.info(
+                    f"{dry_log}Hide source user '{contributor}' public email")
             elif data:
                 user = find_user_by_email_comparison_without_id(
                     data.get('email'))
@@ -124,9 +146,12 @@ class ContributorRetentionClient(BaseClass):
                     f"Missing contributor '{contributor}' mapping data '{data}'")
                 continue
             self.log.info(
-                f"{get_dry_log(self.dry_run)}Removing contributor '{contributor}' from project '{self.full_path}'")
+                f"{dry_log}Removing contributor '{contributor}' from project '{self.full_path}'")
             if user and not self.dry_run:
                 self.projects.remove_member(pid, user['id'], host, token)
+                # Hide public_email field
+                if source:
+                    self.update_contributor_public_email(contributor, data)
 
     def get_members(self, asset_type):
         if is_dot_com(self.config.source_host):

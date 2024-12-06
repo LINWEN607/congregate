@@ -101,7 +101,6 @@ After ensuring the permissions are set, follow the initialization steps to:
 
     ```bash
     congregate validate-config
-    supervisorctl start all
     ```
 
     **NOTE:** All secrets (PATs) must be obfuscated in your `congregate.conf` configuration file. Use `./congregate.sh obfuscate`.
