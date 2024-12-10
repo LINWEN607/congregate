@@ -1,5 +1,6 @@
 import sys
-import os, signal
+import os
+import signal
 import errno
 import json
 
@@ -37,9 +38,11 @@ def get_staged_projects():
     return read_json_file_into_object(
         f"{b.app_path}/data/staged_projects.json")
 
+
 def get_project_id_mapping():
     return read_json_file_into_object(
         f"{b.app_path}/data/project_id_mapping.json")
+
 
 def get_staged_projects_without_failed_export(staged_projects, failed_export):
     """
@@ -288,7 +291,7 @@ def is_top_level_group(g):
 
 
 def is_loc_supported(loc):
-    if loc not in ["filesystem", "aws"]:
+    if loc.lower() not in ["filesystem", "aws"]:
         b.log.error(f"Unsupported export location: {loc}")
         sys.exit(os.EX_CONFIG)
 
@@ -496,6 +499,7 @@ def toggle_maintenance_mode(
         if not dry_run:
             instance_api.change_application_settings(
                 host, token, data)
+
 
 def check_download_directory(directory_path):
     """
