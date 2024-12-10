@@ -733,7 +733,7 @@ class ProjectsClient(BaseClass):
                     f"Start destination project '{mirror_path}' ({mirror_pid}) pull mirror")
                 resp = self.projects_api.start_pull_mirror(
                     dst_host, dst_token, mirror_pid)
-                if resp.status_code != 201:
+                if resp.status_code != 200:
                     self.log.error(
                         f"Failed to start destination project '{mirror_path}' ({mirror_pid}) pull mirror:\n{resp} - {resp.text}")
         except RequestException as re:
