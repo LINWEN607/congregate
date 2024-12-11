@@ -1,7 +1,32 @@
 
 # Troubleshooting File-Based Import Failures and Switching to Direct Transfer
 
-When dealing with GitLab file-based imports, particularly those using S3, you might encounter prolonged delays or import failures. This troubleshooting guide walks through diagnosing such issues and switching to Direct Transfer to resolve them.
+When dealing with GitLab file-based imports, particularly those using [S3](https://docs.gitlab.com/ee/api/project_import_export.html#import-a-file-from-aws-s3), you might encounter prolonged delays or import failures. This troubleshooting guide walks through diagnosing such issues and switching to Direct Transfer to resolve them.
+
+## Potential Errors
+
+- {"message":"Limit reached You cannot create projects in your personal namespace. Contact your GitLab administrator."}
+
+This usually occurs when you've entered `data` for the curl request improperly. The example can be confusing as it seems to conflict with nomenclature from other import sources. The proper form example is below:
+
+```bash
+curl --request POST \
+  --url "https://gitlab.com/api/v4/projects/remote-import-s3" \
+  --header "PRIVATE-TOKEN: admin_token" \
+  --header 'Content-Type: application/json' \
+  --data '{
+  "name": "Project Display Name",
+  "path": "parent-group-piece-of-url",
+  "region": "us-east-2",
+  "bucket_name": "source-bucket",
+  "file_key": "my-export.tar.gz",
+  "access_key_id": "secretID",
+  "secret_access_key": "Secret Password",
+  "namespace": "id-of-parent-group"
+}'
+```
+
+`path` in particular is confusing. It should just be the URL piece of the parent group. So, in `https://gitlab.com/gitlab-org/gitlab` the `gitlab-org` piece. Namespace should be the ID of that parent group.
 
 ## Step 1: Diagnosing the Import with Kibana
 

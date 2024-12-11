@@ -360,6 +360,8 @@ When it comes to how old can the GitLab source instance be we come to the follow
   * The `public_email` field is used, instead of `email`, for [group](https://docs.gitlab.com/ee/user/group/import/index.html#preparation) and [project](https://docs.gitlab.com/ee/user/project/settings/import_export.html#map-users-for-import) export/import
   * On import it is backwards compatible i.e. accepting the `email` field if exported
   * The deprecation version for import is not yet known
+* **16.11**
+  * Currently generally accepted as the "baseline" source instance version for Direct Transfer migrations. Has several performance and tuning fixes/additions that can unblock migrations on source systems with limited resources.
 
 ### Importer bugs
 
