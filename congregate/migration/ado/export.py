@@ -9,6 +9,7 @@ from gitlab_ps_utils.misc_utils import safe_json_response
 from congregate.migration.meta.custom_importer.export_builder import ExportBuilder
 from congregate.migration.meta.custom_importer.data_models.tree.merge_requests import MergeRequests
 from congregate.migration.meta.custom_importer.data_models.tree.project_members import ProjectMembers
+from congregate.migration.meta.custom_importer.data_models.tree.project_member_user import ProjectMemberUser
 from congregate.migration.meta.custom_importer.data_models.project_export import ProjectExport
 from congregate.migration.meta.custom_importer.data_models.project import Project
 from congregate.migration.meta.custom_importer.data_models.tree.note import Note
@@ -21,6 +22,7 @@ from congregate.migration.ado.api.projects import ProjectsApi
 from congregate.migration.ado.api.repositories import RepositoriesApi
 from congregate.migration.ado.api.pull_requests import PullRequestsApi
 from congregate.migration.ado.api.teams import TeamsApi
+from congregate.migration.ado.base import AzureDevOpsWrapper
 
 
 class AdoExportBuilder(ExportBuilder):
@@ -109,9 +111,15 @@ class AdoExportBuilder(ExportBuilder):
         project_members = []
         for team in self.teams_api.get_teams(self.project_id):
             for member in self.teams_api.get_team_members(self.project_id, team["id"]):
+                user_id = self.get_new_member_id(member.get('identity'))
                 project_members.append(ProjectMembers(
                     access_level=self.convert_access_level(member.get('accessLevel')),
-                    user_id=member.get('id'),
+                    user_id=user_id,
+                    user=ProjectMemberUser(
+                        id=user_id,
+                        username=AzureDevOpsWrapper().create_valid_username(dig(member, 'identity', 'displayName')),
+                        public_email=dig(member, 'identity', 'uniqueName')
+                    ),
                     # username=member.get('uniqueName'),
                     # name=member.get('displayName'),
                     expires_at=None  # ADO doesn't have an expiration concept for project members

@@ -1,7 +1,8 @@
 from typing import Optional
 from dataclasses import dataclass, asdict, field
 from gitlab_ps_utils.dict_utils import strip_none
-                    
+from congregate.migration.meta.custom_importer.data_models.tree.project_member_user import ProjectMemberUser
+
 @dataclass
 class ProjectMembers:
     '''
@@ -22,7 +23,7 @@ class ProjectMembers:
     requested_at: Optional[str] = None
     source_type: Optional[str] = None
     updated_at: Optional[str] = None
-    user: Optional[dict] = field(default_factory=dict)
+    user: Optional[ProjectMemberUser] = field(default_factory=dict)
     user_id: Optional[int] = None
 
     def to_dict(self):
