@@ -143,6 +143,8 @@ direct_transfer = true
 
 ### Troubleshooting Supervisorctl
 
+#### Reboot supervisorctl
+
 `supervisorctl` can give errors like `connection refused`.
 
 Attempt to reboot `supervisord` from the container using the default config and try again:
@@ -150,3 +152,45 @@ Attempt to reboot `supervisord` from the container using the default config and 
 ```bash
 sudo supervisord -c /etc/supervisor/conf.d/supervisord.conf
 ```
+
+#### Restart docker-compose
+
+If the UI is hanging i.e. still running expired processes best is to restart `docker-compose`.
+
+**NOTE:** This will restart your containers and drop the job history and local (Git) changes.
+
+1. In the `congregate` container run the following and exit:
+
+    ```bash
+    supervisorctl stop all
+    ```
+
+1. On the migration VM (outside of the container) run the following:
+
+    ```bash
+    export CONGREGATE_DATA=/root/congregate_work/data   # or custom path
+    docker-compose down
+    docker-compose up -d
+    ```
+
+1. Repeat [post-initialization steps](#6-post-initialization-steps).
+
+#### Adjust concurrency (processes)
+
+One may want to adjust the default (4) `celery` concurrency i.e. number of parallel processes/tasks handling the direct-transfer bulk import.
+
+1. In the `congregate` container edit the `supervisorctl` config `/etc/supervisor/conf.d/supervisord.conf`
+1. Update the `[program:congregate-celery]` section as follows:
+
+    ```ini
+    command=bash -c "cd /opt/congregate && poetry run celery -A congregate.ui.wsgi.celery_app worker --concurrency=<number-of-processes>"
+    ```
+
+1. Reload the supervisor configuration and restart all supervisor services from within the `congregate` container by restarting `supervisorctl`, as follows:
+
+    ```bash
+    supervisorctl stop all
+    supervisorctl reread
+    supervisorctl update
+    supervisorctl start all
+    ```
