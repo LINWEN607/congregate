@@ -289,6 +289,7 @@ Project exports include, among others:
         "secret_access_key": “<aws-secret-key>"
       }'
     ```
+    1. If you encounter errors, consult our PS troubleshooting guide [here](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/blob/master/docs/troubleshooting_s3_import.md)
 
 #### Workarounds
 
