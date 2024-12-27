@@ -28,18 +28,18 @@ class ReposClient(BitBucketServer):
     def set_user_groups(self, groups):
         self.user_groups = groups
 
-    def retrieve_repo_info(self, processes=None):
+    def retrieve_repo_info(self, processes=None, skip_archived_projects=False):
         if self.subset:
             subset_path = check_list_subset_input_file_path()
             self.log.info(
                 f"Listing subset of {self.config.source_host} repos from '{subset_path}'")
             self.multi.start_multi_process_stream_with_args(
-                self.handle_repos_subset, get_subset_list(), processes=processes, nestable=True)
+                self.handle_repos_subset, get_subset_list(), skip_archived_projects, processes=processes, nestable=True)
         else:
             self.multi.start_multi_process_stream_with_args(
-                self.handle_retrieving_repos, self.repos_api.get_all_repos(), processes=processes, nestable=True)
+                self.handle_retrieving_repos, self.repos_api.get_all_repos(), skip_archived_projects, processes=processes, nestable=True)
 
-    def handle_repos_subset(self, repo):
+    def handle_repos_subset(self, repo, skip_archived_projects):
         # e.g. https://www.bitbucketserverexample.com/scm/test_project/repos/test_repo.git"
         repo_split = repo.split("/")
         project_key = repo_split[4]
@@ -48,37 +48,37 @@ class ReposClient(BitBucketServer):
             self.log.info(
                 f"Listing project '{project_key}' repo '{repo_slug}'")
             repo_json = self.repos_api.get_repo(project_key, repo_slug)
-            self.handle_retrieving_repos(repo_json, project_key=project_key)
+            self.handle_retrieving_repos(repo_json, skip_archived_projects, project_key=project_key)
         except RequestException as re:
             self.log.error(
                 f"Failed to GET project '{project_key}' repo '{repo_slug}', with error:\n{re}")
 
-    def handle_retrieving_repos(self, repo, mongo=None, project_key=None):
+    def handle_retrieving_repos(self, skip_archived_projects, repo, mongo=None, project_key=None):
         # List and reformat all Bitbucket Server repo to GitLab project metadata
         error, resp = is_error_message_present(repo)
         if resp and not error:
             if project_key and project_key not in self.unique_projects:
                 self.handle_retrieving_repo_parent_project(
-                    resp.get("slug"), project_key)
+                    resp.get("slug"), project_key, skip_archived_projects)
 
             # mongo should be set to None unless this function is being used in a unit test
             if not mongo:
                 mongo = CongregateMongoConnector()
             mongo.insert_data(
                 f"projects-{strip_netloc(self.config.source_host)}",
-                self.format_repo(resp))
+                self.format_repo(resp, skip_archived_projects))
             mongo.close_connection()
         else:
             self.log.error(resp)
 
-    def handle_retrieving_repo_parent_project(self, repo_slug, project_key, mongo=None):
+    def handle_retrieving_repo_parent_project(self, repo_slug, project_key, skip_archived_projects, mongo=None):
         if project := self.list_repo_parent_project(repo_slug, project_key):
             # mongo should be set to None unless this function is being used in a unit test
             if not mongo:
                 mongo = CongregateMongoConnector()
             mongo.insert_data(
                 f"groups-{strip_netloc(self.config.source_host)}",
-                self.format_project(project, mongo))
+                self.format_project(project, mongo, skip_archived_projects))
             mongo.close_connection()
 
     def list_repo_parent_project(self, repo_slug, project_key):

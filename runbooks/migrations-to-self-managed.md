@@ -80,7 +80,7 @@ Copy the following data and add subsequent rows for single group migration
 ### Pre-migration checklist
 
 * PSE conducting the migration:
-  * [ ] Acquires a GitLab source and destination instance personal access token with Admin privileges (top right icon in GitLab -> Settings -> Access Tokens)
+  * [ ] Acquires an obfuscated (`./congregate.sh obfuscate`) GitLab source and destination instance personal access token with Admin privileges and `api` scope (top right icon in GitLab -> Settings -> Access Tokens)
   * [ ] [Configures Congregate](/docs/full_setup.md) to migrate between two GitLab instances
     * [ ] Inspects and validates configured values in `data/congregate.conf`
       * **Tip:** Run `./congregate.sh validate-config`

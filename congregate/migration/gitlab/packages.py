@@ -2,14 +2,17 @@ from pathlib import Path
 from traceback import print_exc
 from requests.exceptions import RequestException
 from congregate.helpers.base_class import BaseClass
+from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.packages import PackagesApi
 from congregate.migration.gitlab.api.pypi import PyPiPackagesApi
 from congregate.migration.gitlab.api.maven import MavenPackagesApi
 from congregate.migration.gitlab.api.npm import NpmPackagesApi
+from congregate.migration.gitlab.api.helm import HelmPackagesApi
 from congregate.helpers.package_utils import generate_pypi_package_payload, generate_npm_package_payload, extract_pypi_package_metadata, extract_npm_package_metadata, get_pkg_data, generate_npm_json_data, generate_custom_npm_tarball_url, extract_pypi_wheel_metadata
 from congregate.migration.meta.api_models.pypi_package import PyPiPackage
 from congregate.migration.meta.api_models.npm_package import NpmPackage
 from congregate.migration.meta.api_models.maven_package import MavenPackage
+import requests
 
 
 class PackagesClient(BaseClass):
@@ -18,6 +21,8 @@ class PackagesClient(BaseClass):
         self.pypi_packages = PyPiPackagesApi()
         self.maven_packages = MavenPackagesApi()
         self.npm_packages = NpmPackagesApi()
+        self.helm_packages = HelmPackagesApi()
+        self.users = UsersApi()
         super().__init__()
 
     def migrate_project_packages(self, src_id, dest_id, project_name):
@@ -37,6 +42,9 @@ class PackagesClient(BaseClass):
                             src_id, dest_id, package, results)
                     elif package_type == 'npm':
                         self.migrate_npm_packages(
+                            src_id, dest_id, package, results)
+                    elif package_type == 'helm':
+                        self.migrate_helm_packages(
                             src_id, dest_id, package, results)
                     else:
                         self.log.warning(
@@ -290,5 +298,47 @@ class PackagesClient(BaseClass):
             else:
                 self.log.info(
                     f"Successfully migrated package '{package.file_name}' file '{package_file['file_name']}'")
+
+        results.append({'Migrated': migration_status, 'Package': artifact})
+
+    def migrate_helm_packages(self, src_id, dest_id, package, results):
+        """
+        Migrates a Helm package from source project to destination project.
+
+        Parameters:
+        - src_id: Identifier or path for the source project.
+        - dest_id: Identifier or path for the destination project.
+        - package: The package name to migrate.
+        - results: A dictionary to store the results of the migration.
+
+        This method updates the `package.json` of both projects and records the migration status.
+        """
+        version = package['version']
+        package_name = package['name']
+        artifact = self.format_artifact(package_name, version)
+        channel = 'stable'
+
+        self.log.info(f"Attempting to download Helm package: {artifact}")
+        migration_status = True
+        src_user = self.users.get_current_user(self.config.source_host, self.config.source_token)
+        dst_user = self.users.get_current_user(self.config.destination_host, self.config.destination_token)
+        metadata = {}
+        for package_file in self.packages.get_package_files(self.config.source_host, self.config.source_token, src_id, package.get('id')):
+            file_name = package_file['file_name']
+            response = self.helm_packages.transfer_helm_package(self.config.source_host, self.config.destination_host, 
+                                                                self.config.source_token, self.config.destination_token, 
+                                                                src_id, dest_id, 
+                                                                src_user, dst_user, file_name)
+            # Handling response code
+            if response.status_code == 403:
+                self.log.info(
+                    f"Package '{file_name}' already exists in the destination instance. Skipping")
+            elif response.status_code != 201:
+                self.log.error(
+                    f"Failed to migrate package '{file_name}':\n{response} - {response.text} - {response.url}")
+                migration_status = False
+            else:
+                self.log.info(
+                    f"Successfully migrated package '{file_name}'")
 
         results.append({'Migrated': migration_status, 'Package': artifact})

@@ -8,7 +8,7 @@ class UserUtilTest(unittest.TestCase):
     @mock.patch("congregate.helpers.base_class.ConfigurationValidator.user_map", new_callable=unittest.mock.PropertyMock)
     def test_happy(self, um):
         um.return_value = "congregate/tests/helpers/user_util/data/fake_user_map.csv"
-        with self.assertLogs() as captured:
+        with self.assertLogs('congregate.helpers.base_class') as captured:
             with mock.patch.object(uutil.bm, "app_path", "congregate/tests/helpers/user_util"):
                 uutil.map_and_stage_users_by_email_match()
         self.assertEqual(len(captured.records), 7)
@@ -22,7 +22,7 @@ class UserUtilTest(unittest.TestCase):
     @mock.patch("congregate.helpers.base_class.ConfigurationValidator.user_map", new_callable=unittest.mock.PropertyMock)
     def test_bad_in_csv(self, um):
         um.return_value = "congregate/tests/helpers/user_util/data/fake_user_map_extra.csv"
-        with self.assertLogs() as captured:
+        with self.assertLogs('congregate.helpers.base_class') as captured:
             with mock.patch.object(uutil.bm, "app_path", "congregate/tests/helpers/user_util"):
                 uutil.map_and_stage_users_by_email_match()
         self.assertEqual(len(captured.records), 7)

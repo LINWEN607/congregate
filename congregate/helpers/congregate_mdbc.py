@@ -78,6 +78,7 @@ class CongregateMongoConnector(MongoConnector):
                 self.drop_collection(col)
         self.__setup_db()
 
+
 def mongo_connection(func):
     '''
         Decorator function to open and close a MongoDB connection
@@ -85,12 +86,12 @@ def mongo_connection(func):
     def wrapper(*args, **kwargs):
         if 'mongo' in kwargs:
             return func(*args, **kwargs)
-        else:
-            mongo = CongregateMongoConnector()
-            retval = func(*args, mongo=mongo, **kwargs)
-            mongo.close_connection()
-            return retval
+        mongo = CongregateMongoConnector()
+        retval = func(*args, mongo=mongo, **kwargs)
+        mongo.close_connection()
+        return retval
     return wrapper
+
 
 @shared_task(name='dump-collection-to-file')
 @mongo_connection

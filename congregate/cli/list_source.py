@@ -23,6 +23,7 @@ from congregate.migration.github.users import UsersClient as GitHubUsers
 
 from congregate.migration.ado.projects import ProjectsClient as AdoProjects
 from congregate.migration.ado.groups import GroupsClient as AdoGroups
+from congregate.migration.ado.users import UsersClient as AdoUsers
 
 from congregate.migration.jenkins.base import JenkinsClient as JenkinsData
 from congregate.migration.teamcity.base import TeamcityClient as TeamcityData
@@ -42,7 +43,8 @@ class ListClient(BaseClass):
         skip_project_members=False,
         skip_ci=False,
         src_instances=False,
-        subset=False
+        subset=False,
+        skip_archived_projects=False,
     ):
         super().__init__()
         self.processes = processes
@@ -55,10 +57,12 @@ class ListClient(BaseClass):
         self.skip_ci = skip_ci
         self.src_instances = src_instances
         self.subset = subset
+        self.skip_archived_projects = skip_archived_projects
 
     def list_gitlab_data(self):
         """
             List the projects information, and Retrieve user info, group info from source instance.
+            File-based - Save all projects, groups, and users information into mongodb and json file.
         """
         mongo, p, g, u = self.mongo_init()
         host = self.config.source_host
@@ -109,7 +113,7 @@ class ListClient(BaseClass):
             projects = BitBucketProjects(subset=self.subset)
             if not self.skip_group_members:
                 projects.set_user_groups(user_groups)
-            projects.retrieve_project_info(processes=self.processes)
+            projects.retrieve_project_info(processes=self.processes, skip_archived_projects=self.skip_archived_projects)
             mongo.dump_collection_to_file(
                 g, f"{self.app_path}/data/groups.json")
             # Save listed BB Server parent projects
@@ -120,7 +124,7 @@ class ListClient(BaseClass):
             repos = BitBucketRepos(subset=self.subset)
             if not self.skip_project_members:
                 repos.set_user_groups(user_groups)
-            repos.retrieve_repo_info(processes=self.processes)
+            repos.retrieve_repo_info(processes=self.processes, skip_archived_projects=self.skip_archived_projects)
             mongo.dump_collection_to_file(
                 p, f"{self.app_path}/data/projects.json")
             # Save listed BB Server parent projects
@@ -170,7 +174,7 @@ class ListClient(BaseClass):
                     mongo.dump_collection_to_file(p, f"{app}/data/{p}.json")
         mongo.close_connection()
 
-    def list_azure_devops_data(self): 
+    def list_azure_devops_data(self):
         mongo, p, g, u = self.mongo_init()
 
         # Find only projects with =<1 repo ( = project in GitLab)
@@ -181,12 +185,17 @@ class ListClient(BaseClass):
                 p, f"{self.app_path}/data/projects.json")
 
         # Find ADO projects with >1 repos ( = group in GitLab)
-
         if not self.skip_groups:
             groups = AdoGroups()
             groups.retrieve_group_info(processes=self.processes)
             mongo.dump_collection_to_file(
                 g, f"{self.app_path}/data/groups.json")
+
+        if not self.skip_users:
+            users = AdoUsers()
+            users.retrieve_user_info(processes=self.processes)
+            mongo.dump_collection_to_file(
+                u, f"{self.app_path}/data/users.json")
 
         mongo.close_connection()
 
@@ -240,10 +249,10 @@ class ListClient(BaseClass):
             f"Listing data from {src_type} source type - {self.config.source_host}")
         # In case one skips users/groups/projects on first list
         self.initialize_list_files()
-        if src_type == "bitbucket server":
-            self.list_bitbucket_data()
-        elif src_type == "gitlab":
+        if src_type == "gitlab":
             self.list_gitlab_data()
+        elif src_type == "bitbucket server":
+            self.list_bitbucket_data()
         elif src_type == "github":
             self.list_github_data()
         elif src_type == "azure devops":
@@ -285,9 +294,13 @@ class ListClient(BaseClass):
 
 @shared_task
 def list_data(partial=False, skip_users=False, skip_groups=False, skip_group_members=False,
-              skip_projects=False, skip_project_members=False, skip_ci=False, 
+              skip_projects=False, skip_project_members=False, skip_ci=False,
               src_instances=False, subset=False):
+    """
+        List the projects information, and Retrieve user info, group info from source instance.
+        Direct transfer - Save all projects, groups, and users information into mongodb and json file.
+    """
     client = ListClient(partial=partial, skip_users=skip_users, skip_groups=skip_groups, skip_group_members=skip_group_members,
-              skip_projects=skip_projects, skip_project_members=skip_project_members, skip_ci=skip_ci, 
-              src_instances=src_instances, subset=subset)
+                        skip_projects=skip_projects, skip_project_members=skip_project_members, skip_ci=skip_ci,
+                        src_instances=src_instances, subset=subset)
     return client.list_data()

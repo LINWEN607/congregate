@@ -1,12 +1,11 @@
 import os
 import sys
 from requests import Response
-from requests.exceptions import RequestException
+from requests.exceptions import RequestException, HTTPError
 from pandas import DataFrame, Series, set_option
 from dacite import from_dict
 from celery import shared_task
-from gitlab_ps_utils.misc_utils import get_dry_log, get_timedelta, is_error_message_present, \
-    safe_json_response, strip_netloc
+from gitlab_ps_utils.misc_utils import get_dry_log, get_timedelta, safe_json_response, strip_netloc
 from gitlab_ps_utils.json_utils import json_pretty, read_json_file_into_object, write_json_to_file
 from gitlab_ps_utils.dict_utils import rewrite_list_into_dict, rewrite_json_list_into_dict
 
@@ -18,6 +17,7 @@ from congregate.migration.gitlab import constants
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.users import UsersApi
+from congregate.migration.gitlab.api.namespaces import NamespacesApi
 from congregate.migration.meta.api_models.users import UserPayload
 
 
@@ -26,6 +26,7 @@ class UsersClient(BaseClass):
         self.groups_api = GroupsApi()
         self.users_api = UsersApi()
         self.projects_api = ProjectsApi()
+        self.namespaces_api = NamespacesApi()
         super().__init__()
         self.sso_hash_map = self.generate_hash_map()
 
@@ -70,27 +71,41 @@ class UsersClient(BaseClass):
 
     def is_username_group_name(self, username, old_user):
         """
-        Check if a username exists as a group namespace
+        Check if a username exists as a group namespace by querying the Namespaces API.
         :param old_user: The source user we are trying to create a new user for
         :return: True if the username from old_user exists as a group namespace
-                None signifies "we don't know. do what you will."
-                else False
+                 None signifies "we don't know. do what you will."
+                 else False
         """
         try:
-            for g in self.groups_api.search_for_group(
-                    username, host=self.config.destination_host, token=self.config.destination_token):
-                is_error, resp = is_error_message_present(g)
-                if is_error:
-                    self.log.warning(
-                        f"Is '{username}' a group namespace lookup failed for group:\n{resp}")
-                elif resp.get("full_path") and str(resp["full_path"]).lower() == username.lower():
-                    # We found a match, so user=group namespace
-                    return True
+            # Use the Namespaces API to get the namespace by the full path (username in this case)
+            response = self.namespaces_api.get_namespace_by_full_path(
+                username, self.config.destination_host, self.config.destination_token)
+            if response.status_code == 200:
+                if namespace_data := safe_json_response(response):
+
+                    # Check if the returned namespace is of type 'group'
+                    if namespace_data.get('kind') == 'group':
+                        return True
+                    return False  # Valid response, but not a group
+                self.log.error(
+                    f"Received invalid JSON response for namespace: '{username}'")
+                return None  # Return None if response was invalid
+
+            # Log the HTTP status code and response message for troubleshooting
+            self.log.error(f"Failed to check namespace for user '{old_user}', "
+                           f"HTTP {response.status_code}: {response.text}")
             return False
+        except HTTPError as http_err:
+            self.log.error(
+                f"HTTP error occurred while checking group namespace for user '{old_user}': {http_err}")
         except RequestException as re:
             self.log.error(
-                f"Failed checking username '{username}' is not group namespace for user:\n{old_user}\n{re}")
-            return None
+                f"Request failed while checking group namespace for user '{old_user}': {re}")
+        except Exception as err:
+            self.log.error(f"An error occurred: {err}")
+
+        return None
 
     def user_email_exists(self, email):
         if email:
@@ -561,12 +576,15 @@ class UsersClient(BaseClass):
         return staged
 
     def retrieve_user_info(self, host, token, processes=None):
-        if self.config.src_parent_group_path:
+        # Always retrieve full user list when possible
+        if self.config.src_parent_group_path and is_dot_com(self.config.source_host):
             users = []
             for user in self.groups_api.get_all_group_members(
                     self.config.src_parent_id, host, token):
-                users.append(safe_json_response(
-                    self.users_api.get_user(user["id"], host, token)))
+                # Exclude bot users
+                if not user.get("bot"):
+                    users.append(safe_json_response(
+                        self.users_api.get_user(user.get("id"), host, token)))
         else:
             users = self.users_api.get_all_users(host, token)
         if self.config.direct_transfer:
@@ -618,35 +636,40 @@ class UsersClient(BaseClass):
                 "If both 'reset_password' and 'force_random_password' are False, the 'password' field has to be set")
         return user_model.to_dict()
 
-    def block_user(self, user_data):
+    def change_user_state(self, user_data, block=True):
+        host = self.config.destination_host
+        token = self.config.destination_token
         try:
             response = find_user_by_email_comparison_without_id(
                 user_data["email"])
-            user_creation_data = self.get_user_creation_id_and_email(response)
-            if user_creation_data:
-                block_response = self.users_api.block_user(
-                    self.config.destination_host,
-                    self.config.destination_token,
-                    user_creation_data["id"])
-                self.log.info(
-                    f"Blocking user {user_data['username']} email {user_data['email']} (status: {block_response})")
-                if isinstance(block_response, Response) and block_response.status_code == 201:
-                    self.add_blocked_user_admin_note(user_creation_data)
+            if user_creation_data := self.get_user_creation_id_and_email(response):
+                text = "Block" if block else "Unblock"
+                user_id = user_creation_data["id"]
+                if block:
+                    response = self.users_api.block_user(host, token, user_id)
+                    if isinstance(response, Response) and response.status_code == 201:
+                        self.add_blocked_user_admin_note(
+                            user_creation_data, user_data.get('state'))
+                    else:
+                        self.log.error(
+                            f"Failed to {text} user {user_data}, with response:\n{response} - {response.text}")
                 else:
-                    self.log.error(
-                        f"Failed to block user {user_data}, with response:\n{block_response} - {block_response.text}")
-                return block_response
+                    response = self.users_api.unblock_user(
+                        host, token, user_id)
+                self.log.info(
+                    f"{text} user '{user_data['username']}' email {user_data['email']} (status: {response})")
+                return response
             return None
         except RequestException as e:
             self.log.error(
-                f"Failed request to block user {user_data}, with error:\n{e}")
+                f"Failed request to {text} user {user_data}, with error:\n{e}")
             return None
 
-    def add_blocked_user_admin_note(self, user):
+    def add_blocked_user_admin_note(self, user, original_state):
         host = self.config.destination_host
         user_msg = f"blocked user {user['email']}' (ID: {user['id']}) Admin note"
         data = {
-            "note": f"User blocked as part of {'GitLab PS' if is_dot_com(host) else ''} user migration from {self.config.source_host}"}
+            "note": f"User blocked as part of {'GitLab PS' if is_dot_com(host) else ''} user migration from {self.config.source_host}. Original state on source was [{original_state}]"}
         self.log.info(f"Add {user_msg}")
         try:
             resp = self.users_api.modify_user(
@@ -763,7 +786,10 @@ class UsersClient(BaseClass):
             # Assume primary email matches on dest
             email = su.get("email")
             su_pub_email = su.get("public_email")
-            set_email = su_pub_email if hide else email
+            if is_dot_com(host):
+                set_email = "" if hide else email
+            else:
+                set_email = su_pub_email if hide else email
             try:
                 # Look up user on source
                 user = find_user_by_email_comparison_without_id(
@@ -835,6 +861,9 @@ class UsersClient(BaseClass):
         if not isinstance(resp, Response) or resp.status_code != 201:
             self.log.error(
                 f"Failed to add email '{email}' to source user '{username}' (ID: {uid}):\n{resp} - {resp.text}")
+        else:
+            self.log.info(
+                f"Added email '{email}' to source user '{username}' (ID: {uid})")
 
 
 @shared_task(name='retrieve-user')

@@ -14,15 +14,15 @@ nav:
   - Usage:
       - Getting Started: using-congregate.md
       - CLI-based Migrations: using-congregate.md
-      - UI/API-based Migrations: 
-        - via Direct Transfer:
-          - Direct Transfer Setup: direct-transfer-api.md
-          - Direct Transfer Usage: direct-transfer-usage.md
-        - Air-gapped Migrations:
-          - Air-gapped Migration Setup: setting-up-airgap-migrations.md
-          - Air-gapped Migration Usage: airgapped-migration-usage.md
+      - UI/API-based Migrations:
+          - via Direct Transfer:
+              - Direct Transfer Setup: setting-up-direct-transfer-migrations.md
+              - Direct Transfer Usage: direct-transfer-usage.md
+          - Air-gapped Migrations:
+              - Air-gapped Migration Setup: setting-up-airgap-migrations.md
+              - Air-gapped Migration Usage: airgapped-migration-usage.md
       - Extras:
-        - LDAP Group Sync: ldap-group-sync.md
+          - LDAP Group Sync: ldap-group-sync.md
   - Readme: project_readme.md
   - Installation:
       - Full Setup: full_setup.md
@@ -39,7 +39,7 @@ nav:
       - Writing tests: writing-tests.md
       - Roadmap: roadmap.md
       - API Docs: reference/
-  - General Migration Preparation: 
+  - General Migration Preparation:
       - Migration Readiness Checklist: migration-readiness-checklist.md
       - Migration Wave Considerations: migration-wave-considerations.md
       - Pre and Post Migration: pre-and-post-migration.md

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "congregate"
-version = "7.3.0"
+version = "7.8.0"
 description = "GitLab Professional Service Migration Utility"
 authors = ["Michael Leopard <mleopard@gitlab.com>", "Petar Prokic <pprokic@gitlab.com>", "Glen Miller <gmiller@gitlab.com>"]
 
@@ -20,8 +20,8 @@ lxml = "^4.6.3"
 mock = "<=4.0.1"
 pytest = "<=5.3.5"
 pytest-cov = "^2.8.1"
-requests = "^2.22.0"
-requests-toolbelt = "^0.9.1"
+requests = ">=2.26.0, <2.32.0"
+requests-toolbelt = "^1.0.0"
 responses = "^0.10.9"
 xmltodict = "^0.12.0"
 python-jenkins = "^1.7.0"
@@ -32,7 +32,7 @@ toml = "^0.10.1"
 pymongo = "^3.11.0"
 mongomock = "^3.20.0"
 tqdm = "^4.59.0"
-gitlab-ps-utils = "0.10.2"
+gitlab-ps-utils = "^0.13.0"
 mkdocs = "^1.2.3"
 mkdocs-material = "^8.1.11"
 mkdocs-mermaid2-plugin = "^0.5.2"
@@ -44,6 +44,7 @@ celery = {extras = ["redis"], version = "^5.2.7"}
 flower = "^1.2.0"
 Flask-Cors = "^4.0.0"
 redis = "^5.0.3"
+gitpython = "^3.1.43"
 
 
 [tool.poetry.dev-dependencies]

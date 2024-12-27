@@ -269,7 +269,7 @@ class ProjectsTests(unittest.TestCase):
         mock_find_id.return_value = None
         mock_get_path.return_value = "pmm-demo/spring-app-secure-2"
         self.assertTupleEqual(self.projects.find_mirror_project(
-            self.mock_projects.get_staged_group_project(), "host", "token"), (False, False))
+            self.mock_projects.get_staged_group_project()), (False, False))
 
     @patch("congregate.helpers.migrate_utils.get_dst_path_with_namespace")
     @patch.object(ProjectsClient, "find_project_by_path")
@@ -280,7 +280,7 @@ class ProjectsTests(unittest.TestCase):
         mock_get_path.side_effect = [
             "pmm-demo/spring-app-secure-2", "pmm-demo/spring-app-secure-2"]
         self.assertTupleEqual(self.projects.find_mirror_project(
-            self.mock_projects.get_staged_group_project(), "host", "token"), (1, False))
+            self.mock_projects.get_staged_group_project()), (None, False))
 
     @patch("congregate.helpers.migrate_utils.get_dst_path_with_namespace")
     @patch.object(ProjectsClient, "find_project_by_path")
@@ -291,7 +291,7 @@ class ProjectsTests(unittest.TestCase):
         mock_get_path.side_effect = [
             "pmm-demo/spring-app-secure-2", "pmm-demo/spring-app-secure-2"]
         self.assertTupleEqual(self.projects.find_mirror_project(
-            self.mock_projects.get_staged_group_project(), "host", "token"), (1, "pmm-demo/spring-app-secure-2"))
+            self.mock_projects.get_staged_group_project()), (2, "pmm-demo/spring-app-secure-2"))
 
     @patch("congregate.helpers.migrate_utils.get_dst_path_with_namespace")
     @patch.object(ProjectsClient, "find_project_by_path")
@@ -302,7 +302,7 @@ class ProjectsTests(unittest.TestCase):
         mock_find_id.side_effect = RequestException()
         with self.assertLogs(self.projects.log, level="ERROR"):
             self.projects.find_mirror_project(
-                self.mock_projects.get_staged_group_project(), "host", "token")
+                self.mock_projects.get_staged_group_project())
 
     @patch.object(UsersApi, "get_current_user")
     @patch.object(ProjectsClient, "find_mirror_project")

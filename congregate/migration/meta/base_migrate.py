@@ -16,7 +16,7 @@ from gitlab_ps_utils import json_utils, misc_utils, string_utils, dict_utils
 
 import congregate.helpers.migrate_utils as mig_utils
 from congregate.migration.meta.constants import EXT_CI_SOURCE_CLASSES
-from congregate.helpers.utils import rotate_logs
+from congregate.helpers.utils import rotate_logs, is_dot_com
 from congregate.helpers.reporting import Reporting
 from congregate.cli.stage_projects import ProjectStageCLI
 from congregate.helpers.base_class import BaseClass
@@ -50,7 +50,8 @@ class MigrateClient(BaseClass):
         subgroups_only=False,
         scm_source=None,
         group_structure=False,
-        retain_contributors=False
+        retain_contributors=False,
+        permanent=False,
     ):
         self.users = UsersClient()
         self.users_api = UsersApi()
@@ -80,8 +81,9 @@ class MigrateClient(BaseClass):
         self.scm_source = scm_source
         self.group_structure = group_structure
         self.retain_contributors = retain_contributors
+        self.permanent = permanent
 
-    # keep for overriden function but reuse functionality from the various migrate_from_* functions
+    # keep for overridden function but reuse functionality from the various migrate_from_* functions
     def migrate(self):
         raise NotImplementedError
 
@@ -180,7 +182,8 @@ class MigrateClient(BaseClass):
         }
         old_user = {
             "email": email,
-            "id": user.get("id")
+            "id": user.get("id"),
+            "state": state
         }
         try:
             if not self.only_post_migration_info:
@@ -201,13 +204,13 @@ class MigrateClient(BaseClass):
                     # NOTE: Persist 'inactive' user state regardless of domain
                     # and creation status.
                     if user_data.get("state").lower() in self.INACTIVE:
-                        self.users.block_user(user_data)
+                        self.users.change_user_state(user_data)
                     new_user = self.users.handle_user_creation_status(
                         response, user_data)
             if not self.dry_run and self.config.source_type == "gitlab":
-                self.gl_user_creation(new_user, old_user, email, user)
+                self.gl_post_user_creation(new_user, old_user, email, user)
             if not self.dry_run and self.config.source_type == "bitbucket server":
-                self.bb_user_creation(new_user, username, email, user)
+                self.bb_post_user_creation(new_user, username, email, user)
         except RequestException as e:
             self.log.error(
                 f"Failed to create user {user_data}, with error:\n{e}")
@@ -217,7 +220,7 @@ class MigrateClient(BaseClass):
             self.log.error(print_exc(e))
         return new_user
 
-    def gl_user_creation(self, new_user, old_user, email, user):
+    def gl_post_user_creation(self, new_user, old_user, email, user):
         if new_user:
             found_user = new_user if new_user.get(
                 "id") is not None else mig_utils.find_user_by_email_comparison_without_id(email)
@@ -232,17 +235,30 @@ class MigrateClient(BaseClass):
                 else:
                     self.log.warning(
                         f"SKIP: Not migrating SSH & GPG keys for user: {email}")
+                self.align_users_with_state_mismatch(old_user, new_user)
         else:
             user_data = self.users.generate_user_data(user)
             self.log.warning(
                 f"Could not create user. User may exist with a different primary email. Check previous logs warnings. Userdata follows:\n{user_data}")
-            # Return the "original" new_user setting
-            return {
-                "email": email,
-                "id": None
-            }
 
-    def bb_user_creation(self, new_user, old_user, email, user):
+    def align_users_with_state_mismatch(self, old_user, new_user):
+        """
+            Align existing users with state mismatch.
+            E.g. "inactive" on source and "active" on destination or the opposite.
+            Currently handling only 2 cases:
+                1. When source is "inactive" and destination is "active" - block destination user
+                2. When source is "active" and destination is "inactive" - unblock destination user
+            Currently handled only for dot-com.
+        """
+        old_state = old_user.get("state")
+        new_state = new_user.get("state")
+        if is_dot_com(self.config.destination_host) and self.config.align_users_with_state_mismatch and old_state != new_state:
+            if old_state == "active" and new_state in self.INACTIVE:
+                self.users.change_user_state(new_user, block=False)
+            elif old_state in self.INACTIVE and new_state == "active":
+                self.users.change_user_state(new_user)
+
+    def bb_post_user_creation(self, new_user, old_user, email, user):
         if new_user:
             found_user = new_user if new_user.get(
                 "id") is not None else mig_utils.find_user_by_email_comparison_without_id(email)
@@ -259,11 +275,6 @@ class MigrateClient(BaseClass):
             user_data = self.users.generate_user_data(user)
             self.log.warning(
                 f"Could not create user. User may exist with a different primary email. Check previous logs warnings. Userdata follows:\n{user_data}")
-            # Return the "original" new_user setting
-            return {
-                "email": email,
-                "id": None
-            }
 
     def disable_shared_ci(self, path, pid):
         # Disable Auto DevOps
@@ -285,22 +296,23 @@ class MigrateClient(BaseClass):
             self.log.info(
                 f"{dry_log}Removing staged groups{'' if self.skip_projects else ' and projects'} on destination")
             self.groups.delete_groups(
-                dry_run=self.dry_run, skip_projects=self.skip_projects)
+                dry_run=self.dry_run, skip_projects=self.skip_projects, permanent=self.permanent)
 
         # Remove only projects
         if not self.skip_projects:
             self.log.info(
                 f"{dry_log}Removing staged projects on destination")
-            self.projects.delete_projects(dry_run=self.dry_run)
+            self.projects.delete_projects(
+                dry_run=self.dry_run, permanent=self.permanent)
 
         if not self.skip_users:
             self.log.info(
                 f"{dry_log}Removing staged users on destination (hard_delete={self.hard_delete})")
             self.users.delete_users(
                 dry_run=self.dry_run, hard_delete=self.hard_delete)
-            
+
         # Unarchive previously active projects on source during rollback
-        if self.config.archive_logic and (not self.skip_projects or not self.skip_groups):    
+        if self.config.archive_logic and (not self.skip_projects or not self.skip_groups):
             self.log.info(
                 f"{dry_log}Unarchiving previously active projects on source due to rollback")
             self.projects.update_staged_projects_archive_state(
@@ -364,6 +376,9 @@ class MigrateClient(BaseClass):
             if not isinstance(resp, Response) or resp.status_code not in [204, 404]:
                 self.log.error(
                     f"Failed to remove import user (ID: {import_uid}) from {gl_type} (ID: {dst_id}):\n{resp}")
+            else:
+                self.log.info(
+                    f"Successfully removed import user (ID: {import_uid}) from {gl_type} (ID: {dst_id})")
         except RequestException as re:
             self.log.error(
                 f"Failed to remove import user (ID: {import_uid}) from {gl_type} (ID: {dst_id}), with error:\n{re}")
@@ -413,6 +428,36 @@ class MigrateClient(BaseClass):
                 host, token, dst_gid, members)
             self.log.info(
                 f"Members added to destination group '{full_path}' ({dst_gid}):\n{result}")
+        return result
+    
+    def share_groups_with_groups(self, src_gid, dst_gid):
+        source_group_response = self.groups_api.get_group(
+                src_gid, self.config.source_host, self.config.source_token)
+        source_group = misc_utils.safe_json_response(source_group_response)
+        shared_with_groups = source_group.get('shared_with_groups', [])
+        result = {}
+
+        # Migrate shared group memberships
+        for shared_group in shared_with_groups:
+            shared_group_full_path = shared_group['group_full_path']
+            shared_group_full_path_with_parent_namespace = mig_utils.get_full_path_with_parent_namespace(shared_group_full_path)
+            shared_group_id = self.groups.find_group_id_by_path(
+                        self.config.destination_host, self.config.destination_token, shared_group_full_path_with_parent_namespace)
+            data={
+                'group_id': shared_group_id,
+                'group_access': shared_group.get('group_access_level'),
+                'expires_at': shared_group.get('expires_at')
+            }
+
+            # Share the destination group with the shared group in the destination
+            share_response = self.groups_api.share_group(self.config.destination_host, self.config.destination_token, dst_gid, data=data)
+
+            if share_response.status_code == 201:
+                self.log.info(f"Successfully shared group '{shared_group_id}' with group ID '{dst_gid}' ")
+                result[shared_group_id] = True
+            else:
+                self.log.error(f"Failed to share group '{shared_group_id}' with group ID '{dst_gid}' : {share_response.content}")
+                result[shared_group_id] = False
         return result
 
     def migrate_external_group(self, group):

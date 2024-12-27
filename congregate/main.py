@@ -4,7 +4,7 @@ Copyright (c) 2022 - GitLab
 
 Usage:
     congregate init
-    congregate list [--processes=<n>] [--partial] [--skip-users] [--skip-groups] [--skip-group-members] [--skip-projects] [--skip-project-members] [--skip-ci] [--src-instances] [--subset]
+    congregate list [--processes=<n>] [--partial] [--skip-users] [--skip-groups] [--skip-group-members] [--skip-projects] [--skip-project-members] [--skip-ci] [--src-instances] [--subset] [--skip-archived-projects]
     congregate configure # Deprecated. Manually create config file and validate it by running 'congregate validate-config'
     congregate validate-config
     congregate generate-reporting
@@ -13,16 +13,16 @@ Usage:
     congregate stage-users <users>... [--commit]
     congregate stage-wave <wave> [--commit] [--scm-source=hostname]
     congregate create-stage-wave-csv [--commit]
-    congregate migrate [--processes=<n>] [--reporting] [--skip-users] [--remove-members] [--sync-members] [--stream-groups] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostname] [--commit] [--reg-dry-run] [--group-structure] [--retain-contributors]
-    congregate rollback [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--commit]
+    congregate migrate [--commit] [--processes=<n>] [--reporting] [--skip-users] [--remove-members] [--sync-members] [--stream-groups] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostname] [--reg-dry-run] [--group-structure] [--retain-contributors]
+    congregate rollback [--commit] [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--permanent]
     congregate ui
     congregate do-all [--commit]
     congregate do-all-users [--commit]
     congregate do-all-groups-and-projects [--commit]
     congregate search-for-staged-users [--table]
     congregate update-aws-creds
-    congregate update-parent-group-members [--access-level=<level>] [--add-members] [--commit]
-    congregate update-members-access-level [--current-level=<level>] [--target-level=<level>] [--skip-groups] [--skip-projects] [--commit]
+    congregate update-parent-group-members [--commit] [--access-level=<level>] [--add-members]
+    congregate update-members-access-level [--commit] [--current-level=<level>] [--target-level=<level>] [--skip-groups] [--skip-projects]
     congregate remove-inactive-users [--commit] [--membership]
     congregate get-total-count
     # TODO: Refactor, project name matching does not seem correct
@@ -32,7 +32,7 @@ Usage:
     congregate remove-users-from-parent-group [--commit]
     congregate migrate-variables-in-stage [--commit]
     congregate migrate-linked-issues [--commit]
-    congregate pull-mirror-staged-projects [--commit]
+    congregate pull-mirror-staged-projects [--commit] [--protected-only] [--force] [--overwrite]
     congregate push-mirror-staged-projects [--disabled] [--keep_div_refs] [--force] [--commit]
     congregate toggle-staged-projects-push-mirror [--disable] [--commit]
     congregate verify-staged-projects-push-mirror [--disabled] [--keep_div_refs]
@@ -70,6 +70,7 @@ Usage:
     congregate align-user-mapping-emails [--commit]
     congregate create-staged-projects-structure [--commit] [--disable-cicd]
     congregate create-staged-projects-fork-relation [--commit]
+    congregate list-staged-projects-contributors [--commit]
     congregate -h | --help
     congregate -v | --version
 
@@ -86,13 +87,15 @@ Arguments:
     skip-users                              Stage: Skip staging users; Migrate: Skip migrating users; Rollback: Remove only groups and projects.
     remove-members                          Remove all members of created (GitHub) or imported (GitLab) groups. Skip adding any members of BitBucket Server repos and projects.
     sync-members                            Align group members list between source and destination by adding missing members on destination.
-    hard-delete                             Remove user contributions and solely owned groups
+    hard-delete                             DESTRUCTIVE: Remove user contributions and solely owned groups
+    permanent                               DESTRUCTIVE: Permanently delete group and/or project. Otherwise, by default, scheduled for deletion
     stream-groups                           Streamed approach of migrating staged groups in bulk
     skip-groups                             Rollback: Remove only users and projects
     skip-group-members                      Add empty list instead of listing GitLab group members. Skip saving BBS project user groups as GL group members.
     skip-group-export                       Skip exporting groups from source instance
     skip-group-import                       Skip importing groups to destination instance
     skip-projects                           Rollback: Remove only users and empty groups
+    skip-archived-projects                  Skip archived projects (Bitbucket only right now)
     skip-project-members                    Add empty list instead of listing GitLab project members. Skip saving BBS repo user groups as GL project members.
     skip-project-export                     Skips the project export and assumes that the project file is already ready
                                                 for rewrite. Currently does NOT work for exports through filesystem-aws
@@ -102,7 +105,7 @@ Arguments:
     only-post-migration-info                Skips migrating all content except for post-migration information. Use when import is handled outside of congregate
     subgroups-only                          Expects that only sub-groups are staged and that their parent groups already exist on destination
     reg-dry-run                             If registry migration is configured, instead of doing the actual migration, write the tags to the logs for use in the brute force migration. Can also be useful when renaming targets
-    retain-contributors                     Searches a project for all contributors to a project and adds them as members before exporting the project. Only works in GitLab file-based migrations
+    retain-contributors                     Searches a project for all contributors to a project and adds them as members before exporting the project. Only required for GitLab file-based migrations.
     group-structure                         Let the GitHub and BitBucket Server importers create the missing sub-group layers.
     access-level                            Update parent group level user permissions (None/Minimal/Guest/Reporter/Developer/Maintainer/Owner).
     current-level                           Current destination group/project members access level.
@@ -127,6 +130,7 @@ Arguments:
     disable                                 Disable staged project push mirror
     keep_div_refs                           Set keep_divergent_refs to True (False by default) and avoid overwriting changes on the mirror repo
     force                                   Immediately trigger push mirroring with a repo change e.g. new branch
+    overwrite                               DESTRUCTIVE: Overwrites pull mirrored branches on destination that have diverged from source. Therefore, recommended to make change in new branches on destination instead.
     name                                    Project branch name
     all                                     Include all listed objects.
     bb-projects                             Target BitBucket repo branches from a project level
@@ -168,7 +172,7 @@ Commands:
     remove-users-from-parent-group          Remove all users with at most Reporter access from the parent group.
     migrate-variables-in-stage              Migrate CI variables for staged projects.
     migrate-linked-issues                   Migrate Linked items in issues for staged projects.
-    pull-mirror-staged-projects             Set up project pull mirroring for staged projects.
+    pull-mirror-staged-projects             Create and start project pull mirroring for staged projects.
     push-mirror-staged-projects             Set up and enable (by default) project push mirroring for staged projects.
                                                 Assuming both the mirrored repo and empty project structure (create-staged-projects-structure) for mirroring already exist on destination.
                                                 NOTE: Destination instance only mirroring.
@@ -211,6 +215,7 @@ Commands:
     align-user-mapping-emails               Add new email to source users based on 'user_mapping_by_<field>.json' src:dest primary/public email mapping file.
     create-staged-projects-structure        Create empty project structures on GitLab destination for staged projects. Optionally, disable CI/CD on creation.
     create-staged-projects-fork-relation    Create a forked from/to relation between (group) projects on destination, based on staged projects. Assumes fork and forked project have already been migrated.
+    list-staged-projects-contributors       List all non-member contributors for all staged projects and save to file. GitLab ONLY.
 """
 
 import os
@@ -374,7 +379,8 @@ def main():
                     skip_project_members=arguments["--skip-project-members"],
                     skip_ci=arguments["--skip-ci"],
                     src_instances=SRC_INSTANCES,
-                    subset=arguments["--subset"]
+                    subset=arguments["--subset"],
+                    skip_archived_projects=arguments["--skip-archived-projects"],
                 )
                 list_client.list_data()
                 add_post_migration_stats(start, log=log)
@@ -445,7 +451,8 @@ def main():
                     skip_users=SKIP_USERS,
                     hard_delete=arguments["--hard-delete"],
                     skip_groups=SKIP_GROUPS,
-                    skip_projects=SKIP_PROJECTS
+                    skip_projects=SKIP_PROJECTS,
+                    permanent=arguments["--permanent"],
                 )
                 migrate.rollback()
 
@@ -495,7 +502,8 @@ def main():
             if arguments["delete-all-staged-projects-pull-mirrors"]:
                 projects.delete_all_pull_mirrors(dry_run=DRY_RUN)
             if arguments["pull-mirror-staged-projects"]:
-                projects.pull_mirror_staged_projects(dry_run=DRY_RUN)
+                projects.pull_mirror_staged_projects(
+                    protected_only=arguments["--protected-only"], force=arguments["--force"], overwrite=arguments["--overwrite"], dry_run=DRY_RUN)
             if arguments["push-mirror-staged-projects"]:
                 projects.push_mirror_staged_projects(
                     disabled=arguments["--disabled"], keep_div_refs=arguments["--keep_div_refs"], force=arguments["--force"], dry_run=DRY_RUN)
@@ -740,6 +748,8 @@ def main():
                 projects.create_staged_projects_fork_relation(dry_run=DRY_RUN)
             if arguments["url-rewrite-only"]:
                 projects.perform_url_rewrite_only(dry_run=DRY_RUN)
+            if arguments["list-staged-projects-contributors"]:
+                projects.list_staged_projects_contributors(dry_run=DRY_RUN)
 
 
 if __name__ == "__main__":

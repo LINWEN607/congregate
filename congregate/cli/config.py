@@ -162,6 +162,7 @@ def generate_config():
                 config.set("SOURCE", "src_parent_group_path", "")
                 print(
                     f"WARNING: Source group not found. Please enter 'src_parent_group_id' and 'src_parent_group_path' manually (in {config_path})")
+        
 
         # GitLab source/destination instance registry configuration
         migrating_registries = input(

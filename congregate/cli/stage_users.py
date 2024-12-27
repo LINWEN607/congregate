@@ -4,6 +4,7 @@ Congregate - GitLab instance migration utility
 Copyright (c) 2024 - GitLab
 """
 
+from gitlab_ps_utils.json_utils import write_json_to_file
 from gitlab_ps_utils.list_utils import remove_dupes
 from congregate.cli.stage_base import BaseStageClass
 
@@ -21,15 +22,17 @@ class UserStageCLI(BaseStageClass):
         if self.config.source_type == "gitlab":
             self.list_staged_users_without_public_email()
         if not dry_run:
+            write_json_to_file(f"{self.app_path}/data/staged_groups.json", [])
+            write_json_to_file(
+                f"{self.app_path}/data/staged_projects.json", [])
             self.write_staged_users_file()
             self.log.info(
-                "Written metadata to staged users file 'data/staged_users.json'")
+                "Written metadata to staged users file 'data/staged_users.json', '[]' to staged groups and projects")
 
     def build_staging_data(self, users_to_stage):
         users = self.open_users_file()
         if list(filter(None, users_to_stage)):
-            if users_to_stage[0] in ["all", "."] or len(
-                    users_to_stage) == len(users):
+            if users_to_stage[0] in ["all", "."]:
                 for u in users:
                     self.log.info(
                         f"Staging user '{u['email']}' (ID: {u['id']}) [{len(self.staged_users)}/{len(users)}]")

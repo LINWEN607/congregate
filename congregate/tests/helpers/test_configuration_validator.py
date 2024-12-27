@@ -30,7 +30,7 @@ class ConfigurationValidationTests(unittest.TestCase):
         self.ado_users = ADOUsers()
         self.config = ConfigurationValidator(
             path="congregate/tests/cli/data/test_not_ext_src_parent_group_path_no_mirror_name_aws_default.conf")
-        
+
     @fixture(autouse=True)
     def capsys(self, capsys):
         """Capsys hook into this class"""
@@ -325,7 +325,6 @@ class ConfigurationValidationTests(unittest.TestCase):
         # pylint: enable=no-member
         self.assertRaises(ConfigurationException,
                           self.config.validate_src_token, "test")
-        
 
     @responses.activate
     # pylint: enable=no-member
@@ -512,7 +511,8 @@ class ConfigurationValidationTests(unittest.TestCase):
 
         # Capture warning stdout
         out, _ = self.capsys.readouterr()
-        self.assertEqual(out, "Source token is currently assigned to a standard user. Some API endpoints may not behave correctly\n")
+        self.assertEqual(
+            out, "Source token is currently assigned to a non-admin user. Some API endpoints (e.g. users) may be forbidden\n")
 
     @responses.activate
     # pylint: enable=no-member
@@ -527,7 +527,7 @@ class ConfigurationValidationTests(unittest.TestCase):
         src_type.return_value = "azure devops"
         host.return_value = "https://dev.azure.com/gitlab-ps"
         self.config.src_token_validated_in_session = False
-        url_value = "https://dev.azure.com/gitlab-ps/_apis/ConnectionData?api-version=7.0"
+        url_value = "https://dev.azure.com/gitlab-ps/_apis/ConnectionData?api-version=7.0-preview"
         # url.return_value = url_value
         self.config.as_obj().set("SOURCE", "source_token", obfuscate("Enter secret: "))
         # pylint: disable=no-member
@@ -587,7 +587,7 @@ class ConfigurationValidationTests(unittest.TestCase):
 
     @responses.activate
     # pylint: enable=no-member
-    @mock.patch('sys.stdout', new_callable = StringIO)
+    @mock.patch('sys.stdout', new_callable=StringIO)
     @mock.patch("getpass.getpass")
     @mock.patch.object(GitLabApi, "generate_v4_request_url")
     def test_validate_dstn_token_not_admin(self, url, secret, stdout):
@@ -601,9 +601,9 @@ class ConfigurationValidationTests(unittest.TestCase):
         responses.add(responses.GET, url_value,
                       json=self.users.get_current_user(), status=200, content_type='text/json', match_querystring=True)
         # pylint: enable=no-member
-        
+
         self.config.validate_dstn_token("test")
-        expected = "Destination token is currently assigned to a standard user. Some API endpoints may not behave correctly\n"
+        expected = "Destination token is currently assigned to a non-admin user. Some API endpoints (e.g. users) may be forbidden\n"
         self.assertEqual(stdout.getvalue(), expected)
 
     @responses.activate
@@ -696,7 +696,7 @@ class ConfigurationValidationTests(unittest.TestCase):
 
         self.assertRaises(ConfigurationException,
                           self.config.validate_direct_transfer_enabled)
-    
+
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.src_token_validated_in_session')
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_token_validated_in_session')
     @mock.patch.object(GitLabApi, "generate_v4_request_url")
@@ -717,7 +717,7 @@ class ConfigurationValidationTests(unittest.TestCase):
         src_setting_resp = mock.MagicMock()
         type(src_setting_resp).status_code = mock.PropertyMock(return_value=200)
         src_setting_resp.json.return_value = set_to_false
-        
+
         # Set up mock dstn settings API call
         dstn_setting_resp = mock.MagicMock()
         type(dstn_setting_resp).status_code = mock.PropertyMock(return_value=200)
@@ -728,7 +728,7 @@ class ConfigurationValidationTests(unittest.TestCase):
 
         self.assertRaises(ConfigurationException,
                           self.config.validate_direct_transfer_enabled)
-    
+
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.src_token_validated_in_session')
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_token_validated_in_session')
     @mock.patch.object(GitLabApi, "generate_v4_request_url")
@@ -757,7 +757,7 @@ class ConfigurationValidationTests(unittest.TestCase):
         app_settings.side_effect = [src_setting_resp, dstn_setting_resp]
 
         self.assertTrue(self.config.direct_transfer)
-    
+
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.src_token_validated_in_session')
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_token_validated_in_session')
     @mock.patch.object(GitLabApi, "generate_v4_request_url")
@@ -811,7 +811,7 @@ class ConfigurationValidationTests(unittest.TestCase):
         app_settings.side_effect = [src_setting_resp, dstn_setting_resp]
 
         self.assertTrue(self.config.direct_transfer)
-    
+
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.src_token_validated_in_session')
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_token_validated_in_session')
     @mock.patch.object(GitLabApi, "generate_v4_request_url")
@@ -830,7 +830,7 @@ class ConfigurationValidationTests(unittest.TestCase):
         src_setting_resp = mock.MagicMock()
         type(src_setting_resp).status_code = mock.PropertyMock(return_value=403)
         src_setting_resp.json.return_value = None
-        
+
         # Set up mock dstn settings API call
         dstn_setting_resp = mock.MagicMock()
         type(dstn_setting_resp).status_code = mock.PropertyMock(return_value=403)

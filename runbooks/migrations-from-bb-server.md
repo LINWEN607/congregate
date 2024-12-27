@@ -89,8 +89,8 @@ Copy the following data and add subsequent columns for single project migration
 * PSE conducting the migration:
   * [ ] Acquires a BitBucket Server account with `SYS_ADMIN` or `ADMIN` privileges
     * **NOTE:** Unverified alternatives are [app passwords](https://bitbucket.org/blog/deprecating-atlassian-account-password-for-bitbucket-api-and-git-activity) and [HTTP access tokens](https://confluence.atlassian.com/bitbucketserver/personal-access-tokens-939515499.html) (as of version 8)
-  * [ ] Acquires the obfuscated (`congregate obfuscate`) BitBucket Server account password as `src_access_token`
-  * [ ] Acquires a GitLab Admin token (top right icon in *GitLab -> Settings -> Access Tokens*) with `api` scope
+  * [ ] Acquires the obfuscated (`./congregate.sh obfuscate`) BitBucket Server account password as `src_access_token`
+  * [ ] Acquires an obfuscated (`./congregate.sh obfuscate`) GitLab Admin token with `api` scope (top right icon in *GitLab -> Settings -> Access Tokens*)
   * [ ] [Configures Congregate](/docs/full_setup.md) to migrate from BitBucket Server to GitLab
     * [ ] Inspects and validates configured values in `data/congregate.conf`
       * **Tip:** Run `./congregate.sh validate-config`

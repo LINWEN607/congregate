@@ -1,4 +1,6 @@
 import json
+import os
+import signal
 from re import sub
 from urllib.parse import quote, quote_plus
 from time import sleep
@@ -20,7 +22,7 @@ from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.namespaces import NamespacesApi
 from congregate.helpers.migrate_utils import get_project_dest_namespace, is_user_project, get_user_project_namespace, \
     get_export_filename_from_namespace_and_name, get_dst_path_with_namespace, get_full_path_with_parent_namespace, \
-    is_loc_supported, check_is_project_or_group_for_logging, migration_dry_run
+    is_loc_supported, check_is_project_or_group_for_logging, migration_dry_run, check_download_directory
 
 
 class ImportExportClient(BaseGitLabClient):
@@ -256,30 +258,30 @@ class ImportExportClient(BaseGitLabClient):
                 while (ns := self.namespaces_api.get_namespace_by_full_path(
                         dest_namespace, self.dest_host, self.dest_token)).status_code != 200:
                     self.log.info(
-                        f"Waited {total_time}/{timeout} seconds to create {dest_namespace} for project {name}")
+                        f"Waited {total_time}/{timeout} seconds to create '{dest_namespace}' for project '{name}'")
                     total_time += wait_time
                     sleep(wait_time)
                     if total_time > timeout:
                         self.log.error(
-                            f"Time limit exceeded waiting for project {name} to import to {dest_namespace}, with response:\n{import_response}")
+                            f"Time limit exceeded waiting for project '{name}' to import to '{dest_namespace}', with response:\n{import_response}")
                         return None
                 ns_id = ns.json().get('id')
                 import_response = self.attempt_import(
                     filename, name, path, ns_id, override_params, members)
             elif import_response.status_code == 422:
                 self.log.error(
-                    f"Project {name} failed to import to {dest_namespace}, due to:\n{import_response.text}")
+                    f"Project '{name}' failed to import to '{dest_namespace}', due to:\n{import_response.text}")
                 return None
             elif import_response.status_code == 400:
                 self.log.error(
-                    f"Project {name} failed to import to {dest_namespace}, due to:\n{import_response.text}\n\t"
+                    f"Project '{name}' failed to import to '{dest_namespace}', due to:\n{import_response.text}\n\t"
                     "Double check your path. If your path seems correct, make sure you can manually create a project in the GL instance UI under the path")
                 return None
             import_id = self.get_import_id_from_response(
                 import_response, filename, name, path, dest_namespace, override_params, members)
         else:
             self.log.info(
-                f"{dry}Outputing project {name} (file: {filename}) migration data to dry_run_project_migration.json")
+                f"{dry}Outputing project '{name}' (file: {filename}) migration data to dry_run_project_migration.json")
             migration_dry_run("project", {
                 "filename": filename,
                 "name": name,
@@ -326,6 +328,12 @@ class ImportExportClient(BaseGitLabClient):
                     import_response = self.aws.copy_from_s3_and_import(
                         name, namespace, downloaded_filename)
         elif self.config.location == "filesystem":
+            # Check if the download directory exists before attempting to access it
+            download_dir = f"{self.config.filesystem_path}/downloads"
+            if not check_download_directory(download_dir):
+                self.log.error(f"Error: The download directory '{download_dir}' does not exist. "
+                               "Please create the directory and try again.")
+                os.killpg(os.getpgid(os.getpid()), signal.SIGKILL)
             resp = None
             self.log.info(
                 "Importing project {0} from filesystem to {1}".format(name, namespace))
@@ -438,6 +446,12 @@ class ImportExportClient(BaseGitLabClient):
             self.log.warning(
                 "NOTICE: Group export does not yet support (AWS/S3) user attributes")
         elif self.config.location == "filesystem":
+            # Check if the download directory exists before attempting to access it
+            download_dir = f"{self.config.filesystem_path}/downloads"
+            if not check_download_directory(download_dir):
+                self.log.error(f"Error: The download directory '{download_dir}' does not exist. "
+                               "Please create the directory and try again.")
+                os.killpg(os.getpgid(os.getpid()), signal.SIGKILL)
             token = self.config.destination_token
             with open(f"{self.config.filesystem_path}/downloads/{filename}", "rb") as f:
                 data = {
@@ -486,30 +500,31 @@ class ImportExportClient(BaseGitLabClient):
                 text = import_response.text
                 if import_response.status_code == 429:
                     self.log.info(
-                        f"Re-importing project {name} to {dst_namespace}, waiting {self.COOL_OFF_MINUTES} minutes due to:\n{text}")
+                        f"Re-importing project '{name}' to '{dst_namespace}', waiting {self.COOL_OFF_MINUTES} minutes due to:\n{text}")
                     sleep(self.COOL_OFF_MINUTES * 60)
                 # Assuming Default deletion adjourned period (Admin -> Settings
                 # -> General -> Visibility and access controls) is 0
                 elif import_response.status_code in [409, 400]:
                     if total_time > timeout:
                         self.log.error(
-                            f"Time limit exceeded waiting for project {name} to delete from {dst_namespace}, with response:\n{text}")
+                            f"Time limit exceeded waiting for project '{name}' to delete from '{dst_namespace}', with response:\n{text}")
                         return None
                     self.log.info(
-                        f"Waited {total_time}/{timeout} seconds for project {name} to delete from {dst_namespace} before re-importing:\n{text}")
+                        f"Waited {total_time}/{timeout} seconds for project '{name}' to delete from '{dst_namespace}' before re-importing:\n{text}")
                     total_time += wait_time
                     sleep(wait_time)
                 elif import_response.status_code == 500:
                     if retry:
                         self.log.info(
-                            f"Attempting to delete project {name} from {dst_namespace}, before re-importing, due to:\n{text}")
+                            f"Attempting to delete project '{name}' from '{dst_namespace}', before re-importing, due to:\n{text}")
+                        # Using project path instead of ID
                         self.projects_api.delete_project(
                             host, token, quote_plus(dst_namespace + "/" + path))
                         sleep(wait_time)
                         retry = False
                     else:
                         self.log.error(
-                            f"Skipping project {name} due to multiple 500 errors")
+                            f"Skipping project '{name}' due to multiple 500 errors")
                         break
                 import_response = self.attempt_import(
                     filename, name, path, dst_namespace, override_params, members)
@@ -524,7 +539,7 @@ class ImportExportClient(BaseGitLabClient):
                         "import_status") if status_json else None
                     if state == "finished":
                         self.log.info(
-                            f"Project {name} successfully imported to {dst_namespace}, with import status:\n{json_pretty(status_json)}")
+                            f"Project '{name}' successfully imported to '{dst_namespace}', with import status:\n{json_pretty(status_json)}")
                         with open(f"{self.app_path}/data/logs/import_failed_relations.json", "a") as f:
                             json.dump({status_json.get("path_with_namespace"): status_json.get(
                                 "failed_relations")}, f, indent=4)
@@ -573,7 +588,7 @@ class ImportExportClient(BaseGitLabClient):
         return import_id
 
     def export_project(self, project, dry_run=True):
-        loc = self.config.location.lower()
+        loc = self.config.location
         is_loc_supported(loc)
         exported = False
         name = project["name"]
@@ -634,7 +649,8 @@ class ImportExportClient(BaseGitLabClient):
                 self.config.filesystem_path,
                 filename,
                 headers={"PRIVATE-TOKEN": self.src_token},
-                verify=self.config.ssl_verify)
+                verify=self.config.ssl_verify,
+                wait=65)
             # If None i.e. exception, retry
             if not new_file:
                 self.log.info(
@@ -667,7 +683,7 @@ class ImportExportClient(BaseGitLabClient):
                 self.log.info("Downloading export")
                 try:
                     filename = download_file(url, self.config.filesystem_path, path_with_namespace, headers={
-                        "PRIVATE-TOKEN": self.src_token}, verify=self.config.ssl_verify)
+                        "PRIVATE-TOKEN": self.src_token}, verify=self.config.ssl_verify, wait=65)
                     self.log.info("Copying %s to s3", filename)
                     success = self.aws.copy_file_to_s3(filename)
                     if success:
@@ -687,7 +703,7 @@ class ImportExportClient(BaseGitLabClient):
         return success
 
     def export_group(self, src_gid, full_path, filename, dry_run=True):
-        loc = self.config.location.lower()
+        loc = self.config.location
         is_loc_supported(loc)
         exported = False
         full_path_with_parent_namespace = get_full_path_with_parent_namespace(
@@ -715,7 +731,7 @@ class ImportExportClient(BaseGitLabClient):
                     self.log.info("Downloading group {0} (ID: {1}) as {2}".format(
                         full_path, src_gid, filename))
                     download_file(url, self.config.filesystem_path, filename=filename, headers={
-                        "PRIVATE-TOKEN": self.src_token}, verify=self.config.ssl_verify)
+                        "PRIVATE-TOKEN": self.src_token}, verify=self.config.ssl_verify, wait=65)
             # TODO: Refactor and sync with other scenarios (#119)
             elif loc == "filesystem-aws":
                 self.log.error(

@@ -270,7 +270,7 @@ class Config(BaseConfig):
 # EXPORT
     @property
     def location(self):
-        return self.prop("EXPORT", "location")
+        return self.prop("EXPORT", "location", default="filesystem")
 
     @property
     def bucket_name(self):
@@ -304,6 +304,15 @@ class Config(BaseConfig):
         return self.prop_bool("USER", "keep_inactive_users", default=True)
 
     @property
+    def align_users_with_state_mismatch(self):
+        """
+        Determines if we should (un)block existing users with state mismatch.
+        E.g. "inactive" on source and "active" on destination or the opposite.
+        :return: The set config value or False as default.
+        """
+        return self.prop_bool("USER", "align_users_with_state_mismatch", default=False)
+
+    @property
     def reset_password(self):
         """
         Whether or not we should send the reset password link on user creation. Note: The API defaults to false
@@ -319,7 +328,7 @@ class Config(BaseConfig):
         :return: The set config value or True as default.
         """
         return self.prop_bool("USER", "force_rand_pwd", default=True)
-    
+
     @property
     def skip_keys_migration(self):
         """
@@ -369,7 +378,7 @@ class Config(BaseConfig):
     @property
     def ssl_verify(self):
         return self.prop_bool("APP", "ssl_verify", default=True)
-    
+
     @property
     def archive_logic(self):
         return self.prop_bool("APP", "archive_logic", default=False)
@@ -484,7 +493,7 @@ class Config(BaseConfig):
         to the source instance
         """
         return self.prop_bool("APP", "airgap_import", default=False)
-    
+
     @property
     def direct_transfer(self):
         """
@@ -492,7 +501,7 @@ class Config(BaseConfig):
         instead of file-based export/import
         """
         return self.prop_bool("APP", "direct_transfer", default=False)
-    
+
     @property
     def poll_interval(self):
         """
@@ -596,4 +605,4 @@ class Config(BaseConfig):
 
     @property
     def ado_api_version(self):
-        return self.prop("SOURCE", "api_version", default="7.0")
+        return self.prop("SOURCE", "api_version", default="7.0-preview")

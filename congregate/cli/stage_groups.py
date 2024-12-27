@@ -10,9 +10,10 @@ import os
 
 from gitlab_ps_utils.misc_utils import get_dry_log
 from gitlab_ps_utils.list_utils import remove_dupes
-from gitlab_ps_utils.dict_utils import rewrite_list_into_dict
+from gitlab_ps_utils.dict_utils import rewrite_list_into_dict, dig
 
 from congregate.cli.stage_base import BaseStageClass
+from congregate.migration.ado import constants
 
 
 class GroupStageCLI(BaseStageClass):
@@ -20,10 +21,6 @@ class GroupStageCLI(BaseStageClass):
                    skip_users=False, scm_source=None):
         """
             Stage data based on selected groups on source instance
-
-            :param: groups_to_stage: (dict) the staged groups object
-            :param: dry_run (bool) If true, it will only build the staging data lists
-            :param: skip_users (bool) If true will skip writing staged users to file
         """
         self.build_staging_data(groups_to_stage, dry_run, scm_source)
         if self.config.source_type == "gitlab":
@@ -35,9 +32,6 @@ class GroupStageCLI(BaseStageClass):
                            dry_run=True, scm_source=None):
         """
             Build data down from group level, including sub-groups, projects and users (members)
-
-            :param: groups_to_stage: (dict) the staged groups objects
-            :param: dry_run (bool) If true, it will only build the staging data lists.
         """
         i = 0
         if scm_source is not None:
@@ -45,117 +39,172 @@ class GroupStageCLI(BaseStageClass):
         if i == -1:
             self.log.warning(
                 f"Couldn't find the correct GH instance with hostname: {scm_source}")
-        # Loading projects information
+
         groups = self.open_groups_file(scm_source)
         projects = self.open_projects_file(scm_source)
         users = self.open_users_file(scm_source)
 
-        # Rewriting projects to retrieve objects by ID more efficiently
         self.rewritten_users = rewrite_list_into_dict(users, "id")
         self.rewritten_projects = rewrite_list_into_dict(projects, "id")
         self.rewritten_groups = rewrite_list_into_dict(groups, "id")
 
-        # If there is CLI or UI input
+        # Track which groups have already been staged to avoid duplicates
+        self.staged_group_ids = set()
+
         if list(filter(None, groups_to_stage)):
             # Stage ALL
-            if groups_to_stage[0] in ["all", "."] or len(
-                    groups_to_stage) == len(groups):
-                for p in projects:
-                    self.log.info(
-                        f"{get_dry_log(dry_run)}Staging project '{p['path_with_namespace']}' (ID: {p['id']})")
-                    self.staged_projects.append(self.get_project_metadata(p))
+            if self.config.source_type == "azure devops":
+                if groups_to_stage[0] in ["all", "."]:
+                    # Stage all projects
+                    for p in projects:
+                        self.log.info(
+                            f"{get_dry_log(dry_run)}Staging project '{p['path_with_namespace']}' (ID: {p['id']})")
+                        self.staged_projects.append(
+                            self.get_project_metadata(p))
 
-                for g in groups:
-                    self.log.info(
-                        f"{get_dry_log(dry_run)}Staging group '{g['full_path']}' (ID: {g['id']})")
-                    self.staged_groups.append(self.format_group(g))
+                    # Stage all groups
+                    for g in groups:
+                        self.log.info(
+                            f"{get_dry_log(dry_run)}Staging group '{g['full_path']}' (ID: {g['id']})")
+                        self.staged_groups.append(self.format_group(g))
 
-                for u in users:
-                    self.log.info(
-                        f"{get_dry_log(dry_run)}Staging user '{u['email']}' (ID: {u['id']})")
-                    self.staged_users.append(u)
-            # CLI range input
-            elif re.search(r"\d+-\d+", groups_to_stage[0]) is not None:
-                match = (re.search(r"\d+-\d+", groups_to_stage[0])).group(0)
-                start = int(match.split("-")[0])
-                if start != 0:
-                    start -= 1
-                end = int(match.split("-")[1])
-                for i in range(start, end):
-                    # Retrieve group object from groups.json
-                    self.append_data(groups[i], i, groups_to_stage, p_range=range(
-                        start, end), dry_run=dry_run)
-            # Random selection
+                    # Stage all users
+                    for u in users:
+                        self.log.info(
+                            f"{get_dry_log(dry_run)}Staging user '{u['email']}' (ID: {u['id']})")
+                        self.staged_users.append(u)
+                elif re.match(constants.UUID_PATTERN, groups_to_stage[0]):
+                    groups = [group for group in groups if group["id"]
+                              in groups_to_stage]
+                    for g in groups:
+                        self.log.info(
+                            f"{get_dry_log(dry_run)}Staging group '{g['full_path']}' (ID: {g['id']})")
+                        self.append_data(
+                            g, i, groups_to_stage, dry_run=dry_run)
+                else:
+                    self.log.error(
+                        f"Please use a space delimited list of UUIDs (group IDs), NOT {groups_to_stage[0]}")
+                    sys.exit(os.EX_IOERR)
             else:
-                for i, g in enumerate(groups_to_stage):
-                    # Hacky check for id or project name by explicitly checking
-                    # variable type
-                    try:
-                        # Retrieve group object from groups.json
-                        group = self.rewritten_groups[int(
-                            re.sub("[^0-9]", "", groups_to_stage[i]))]
-                    except ValueError:
-                        self.log.error(
-                            f"Please use a space delimited list of integers (group IDs), NOT {g}")
-                        sys.exit(os.EX_IOERR)
-                    except KeyError:
-                        self.log.error(f"Unknown group ID {g}")
-                        sys.exit(os.EX_DATAERR)
-                    self.append_data(
-                        group, i, groups_to_stage, dry_run=dry_run)
+                if groups_to_stage[0] in ["all", "."]:
+                    # Stage all projects
+                    for p in projects:
+                        self.log.info(
+                            f"{get_dry_log(dry_run)}Staging project '{p['path_with_namespace']}' (ID: {p['id']})")
+                        self.staged_projects.append(self.get_project_metadata(p))
+                    # Stage all groups
+                    for g in groups:
+                        self.log.info(
+                            f"{get_dry_log(dry_run)}Staging group '{g['full_path']}' (ID: {g['id']})")
+                        self.staged_groups.append(self.format_group(g))
+                    # Stage all users
+                    for u in users:
+                        self.log.info(
+                            f"{get_dry_log(dry_run)}Staging user '{u['email']}' (ID: {u['id']})")
+                        self.staged_users.append(u)
+                # CLI range input
+                elif re.search(r"\d+-\d+", groups_to_stage[0]) is not None:
+                    match = (
+                        re.search(r"\d+-\d+", groups_to_stage[0])).group(0)
+                    start = int(match.split("-")[0])
+                    if start != 0:
+                        start -= 1
+                    end = int(match.split("-")[1])
+                    for i in range(start, end):
+                        self.append_data(groups[i], i, groups_to_stage, p_range=range(start, end), dry_run=dry_run)
+                # Random selection of group IDs
+                else:
+                    for i, g in enumerate(groups_to_stage):
+                        try:
+                            gid = int(re.sub("[^0-9]", "", groups_to_stage[i]))
+                            group = self.rewritten_groups[gid]
+                        except ValueError:
+                            self.log.error(
+                                f"Please use a space delimited list of integers (group IDs), NOT {g}")
+                            sys.exit(os.EX_IOERR)
+                        except KeyError:
+                            self.log.error(f"Unknown group ID {g}")
+                            sys.exit(os.EX_DATAERR)
+                        self.append_data(group, i, groups_to_stage, dry_run=dry_run)
         else:
             self.log.info("Staging empty list")
             return self.staged_users, self.staged_groups, self.staged_projects
+
         return remove_dupes(self.staged_projects), remove_dupes(
             self.staged_users), remove_dupes(self.staged_groups)
 
     def append_data(self, group, group_index, groups_to_stage, p_range=0, dry_run=True):
         dry = get_dry_log(dry_run)
 
-        # Append all group projects to staged projects
+        # Stage all parent groups first
+        if parent_id := group.get("parent_id"):
+            self.add_group_and_parents(parent_id, dry_run)
+
+        # Stage the current group's projects
         for pid in group.get("projects", []):
             obj = self.get_project_metadata(pid, group=True)
-
-            # Append all project members to staged users
             for pm in obj.get("members", []):
                 self.append_member_to_members_list([], pm, dry_run)
-            self.log.info(
-                f"{dry}Staging project {obj.get('path_with_namespace')} (ID: {obj.get('id')})")
+            self.log.info(f"{dry}Staging project {obj.get('path_with_namespace')} (ID: {obj.get('id')})")
             self.staged_projects.append(obj)
 
-        # Append all descendant groups to staged groups
+        # Stage descendant groups (and their projects)
         desc_groups = group.get("desc_groups", [])
         for i, dgid in enumerate(desc_groups):
             try:
                 desc_group = self.rewritten_groups[dgid]
 
-                # Append all descendant group projects to staged projects
+                # Stage each descendant group's projects
                 for pid in desc_group.get("projects", []):
                     obj = self.get_project_metadata(pid, group=True)
-
-                    # Append all project members to staged users
                     for pm in obj.get("members", []):
                         self.append_member_to_members_list([], pm, dry_run)
-                    self.log.info(
-                        f"{dry}Staging project {obj.get('path_with_namespace')} (ID: {obj.get('id')})")
+                    self.log.info(f"{dry}Staging project {obj.get('path_with_namespace')} (ID: {obj.get('id')})")
                     self.staged_projects.append(obj)
 
                 self.log.info(
                     f"{dry}Staging descendant group {desc_group['full_path']} (ID: {dgid}) [{i+1}/{len(desc_groups)}]")
                 self.staged_groups.append(self.format_group(desc_group))
 
-                # Append all descendant group members to staged users
                 for m in desc_group.get("members", []):
                     self.append_member_to_members_list([], m, dry_run)
+
             except KeyError:
-                self.log.error(
-                    f"Descendent group ID {dgid} NOT found among listed groups")
+                self.log.error(f"Descendent group ID {dgid} NOT found among listed groups")
                 sys.exit(os.EX_DATAERR)
 
-        # Append all group members to staged users
+        # Stage all group members
         for m in group.get("members", []):
             self.append_member_to_members_list([], m, dry_run)
 
+        # Stage the current group
         self.log.info(
             f"{dry}Staging group {group['full_path']} (ID: {group['id']}) [{group_index + 1}/{len(p_range) if p_range else len(groups_to_stage)}]")
         self.staged_groups.append(self.format_group(group))
+
+
+    def add_group_and_parents(self, group_id, dry_run=True):
+        """
+        Stage all ancestor groups of a given group.
+        This does NOT stage the requested group itself, only its parents.
+        """
+        if group_id in self.staged_group_ids:
+            return
+
+        group_to_stage = self.rewritten_groups.get(group_id)
+        if not group_to_stage:
+            self.log.warning(f"Group ID {group_id} NOT found among listed groups")
+            return
+
+        # If there is a parent group, stage it first
+        if parent_id := group_to_stage.get("parent_id"):
+            self.add_group_and_parents(parent_id, dry_run)
+
+        # Then stage this parent group
+        self.log.info(f"{get_dry_log(dry_run)}Staging parent group '{group_to_stage['full_path']}' (ID: {group_to_stage['id']})")
+        self.staged_groups.append(self.format_group(group_to_stage))
+        self.staged_group_ids.add(group_id)
+
+        # Stage members of this parent group
+        for member in group_to_stage.get("members", []):
+            self.append_member_to_members_list([], member, dry_run)

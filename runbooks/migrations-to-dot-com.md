@@ -83,8 +83,8 @@ Copy the following data and add subsequent rows for single group migration
 
 PSE conducting the migration:
 
-* [ ] Acquires a GitLab source instance personal access token with admin privileges (top right icon _Your user Avatar -\> Edit Profile -\> Access Tokens_)
-* [ ] Acquires an Admin token for Gitlab.com by raising an _Issue_ in [Access request](https://gitlab.com/gitlab-com/team-member-epics/access-requests) and choose the template _Access Change Request_
+* [ ] Acquires an obfuscated (`./congregate.sh obfuscate`) GitLab source instance personal access token with admin privileges and `api` scope (top right icon _Your user Avatar -\> Edit Profile -\> Access Tokens_)
+* [ ] Acquires an obfuscated (`./congregate.sh obfuscate`) GitLab.com Admin token with `api` scope by raising an _Issue_ in [Access request](https://gitlab.com/gitlab-com/team-member-epics/access-requests) and choosing template _Access Change Request_
 * [ ] Configures Congregate to migrate from a GitLab instance to gitlab.com
   * [ ] Inspects and validates configured values in `data/congregate.conf`
     * **Tip:** Run `./congregate.sh validate-config`  to ensure Congregate is configured properly
@@ -113,6 +113,7 @@ PSE conducting the migration:
     * See GitLab migration prerequisites for details
 * [ ] Create a directory called "waves" in `/opt/congregate/data` in the container if it doesn't already exist
 * [ ] Create a directory called `user_wave` in `/opt/congregate/data/waves` if it doesn't already exist
+* [ ] Ensure the permissions for the directories _/opt/congregate/data_ and _/opt/congregate/downloads_ are set to `ps-user`. Run the command (within the Congregate container) `sudo chown ps-user:ps-user -R data downloads` from the _/opt/congregate_ directory
 * [ ] Run `nohup ./congregate.sh list > data/waves/listing.log 2>&1 &` at the beginning of the migration blackout period
 * [ ] Stage ALL users
   * **NOTE:** Make sure no groups and projects are staged
@@ -288,6 +289,7 @@ Project exports include, among others:
         "secret_access_key": “<aws-secret-key>"
       }'
     ```
+    1. If you encounter errors, consult our PS troubleshooting guide [here](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/blob/master/docs/troubleshooting_s3_import.md)
 
 #### Workarounds
 
