@@ -247,7 +247,7 @@ def search_for_user_by_user_mapping_field(field, user, host, token):
     else:
         b.log.error(
             f"Invalid (or insecure, for gitlab.com) user mapping field configured: '{field}'")
-        return user
+        return {}
     for u in user_search:
         if u.get(field, "").lower() == user.get(field, "").lower():
             return u

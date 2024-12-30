@@ -115,7 +115,7 @@ class ProjectsApi(GitLabApiWrapper):
         """
         Adds a member to a group or project
 
-        GitLab API Doc: https://docs.gitlab.com/ee/api/members.html
+        GitLab API Doc: https://docs.gitlab.com/ee/api/members.html#add-a-member-to-a-group-or-project
 
             :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
@@ -132,7 +132,7 @@ class ProjectsApi(GitLabApiWrapper):
         """
         Removes member from project
 
-        GitLab API Doc: https://docs.gitlab.com/ee/api/members.html
+        GitLab API Doc: https://docs.gitlab.com/ee/api/members.html#remove-a-member-from-a-group-or-project
 
             :param: pid: (int) GitLab project ID
             :param: uid: (int) GitLab user ID
