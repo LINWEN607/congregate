@@ -158,7 +158,7 @@ class ProjectsTests(unittest.TestCase):
                 "email": "johndoe@email.com",
                 "id": 1
             },
-            None
+            {}
         ]
         members = [
             {

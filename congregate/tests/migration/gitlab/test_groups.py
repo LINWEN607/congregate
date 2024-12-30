@@ -165,7 +165,7 @@ class GroupsTests(unittest.TestCase):
                 "email": "johndoe@email.com",
                 "id": 1
             },
-            None
+            {}
         ]
         members = [
             {
@@ -190,7 +190,7 @@ class GroupsTests(unittest.TestCase):
         actual = self.groups.add_members_to_destination_group(
             "", "", 000, members)
         self.assertDictEqual(expected, actual)
-        
+
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.validate_dstn_token', return_value=True)
     @mock.patch.object(GroupsApi, 'share_group')
     @mock.patch.object(GroupsApi, 'get_group')
