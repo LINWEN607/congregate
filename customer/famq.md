@@ -183,6 +183,15 @@ By default they are inherited by the import user account.
 
 Please see [here](#q4) how to prevent this behavior.
 
+## Do account states propagate during user migration?
+
+`active` users migrate as `active`, while all other states migrate as `blocked`.
+
+Note that on gitlab.com, there is no `deactivated` state available. To free up a license seat one has to either:
+
+* Demote the user permission to a role that does not consume a license seat ([tier dependant](https://docs.gitlab.com/ee/subscriptions/gitlab_com/#billable-users))
+* Remove the billable member from the IdP (SCIM) or [the top-level group via API](https://docs.gitlab.com/ee/api/members.html#remove-a-billable-member-from-a-group).
+
 ## During a user migration, how are passwords set?
 
 By default, when Congregate creates a user account on destination it:
