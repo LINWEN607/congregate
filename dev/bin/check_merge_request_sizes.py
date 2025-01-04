@@ -106,10 +106,10 @@ def process_group(gitlab_wrapper: GitLabWrapper, group_id: int, csv_writer: csv.
 def main():
     # Configuration
     GITLAB_URL = "https://gitlab.com"  # Replace with your GitLab instance URL
-    PRIVATE_TOKEN = "TOKEN"
-    ROOT_GROUP_ID = GROUPID  # Replace with your root group ID
+    PRIVATE_TOKEN = "token"
+    ROOT_GROUP_ID = GROUP_ID  # Replace with your root group ID
     OUTPUT_FILE = "merge_requests.csv"
-    MAX_SIZE = 50 # MB
+    MAX_SIZE = 50  # MB
 
     # Initialize GitLab client
     gitlab_wrapper = GitLabWrapper(GITLAB_URL, PRIVATE_TOKEN)
