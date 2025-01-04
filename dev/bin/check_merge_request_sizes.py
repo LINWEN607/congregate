@@ -82,12 +82,14 @@ def process_group(gitlab_wrapper: GitLabWrapper, group_id: int, csv_writer: csv.
                     mr_dict = get_object_dict(mr)
                     mr_json = json.dumps(mr_dict)
                     size_mb = len(mr_json.encode('utf-8')) / (1024 * 1024)
+                    over_size = size_mb > max_size 
                     
                     # Write row to CSV
                     csv_writer.writerow([
                         mr.iid,
                         mr.title,
-                        f"{size_mb:.8f}"
+                        f"{size_mb:.8f}",
+                        oversize
                     ])
             except gitlab.exceptions.GitlabError as e:
                 print(f"Error processing project {group_project.name}: {e}", 
@@ -116,7 +118,7 @@ def main():
         csv_writer = csv.writer(csvfile)
         
         # Write header
-        csv_writer.writerow(['IID', 'Title', 'JSON Size (MB)'])
+        csv_writer.writerow(['IID', 'Title', 'JSON Size (MB)', 'Oversize'])
         
         # Process root group and all its subgroups
         print(f"Starting processing from group ID: {ROOT_GROUP_ID}")
