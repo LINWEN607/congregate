@@ -61,7 +61,7 @@ def get_object_dict(obj) -> dict:
     """Convert a GitLab object to a dictionary in a way compatible with 4.5.0"""
     return obj._attrs
 
-def process_group(gitlab_wrapper: GitLabWrapper, group_id: int, csv_writer: csv.writer) -> None:
+def process_group(gitlab_wrapper: GitLabWrapper, group_id: int, csv_writer: csv.writer, max_size: int) -> None:
     """Process a group and all its subgroups recursively"""
     
     try:
@@ -82,14 +82,14 @@ def process_group(gitlab_wrapper: GitLabWrapper, group_id: int, csv_writer: csv.
                     mr_dict = get_object_dict(mr)
                     mr_json = json.dumps(mr_dict)
                     size_mb = len(mr_json.encode('utf-8')) / (1024 * 1024)
-                    over_size = size_mb > max_size 
-                    
+                    over_size = size_mb > max_size
+
                     # Write row to CSV
                     csv_writer.writerow([
                         mr.iid,
                         mr.title,
                         f"{size_mb:.8f}",
-                        oversize
+                        over_size
                     ])
             except gitlab.exceptions.GitlabError as e:
                 print(f"Error processing project {group_project.name}: {e}", 
@@ -98,7 +98,7 @@ def process_group(gitlab_wrapper: GitLabWrapper, group_id: int, csv_writer: csv.
         
         # Process all subgroups recursively
         for subgroup in gitlab_wrapper.get_subgroups(group):
-            process_group(gitlab_wrapper, subgroup.id, csv_writer)
+            process_group(gitlab_wrapper, subgroup.id, csv_writer, max_size)
             
     except gitlab.exceptions.GitlabError as e:
         print(f"Error processing group {group_id}: {e}", file=sys.stderr)
@@ -109,7 +109,8 @@ def main():
     PRIVATE_TOKEN = "TOKEN"
     ROOT_GROUP_ID = GROUPID  # Replace with your root group ID
     OUTPUT_FILE = "merge_requests.csv"
-    
+    MAX_SIZE = 50 # MB
+
     # Initialize GitLab client
     gitlab_wrapper = GitLabWrapper(GITLAB_URL, PRIVATE_TOKEN)
     
@@ -122,7 +123,7 @@ def main():
         
         # Process root group and all its subgroups
         print(f"Starting processing from group ID: {ROOT_GROUP_ID}")
-        process_group(gitlab_wrapper, ROOT_GROUP_ID, csv_writer)
+        process_group(gitlab_wrapper, ROOT_GROUP_ID, csv_writer, MAX_SIZE)
         
     print(f"Processing complete. Results written to {OUTPUT_FILE}")
 
