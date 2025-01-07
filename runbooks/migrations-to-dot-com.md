@@ -70,7 +70,7 @@ Copy the following data and add subsequent rows for wave migration or migration 
 | :x:       | [name / username]          | [total-projects] | [size]          |
 | **Total** | [total-number]             | [sum-of-column]  | [sum-of-column] |
 
-Copy the following data and add subsequent rows for single group migration
+Copy the following data and add subsequent rows for single project migration
 
 | Completed | Project Path | Repo Size   |
 | --------- | ------------ | ----------- |
