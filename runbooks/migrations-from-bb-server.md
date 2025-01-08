@@ -67,14 +67,14 @@ Quick reference:
 BitBucket Project = GitLab Group
 BitBucket Repo = GitLab Project
 
-Copy the following data and add subsequent columns for wave migration or nested project migration
+Copy the following data and add subsequent columns for wave migration or nested projects migration
 
 | Completed | Project Name   | Total Repos     | Project Size    |
 | --------- | -------------- | --------------- | --------------- |
 | :x:       | [name]         | [total-Repos]   | [project-size]  |
 | **Total** | [total-number] | [sum-of-column] | [sum-of-column] |
 
-Copy the following data and add subsequent columns for single project migration
+Copy the following data and add subsequent columns for single repository migration
 
 | Completed | Repo Path | Repo Size     |
 | --------- | --------- | ------------- |

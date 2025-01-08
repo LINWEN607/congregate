@@ -150,7 +150,12 @@ Certain GitLab features are migrated but not adapted to the destination instance
   * Group level runners can be manually (via UI - *Settings -> CI/CD -> Runners*) enabled/disabled as of 13.5
   * Enable project-level shared runners (default: `true`)
   * Disable AutoDevOps (default: `true`)
-* Update group and project permissions (default: `private`). See [project](https://docs.gitlab.com/ee/user/project/settings/import_export.html) and [group](https://docs.gitlab.com/ee/user/group/import/index.html#migrate-groups-by-uploading-an-export-file-deprecated) import/export notes for more details.
+* Update group and project permissions (default: `private`). See [project](https://docs.gitlab.com/ee/user/project/settings/import_export.html) and [group](https://docs.gitlab.com/ee/user/group/import/index.html#migrate-groups-by-uploading-an-export-file-deprecated) import/export notes for more details. gitlab.com specific limitations:
+  * [Only the `public` and `private` visibility is currently available](https://gitlab.com/gitlab-org/gitlab/-/issues/386036), and `public` is rarely used for security reasons.
+  * For projects that were `internal` on source this means that **Guests** will not be able to [view `private` project code](https://docs.gitlab.com/ee/user/permissions.html#repository) on gitlab.com anymore.
+  * Another downside of the **Guest** role is inability to pull images and packages, which, for `private` projects, requires a **Reporter** role. This gap has been around and is captured in `https://gitlab.com/gitlab-org/gitlab/-/issues/336622`.
+  * The current workaround for **Guests** on gitlab.com to view the code, and still **not** consume a license seat (in case of Ultimate subscriptions), is to create a custom role (at the top-level group) that extends **Guest** by [only additionally allowing `read-code` functionality](https://docs.gitlab.com/ee/user/custom_roles.html#billing-and-seat-usage).
+  * For pulling images and packages as **Guest** [a breaking change is planned](https://gitlab.com/gitlab-org/gitlab/-/issues/336622).
 * Update paths (hostnames) for:
   * project, group and system hooks
     * **NOTE:** if they are pointing to a private instance or `localhost` gitlab.com will see them as invalid and fail creating them
