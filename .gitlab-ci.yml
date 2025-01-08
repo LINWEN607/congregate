@@ -697,27 +697,27 @@ debian_container_scanning:
         - frontend/package.json
         - docker/release/debian.Dockerfile
 
-docs update:
-  stage: deploy
-  extends:
-    - .dotcom-creds
-  script:
-    - echo "This is a placeholder job ran only when runbooks are changed"
-    - echo "Storing any changed runbook to artifacts that will expire in 1 week."
-    # To the ps-migration project
-    - python ci/docscript.py 11750578
-    # To the Migration Template
-    - python ci/docscript.py 21146917 extras
-  rules:
-    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
-      changes:
-        - runbooks/*
-        - customer/*
-  artifacts:
-    paths:
-      - runbooks/*
-      - customer/*
-    expire_in: 1 week
+# docs update:
+#   stage: deploy
+#   extends:
+#     - .dotcom-creds
+#   script:
+#     - echo "This is a placeholder job ran only when runbooks are changed"
+#     - echo "Storing any changed runbook to artifacts that will expire in 1 week."
+#     # To the ps-migration project
+#     - python ci/docscript.py 11750578
+#     # To the Migration Template
+#     - python ci/docscript.py 21146917 extras
+#   rules:
+#     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
+#       changes:
+#         - runbooks/*
+#         - customer/*
+#   artifacts:
+#     paths:
+#       - runbooks/*
+#       - customer/*
+#     expire_in: 1 week
 
 mvc:
   stage: test
@@ -799,4 +799,3 @@ gitlab-advanced-sast:
     - if: $CI_COMMIT_BRANCH        # If there's no open merge request, add it to a *branch* pipeline instead.
       exists:
         - '**/*.py'
-

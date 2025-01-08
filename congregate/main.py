@@ -4,7 +4,7 @@ Copyright (c) 2022 - GitLab
 
 Usage:
     congregate init
-    congregate list [--processes=<n>] [--partial] [--skip-users] [--skip-groups] [--skip-group-members] [--skip-projects] [--skip-project-members] [--skip-ci] [--src-instances] [--subset]
+    congregate list [--processes=<n>] [--partial] [--skip-users] [--skip-groups] [--skip-group-members] [--skip-projects] [--skip-project-members] [--skip-ci] [--src-instances] [--subset] [--skip-archived-projects]
     congregate configure # Deprecated. Manually create config file and validate it by running 'congregate validate-config'
     congregate validate-config
     congregate generate-reporting
@@ -95,6 +95,7 @@ Arguments:
     skip-group-export                       Skip exporting groups from source instance
     skip-group-import                       Skip importing groups to destination instance
     skip-projects                           Rollback: Remove only users and empty groups
+    skip-archived-projects                  Skip archived projects (Bitbucket only right now)
     skip-project-members                    Add empty list instead of listing GitLab project members. Skip saving BBS repo user groups as GL project members.
     skip-project-export                     Skips the project export and assumes that the project file is already ready
                                                 for rewrite. Currently does NOT work for exports through filesystem-aws
@@ -104,7 +105,7 @@ Arguments:
     only-post-migration-info                Skips migrating all content except for post-migration information. Use when import is handled outside of congregate
     subgroups-only                          Expects that only sub-groups are staged and that their parent groups already exist on destination
     reg-dry-run                             If registry migration is configured, instead of doing the actual migration, write the tags to the logs for use in the brute force migration. Can also be useful when renaming targets
-    retain-contributors                     Searches a project for all contributors to a project and adds them as members before exporting the project. Only works in GitLab file-based migrations
+    retain-contributors                     Searches a project for all contributors to a project and adds them as members before exporting the project. Only required for GitLab file-based migrations.
     group-structure                         Let the GitHub and BitBucket Server importers create the missing sub-group layers.
     access-level                            Update parent group level user permissions (None/Minimal/Guest/Reporter/Developer/Maintainer/Owner).
     current-level                           Current destination group/project members access level.
@@ -379,6 +380,7 @@ def main():
                     skip_ci=arguments["--skip-ci"],
                     src_instances=SRC_INSTANCES,
                     subset=arguments["--subset"],
+                    skip_archived_projects=arguments["--skip-archived-projects"],
                 )
                 list_client.list_data()
                 add_post_migration_stats(start, log=log)

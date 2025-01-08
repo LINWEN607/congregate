@@ -30,6 +30,30 @@ class BaseDiffClient(BaseClass):
                 });
             }
         }
+        function toggleBasicStatsMismatch() {
+            var rows = document.getElementsByClassName('project-row');
+            var button = document.getElementById('filterButton');
+            var showMismatch = button.getAttribute('data-showMismatch');
+            if (showMismatch === 'false') {
+                button.innerHTML = 'Show all projects';
+                button.setAttribute('data-showMismatch', 'true');
+                for (var i = 0; i < rows.length; i++) {
+                    var row = rows[i];
+                    if (row.classList.contains('basic-stats-mismatch')) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                }
+            } else {
+                button.innerHTML = 'Show only projects with basic stats mismatches';
+                button.setAttribute('data-showMismatch', 'false');
+                for (var i = 0; i < rows.length; i++) {
+                    var row = rows[i];
+                    row.style.display = '';
+                }
+            }
+        }
     """
     STYLE = """
         body {
@@ -103,6 +127,15 @@ class BaseDiffClient(BaseClass):
          - Total Number of Merge Requests
          - Total Number of Merge Request Comments
     """
+
+    # Define the problematic fields as a class attribute
+    PROBLEMATIC_FIELDS = [
+        "Total Number of Branches",
+        "Total Number of Issues",
+        "Total Number of Issue Comments",
+        "Total Number of Merge Requests",
+        "Total Number of Merge Request Comments"
+    ]
 
     def __init__(self):
         super().__init__()
@@ -487,65 +520,25 @@ class BaseDiffClient(BaseClass):
             bgcolor = self.HEX_TITLE
         return bgcolor
 
-    def update_problematic_fields(self, soup):
-        '''
-        Currently the way the generate HTML file is created doesn't calculate
-        the fields listed below. I tried to fix it in the generate_html_report
-        and other fields but couldn't get it to work properly. This change is 
-        temprary and the best solution would be to re-write the generate html
-        file to use the data in the project_diff.json as it seems that data
-        is accurate.
-        '''
-        self.log.info(f"Starting the update of problematic fields")
-
-        # Define the list of problematic fields
-        problematic_fields = [
-            "Total Number of Branches",
-            "Total Number of Issues",
-            "Total Number of Issue Comments",
-            "Total Number of Merge Requests",
-            "Total Number of Merge Request Comments"
-        ]
-        
-        # Loop over the problematic fields
-        for field in problematic_fields:
-            # Find all the <td> elements that contain the problematic field names
-            field_tds = soup.find_all('td', string=re.compile(f".*{field}.*"))
-            
-            for field_td in field_tds:           
-                # Find the next <td> (the one that contains the "N/A")
-                accuracy_td = field_td.find_next_sibling('td')
-                
-                if accuracy_td and "N/A" in accuracy_td.text:                 
-                    # Find the third <td> that contains source and destination values
-                    source_dest_td = accuracy_td.find_next_sibling('td')
-                    
-                    if source_dest_td:
-                        # Extract the source and destination values
-                        source_tag = source_dest_td.find('p', string=re.compile("source:"))
-                        dest_tag = source_dest_td.find('p', string=re.compile("destination:"))
-
-                        if source_tag and dest_tag:
-                            source = source_tag.text.replace('source: ', '').strip()
-                            destination = dest_tag.text.replace('destination: ', '').strip()
-
-                            # Handle None values as 100% accuracy
-                            if source == 'None' and destination == 'None':
-                                accuracy = 100.00
-                            else:
-                                try:
-                                    source_value = int(source)
-                                    dest_value = int(destination)
-                                    accuracy = 100.00 if source_value == dest_value else 0.00
-                                except ValueError:
-                                    self.log.warning(f"Non-integer values found for field: {field}")
-                                    continue
-
-                            # Update the accuracy field with the calculated percentage
-                            accuracy_td.clear()
-                            accuracy_td.append(f"{accuracy:.2f}%")
-
-        self.log.info(f"Problematic fields updated successfully")
+    def calculate_problematic_fields_accuracy(self, v):
+        for field in self.PROBLEMATIC_FIELDS:
+            source_count = dig(v, field, 'source')
+            destination_count = dig(v, field, 'destination')
+            if source_count is not None and destination_count is not None:
+                if source_count == destination_count:
+                    accuracy = 1.0
+                else:
+                    accuracy = 0.0
+                if v.get(field):
+                    v[field]['accuracy'] = accuracy
+                    # Remove any existing 'diff' entry to avoid redundancy
+                    if 'diff' in v[field]:
+                        del v[field]['diff']
+            else:
+                # If counts are missing, set accuracy to None or 0 and keep the counts
+                accuracy = 0.0
+                if v.get(field):
+                    v[field]['accuracy'] = accuracy
 
     def generate_html_report(self, asset, diff, filepath, nested=False):
         filepath = f"{self.app_path}{filepath}"
@@ -558,6 +551,10 @@ class BaseDiffClient(BaseClass):
         soup.html.append(soup.new_tag("head"))
         soup.html.head.append(style)
 
+        # Add a list to collect projects with basic stats mismatches
+        projects_with_mismatches = []
+
+        # Iterate over each project in the diff
         for d, v in sorted(diff.items()):
             if not isinstance(v, dict):
                 # Make sure the JSON only has double quotes
@@ -573,13 +570,24 @@ class BaseDiffClient(BaseClass):
             elif len(v) > 100000:
                 self.log.warning(f"Skipping {d} due to large size")
             else:
-                # if not isinstance(v, dict):
-                #     # Make sure the JSON only has double quotes
-                #     p = re.compile('(?<!\\\\)\'')
-                #     v = json.loads(json.dumps(p.sub('\"', v)))
-
-                # This is the main table body of the report, and contains all the individual projects, groups, or users, etc...
                 if "migration_results" not in d:
+                    # Calculate accuracies for problematic fields
+                    self.calculate_problematic_fields_accuracy(v)
+
+                    # Initialize the basic_stats_mismatch flag for each project
+                    basic_stats_mismatch = False
+
+                    # Check if any of the problematic fields have accuracy less than 100%
+                    for field in self.PROBLEMATIC_FIELDS:
+                        accuracy = dig(v, field, 'accuracy')
+                        if accuracy is not None and accuracy < 1.0:
+                            basic_stats_mismatch = True
+                            break
+
+                    # If there is a mismatch, add the project to the list
+                    if basic_stats_mismatch:
+                        projects_with_mismatches.append(d)
+
                     # Creating the normal asset row
                     header_row = soup.new_tag("tr")
                     header_data_row = soup.new_tag("tr")
@@ -596,6 +604,15 @@ class BaseDiffClient(BaseClass):
                         header_data_row['bgcolor'] = self.select_bg_color(kv)
                         header_row.append(cell_header)
                         header_data_row.append(cell_data)
+
+                    # Add classes to the project rows
+                    if basic_stats_mismatch:
+                        header_row['class'] = 'project-row basic-stats-mismatch'
+                        header_data_row['class'] = 'project-row basic-stats-mismatch'
+                    else:
+                        header_row['class'] = 'project-row'
+                        header_data_row['class'] = 'project-row'
+
                     soup.html.body.table.append(header_row)
                     soup.html.body.table.append(header_data_row)
 
@@ -631,38 +648,46 @@ class BaseDiffClient(BaseClass):
                             diff_data_row = soup.new_tag("tr")
                             data = [
                                 endpoint,
-                                "N/A",
-                                [f"{count_key}: {count_value}" for count_key,
-                                    count_value in dig(v, endpoint).items()]
+                                str(self.as_percentage(
+                                    dig(v, endpoint, 'accuracy'))),
+                                [f"source: {dig(v, endpoint, 'source')}", f"destination: {dig(v, endpoint, 'destination')}"]
                             ]
 
-                        for da in data:
-                            cell_data = soup.new_tag("td")
-                            if isinstance(da, dict):
-                                showhide = soup.new_tag("button")
-                                showhide['id'] = f"{endpoint}-showhide"
-                                showhide['class'] = 'accordion'
-                                showhide.string = "show/hide"
-                                cell_data.append(showhide)
-                                json_block = soup.new_tag("pre")
-                                json_block['id'] = 'json'
-                                json_block['class'] = 'accordion-content'
-                                json_block.string = json.dumps(da, indent=4)
-                                cell_data.append(json_block)
-                            elif isinstance(da, list):
-                                for count in da:
-                                    count_data = soup.new_tag("p")
-                                    count_data.string = count
-                                    cell_data.append(count_data)
-                            else:
-                                cell_data.string = da if da else ""
-                            diff_data_row.append(cell_data)
-                        diff_row_table.append(diff_data_row)
+                        if data:
+                            for da in data:
+                                cell_data = soup.new_tag("td")
+                                if isinstance(da, dict):
+                                    showhide = soup.new_tag("button")
+                                    showhide['id'] = f"{endpoint}-showhide"
+                                    showhide['class'] = 'accordion'
+                                    showhide.string = "show/hide"
+                                    cell_data.append(showhide)
+                                    json_block = soup.new_tag("pre")
+                                    json_block['id'] = 'json'
+                                    json_block['class'] = 'accordion-content'
+                                    json_block.string = json.dumps(da, indent=4)
+                                    cell_data.append(json_block)
+                                elif isinstance(da, list):
+                                    for count in da:
+                                        count_data = soup.new_tag("p")
+                                        count_data.string = count
+                                        cell_data.append(count_data)
+                                else:
+                                    cell_data.string = da if da else ""
+                                diff_data_row.append(cell_data)
+                            diff_row_table.append(diff_data_row)
 
                     td = soup.new_tag("td")
                     td['colspan'] = 3
                     td.append(diff_row_table)
                     diff_row.append(td)
+
+                    # Add classes to the diff row
+                    if basic_stats_mismatch:
+                        diff_row['class'] = 'project-row basic-stats-mismatch'
+                    else:
+                        diff_row['class'] = 'project-row'
+
                     soup.html.body.table.append(diff_row)
 
                 # This is the Main Header Row for the page
@@ -682,6 +707,16 @@ class BaseDiffClient(BaseClass):
                     summary_data_row.append(summary_cell_data)
                     soup.html.body.table.insert(1, summary_data_row)
 
+                    # Add the filter button row
+                    filter_row = soup.new_tag("tr")
+                    filter_cell = soup.new_tag("td")
+                    filter_cell['colspan'] = 3
+                    filter_button = soup.new_tag("button", id="filterButton", onclick="toggleBasicStatsMismatch()", **{'data-showMismatch':'false'})
+                    filter_button.string = "Show only projects with basic stats mismatches"
+                    filter_cell.append(filter_button)
+                    filter_row.append(filter_cell)
+                    soup.html.body.table.insert(2, filter_row)
+
                     overall_results_header_row = soup.new_tag("tr")
                     diff_headers = [pretty_print_key(
                         d), "Overall Accuracy", "Result"]
@@ -689,9 +724,8 @@ class BaseDiffClient(BaseClass):
                         diff_cell_header = soup.new_tag("th")
                         diff_cell_header.string = diff_header
                         overall_results_header_row.append(diff_cell_header)
-                    overall_results_header_row['bgcolor'] = self.select_bg_color(
-                    )
-                    soup.html.body.table.insert(2, overall_results_header_row)
+                    overall_results_header_row['bgcolor'] = self.select_bg_color()
+                    soup.html.body.table.insert(3, overall_results_header_row)
                     overall_results_data_row = soup.new_tag("tr")
 
                     # When the parent group is included in the repo report
@@ -708,17 +742,17 @@ class BaseDiffClient(BaseClass):
                         cell_data = soup.new_tag("td")
                         cell_data.string = da if da else ""
                         overall_results_data_row.append(cell_data)
-                    soup.html.body.table.insert(3, overall_results_data_row)
+                    soup.html.body.table.insert(4, overall_results_data_row)
 
         head = soup.new_tag("head")
         script = soup.new_tag("script")
+        # Add the JavaScript code
         script.string = self.SCRIPT
         style = soup.new_tag("style")
         style.string = self.STYLE
         head.append(script)
         head.append(style)
         soup.html.append(head)
-        self.update_problematic_fields(soup)
         with open(filepath, "wb") as f:
             f.write(soup.prettify().encode())
 

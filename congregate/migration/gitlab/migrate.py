@@ -436,9 +436,10 @@ class GitLabMigrateClient(MigrateClient):
         if self.sync_members and not self.remove_members:
             results["members_added"] = self.add_group_members(
                 src_gid, dst_gid, full_path)
-            
+
         # Add group members to groups
-        results["shared_with_groups"] = self.share_groups_with_groups(src_gid, dst_gid)
+        results["shared_with_groups"] = self.share_groups_with_groups(
+            src_gid, dst_gid)
 
         return results
 
@@ -496,19 +497,17 @@ class GitLabMigrateClient(MigrateClient):
             self.log.warning("SKIP: No projects staged for migration")
 
     def handle_exporting_projects(self, project, src_host=None, src_token=None):
-        name = project["name"]
-        namespace = project["namespace"]
         pid = project["id"]
         project_path = project['path_with_namespace']
         dry_log = get_dry_log(self.dry_run)
         filename = mig_utils.get_export_filename_from_namespace_and_name(
-            namespace, name)
+            project["namespace"], name=project["name"])
         result = {
             filename: False
         }
         try:
             c_retention = None
-            if self.retain_contributors:
+            if self.retain_contributors and not self.config.direct_transfer:
                 self.log.info(
                     f"{dry_log}Contributor Retention is enabled. Adding all project contributors as project members")
                 c_retention = ContributorRetentionClient(
@@ -519,7 +518,7 @@ class GitLabMigrateClient(MigrateClient):
                 f"{dry_log}Exporting project {project_path} (ID: {pid}) as {filename}")
             result[filename] = ImportExportClient(src_host=src_host, src_token=src_token).export_project(
                 project, dry_run=self.dry_run)
-            if self.retain_contributors:
+            if self.retain_contributors and not self.config.direct_transfer:
                 self.log.info(
                     f"{dry_log}Contributor Retention is enabled. Project export is complete Removing all project contributors from members")
                 c_retention.remove_contributors_from_project(source=True)
@@ -534,18 +533,18 @@ class GitLabMigrateClient(MigrateClient):
                     final_path = create_archive(
                         pid, f"{self.config.filesystem_path}/downloads/{filename}")
                     self.log.info(
-                        f"Saved project [{name}:{pid}] archive to {final_path}")
+                        f"Saved project [{project_path}:{pid}] archive to {final_path}")
                     delete_project_features(pid)
 
                 # Archive project immediately after export
                 if self.config.archive_logic:
                     self.log.info(
-                        f"Archiving source project '{name}' (ID: {pid})")
+                        f"Archiving source project '{project_path}' (ID: {pid})")
                     self.projects_api.archive_project(
                         self.config.source_host, self.config.source_token, pid)
         except (IOError, RequestException) as oe:
             self.log.error(
-                f"Failed to export/download project {name} (ID: {pid}) as {filename} with error:\n{oe}")
+                f"Failed to export/download project {project_path} (ID: {pid}) as {filename} with error:\n{oe}")
         except Exception as e:
             self.log.error(e)
             self.log.error(print_exc())
@@ -722,7 +721,7 @@ class GitLabMigrateClient(MigrateClient):
             self.projects.migrate_gitlab_variable_replace_ci_yml(dst_id)
 
         c_retention = None
-        if self.retain_contributors:
+        if self.retain_contributors and not self.config.direct_transfer:
             self.log.info(
                 f"Contributor Retention is enabled. Project {project['path_with_namespace']} has been imported so removing all project contributors as project members")
             c_retention = ContributorRetentionClient(
@@ -734,6 +733,11 @@ class GitLabMigrateClient(MigrateClient):
         if self.config.airgap:
             delete_project_features(src_id)
 
+        if self.config.direct_transfer and self.config.archive_logic:
+            self.log.info(
+                f"Archiving active source project '{src_path}' (ID: {src_id})")
+            self.projects_api.archive_project(
+                self.config.source_host, self.config.source_token, src_id)
         self.log.info(
             f"Completed migrating additional source project '{src_path}' (ID: {src_id}) GitLab features")
         return results

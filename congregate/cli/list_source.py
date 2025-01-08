@@ -44,6 +44,7 @@ class ListClient(BaseClass):
         skip_ci=False,
         src_instances=False,
         subset=False,
+        skip_archived_projects=False,
     ):
         super().__init__()
         self.processes = processes
@@ -56,10 +57,12 @@ class ListClient(BaseClass):
         self.skip_ci = skip_ci
         self.src_instances = src_instances
         self.subset = subset
+        self.skip_archived_projects = skip_archived_projects
 
     def list_gitlab_data(self):
         """
             List the projects information, and Retrieve user info, group info from source instance.
+            File-based - Save all projects, groups, and users information into mongodb and json file.
         """
         mongo, p, g, u = self.mongo_init()
         host = self.config.source_host
@@ -110,7 +113,7 @@ class ListClient(BaseClass):
             projects = BitBucketProjects(subset=self.subset)
             if not self.skip_group_members:
                 projects.set_user_groups(user_groups)
-            projects.retrieve_project_info(processes=self.processes)
+            projects.retrieve_project_info(processes=self.processes, skip_archived_projects=self.skip_archived_projects)
             mongo.dump_collection_to_file(
                 g, f"{self.app_path}/data/groups.json")
             # Save listed BB Server parent projects
@@ -121,7 +124,7 @@ class ListClient(BaseClass):
             repos = BitBucketRepos(subset=self.subset)
             if not self.skip_project_members:
                 repos.set_user_groups(user_groups)
-            repos.retrieve_repo_info(processes=self.processes)
+            repos.retrieve_repo_info(processes=self.processes, skip_archived_projects=self.skip_archived_projects)
             mongo.dump_collection_to_file(
                 p, f"{self.app_path}/data/projects.json")
             # Save listed BB Server parent projects
@@ -293,6 +296,10 @@ class ListClient(BaseClass):
 def list_data(partial=False, skip_users=False, skip_groups=False, skip_group_members=False,
               skip_projects=False, skip_project_members=False, skip_ci=False,
               src_instances=False, subset=False):
+    """
+        List the projects information, and Retrieve user info, group info from source instance.
+        Direct transfer - Save all projects, groups, and users information into mongodb and json file.
+    """
     client = ListClient(partial=partial, skip_users=skip_users, skip_groups=skip_groups, skip_group_members=skip_group_members,
                         skip_projects=skip_projects, skip_project_members=skip_project_members, skip_ci=skip_ci,
                         src_instances=src_instances, subset=subset)

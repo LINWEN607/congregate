@@ -589,7 +589,7 @@ class ImportExportClient(BaseGitLabClient):
         return import_id
 
     def export_project(self, project, dry_run=True):
-        loc = self.config.location.lower()
+        loc = self.config.location
         is_loc_supported(loc)
         exported = False
         name = project["name"]
@@ -704,7 +704,7 @@ class ImportExportClient(BaseGitLabClient):
         return success
 
     def export_group(self, src_gid, full_path, filename, dry_run=True):
-        loc = self.config.location.lower()
+        loc = self.config.location
         is_loc_supported(loc)
         exported = False
         full_path_with_parent_namespace = get_full_path_with_parent_namespace(
