@@ -1,4 +1,4 @@
-FROM python:3.8.16-slim-bullseye
+FROM python:3.8.20-slim-bullseye
 
 # Add ps-user and give them sudo privileges
 RUN adduser ps-user && \
@@ -32,7 +32,7 @@ RUN apt-get update && \
     apt-get upgrade -y
 
 # Install Node
-RUN curl -sSL https://deb.nodesource.com/setup_16.x | bash - && \
+RUN curl -sSL https://deb.nodesource.com/setup_22.x | bash - && \
     apt-get install -y nodejs && \
     cd frontend && \
     npm install && \
@@ -78,10 +78,9 @@ RUN export PATH=$PATH:$HOME/.local/bin && \
     echo "export PATH=$PATH" >> ~/.zshrc
 
 # Install poetry
-RUN curl -sSL https://install.python-poetry.org | python3.8 - && \
-    export PATH="/home/ps-user/.local/bin:$PATH" && \
-    poetry --version && \
-    poetry install
+RUN python -m pip install --user poetry==1.8.5 && \
+    python -m poetry --version && \
+    python -m poetry install
 
 USER root
 
