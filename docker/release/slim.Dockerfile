@@ -42,14 +42,14 @@ RUN chown -R ps-user:wheel /data && \
 
 # Install Python
 RUN cd /opt && \
-    curl https://www.python.org/ftp/python/3.8.12/Python-3.8.12.tgz -o Python-3.8.12.tgz && \
-    tar xzf Python-3.8.12.tgz && \
-    cd Python-3.8.12 && \
+    curl https://www.python.org/ftp/python/3.8.20/Python-3.8.20.tgz -o Python-3.8.20.tgz && \
+    tar xzf Python-3.8.20.tgz && \
+    cd Python-3.8.20 && \
     ./configure --enable-optimizations && \
     sudo make altinstall && \
     cd /opt && \
-    rm Python-3.8.12.tgz && \
-    rm -r Python-3.8.12
+    rm Python-3.8.20.tgz && \
+    rm -r Python-3.8.20
 
 # The alias takes precendence once you are in an interactive shell (-it)
 # in Docker, so this "fixes" the build steps afterwards, but doesn't seem to
@@ -58,8 +58,8 @@ RUN echo -e '#!/bin/bash\npython3.8 "$@"' > /usr/local/sbin/python && \
     chmod +x /usr/local/sbin/python
 
 # Install Node
-RUN yum install https://rpm.nodesource.com/pub_16.x/nodistro/repo/nodesource-release-nodistro-1.noarch.rpm -y && \
-    yum install nodejs -y --setopt=nodesource-nodejs.module_hotfixes=1
+RUN curl -sL https://rpm.nodesource.com/setup_22.x | bash - && \
+    yum install -y nodejs
 
 # Create python symlinks
 RUN rm -f /usr/bin/python3 && \
@@ -96,10 +96,9 @@ RUN cd /opt/congregate && \
     git commit -m "Initial commit"
 
 # Install poetry
-RUN curl -sSL https://install.python-poetry.org | python3.8 - && \
-    export PATH="/home/ps-user/.local/bin:$PATH" && \
-    poetry --version && \
-    poetry install
+RUN python3.8 -m pip install --user poetry==1.8.5 && \
+    python3.8 -m poetry --version && \
+    python3.8 -m poetry install
 
 # Install node dependencies
 RUN cd frontend && \
