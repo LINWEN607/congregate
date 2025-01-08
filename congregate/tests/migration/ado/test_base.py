@@ -101,7 +101,7 @@ class BaseTests(unittest.TestCase):
             ],
             "name": "eShopOnWeb",
             "namespace": {
-                "full_path": "",
+                "full_path": "eshoponweb",
                 "id": "fab6c524-9c20-4564-8f38-3a90f188d651",
                 "kind": "group",
                 "name": "eShopOnWeb",
