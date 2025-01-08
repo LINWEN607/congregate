@@ -41,7 +41,7 @@ class AzureDevOpsWrapper(BaseClass):
         if len(path_with_namespace.split("/")) > 1:
             full_path = path_with_namespace.split("/")[0]   
         else: 
-            full_path = ""
+            full_path = path_with_namespace
             
         return {
             "name": repository["name"],
