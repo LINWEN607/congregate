@@ -5,11 +5,12 @@ from bs4 import BeautifulSoup as bs
 from gitlab_ps_utils.misc_utils import is_error_message_present, pretty_print_key
 from gitlab_ps_utils.dict_utils import rewrite_list_into_dict, is_nested_dict, dig, find as nested_find
 from gitlab_ps_utils.jsondiff import Comparator
-
+from gitlab_ps_utils.json_utils import read_json_file_into_object
 from congregate.helpers.migrate_utils import get_target_project_path, get_full_path_with_parent_namespace
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.congregate_mdbc import CongregateMongoConnector
 
+b = BaseClass()
 
 class BaseDiffClient(BaseClass):
     SCRIPT = """
@@ -142,6 +143,7 @@ class BaseDiffClient(BaseClass):
         self.keys_to_ignore = []
         self.results = None
         self.target_parent_paths = set()
+        self.staged_data = read_json_file_into_object(f"{b.app_path}/data/staged_projects.json")
 
     def generate_split_html_report(self):
         """
@@ -188,12 +190,13 @@ class BaseDiffClient(BaseClass):
                 if isinstance(source_data, list):
                     if diff:
                         accuracy = 0
-                        for i, _ in enumerate(source_data):
-                            if diff.get(i):
+
+                        for i in range(len(source_data)):
+                            if diff.get(i) is not None and i <= len(source_data) and i <= len(destination_data):
                                 try:
                                     accuracy += self.calculate_individual_dict_accuracy(
                                         diff[i], source_data[i], destination_data[i], critical_key, parent_group=parent_group)
-                                except IndexError as e:
+                                except Exception as e:
                                     self.log.warning(e)
                         if accuracy != 0:
                             accuracy = float(accuracy) / \
@@ -447,6 +450,13 @@ class BaseDiffClient(BaseClass):
             return new_data
         return {}
 
+    def is_json_serializable(self, obj):
+        try:
+            json.dumps(obj)
+            return True
+        except (TypeError, ValueError):
+            return False
+
     def obfuscate_values(self, obj):
         if isinstance(obj, dict):
             keys_to_obfuscate = [
@@ -455,12 +465,12 @@ class BaseDiffClient(BaseClass):
                 "runners_token"
             ]
             for key in keys_to_obfuscate:
-                if key in obj:
-                    try:
-                        obj[key] = base64.b64encode(obj[key])
-                    except TypeError:
-                        obj[key] = str(base64.b64encode(
-                            bytes(obj[key], encoding='UTF-8')))
+                if key in obj and obj[key]:
+                    obj[key] = base64.b64encode(obj[key].encode('utf-8'))
+                    if not self.is_json_serializable(obj[key]):
+                        obj[key] = str(obj[key])
+                elif key in obj and obj[key] == None:
+                    del obj[key]
 
         return obj
 
@@ -734,7 +744,7 @@ class BaseDiffClient(BaseClass):
                         [x for x in diff.items() if 'error' not in x[1]]) - parent_count
                     source_length = len(diff.items()) - parent_count
                     data = [
-                        f"Staged {asset}'s: '{source_length}' Successful {asset}'s: '{dest_length}'",
+                        f"Staged {asset}'s: '{len(self.staged_data)}' Successful {asset}'s: '{dest_length}'",
                         str(self.as_percentage(v.get("overall_accuracy", 0))),
                         v.get("result", "failure")
                     ]

@@ -61,7 +61,8 @@ class ProjectDiffClient(BaseDiffClient):
     def generate_single_diff_report(self, project):
         diff_report = {}
         project_path = get_dst_path_with_namespace(project)
-        if self.results.get(project_path) and (self.asset_exists(self.projects_api.get_project,
+
+        if self.results.get(project_path) and type(self.results.get(project_path)) != int and (self.asset_exists(self.projects_api.get_project,
                                                                  self.results[project_path].get("id")) or isinstance(self.results.get(project_path), int)):
             project_diff = self.handle_endpoints(project)
             diff_report[project_path] = project_diff
