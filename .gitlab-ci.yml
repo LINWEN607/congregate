@@ -523,25 +523,6 @@ centos rolling release:
         - docker/release/centos.Dockerfile
         - docker/release/centos/**/*
 
-slim rolling release:
-  extends:
-    - .docker-build
-  stage: rolling release
-  variables:
-    DISTRO: "slim"
-    RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:rolling-centos-slim"
-  rules:
-    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
-      changes:
-        - congregate/**/*.py
-        - frontend/**/*
-        - congregate.sh
-        - pyproject.toml
-        - frontend/package.json
-        - docker/release/slim.Dockerfile
-        - docker/release/slim.dockerignore
-        - docker/release/centos/**/*
-
 centos-release-tag:
   extends:
     - .docker-build
@@ -552,17 +533,6 @@ centos-release-tag:
     DISTRO: "centos"
     RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME-centos"
     LATEST: "$CI_REGISTRY_IMAGE:latest-centos"
-
-slim-centos-release-tag:
-  extends:
-    - .docker-build
-  rules:
-    - if: "$CI_COMMIT_TAG"
-  stage: release
-  variables:
-    DISTRO: "slim"
-    RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME-centos-slim"
-    LATEST: "$CI_REGISTRY_IMAGE:latest-centos-slim"
 
 centos-no-mongo rolling release:
   extends:
@@ -594,21 +564,6 @@ container-scan-build:centos:
         - pyproject.toml
         - frontend/package.json
         - docker/release/centos.Dockerfile
-
-container-scan-build:centos-slim:
-  stage: build
-  extends:
-    - .docker-build
-  variables:
-    DISTRO: "slim"
-    RELEASE_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-centos-slim
-  rules:
-    - if: "$CI_PIPELINE_SOURCE != 'schedule'"
-      changes:
-        - pyproject.toml
-        - frontend/package.json
-        - docker/release/slim.Dockerfile
-        - docker/release/slim.dockerignore
 
 container-scan-build:debian:
   stage: build
@@ -657,26 +612,6 @@ container_scanning_custom:
         - frontend/package.json
         - docker/release/centos.Dockerfile
         - docker/release/debian.Dockerfile
-
-slim_container_scanning:
-  extends: container_scanning_custom
-  # services:
-  #   - docker:${DOCKER_VERSION}-dind
-  variables:
-    CS_IMAGE: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-centos-slim
-    DOCKERFILE_PATH: "docker/release/slim.Dockerfile"
-    GIT_STRATEGY: "fetch"
-    DOCKER_DRIVER: overlay2
-    DOCKER_TLS_CERTDIR: "/certs"
-  # tags:
-  #   - gitlab-org-docker
-  rules:
-    - if: "$CI_PIPELINE_SOURCE != 'schedule'"
-      changes:
-        - pyproject.toml
-        - frontend/package.json
-        - docker/release/slim.Dockerfile
-        - docker/release/slim.dockerignore
 
 debian_container_scanning:
   extends: container_scanning_custom
