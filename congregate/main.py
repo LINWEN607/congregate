@@ -49,8 +49,6 @@ Usage:
     congregate unset-bb-read-only-member-permissions [--bb-projects] [--commit]
     congregate filter-projects-by-state [--commit] [--archived]
     congregate find-empty-repos
-    congregate compare-groups [--staged]
-    congregate staged-user-list
     congregate generate-seed-data [--commit] # TODO: Refactor, broken
     congregate validate-staged-groups-schema
     congregate validate-staged-projects-schema
@@ -186,8 +184,6 @@ Commands:
     count-unarchived-projects               Return total number and list of all unarchived projects on source.
     find-empty-repos                        Inspect project repo sizes between source and destination instance in search for empty repos.
                                                 This could be misleading as it sometimes shows 0 (zero) commits/tags/bytes for fully migrated projects.
-    compare-groups                          Compare source and destination group results.
-    staged-user-list                        Output a list of all staged users and their respective user IDs. Used to confirm IDs were updated correctly.
     archive-staged-projects                 Archive GitLab source (or destination if '--dest') projects that are staged, not necessarily migrated.
     unarchive-staged-projects               Unarchive GitLab source (or destination if '--dest') projects that are staged, not necessarily migrate.
     set-bb-read-only-branch-permissions     Add read-only branch permission/restriction to all branches (*) on staged BitBucket repos (or projects if '--bb-projects').
@@ -327,7 +323,6 @@ def main():
             from congregate.migration.gitlab.groups import GroupsClient
             from congregate.migration.gitlab.projects import ProjectsClient
             from congregate.migration.gitlab.variables import VariablesClient
-            from congregate.migration.gitlab.compare import CompareClient
             from congregate.migration.migrate import MigrateClient
             from congregate.migration.meta.base_migrate import MigrateClient as BaseMigrateClient
             from congregate.migration.gitlab.migrate import GitLabMigrateClient
@@ -357,7 +352,6 @@ def main():
             projects = ProjectsClient()
             bb_repos = BBReposClient()
             variables = VariablesClient()
-            compare = CompareClient()
             branches = BranchesClient()
 
             if not config.ssl_verify:
@@ -596,22 +590,6 @@ def main():
                         f"The 'archived' field is currently not present when listing on {config.source_type}")
             if arguments["find-empty-repos"]:
                 projects.find_empty_repos()
-            if arguments["compare-groups"]:
-                if arguments["--staged"]:
-                    results, unknown_users = compare.create_group_migration_results(
-                        staged=True)
-                else:
-                    results, unknown_users = compare.create_group_migration_results()
-                with open(f"{app_path}/data/groups_audit.json", "w") as f:
-                    dump(results, f, indent=4)
-                with open(f"{app_path}/data/unknown_users.json", "w") as f:
-                    dump(unknown_users, f, indent=4)
-            if arguments["staged-user-list"]:
-                results = compare.compare_staged_users()
-                log.info(
-                    f"Staged user list:\n{dumps(results, indent=4, sort_keys=True)}")
-                log.info(
-                    f"Length: {{key: len(value) for key, value in results.items()}}")
             if arguments["generate-seed-data"]:
                 s = SeedDataGenerator()
                 s.generate_seed_data(dry_run=DRY_RUN)
