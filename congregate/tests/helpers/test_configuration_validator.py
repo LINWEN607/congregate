@@ -46,7 +46,7 @@ class ConfigurationValidationTests(unittest.TestCase):
     @mock.patch.object(GitLabApi, "generate_v4_request_url")
     def test_fail_parent_id_validation(self, url):
         self.config.dstn_parent_id_validated_in_session = False
-        url_value = "https://gitlab.com/api/v4/groups/1234"
+        url_value = "https://gitlab.example.com/api/v4/groups/1234"
         url.return_value = url_value
         self.config.as_obj().set("DESTINATION", "dstn_parent_group_id", "1234")
         # pylint: disable=no-member
@@ -63,7 +63,7 @@ class ConfigurationValidationTests(unittest.TestCase):
     def test_succeed_parent_id_validation(self, url, valid_token):
         self.config.dstn_parent_id_validated_in_session = False
         print(self.config.dstn_parent_id_validated_in_session)
-        url_value = "https://gitlab.com/api/v4/groups/4"
+        url_value = "https://gitlab.example.com/api/v4/groups/4"
         url.return_value = url_value
         valid_token.return_value = True
         self.config.as_obj().set("DESTINATION", "dstn_parent_group_id", "1234")
@@ -81,7 +81,7 @@ class ConfigurationValidationTests(unittest.TestCase):
     def test_succeed_parent_id_and_path_validation(self, url, valid_token):
         self.config.dstn_parent_group_path_validated_in_session = True
         self.config.dstn_parent_id_validated_in_session = False
-        url_value = "https://gitlab.com/api/v4/groups/4"
+        url_value = "https://gitlab.example.com/api/v4/groups/4"
         url.return_value = url_value
         valid_token.return_value = True
         self.config.as_obj().set("DESTINATION", "dstn_parent_group_id", "1234")
@@ -96,7 +96,7 @@ class ConfigurationValidationTests(unittest.TestCase):
     # pylint: enable=no-member
     @mock.patch.object(GitLabApi, "generate_v4_request_url")
     def test_fail_import_user_id_validation(self, url):
-        url_value = "https://gitlab.com/api/v4/users"
+        url_value = "https://gitlab.example.com/api/v4/users"
         url.return_value = url_value
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
@@ -105,7 +105,6 @@ class ConfigurationValidationTests(unittest.TestCase):
         # self.assertRaises(ConfigurationException, self.config.validate_import_user_id, 1)
         with self.assertRaises(ConfigurationException) as context:
             self.config.import_user_id
-
         self.assertTrue(context.exception)
 
     def test_none_parent_id_validation(self):
@@ -119,7 +118,7 @@ class ConfigurationValidationTests(unittest.TestCase):
     # pylint: enable=no-member
     @mock.patch.object(GitLabApi, "generate_v4_request_url")
     def test_invalid_token(self, url):
-        url_value = "https://gitlab.com/api/v4/users"
+        url_value = "https://gitlab.example.com/api/v4/users"
         url.return_value = url_value
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
@@ -132,7 +131,7 @@ class ConfigurationValidationTests(unittest.TestCase):
     # pylint: enable=no-member
     @mock.patch.object(GitLabApi, "generate_v4_request_url")
     def test_unexpected_error(self, url):
-        url_value = "https://gitlab.com/api/v4/users"
+        url_value = "https://gitlab.example.com/api/v4/users"
         url.return_value = url_value
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
@@ -145,7 +144,7 @@ class ConfigurationValidationTests(unittest.TestCase):
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.validate_dstn_token')
     @mock.patch.object(GitLabApi, "generate_v4_request_url")
     def test_pass_import_user_id_validation(self, url, valid_token):
-        url_value = "https://gitlab.com/api/v4/users"
+        url_value = "https://gitlab.example.com/api/v4/users"
         url.return_value = url_value
         valid_token.return_value = True
         self.config.as_obj().set("DESTINATION", "import_user_id", "1")
@@ -159,7 +158,7 @@ class ConfigurationValidationTests(unittest.TestCase):
     # pylint: enable=no-member
     @mock.patch.object(GitLabApi, "generate_v4_request_url")
     def test_mismatched_import_user_id_validation(self, url):
-        url_value = "https://gitlab.com/api/v4/users"
+        url_value = "https://gitlab.example.com/api/v4/users"
         url.return_value = url_value
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
@@ -178,7 +177,7 @@ class ConfigurationValidationTests(unittest.TestCase):
             self, url, parent_id, valid_token):
         parent_id.return_value = 4
         self.config.as_obj().set("DESTINATION", "dstn_parent_group_path", "twitter")
-        url_value = "https://gitlab.com/api/v4/groups/4"
+        url_value = "https://gitlab.example.com/api/v4/groups/4"
         url.return_value = url_value
         valid_token.return_value = True
         # pylint: disable=no-member
@@ -199,7 +198,7 @@ class ConfigurationValidationTests(unittest.TestCase):
             self, url, parent_id, valid_token):
         parent_id.return_value = 4
         self.config.as_obj().set("DESTINATION", "dstn_parent_group_path", "twitter")
-        url_value = "https://gitlab.com/api/v4/groups/4"
+        url_value = "https://gitlab.example.com/api/v4/groups/4"
         url.return_value = url_value
         valid_token.return_value = True
         # pylint: disable=no-member
@@ -219,7 +218,7 @@ class ConfigurationValidationTests(unittest.TestCase):
     def test_fail_parent_group_path_validation(self, url, parent_id):
         parent_id.return_value = 4
         self.config.as_obj().set("DESTINATION", "dstn_parent_group_path", "twitter")
-        url_value = "https://gitlab.com/api/v4/groups/4"
+        url_value = "https://gitlab.example.com/api/v4/groups/4"
         url.return_value = url_value
         # pylint: disable=no-member
         responses.add(responses.GET, url_value,
@@ -264,7 +263,7 @@ class ConfigurationValidationTests(unittest.TestCase):
         secret.return_value = "test"
         src_type.return_value = "gitlab"
         self.config.src_token_validated_in_session = False
-        url_value = "https://gitlab.com/api/v4/user"
+        url_value = "https://gitlab.example.com/api/v4/user"
         url.return_value = url_value
         self.config.as_obj().set("SOURCE", "source_token", obfuscate("Enter secret: "))
         # pylint: disable=no-member
@@ -500,7 +499,7 @@ class ConfigurationValidationTests(unittest.TestCase):
         secret.return_value = "test"
         src_type.return_value = "gitlab"
         self.config.src_token_validated_in_session = False
-        url_value = "https://gitlab.com/api/v4/user"
+        url_value = "https://gitlab.example.com/api/v4/user"
         url.return_value = url_value
         self.config.as_obj().set("SOURCE", "source_token", obfuscate("Enter secret: "))
         # pylint: disable=no-member
@@ -546,7 +545,7 @@ class ConfigurationValidationTests(unittest.TestCase):
         secret.return_value = "test"
         src_type.return_value = "gitlab"
         self.config.src_token_validated_in_session = False
-        url_value = "https://gitlab.com/api/v4/user"
+        url_value = "https://gitlab.example.com/api/v4/user"
         url.return_value = url_value
         self.config.as_obj().set("SOURCE", "source_token", obfuscate("Enter secret: "))
         # pylint: disable=no-member
@@ -574,7 +573,7 @@ class ConfigurationValidationTests(unittest.TestCase):
     def test_validate_dstn_token_invalid(self, url, secret):
         secret.return_value = "test"
         self.config.dstn_token_validated_in_session = False
-        url_value = "https://gitlab.com/api/v4/user"
+        url_value = "https://gitlab.example.com/api/v4/user"
         url.return_value = url_value
         self.config.as_obj().set("DESTINATION", "destination_token",
                                  obfuscate("Enter secret: "))
@@ -593,7 +592,7 @@ class ConfigurationValidationTests(unittest.TestCase):
     def test_validate_dstn_token_not_admin(self, url, secret, stdout):
         secret.return_value = "test"
         self.config.dstn_token_validated_in_session = False
-        url_value = "https://gitlab.com/api/v4/user"
+        url_value = "https://gitlab.example.com/api/v4/user"
         url.return_value = url_value
         self.config.as_obj().set("DESTINATION", "destination_token",
                                  obfuscate("Enter secret: "))
@@ -613,7 +612,7 @@ class ConfigurationValidationTests(unittest.TestCase):
     def test_validate_dstn_token_success(self, url, secret):
         secret.return_value = "test"
         self.config.dstn_token_validated_in_session = False
-        url_value = "https://gitlab.com/api/v4/user"
+        url_value = "https://gitlab.example.com/api/v4/user"
         url.return_value = url_value
         self.config.as_obj().set("DESTINATION", "destination_token",
                                  obfuscate("Enter secret: "))
@@ -644,7 +643,7 @@ class ConfigurationValidationTests(unittest.TestCase):
         # Mock validate src and dstn tokens
         src_token.return_value = True
         dstn_token.return_value = True
-        url_value = "htts://gitlab.com/api/v4/application_settings"
+        url_value = "htts://gitlab.example.com/api/v4/application_settings"
         url.return_value = url_value
 
         # Set direct_transfer to true to trigger validation
@@ -673,7 +672,7 @@ class ConfigurationValidationTests(unittest.TestCase):
         # Mock validate src and dstn tokens
         src_token.return_value = True
         dstn_token.return_value = True
-        url_value = "htts://gitlab.com/api/v4/application_settings"
+        url_value = "htts://gitlab.example.com/api/v4/application_settings"
         url.return_value = url_value
 
         # Set direct_transfer to true to trigger validation
@@ -705,7 +704,7 @@ class ConfigurationValidationTests(unittest.TestCase):
         # Mock validate src and dstn tokens
         src_token.return_value = True
         dstn_token.return_value = True
-        url_value = "htts://gitlab.com/api/v4/application_settings"
+        url_value = "htts://gitlab.example.com/api/v4/application_settings"
         url.return_value = url_value
 
         # Set direct_transfer to true to trigger validation
@@ -737,7 +736,7 @@ class ConfigurationValidationTests(unittest.TestCase):
         # Mock validate src and dstn tokens
         src_token.return_value = True
         dstn_token.return_value = True
-        url_value = "htts://gitlab.com/api/v4/application_settings"
+        url_value = "htts://gitlab.example.com/api/v4/application_settings"
         url.return_value = url_value
 
         # Set direct_transfer to true to trigger validation
@@ -766,7 +765,7 @@ class ConfigurationValidationTests(unittest.TestCase):
         # Mock validate src and dstn tokens
         src_token.return_value = True
         dstn_token.return_value = True
-        url_value = "htts://gitlab.com/api/v4/application_settings"
+        url_value = "htts://gitlab.example.com/api/v4/application_settings"
         url.return_value = url_value
 
         # Set direct_transfer to true to trigger validation
@@ -793,7 +792,7 @@ class ConfigurationValidationTests(unittest.TestCase):
         # Mock validate src and dstn tokens
         src_token.return_value = True
         dstn_token.return_value = True
-        url_value = "htts://gitlab.com/api/v4/application_settings"
+        url_value = "htts://gitlab.example.com/api/v4/application_settings"
         url.return_value = url_value
 
         # Set direct_transfer to true to trigger validation
@@ -820,7 +819,7 @@ class ConfigurationValidationTests(unittest.TestCase):
         # Mock validate src and dstn tokens
         src_token.return_value = True
         dstn_token.return_value = True
-        url_value = "htts://gitlab.com/api/v4/application_settings"
+        url_value = "htts://gitlab.example.com/api/v4/application_settings"
         url.return_value = url_value
 
         # Set direct_transfer to true to trigger validation

@@ -1,4 +1,4 @@
-FROM python:3.8.16-slim-bullseye
+FROM python:3.8.20-slim-bullseye
 
 ENV APP_NAME=congregate \
     PIP_DEFAULT_TIMEOUT=100

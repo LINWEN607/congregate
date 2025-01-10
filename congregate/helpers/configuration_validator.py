@@ -123,10 +123,10 @@ class ConfigurationValidator(Config):
         if iuid is not None:
             user_resp = safe_json_response(self.users.get_user(
                 iuid, self.destination_host, self.destination_token))
-            error, user_resp = is_error_message_present(user_resp)
-            if error or not user_resp:
+            is_error, user_resp = is_error_message_present(user_resp)
+            if is_error or not user_resp:
                 raise ConfigurationException("import_user_id")
-            elif user_resp.get("error") is not None:
+            if user_resp.get("error") is not None:
                 if user_resp["error"] == "invalid_token":
                     raise ConfigurationException(
                         "parent_token", msg=f"{json_pretty(user_resp)}")
@@ -160,9 +160,9 @@ class ConfigurationValidator(Config):
         if dstn_token is not None:
             user = safe_json_response(self.users.get_current_user(
                 self.destination_host, dstn_token))
-            error, user = is_error_message_present(user)
+            is_error, user = is_error_message_present(user)
             # Admin token required when migrating from GitLab
-            if error or not user:
+            if is_error or not user:
                 raise ConfigurationException(
                     "destination_token", msg=f"Invalid user and/or token:\n{json_pretty(user)}")
             is_admin = user.get(
@@ -192,7 +192,7 @@ class ConfigurationValidator(Config):
         user = safe_json_response(
             self.users.get_current_user(self.source_host, token))
         is_error, user = is_error_message_present(user)
-        if not user or is_error:
+        if is_error or not user:
             raise ConfigurationException(
                 "source_token", msg=f"{msg}{json_pretty(user)}")
         if not user.get("is_admin"):

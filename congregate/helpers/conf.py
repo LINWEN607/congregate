@@ -270,7 +270,7 @@ class Config(BaseConfig):
 # EXPORT
     @property
     def location(self):
-        return self.prop("EXPORT", "location", default="filesystem")
+        return self.prop_lower("EXPORT", "location", default="filesystem")
 
     @property
     def bucket_name(self):

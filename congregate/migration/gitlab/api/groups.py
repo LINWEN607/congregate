@@ -90,6 +90,19 @@ class GroupsApi(GitLabApiWrapper):
         """
         return self.api.list_all(host, token, "groups")
 
+    def get_all_group_enterprise_users(self, gid, host, token):
+        """
+        Lists all enterprise users for a given top-level group.
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/group_enterprise_users.html#list-all-enterprise-users
+
+            :param: gid: (int) GitLab group ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Response object containing the response to GET /groups/:gid/enterprise_users
+        """
+        yield from self.api.list_all(host, token, f"groups/{gid}/enterprise_users")
+
     def get_all_group_members(self, gid, host, token):
         """
         Gets a list of group or project members viewable by the authenticated user.

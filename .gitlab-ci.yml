@@ -339,11 +339,11 @@ test:pylint:syntax-errors:
     when: on_failure
 
 test:unit:
-  extends: 
+  extends:
     - .test-job
     - .pytest-coverage
   script:
-    - poetry run pytest -m 'unit_test' --cov-report html --cov-report term-missing --cov-config=.coveragerc --cov=congregate congregate/tests/
+    - poetry run pytest -v -m 'unit_test' --cov-report html --cov-report term-missing --cov-config=.coveragerc --cov=congregate congregate/tests/
   timeout: 5 minutes
   artifacts:
     paths:
@@ -728,9 +728,9 @@ gitlab-advanced-sast:
       when: never
     - if: $SAST_EXCLUDED_ANALYZERS =~ /gitlab-advanced-sast/
       when: never
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"  # Add the job to merge request pipelines if there's an open merge request.
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" # Add the job to merge request pipelines if there's an open merge request.
       exists:
-        - '**/*.py'
-    - if: $CI_COMMIT_BRANCH        # If there's no open merge request, add it to a *branch* pipeline instead.
+        - "**/*.py"
+    - if: $CI_COMMIT_BRANCH # If there's no open merge request, add it to a *branch* pipeline instead.
       exists:
-        - '**/*.py'
+        - "**/*.py"
