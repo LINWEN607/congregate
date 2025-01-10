@@ -33,7 +33,6 @@ from congregate.migration.gitlab.merge_request_approvals import MergeRequestAppr
 from congregate.migration.gitlab.registries import RegistryClient
 from congregate.migration.gitlab.keys import KeysClient
 from congregate.migration.gitlab.hooks import HooksClient
-from congregate.migration.gitlab.clusters import ClustersClient
 from congregate.migration.gitlab.environments import EnvironmentsClient
 from congregate.migration.gitlab.branches import BranchesClient
 from congregate.migration.gitlab.packages import PackagesClient
@@ -87,7 +86,6 @@ class GitLabMigrateClient(MigrateClient):
         self.packages = PackagesClient()
         self.keys = KeysClient()
         self.hooks = HooksClient()
-        self.clusters = ClustersClient()
         self.environments = EnvironmentsClient()
         self.branches = BranchesClient()
         self.project_feature_flags_client = ProjectFeatureFlagClient(
@@ -129,11 +127,6 @@ class GitLabMigrateClient(MigrateClient):
 
         # Instance hooks
         self.hooks.migrate_instance_hooks(dry_run=self.dry_run)
-
-        # Instance clusters
-        if mig_utils.is_gl_version_older_than(14.5, self.config.source_host, self.config.source_token,
-                                              "Certificate-based clusters are still supported"):
-            self.clusters.migrate_instance_clusters(dry_run=self.dry_run)
 
         # Remove import user from parent group to avoid inheritance
         # (self-managed only)
@@ -413,12 +406,6 @@ class GitLabMigrateClient(MigrateClient):
         results["cicd_variables"] = self.variables.migrate_cicd_variables(
             src_gid, dst_gid, full_path, "group", src_gid)
 
-        # Clusters
-        if mig_utils.is_gl_version_older_than(14.5, self.config.source_host, self.config.source_token,
-                                              "Certificate-based clusters are still supported"):
-            results["clusters"] = self.clusters.migrate_group_clusters(
-                src_gid, dst_gid, full_path)
-
         if self.config.source_tier not in ["core", "free"]:
             # Hooks (Webhooks)
             results["hooks"] = self.hooks.migrate_group_hooks(
@@ -685,12 +672,6 @@ class GitLabMigrateClient(MigrateClient):
             # Hooks (Webhooks)
             results["project_hooks"] = self.hooks.migrate_project_hooks(
                 src_id, dst_id, src_path)
-
-            # Clusters
-            if mig_utils.is_gl_version_older_than(14.5, self.config.source_host, self.config.source_token,
-                                                  "Certificate-based clusters are still supported"):
-                results["clusters"] = self.clusters.migrate_project_clusters(
-                    src_id, dst_id, src_path, jobs_enabled)
 
             # Project Feature Flag Users Lists
             project_feature_flags_users_lists = self.project_feature_flags_users_lists_client.migrate_project_feature_flags_user_lists_for_project(

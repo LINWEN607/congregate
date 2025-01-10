@@ -30,7 +30,6 @@ Usage:
     congregate stage-unimported-projects [--commit] # TODO: Refactor, broken
     congregate url-rewrite-only [--commit]
     congregate remove-users-from-parent-group [--commit]
-    congregate migrate-variables-in-stage [--commit]
     congregate migrate-linked-issues [--commit]
     congregate pull-mirror-staged-projects [--commit] [--protected-only] [--force] [--overwrite]
     congregate push-mirror-staged-projects [--disabled] [--keep_div_refs] [--force] [--commit]
@@ -168,7 +167,6 @@ Commands:
     stage-unimported-projects               Stage unimported projects based on {CONGREGATE_PATH}/data/unimported_projects.txt.
     url-rewrite-only                        Performs the URL rewrite portion of a migration as a stand-alone step, instead of as a post-migration step. Requires the projects to be staged, and to exist on destination
     remove-users-from-parent-group          Remove all users with at most Reporter access from the parent group.
-    migrate-variables-in-stage              Migrate CI variables for staged projects.
     migrate-linked-issues                   Migrate Linked items in issues for staged projects.
     pull-mirror-staged-projects             Create and start project pull mirroring for staged projects.
     push-mirror-staged-projects             Set up and enable (by default) project push mirroring for staged projects.
@@ -491,8 +489,6 @@ def main():
                 BaseMigrateClient(dry_run=DRY_RUN).stage_unimported_projects()
             if arguments["remove-users-from-parent-group"]:
                 users.remove_users_from_parent_group(dry_run=DRY_RUN)
-            if arguments["migrate-variables-in-stage"]:
-                variables.migrate_variables_in_stage(dry_run=DRY_RUN)
             if arguments["delete-all-staged-projects-pull-mirrors"]:
                 projects.delete_all_pull_mirrors(dry_run=DRY_RUN)
             if arguments["pull-mirror-staged-projects"]:

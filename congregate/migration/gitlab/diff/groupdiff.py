@@ -116,8 +116,6 @@ class GroupDiffClient(BaseDiffClient):
                 group, self.groups_api.get_all_group_registry_repositories)
             group_diff["/groups/:id/badges"] = self.generate_group_diff(
                 group, self.groups_api.get_all_group_badges)
-            group_diff["/groups/:id/clusters"] = self.generate_group_diff(
-                group, self.groups_api.get_all_group_clusters)
 
             if self.config.source_tier not in ["core", "free"]:
                 group_diff["/groups/:id/hooks"] = self.generate_group_diff(
