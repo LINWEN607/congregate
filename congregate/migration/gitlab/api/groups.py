@@ -445,7 +445,7 @@ class GroupsApi(GitLabApiWrapper):
         """
         Get a list of visible descendant groups of this group.
 
-        GitLab API Doc: https://docs.gitlab.com/ee/api/groups.html#list-a-groups-descendant-groups
+        GitLab API Doc: https://docs.gitlab.com/ee/api/groups.html#list-descendant-groups
 
             :param: gid: (int) GitLab group ID
             :param: host: (str) GitLab host URL
