@@ -247,7 +247,6 @@ class GroupsClient(BaseClass):
         self.log.info(
             f"Adding {len(members)} member{'s' if len(members) > 1 else ''} to group ID {group_id}:\n{json_pretty(members)}")
         field = self.config.user_mapping_field
-        user = {}
         for member in members:
             user = search_for_user_by_user_mapping_field(
                 field, member, host, token)

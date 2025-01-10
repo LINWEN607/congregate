@@ -29,10 +29,11 @@ def extract_pypi_package_metadata(pkg_info):
             k = line_split[0]
             # Grab the second index of the list, 
             # or join together the remaining indeces if multiple colons are present
-            v = line_split[1] if len(line_split) < 3 else ": ".join(line_split[1:]) 
-            if k and v:
-                # Update the key to lowercase camelcase
-                metadata_dict[k.replace("-", "_").lower()] = v
+            if k:
+                v = line_split[1] if len(line_split) < 3 else ": ".join(line_split[1:])
+                if v:
+                    # Update the key to lowercase camelcase
+                    metadata_dict[k.replace("-", "_").lower()] = v
 
     return metadata_dict
 
