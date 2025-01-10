@@ -93,8 +93,7 @@ class UsersClient(BaseClass):
                 return None  # Return None if response was invalid
 
             # Log the HTTP status code and response message for troubleshooting
-            self.log.error(f"Failed to check namespace for user '{old_user}', "
-                           f"HTTP {response.status_code}: {response.text}")
+            self.log.info(f"No group found with user '{old_user}' namespace: {response.status_code}: {response.text}")
             return False
         except HTTPError as http_err:
             self.log.error(
@@ -577,16 +576,33 @@ class UsersClient(BaseClass):
 
     def retrieve_user_info(self, host, token, processes=None):
         # Always retrieve full user list when possible
-        if self.config.src_parent_group_path and is_dot_com(self.config.source_host):
+        parent_path = self.config.src_parent_group_path
+        if parent_path and is_dot_com(host):
             users = []
-            for user in self.groups_api.get_all_group_members(
-                    self.config.src_parent_id, host, token):
-                # Exclude bot users
-                if not user.get("bot"):
-                    users.append(safe_json_response(
-                        self.users_api.get_user(user.get("id"), host, token)))
-        else:
+            # Core tiers and sub-groups list group members (Admins w/ 'email' field)
+            if self.config.source_tier == "core" or "/" in parent_path:
+                self.log.info(
+                    f"Listing '{host}' group '{parent_path}' members")
+                for user in self.groups_api.get_all_group_members(
+                        self.config.src_parent_id, host, token):
+                    # Exclude bot users
+                    if not user.get("bot"):
+                        users.append(safe_json_response(
+                            self.users_api.get_user(user.get("id"), host, token)))
+            # Higher tiers and top-level groups list Enterprise users (Owners+ w/ 'email' field)
+            else:
+                self.log.info(
+                    f"Listing '{host}' group '{parent_path}' Enterprise users")
+                for user in self.groups_api.get_all_group_enterprise_users(
+                        self.config.src_parent_id, host, token):
+                    users.append(user)
+        # Only for Admin users, of any tier
+        elif not is_dot_com(host):
             users = self.users_api.get_all_users(host, token)
+        else:
+            self.log.error(
+                f"Listing all '{host}' users is not supported. Please configure parent group")
+            sys.exit(os.EX_CONFIG)
         if self.config.direct_transfer:
             for user in users:
                 handle_retrieving_users_task.delay(user)
@@ -602,9 +618,9 @@ class UsersClient(BaseClass):
         if not mongo:
             mongo = CongregateMongoConnector()
 
-        user["email"] = user["email"].lower()
+        user["email"] = user.get("email", user.get("public_email", "")).lower()
         projects_limit = self.config.projects_limit
-        if projects_limit:
+        if projects_limit is not None:
             user["projects_limit"] = projects_limit
 
         for key in constants.USER_KEYS_TO_IGNORE:
@@ -872,9 +888,9 @@ def handle_retrieving_users_task(user, mongo=None):
     # mongo should be set to None unless this function is being used in a
     # unit test
     user_client = UsersClient()
-    user["email"] = user["email"].lower()
+    user["email"] = (user.get("email", "") or user.get("public_email", "")).lower()
     projects_limit = user_client.config.projects_limit
-    if projects_limit:
+    if projects_limit is not None:
         user["projects_limit"] = projects_limit
 
     for key in constants.USER_KEYS_TO_IGNORE:

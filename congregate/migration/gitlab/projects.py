@@ -153,7 +153,7 @@ class ProjectsClient(BaseClass):
                         resp, path_with_namespace, permanent=permanent)
             except RequestException as re:
                 self.log.error(
-                    f"Failed to delete project '{path_with_namespace}' on destination:\n{re}")
+                    f"Failed to find project '{path_with_namespace}' on destination:\n{re}")
 
     def delete_project(self, resp, path_with_namespace, permanent=False):
         host = self.config.destination_host
@@ -165,7 +165,7 @@ class ProjectsClient(BaseClass):
             resp = self.projects_api.delete_project(host, token, pid)
             if resp.status_code not in [200, 202, 204]:
                 self.log.error(
-                    f"Failed to delete project '{path_with_namespace}' on destination:\n{resp} - {resp.text}")
+                    f"Failed to delete project '{path_with_namespace}' (ID: {pid}) on destination:\n{resp} - {resp.text}")
             elif permanent:
                 if deleted_path_json := safe_json_response(self.projects_api.get_project(pid, host, token)):
                     # Allow time for project to rename and archive as part of soft deletion
@@ -174,7 +174,7 @@ class ProjectsClient(BaseClass):
                         "path_with_namespace"), permanent=permanent)
                     if resp.status_code not in [200, 202, 204]:
                         self.log.error(
-                            f"Failed to permanently delete project '{path_with_namespace}' on destination:\n{resp} - {resp.text}")
+                            f"Failed to permanently delete project '{path_with_namespace}' (ID: {pid}) on destination:\n{resp} - {resp.text}")
         else:
             self.log.warning(
                 f"SKIP: project '{path_with_namespace}' was created {exp_time} hours ago")
