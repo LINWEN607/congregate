@@ -12,7 +12,7 @@ from congregate.helpers.congregate_mdbc import mongo_connection
 
 
 class ProjectsClient(BaseClass):
-    def __init__(self, subset=False):
+    def __init__(self, subset: bool = False):
         self.subset = subset
         self.api = AzureDevOpsApiWrapper()
         self.base_api = AzureDevOpsWrapper()
