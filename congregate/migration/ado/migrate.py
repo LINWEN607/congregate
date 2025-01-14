@@ -131,8 +131,6 @@ class AzureDevopsMigrateClient(MigrateClient):
             self.log.warning("SKIP: No projects staged for migration")
 
     def handle_exporting_azure_project(self, project):
-        if not self.dry_run:
-    def handle_exporting_azure_project(self, project):
         if self.dry_run:
             exported_file = get_export_filename_from_namespace_and_name(project['path'], project['name'])
             self.log.info(f"DRY-RUN: Would export Azure repo info to {exported_file}")
@@ -142,6 +140,8 @@ class AzureDevopsMigrateClient(MigrateClient):
         return {
             exported_file: True
         }
+
+    def handle_importing_azure_project(self, project, group_path=None, filename=None):
         src_id = project["id"]
         path = project["path_with_namespace"]
         dst_host = self.config.destination_host
