@@ -227,7 +227,8 @@ class AdoExportBuilder(ExportBuilder):
                 filename = dig(change, 'item', 'path', default='').lstrip('/')
                 git_diff = self.repo.git.diff(source_sha, target_sha, '--', f"{filename}")
                 diff_string = '@@' + '@@'.join(git_diff.split('@@')[1:])
-                mode = re.search(r'100755|100644|100755', git_diff).group(0)
+                mode_match = re.search(r'100755|100644|100755', git_diff)
+                mode = mode_match.group(0) if mode_match else '100644'  # Default to 100644 if no match found
                 diff_files.append(MergeRequestDiffFile(
                     relative_order=count,
                     utf8_diff=diff_string,
