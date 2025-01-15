@@ -38,7 +38,6 @@ Usage:
     congregate delete-staged-projects-push-mirrors [--all] [--commit]
     congregate delete-all-staged-projects-pull-mirrors [--commit]
     congregate set-default-branch [--name=<name>] [--commit]
-    congregate enable-mirroring [--commit] # TODO: Find a use for it or remove
     congregate count-unarchived-projects [--local]
     congregate archive-staged-projects [--commit] [--dest] [--scm-source=hostname] [--rollback]
     congregate unarchive-staged-projects [--commit] [--dest] [--scm-source=hostname] [--rollback]
@@ -178,7 +177,6 @@ Commands:
     delete-staged-projects-push-mirrors     Remove project push mirrors for staged projects. Only remove destination instance host (+'dstn_parent_group_path' if configured) mirrors. Add '--all' to remove all mirrors.
     delete-all-staged-projects-pull-mirrors Remove all project pull mirrors for staged projects.
     set-default-branch                      Set default branch for staged projects on destination.
-    enable-mirroring                        Start pull mirror process for all projects on destination.
     count-unarchived-projects               Return total number and list of all unarchived projects on source.
     find-empty-repos                        Inspect project repo sizes between source and destination instance in search for empty repos.
                                                 This could be misleading as it sometimes shows 0 (zero) commits/tags/bytes for fully migrated projects.
