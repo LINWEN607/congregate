@@ -477,6 +477,9 @@ class GitLabMigrateClient(MigrateClient):
                 self.log.info("### {0}Project import results ###\n{1}"
                               .format(dry_log, json_pretty(import_results)))
                 mig_utils.write_results_to_file(import_results, log=self.log)
+                # Run reporting
+                if staged_projects and import_results:
+                    self.create_issue_reporting(staged_projects, import_results)
             else:
                 self.log.info(
                     "SKIP: Assuming staged projects will be later imported")
