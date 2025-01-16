@@ -196,7 +196,7 @@ class AzureDevopsMigrateClient(MigrateClient):
             self.log.error(print_exc())
         return result
     
-    def migrate_single_project_features(project, import_id, dest_host, dest_token):
+    def migrate_single_project_features(self, project, import_id, dest_host, dest_token):
         pass
     
     # def migrate_azure_project_info(self, dry_log):
