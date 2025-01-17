@@ -4,7 +4,7 @@ spin_up_instance () {
     poetry run aws ec2 run-instances \
         --image-id $AMI_ID \
         --count 1 \
-        --instance-type t3.large \
+        --instance-type c5a.xlarge \
         --key-name $KEY_NAME \
         --security-group-ids $SECURITY_GROUP
 }
