@@ -45,6 +45,7 @@ import_user_id = 0
 # user_mapping_field = email
 ### The maximum number of hours to rollback users, groups, and projects. Default value is 24
 # max_asset_expiration_time = 24
+### Container registry (images) hostname (e.g. registry.gitlab.com)
 # dstn_registry_url = destination_registry_url
 
 ### There are few other additional configurations for Destination host which are used sometimes based on requirements received
@@ -88,6 +89,7 @@ src_access_token = *****
 # src_tier = core
 # src_parent_group_id = 0
 # src_parent_group_path = source_group_full_path
+### Container registry (images) hostname (e.g. registry.gitlab.com)
 # src_registry_url = source_registry_url
 
 ### Consider below changes when the source is a Bitbucket server, rest all other configuration remains same.

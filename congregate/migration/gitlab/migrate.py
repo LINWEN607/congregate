@@ -33,7 +33,6 @@ from congregate.migration.gitlab.merge_request_approvals import MergeRequestAppr
 from congregate.migration.gitlab.registries import RegistryClient
 from congregate.migration.gitlab.keys import KeysClient
 from congregate.migration.gitlab.hooks import HooksClient
-from congregate.migration.gitlab.clusters import ClustersClient
 from congregate.migration.gitlab.environments import EnvironmentsClient
 from congregate.migration.gitlab.branches import BranchesClient
 from congregate.migration.gitlab.packages import PackagesClient
@@ -87,7 +86,6 @@ class GitLabMigrateClient(MigrateClient):
         self.packages = PackagesClient()
         self.keys = KeysClient()
         self.hooks = HooksClient()
-        self.clusters = ClustersClient()
         self.environments = EnvironmentsClient()
         self.branches = BranchesClient()
         self.project_feature_flags_client = ProjectFeatureFlagClient(
@@ -129,11 +127,6 @@ class GitLabMigrateClient(MigrateClient):
 
         # Instance hooks
         self.hooks.migrate_instance_hooks(dry_run=self.dry_run)
-
-        # Instance clusters
-        if mig_utils.is_gl_version_older_than(14.5, self.config.source_host, self.config.source_token,
-                                              "Certificate-based clusters are still supported"):
-            self.clusters.migrate_instance_clusters(dry_run=self.dry_run)
 
         # Remove import user from parent group to avoid inheritance
         # (self-managed only)
@@ -413,12 +406,6 @@ class GitLabMigrateClient(MigrateClient):
         results["cicd_variables"] = self.variables.migrate_cicd_variables(
             src_gid, dst_gid, full_path, "group", src_gid)
 
-        # Clusters
-        if mig_utils.is_gl_version_older_than(14.5, self.config.source_host, self.config.source_token,
-                                              "Certificate-based clusters are still supported"):
-            results["clusters"] = self.clusters.migrate_group_clusters(
-                src_gid, dst_gid, full_path)
-
         if self.config.source_tier not in ["core", "free"]:
             # Hooks (Webhooks)
             results["hooks"] = self.hooks.migrate_group_hooks(
@@ -490,6 +477,9 @@ class GitLabMigrateClient(MigrateClient):
                 self.log.info("### {0}Project import results ###\n{1}"
                               .format(dry_log, json_pretty(import_results)))
                 mig_utils.write_results_to_file(import_results, log=self.log)
+                # Run reporting
+                if staged_projects and import_results:
+                    self.create_issue_reporting(staged_projects, import_results)
             else:
                 self.log.info(
                     "SKIP: Assuming staged projects will be later imported")
@@ -536,8 +526,8 @@ class GitLabMigrateClient(MigrateClient):
                         f"Saved project [{project_path}:{pid}] archive to {final_path}")
                     delete_project_features(pid)
 
-                # Archive project immediately after export
-                if self.config.archive_logic:
+                # Archive project immediately after export, if exported
+                if self.config.archive_logic and result[filename]:
                     self.log.info(
                         f"Archiving source project '{project_path}' (ID: {pid})")
                     self.projects_api.archive_project(
@@ -572,12 +562,6 @@ class GitLabMigrateClient(MigrateClient):
                 dst_pid = self.projects.find_project_by_path(
                     dst_host, dst_token, dst_pwn)
 
-                # Certain project features cannot be migrated when archived
-                if archived and not self.dry_run:
-                    self.log.info(
-                        f"Unarchiving source project '{path}' (ID: {src_id})")
-                    self.projects_api.unarchive_project(
-                        src_host, src_token, src_id)
                 if dst_pid:
                     import_status = safe_json_response(self.projects_api.get_project_import_status(
                         dst_host, dst_token, dst_pid))
@@ -595,13 +579,23 @@ class GitLabMigrateClient(MigrateClient):
                     import_id = ie_client.import_project(
                         project, dry_run=self.dry_run, group_path=group_path or tn)
                 if import_id and not self.dry_run:
-                    # Store the mapping
+                    # Store project ID mapping
                     self.project_id_mapping[src_id] = import_id
+
                     # Disable Shared CI
                     self.disable_shared_ci(dst_pwn, import_id)
+
                     # Post import features
                     self.log.info(
                         f"Migrating additional source project '{path}' (ID: {src_id}) GitLab features")
+
+                    # Certain project features cannot be migrated when archived
+                    if archived:
+                        self.log.info(
+                            f"Unarchiving source project '{path}' (ID: {src_id})")
+                        self.projects_api.unarchive_project(
+                            src_host, src_token, src_id)
+
                     result[dst_pwn] = self.migrate_single_project_features(
                         project, import_id, dest_host=dst_host, dest_token=dst_token)
             elif not self.dry_run:
@@ -619,7 +613,7 @@ class GitLabMigrateClient(MigrateClient):
                     self.projects_api.archive_project(
                         src_host, src_token, src_id,
                         message=f"Archiving back source project '{path}' (ID: {src_id})")
-                # Archive project immediately after import
+                # Archive project immediately after import, if imported
                 elif self.config.archive_logic and import_id:
                     self.projects_api.archive_project(
                         src_host, src_token, src_id,
@@ -685,12 +679,6 @@ class GitLabMigrateClient(MigrateClient):
             # Hooks (Webhooks)
             results["project_hooks"] = self.hooks.migrate_project_hooks(
                 src_id, dst_id, src_path)
-
-            # Clusters
-            if mig_utils.is_gl_version_older_than(14.5, self.config.source_host, self.config.source_token,
-                                                  "Certificate-based clusters are still supported"):
-                results["clusters"] = self.clusters.migrate_project_clusters(
-                    src_id, dst_id, src_path, jobs_enabled)
 
             # Project Feature Flag Users Lists
             project_feature_flags_users_lists = self.project_feature_flags_users_lists_client.migrate_project_feature_flags_user_lists_for_project(

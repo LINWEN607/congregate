@@ -61,7 +61,8 @@ class ProjectDiffClient(BaseDiffClient):
     def generate_single_diff_report(self, project):
         diff_report = {}
         project_path = get_dst_path_with_namespace(project)
-        if self.results.get(project_path) and (self.asset_exists(self.projects_api.get_project,
+
+        if self.results.get(project_path) and type(self.results.get(project_path)) != int and (self.asset_exists(self.projects_api.get_project,
                                                                  self.results[project_path].get("id")) or isinstance(self.results.get(project_path), int)):
             project_diff = self.handle_endpoints(project)
             diff_report[project_path] = project_diff
@@ -162,8 +163,6 @@ class ProjectDiffClient(BaseDiffClient):
                 project, self.projects_api.get_all_project_snippets)
             project_diff["/projects/:id/wikis"] = self.generate_project_diff(
                 project, self.projects_api.get_all_project_wikis)
-            project_diff["/projects/:id/clusters"] = self.generate_project_diff(
-                project, self.projects_api.get_all_project_clusters)
 
             if self.config.source_tier not in ["core", "free"]:
                 project_diff["/projects/:id/approvals"] = self.generate_project_diff(

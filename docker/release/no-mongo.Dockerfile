@@ -27,8 +27,11 @@ RUN yum update -y && \
     yum install -y less vim jq curl git readline ncurses \
     gcc openssl-devel bzip2-devel libffi-devel zlib-devel make \
     epel-release xz-devel util-linux-user sqlite-devel procps && \
-    yum install -y screen && \
-    dnf module install nodejs:16 -y
+    yum install -y screen
+
+# Install Node
+RUN curl -sL https://rpm.nodesource.com/setup_22.x | bash - && \
+    yum install -y nodejs
 
 # Install zsh
 RUN yum install -y zsh && chsh -s /usr/bin/zsh && chsh -s /usr/bin/zsh ps-user
@@ -61,7 +64,7 @@ RUN cd /opt/congregate && \
     git commit -m "Initial commit"
 
 # Install poetry
-RUN pip install --user poetry && \
+RUN python -m pip install --user poetry==1.8.5 && \
     poetry --version && \
     poetry install
 

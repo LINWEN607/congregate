@@ -10,26 +10,28 @@ NOTE: Features not listed in the matrix should be presumed to be not yet support
 
 ## Bitbucket Server
 
-| Main           | Feature                   | Sub-feature | GitLab BBS importer  | Congregate           |
-| -------------- | ------------------------- | ----------- | -------------------- | -------------------- |
+| Main           | Feature                   | Sub-feature | GitLab BBS importer   | Congregate            |
+| -------------- | ------------------------- | ----------- | --------------------- | --------------------- |
 | **Project**    |
-|                | GL Group creation         |             | :white_check_mark:   | :white_check_mark:   |
-|                | User permission mapping   |             | :x:                  | :white_check_mark:   |
-|                | Branch permission mapping |             | :x:                  | :x:                  |
+|                | GitLab Group creation *   |             | :white_check_mark:    | :white_check_mark:    |
+|                | User permission mapping   |             | :x:                   | :white_check_mark:    |
+|                | Branch permission mapping |             | :x:                   | :x:                   |
 | **Repository** |
-|                | Project import            |             | :white_check_mark:   | :white_check_mark:   |
-|                | Pull requests             |             | :white_check_mark:   | :white_check_mark:   |
-|                | MR comments               |             | :white_check_mark: * | :white_check_mark: * |
-|                | Git Repo                  |             | :white_check_mark:   | :white_check_mark:   |
-|                | LFS Objects               |             | :white_check_mark:   | :white_check_mark:   |
-|                | User permission mapping   |             | :x:                  | :white_check_mark:   |
-|                | Branch permission mapping |             | :x:                  | :white_check_mark:   |
-|                | Webhooks                  |             | :x:                  | :x:                  |
+|                | Project import            |             | :white_check_mark:    | :white_check_mark:    |
+|                | Pull requests             |             | :white_check_mark:    | :white_check_mark:    |
+|                | MR comments               |             | :white_check_mark: ** | :white_check_mark: ** |
+|                | Git Repo                  |             | :white_check_mark:    | :white_check_mark:    |
+|                | LFS Objects               |             | :white_check_mark:    | :white_check_mark:    |
+|                | User permission mapping   |             | :x:                   | :white_check_mark:    |
+|                | Branch permission mapping |             | :x:                   | :white_check_mark:    |
+|                | Webhooks                  |             | :x:                   | :x:                   |
 | **User**       |
-|                | Account                   |             | :x:                  | :white_check_mark:   |
-|                | SSH Keys                  |             | :x:                  | :white_check_mark:   |
+|                | Account                   |             | :x:                   | :white_check_mark:    |
+|                | SSH Keys                  |             | :x:                   | :white_check_mark:    |
 
-*See [limitations](https://docs.gitlab.com/ee/user/project/import/bitbucket_server.html#items-that-are-not-imported) of the BB server importer
+*`The importer creates any new namespaces (groups) if they don’t exist. If the namespace is taken, the repository imports under the namespace of the user who started the import process.` ([source](https://docs.gitlab.com/ee/user/project/import/bitbucket_server.html#user-assignment))
+
+**See [limitations](https://docs.gitlab.com/ee/user/project/import/bitbucket_server.html#items-that-are-not-imported) of the BB server importer
 
 ## BitBucket Cloud
 

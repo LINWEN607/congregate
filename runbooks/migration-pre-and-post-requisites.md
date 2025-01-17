@@ -47,7 +47,7 @@ This runbook covers the process of preparing and cleaning up after a migration f
 
     **NOTE:** Mentions may change over time
   * (Optional) Post issue in Slack's [**#it_help**](https://gitlab.slack.com/archives/CK4EQH50E) channel
-* (gitlab.com) To avoid SAML provisioning the import Admin user in the external (customer) identity provider, spoof/mock the customer gitlab.com SAML identity for the Admin account. [Modify the Admin account attributes via the Users API](https://docs.gitlab.com/ee/api/users.html#user-modification) and `PUT` the following json body to `https://<hostname>/api/v4/users/<id>`:
+* (gitlab.com) To avoid SAML provisioning the import Admin user in the external (customer) identity provider, spoof/mock the customer gitlab.com SAML identity for the Admin account. [Modify the Admin account attributes via the Users API](https://docs.gitlab.com/ee/api/users.html#modify-a-user) and `PUT` the following json body to `https://<hostname>/api/v4/users/<id>`:
 
     ```json
     {

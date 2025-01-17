@@ -1,5 +1,6 @@
 import json
 from math import ceil
+from pathlib import Path
 from flask import jsonify, Blueprint, request
 from gitlab_ps_utils.misc_utils import strip_netloc
 from congregate.helpers.utils import get_congregate_path
@@ -14,13 +15,25 @@ PROJECT_SEARCH_KEYS = ['id', 'name', 'path_with_namespace', 'visibility', 'archi
 
 def get_data(file_name, sort_by=None):
     data = None
-    with open(f"{get_congregate_path()}/data/{file_name}.json", "r") as f:
+    base_path = Path(get_congregate_path()) / 'data'
+    full_path = base_path / f"{file_name}.json"
+    abs_base_path = base_path.resolve()
+    abs_full_path = full_path.resolve()
+
+    if not abs_full_path.is_file() or abs_base_path not in abs_full_path.parents:
+        raise ValueError("Invalid file path or file does not exist.")
+
+    with abs_full_path.open("r") as f:
         data = json.load(f)
 
     if sort_by is not None:
-        return sorted(data, key=lambda d: d[sort_by])
+        try:
+            return sorted(data, key=lambda d: d[sort_by])
+        except KeyError:
+            raise ValueError(f"Invalid sort key: {sort_by}")
 
     return data
+
 
 @mongo_connection
 def get_mongo_data(asset_type, per_page=50, page=1, sort_by=None, projection=None, filter=None, mongo=None):

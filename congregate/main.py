@@ -30,7 +30,6 @@ Usage:
     congregate stage-unimported-projects [--commit] # TODO: Refactor, broken
     congregate url-rewrite-only [--commit]
     congregate remove-users-from-parent-group [--commit]
-    congregate migrate-variables-in-stage [--commit]
     congregate migrate-linked-issues [--commit]
     congregate pull-mirror-staged-projects [--commit] [--protected-only] [--force] [--overwrite]
     congregate push-mirror-staged-projects [--disabled] [--keep_div_refs] [--force] [--commit]
@@ -39,7 +38,6 @@ Usage:
     congregate delete-staged-projects-push-mirrors [--all] [--commit]
     congregate delete-all-staged-projects-pull-mirrors [--commit]
     congregate set-default-branch [--name=<name>] [--commit]
-    congregate enable-mirroring [--commit] # TODO: Find a use for it or remove
     congregate count-unarchived-projects [--local]
     congregate archive-staged-projects [--commit] [--dest] [--scm-source=hostname] [--rollback]
     congregate unarchive-staged-projects [--commit] [--dest] [--scm-source=hostname] [--rollback]
@@ -49,8 +47,6 @@ Usage:
     congregate unset-bb-read-only-member-permissions [--bb-projects] [--commit]
     congregate filter-projects-by-state [--commit] [--archived]
     congregate find-empty-repos
-    congregate compare-groups [--staged]
-    congregate staged-user-list
     congregate generate-seed-data [--commit] # TODO: Refactor, broken
     congregate validate-staged-groups-schema
     congregate validate-staged-projects-schema
@@ -170,7 +166,6 @@ Commands:
     stage-unimported-projects               Stage unimported projects based on {CONGREGATE_PATH}/data/unimported_projects.txt.
     url-rewrite-only                        Performs the URL rewrite portion of a migration as a stand-alone step, instead of as a post-migration step. Requires the projects to be staged, and to exist on destination
     remove-users-from-parent-group          Remove all users with at most Reporter access from the parent group.
-    migrate-variables-in-stage              Migrate CI variables for staged projects.
     migrate-linked-issues                   Migrate Linked items in issues for staged projects.
     pull-mirror-staged-projects             Create and start project pull mirroring for staged projects.
     push-mirror-staged-projects             Set up and enable (by default) project push mirroring for staged projects.
@@ -182,12 +177,9 @@ Commands:
     delete-staged-projects-push-mirrors     Remove project push mirrors for staged projects. Only remove destination instance host (+'dstn_parent_group_path' if configured) mirrors. Add '--all' to remove all mirrors.
     delete-all-staged-projects-pull-mirrors Remove all project pull mirrors for staged projects.
     set-default-branch                      Set default branch for staged projects on destination.
-    enable-mirroring                        Start pull mirror process for all projects on destination.
     count-unarchived-projects               Return total number and list of all unarchived projects on source.
     find-empty-repos                        Inspect project repo sizes between source and destination instance in search for empty repos.
                                                 This could be misleading as it sometimes shows 0 (zero) commits/tags/bytes for fully migrated projects.
-    compare-groups                          Compare source and destination group results.
-    staged-user-list                        Output a list of all staged users and their respective user IDs. Used to confirm IDs were updated correctly.
     archive-staged-projects                 Archive GitLab source (or destination if '--dest') projects that are staged, not necessarily migrated.
     unarchive-staged-projects               Unarchive GitLab source (or destination if '--dest') projects that are staged, not necessarily migrate.
     set-bb-read-only-branch-permissions     Add read-only branch permission/restriction to all branches (*) on staged BitBucket repos (or projects if '--bb-projects').
@@ -327,7 +319,6 @@ def main():
             from congregate.migration.gitlab.groups import GroupsClient
             from congregate.migration.gitlab.projects import ProjectsClient
             from congregate.migration.gitlab.variables import VariablesClient
-            from congregate.migration.gitlab.compare import CompareClient
             from congregate.migration.migrate import MigrateClient
             from congregate.migration.meta.base_migrate import MigrateClient as BaseMigrateClient
             from congregate.migration.gitlab.migrate import GitLabMigrateClient
@@ -357,7 +348,6 @@ def main():
             projects = ProjectsClient()
             bb_repos = BBReposClient()
             variables = VariablesClient()
-            compare = CompareClient()
             branches = BranchesClient()
 
             if not config.ssl_verify:
@@ -497,8 +487,6 @@ def main():
                 BaseMigrateClient(dry_run=DRY_RUN).stage_unimported_projects()
             if arguments["remove-users-from-parent-group"]:
                 users.remove_users_from_parent_group(dry_run=DRY_RUN)
-            if arguments["migrate-variables-in-stage"]:
-                variables.migrate_variables_in_stage(dry_run=DRY_RUN)
             if arguments["delete-all-staged-projects-pull-mirrors"]:
                 projects.delete_all_pull_mirrors(dry_run=DRY_RUN)
             if arguments["pull-mirror-staged-projects"]:
@@ -596,22 +584,6 @@ def main():
                         f"The 'archived' field is currently not present when listing on {config.source_type}")
             if arguments["find-empty-repos"]:
                 projects.find_empty_repos()
-            if arguments["compare-groups"]:
-                if arguments["--staged"]:
-                    results, unknown_users = compare.create_group_migration_results(
-                        staged=True)
-                else:
-                    results, unknown_users = compare.create_group_migration_results()
-                with open(f"{app_path}/data/groups_audit.json", "w") as f:
-                    dump(results, f, indent=4)
-                with open(f"{app_path}/data/unknown_users.json", "w") as f:
-                    dump(unknown_users, f, indent=4)
-            if arguments["staged-user-list"]:
-                results = compare.compare_staged_users()
-                log.info(
-                    f"Staged user list:\n{dumps(results, indent=4, sort_keys=True)}")
-                log.info(
-                    f"Length: {{key: len(value) for key, value in results.items()}}")
             if arguments["generate-seed-data"]:
                 s = SeedDataGenerator()
                 s.generate_seed_data(dry_run=DRY_RUN)

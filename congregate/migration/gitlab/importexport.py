@@ -382,7 +382,7 @@ class ImportExportClient(BaseGitLabClient):
         """
         if group is None:
             self.log.error(
-                "SKIP: Import, the following group is NONE: {}".format(group))
+                f"SKIP: Import, the following group is NONE: {group}")
             return None
 
         if isinstance(group, str):
@@ -400,7 +400,7 @@ class ImportExportClient(BaseGitLabClient):
                 parent_id = found
             else:
                 self.log.warning(
-                    f"Parent group {parent_path} NOT found on destination")
+                    f"Parent group '{parent_path}' NOT found on destination")
                 return False
         if not dry_run:
             import_response = self.attempt_group_import(
@@ -413,35 +413,35 @@ class ImportExportClient(BaseGitLabClient):
             while import_response.status_code in [500, 429]:
                 if import_response.status_code == 429:
                     self.log.info(
-                        f"Re-importing group {full_path}, waiting {self.COOL_OFF_MINUTES} minutes due to:\n{import_response.text}")
+                        f"Re-importing group '{full_path}', waiting {self.COOL_OFF_MINUTES} minutes due to:\n{import_response.text}")
                     sleep(self.COOL_OFF_MINUTES * 60)
                 elif import_response.status_code == 500:
                     self.log.warning(
-                        f"Re-importing group {full_path} in {wait_time} seconds due to:\n{import_response.text}")
+                        f"Re-importing group '{full_path}' in {wait_time} seconds due to:\n{import_response.text}")
                     sleep(wait_time)
                 import_response = self.attempt_group_import(
                     filename, name, path, members, parent_id=parent_id)
             if import_response and import_response.status_code == 202:
                 self.log.info(
-                    f"Group {full_path} (file: {filename}) successfully imported")
+                    f"Group '{full_path}' (file: {filename}) successfully imported")
                 return True
             self.log.error(
-                f"Group {full_path} (file: {filename}) import failed, with status:\n{text}")
-        else:
-            self.log.info(
-                f"DRY-RUN: Outputing group {full_path} (file: {filename}) migration data to dry_run_group_migration.json")
-            migration_dry_run("group", {
-                "filename": filename,
-                "name": name,
-                "path": path,
-                "full_path": full_path,
-                "group": group})
+                f"Group '{full_path}' (file: {filename}) import failed, with status:\n{text}")
+            return False
+        self.log.info(
+            f"DRY-RUN: Outputting group '{full_path}' (file: {filename}) migration data to dry_run_group_migration.json")
+        migration_dry_run("group", {
+            "filename": filename,
+            "name": name,
+            "path": path,
+            "full_path": full_path,
+            "group": group})
         return False
 
     def attempt_group_import(self, filename, name,
                              path, members, parent_id=None):
         resp = None
-        self.log.info("Importing group {} from filesystem".format(name))
+        self.log.info(f"Importing group '{path}' from filesystem")
         if self.config.location in ["aws", "filesystem-aws"]:
             self.log.warning(
                 "NOTICE: Group export does not yet support (AWS/S3) user attributes")
@@ -453,7 +453,7 @@ class ImportExportClient(BaseGitLabClient):
                                "Please create the directory and try again.")
                 os.killpg(os.getpgid(os.getpid()), signal.SIGKILL)
             token = self.config.destination_token
-            with open("%s/downloads/%s" % (self.config.filesystem_path, filename), "rb") as f:
+            with open(f"{self.config.filesystem_path}/downloads/{filename}", "rb") as f:
                 data = {
                     "path": path,
                     "name": name,
@@ -465,8 +465,7 @@ class ImportExportClient(BaseGitLabClient):
                 headers = {
                     "Private-Token": token
                 }
-                message = "Importing group %s with payload %s and members %s" % (
-                    path, data, members)
+                message = f"Importing group '{path}' with payload {data} and members {members}"
                 resp = self.groups_api.import_group(
                     self.config.destination_host, token, data=data, files=files, headers=headers, message=message)
         return resp
