@@ -8,7 +8,7 @@ from congregate.migration.ado.api.pull_requests import PullRequestsApi
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.congregate_mdbc import mongo_connection
+from congregate.helpers.congregate_mdbc import CongregateMongoConnector
 
 
 class ProjectsClient(BaseClass):
@@ -24,11 +24,12 @@ class ProjectsClient(BaseClass):
         super().__init__()
 
     def retrieve_project_info(self, processes=None):
-        for project in self.projects_api.get_all_projects():
-            self.handle_retrieving_project(project)
+        self.multi.start_multi_process_stream(
+            self.handle_retrieving_project, self.projects_api.get_all_projects(), processes=processes)
 
-    @mongo_connection
     def handle_retrieving_project(self, project, mongo=None):
+        if not mongo:
+            mongo = CongregateMongoConnector()
         if not project:
             self.log.error("Failed to retrieve project information")
             return
@@ -40,6 +41,7 @@ class ProjectsClient(BaseClass):
             if repository:
                 formatted_project = self.base_api.format_project(project, repository, count, mongo)
                 mongo.insert_data(collection_name, formatted_project)
+        mongo.close_connection()
 
     def migrate_pull_requests(self, source_project, dstn_project_id, dry_run=False):
         if not dry_run:
