@@ -2,6 +2,7 @@ import os
 import glob
 import errno
 import mimetypes
+from re import sub
 from shutil import copy
 from datetime import datetime
 from urllib.parse import urlparse
@@ -83,3 +84,11 @@ def guess_file_type(filename):
     if guess[0] and guess[1]:
         return f"{guess[0].split('/')[0]}/{guess[1]}"
     return guess[0]
+
+# TODO: Move this to gitlab-ps-utils since it's used here and in Evaluate
+def to_camel_case(s):
+    """
+        Shameless copy from https://www.w3resource.com/python-exercises/string/python-data-type-string-exercise-96.php
+    """
+    s = sub(r"(_|-)+", " ", s).title().replace(" ", "")
+    return ''.join([s[0].lower(), s[1:]])
