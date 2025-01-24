@@ -485,7 +485,7 @@ class MigrateClient(BaseClass):
                     result["response"] = resp
                 else:
                     self.log.error(
-                        f"Unable to create group {group['full_path']} due to: {result}")
+                        f"Unable to create group {group['full_path']} due to: {resp}")
             if group_id:
                 if not self.remove_members:
                     result["members"] = self.groups.add_members_to_destination_group(
