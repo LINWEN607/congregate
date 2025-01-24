@@ -97,10 +97,15 @@ class ProjectDiffClient(BaseDiffClient):
                 project, "merge_requests", "projects/:id/merge_requests")
             project_diff["Total Number of Merge Request Comments"] = self.generate_nested_project_count_diff_graphql(
                 project, "merge_requests", "notes")
-            project_diff["Total Number of Issues"] = self.generate_project_count_diff(
-                project, "projects/:id/issues")
-            project_diff["Total Number of Issue Comments"] = self.generate_nested_project_count_diff(
-                project, ["projects/:id/issues", "notes"])
+            # project_diff["Total Number of Issues"] = self.generate_project_count_diff(
+            #     project, "projects/:id/issues")
+            # project_diff["Total Number of Issue Comments"] = self.generate_nested_project_count_diff(
+            #     project, ["projects/:id/issues", "notes"])
+            project_diff["Total Number of Issues"] = self.generate_project_count_diff_graphql(
+                project, "issues", "projects/:id/issues")
+            project_diff["Total Number of Issue Comments"] = self.generate_nested_project_count_diff_graphql(
+                project, "issues", "notes")
+            
             project_diff["Total Number of Branches"] = self.generate_project_count_diff(
                 project, "projects/:id/repository/branches")
 
