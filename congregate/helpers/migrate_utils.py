@@ -474,14 +474,7 @@ def sanitize_name(name, full_path, is_group=False, is_subgroup=False):
     Example:
         " !  _-:: This.is-how/WE do\n&it#? - šđžčć_  ? " -> "This.is-how WE do it - šđžčć"
     """
-    
-    # punctuation_for_strip = punctuation
-    # if is_subgroup:
-    #     # Remove dash from the punctuation set so it won't get stripped
-    #     punctuation_for_strip = punctuation_for_strip.replace("-", "")
-
     # Remove leading and trailing special characters and spaces
-    # Don't strip dashes from left/right
     stripped = name.strip(punctuation + " ")
 
     if not stripped and name == "-":
