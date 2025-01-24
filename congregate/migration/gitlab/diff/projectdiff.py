@@ -208,11 +208,10 @@ class ProjectDiffClient(BaseDiffClient):
         formatted_entity = to_camel_case(entity)
         source_count = 0
         destination_count = 0
-
         # Source count lookup via GraphQL with REST API lookup if instance is older than 17.3
         if gql_resp := safe_json_response(self.gl_api.generate_post_request(
-            self.config.source_host, self.config.source_token, None, json_dumps(self.generate_count_query(formatted_entity, source_full_path)), graphql_query=True)):
-            source_count = dig(gql_resp, 'data', 'project', formatted_entity, 'count')
+            self.config.source_host, self.config.source_token, None, json_dumps(self.generate_count_query(source_full_path, formatted_entity)), graphql_query=True)):
+            source_count = dig(gql_resp, 'data', 'project', formatted_entity, 'count', default=0)
         elif is_gl_version_older_than('17.3', self.config.source_host, self.config.source_token, self.log):
             self.log.warning("GraphQL lookup on source failed. Falling back to REST API")
             source_id = project["id"]
@@ -223,8 +222,8 @@ class ProjectDiffClient(BaseDiffClient):
 
         # Destination count lookup via GraphQL with REST API lookup if instance is older than 17.3
         if gql_resp := safe_json_response(self.gl_api.generate_post_request(
-            self.config.destination_host, self.config.destination_token, None, json_dumps(self.generate_count_query(formatted_entity, destination_full_path)), graphql_query=True)):
-            destination_count = dig(gql_resp, 'data', 'project', formatted_entity, 'count')
+            self.config.destination_host, self.config.destination_token, None, json_dumps(self.generate_count_query(destination_full_path, formatted_entity)), graphql_query=True)):
+            destination_count = dig(gql_resp, 'data', 'project', formatted_entity, 'count', default=0)
         elif is_gl_version_older_than('17.3', self.config.source_host, self.config.source_token, self.log):
             self.log.warning("GraphQL lookup on destination failed. Falling back to REST API")
             destination_id = self.get_destination_id(project)
@@ -249,10 +248,11 @@ class ProjectDiffClient(BaseDiffClient):
         count = 0
         for data in self.graphql_list_all_outer_nested(host, token, full_path, primary_entity):
             if id := data.get('id'):
-                query = self.generate_nested_count_query(id, primary_entity, secondary_entity)
+                singular_entity = primary_entity.rstrip('s')
+                query = self.generate_nested_count_query(id, singular_entity, secondary_entity)
                 if resp := safe_json_response(
                     self.gl_api.generate_post_request(host, token, None, data=json_dumps(query), graphql_query=True)):
-                        count += dig(resp, primary_entity, secondary_entity, 'count', default=0)
+                        count += dig(resp, 'data', singular_entity, secondary_entity, 'count', default=0)
         return count
 
     def graphql_list_all_outer_nested(self, host, token, full_path, primary_entity):
@@ -261,7 +261,7 @@ class ProjectDiffClient(BaseDiffClient):
             query = self.generate_outer_nested_query(full_path, primary_entity, after)
             if resp := safe_json_response(
                     self.gl_api.generate_post_request(host, token, None, data=json_dumps(query), graphql_query=True)):
-                yield from dig(resp, 'data', 'project', primary_entity, 'nodes')
+                yield from dig(resp, 'data', 'project', primary_entity, 'nodes', default=[])
                 page_info = dig(resp, 'data', 'project', primary_entity, 'pageInfo', default={})
                 if cursor := page_info.get('endCursor'):
                     after = cursor
@@ -291,14 +291,14 @@ class ProjectDiffClient(BaseDiffClient):
                             nodes {
                                 id
                             }
-                        }
-                        pageInfo {
-                            endCursor
-                            hasNextPage
+                            pageInfo {
+                                endCursor
+                                hasNextPage
+                            }
                         }
                     }
                 }
-            """ % (full_path, after, entity)
+            """ % (full_path, entity, after)
         }
 
     def generate_nested_count_query(self, id, formatted_parent_entity, formatted_nested_entity):
