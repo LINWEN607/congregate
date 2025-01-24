@@ -132,7 +132,7 @@ class AzureDevopsMigrateClient(MigrateClient):
 
     def handle_exporting_azure_project(self, project):
         if self.dry_run:
-            exported_file = get_export_filename_from_namespace_and_name(project['path'], project['name'])
+            exported_file = get_export_filename_from_namespace_and_name(project['namespace'], project['name'])
             self.log.info(f"DRY-RUN: Would export Azure repo info to {exported_file}")
         else:
             exported_file = AdoExportBuilder(project).create()

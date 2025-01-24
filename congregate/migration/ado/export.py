@@ -78,7 +78,7 @@ class AdoExportBuilder(ExportBuilder):
                 merge_commit_sha=dig(pr, 'lastMergeCommit', 'commitId'),
                 squash_commit_sha=dig(pr, 'lastMergeCommit', 'commitId') if pr.get('mergeStrategy') == 'squash' else None,
                 title=pr['title'],
-                description=pr['description'],
+                description=pr.get('description', ''),
                 state=self.pull_request_status(pr),
                 draft=pr['isDraft'],
                 created_at=pr['creationDate'],
@@ -183,7 +183,7 @@ class AdoExportBuilder(ExportBuilder):
         for thread in self.pull_requests_api.get_all_pull_request_threads(project_id=self.project_id, repository_id=self.repository_id, pull_request_id=pr_id):
             for comment in thread['comments']:
                 notes.append(Note(
-                    note=comment['content'],
+                    note=comment.get('content', ''),
                     author_id=self.get_new_member_id(comment['author']),
                     project_id=1,
                     created_at=comment['publishedDate'],

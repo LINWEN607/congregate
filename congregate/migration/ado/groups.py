@@ -4,7 +4,7 @@ from congregate.migration.ado.api.base import AzureDevOpsApiWrapper
 from congregate.migration.ado.base import AzureDevOpsWrapper
 from congregate.migration.ado.api.projects import ProjectsApi
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.congregate_mdbc import mongo_connection
+from congregate.helpers.congregate_mdbc import CongregateMongoConnector
 
 
 class GroupsClient(BaseClass):
@@ -15,11 +15,11 @@ class GroupsClient(BaseClass):
         super().__init__()
 
     def retrieve_group_info(self, processes=None):
-        for project in self.projects_api.get_all_projects():
-            self.handle_retrieving_group(project)
+        self.multi.start_multi_process_stream(self.handle_retrieving_group, self.projects_api.get_all_projects(), processes=processes)
 
-    @mongo_connection
     def handle_retrieving_group(self, project, mongo=None):
+        if not mongo:
+            mongo = CongregateMongoConnector()
         if project:
             count = self.api.get_count(f'{project["id"]}/_apis/git/repositories')
             if count > 1:
@@ -28,3 +28,4 @@ class GroupsClient(BaseClass):
                     self.base_api.format_group(project, mongo))
         else:
             self.log.error("Failed to retrieve project information")
+        mongo.close_connection()
