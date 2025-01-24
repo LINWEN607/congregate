@@ -3,7 +3,6 @@ import os
 import signal
 import errno
 import json
-import string
 
 from string import punctuation
 from re import sub
@@ -19,82 +18,11 @@ from congregate.helpers.base_class import BaseClass
 from congregate.helpers.utils import is_dot_com, get_congregate_path
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.instance import InstanceApi
+from congregate.migration.meta.constants import TOP_LEVEL_RESERVED_NAMES, SUBGROUP_RESERVED_NAMES, PROJECT_RESERVED_NAMES
 
 b = BaseClass()
 users_api = UsersApi()
 instance_api = InstanceApi()
-
-TOP_LEVEL_RESERVED_NAMES = {
-    "-",
-    ".well-known",
-    "404.html",
-    "422.html",
-    "500.html",
-    "502.html",
-    "503.html",
-    "admin",
-    "api",
-    "apple-touch-icon.png",
-    "assets",
-    "dashboard",
-    "deploy.html",
-    "explore",
-    "favicon.ico",
-    "favicon.png",
-    "files",
-    "groups",
-    "health_check",
-    "help",
-    "import",
-    "jwt",
-    "login",
-    "oauth",
-    "profile",
-    "projects",
-    "public",
-    "robots.txt",
-    "s",
-    "search",
-    "sitemap",
-    "sitemap.xml",
-    "sitemap.xml.gz",
-    "slash-command-logo.png",
-    "snippets",
-    "unsubscribes",
-    "uploads",
-    "users",
-    "v2"
-}
-
-SUBGROUP_RESERVED_NAMES = {
-    "-",
-    # add more if needed from the doc
-}
-
-PROJECT_RESERVED_NAMES = {
-    "-",
-    "badges",
-    "blame",
-    "blob",
-    "builds",
-    "commits",
-    "create",
-    "create_dir",
-    "edit",
-    "environments/folders",
-    "files",
-    "find_file",
-    "gitlab-lfs/objects",
-    "info/lfs/objects",
-    "new",
-    "preview",
-    "raw",
-    "refs",
-    "tree",
-    "update",
-    "wikis"
-}
-
 
 def get_failed_export_from_results(res):
     """
