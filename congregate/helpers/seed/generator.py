@@ -12,6 +12,7 @@ from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.instance import InstanceApi
 from congregate.migration.gitlab.api.settings import SettingsAPI
+from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
 from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.pushrules import PushRulesClient
 from congregate.migration.gitlab.branches import BranchesClient
@@ -105,6 +106,24 @@ class SeedDataGenerator(BaseClass):
         }
     ]
 
+    MERGE_REQUEST_DATA = [
+        {
+            "source_branch": "test-branch",
+            "target_branch": "master",
+            "title": "Test MR 1"
+        },
+        {
+            "source_branch": "test-branch2",
+            "target_branch": "master",
+            "title": "Test MR 2"
+        },
+        {
+            "source_branch": "test-branch3",
+            "target_branch": "master",
+            "title": "Test MR 3"
+        }
+    ]
+
     def __init__(self):
         self.ie = ImportExportClient()
         self.mirror = MirrorClient()
@@ -116,6 +135,7 @@ class SeedDataGenerator(BaseClass):
         self.projects_api = ProjectsApi()
         self.instance_api = InstanceApi()
         self.settings_api = SettingsAPI()
+        self.mr_api = MergeRequestsApi()
         self.pushrules = PushRulesClient()
         self.branches = BranchesClient()
         self.mra = MergeRequestApprovalsClient()
@@ -139,16 +159,18 @@ class SeedDataGenerator(BaseClass):
             self.generate_bot_user(g["id"], "group", dry_run)
         projects = self.generate_group_projects(groups, dry_run)
         for p in projects:
-            self.add_project_members(users, p["id"], dry_run)
-            self.generate_dummy_branches(p["id"], dry_run)
-            self.generate_dummy_environment(p["id"], dry_run)
-            self.generate_dummy_project_hooks(p["id"], dry_run)
-            self.generate_dummy_project_deploy_keys(p["id"], dry_run)
-            self.generate_dummy_project_push_rules(p["id"], dry_run)
-            self.generate_dummy_project_variables(p["id"], dry_run)
-            self.generate_dummy_project_pipeline_variables(p["id"], dry_run)
-            self.generate_shared_with_group_data(p["id"], groups, dry_run)
-            self.generate_bot_user(p["id"], "project", dry_run)
+            pid = p['id']
+            self.add_project_members(users, pid, dry_run)
+            self.generate_dummy_branches(pid, dry_run)
+            self.generate_dummy_merge_requests(pid, dry_run)
+            self.generate_dummy_environment(pid, dry_run)
+            self.generate_dummy_project_hooks(pid, dry_run)
+            self.generate_dummy_project_deploy_keys(pid, dry_run)
+            self.generate_dummy_project_push_rules(pid, dry_run)
+            self.generate_dummy_project_variables(pid, dry_run)
+            self.generate_dummy_project_pipeline_variables(pid, dry_run)
+            self.generate_shared_with_group_data(pid, groups, dry_run)
+            self.generate_bot_user(pid, "project", dry_run)
         projects += self.generate_user_projects(users, dry_run)
         self.generate_instance_hooks(dry_run)
         self.enable_importers()
@@ -367,6 +389,14 @@ class SeedDataGenerator(BaseClass):
                 f"{get_dry_log(dry_run)}Creating project {pid} branch ({d})")
             if not dry_run:
                 self.projects_api.create_branch(
+                    self.config.source_host, self.config.source_token, pid, data=d)
+    
+    def generate_dummy_merge_requests(self, pid, dry_run=True):
+        for d in self.MERGE_REQUEST_DATA:
+            self.log.info(
+                f"{get_dry_log(dry_run)}Creating project {pid} branch ({d})")
+            if not dry_run:
+                self.mr_api.create_merge_request(
                     self.config.source_host, self.config.source_token, pid, data=d)
 
     def generate_dummy_environment(self, pid, dry_run=True):
