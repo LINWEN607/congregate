@@ -195,8 +195,9 @@ class BaseStageClass(BaseClass):
         # Decrease size of staged_groups.json
         group.pop("projects", None)
         group.pop("desc_groups", None)
+        is_subgroup = group.get("parent_id") is not None
         group["name"] = sanitize_name(
-            group["name"], group["full_path"], is_group=True)
+            group["name"], group["full_path"], is_group=True, is_subgroup=is_subgroup)
         return group
 
     def list_staged_users_without_public_email(self):
