@@ -229,3 +229,19 @@ class MergeRequestsApi(GitLabApiWrapper):
 
         """
         return self.api.generate_post_request(host, token, f"projects/{project_id}/merge_requests", data=json.dumps(data))
+    
+    def create_merge_request_note(self, host, token, project_id, mr_id, data):
+        """
+        Create merge request using data payload.
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/merge_requests.html#create-mr
+
+        :parma: host: (str) GitLab host URL
+        :parma: token: (str) Access token to GitLab instance
+        :parma: project_id: (int) GitLab Project ID
+        :parma: data: (dict) Data to be posted
+        :yield: Response object containing the response to POST /projects/:id/merge_requests
+
+        """
+        return self.api.generate_post_request(host, token, f"projects/{project_id}/merge_requests/{mr_id}/notes", data=json.dumps(data))
+    
