@@ -394,10 +394,16 @@ class SeedDataGenerator(BaseClass):
     def generate_dummy_merge_requests(self, pid, dry_run=True):
         for d in self.MERGE_REQUEST_DATA:
             self.log.info(
-                f"{get_dry_log(dry_run)}Creating project {pid} branch ({d})")
+                f"{get_dry_log(dry_run)}Creating project {pid} merge request ({d})")
             if not dry_run:
-                self.mr_api.create_merge_request(
-                    self.config.source_host, self.config.source_token, pid, data=d)
+                if mr := safe_json_response(self.mr_api.create_merge_request(
+                    self.config.source_host, self.config.source_token, pid, data=d)):
+                    mr_id = mr['iid']
+                    data = {
+                        'body': "This is a test comment"
+                    }
+                    self.mr_api.create_merge_request_note(
+                        self.config.source_host, self.config.source_token, pid, mr_id, data=data)
 
     def generate_dummy_environment(self, pid, dry_run=True):
         data_prod = {
