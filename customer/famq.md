@@ -377,6 +377,14 @@ When it comes to how old can the GitLab source instance be we come to the follow
 * **16.11**
   * Currently generally accepted as the "baseline" source instance version for Direct Transfer migrations. Has several performance and tuning fixes/additions that can unblock migrations on source systems with limited resources.
 
+#### Retiring export/import
+
+* Export by file is used internally in GitLab and as a backup solution on gitlab.com
+  * Although the file export wasn't built for this purpose, some customers use it for it, so it will stay for some time
+* Export/import as a migration tool should retire as an offering after extending direct transfer to support migrations between offline instances
+* Export/import code itself is currently used by other GitLab features
+  * [In discussion](https://gitlab.com/gitlab-org/gitlab/-/issues/419575) what to do about it
+
 ### Importer bugs
 
 * [Group Export/Import bugs](https://gitlab.com/groups/gitlab-org/-/epics/4614)
