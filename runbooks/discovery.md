@@ -1,3 +1,5 @@
+[TOC]
+
 # Consolidated Discovery Notes
 
 The Ultimate Goal of this document is to have its contents converted into a roadmap markdown file with an index of questions unique to each source and destination. For example when performing a migration from Bitbucket to Gitlab.com you would review the questions/notes for Source -> Bitbucket and Destination -> Gitlab.com. All notes and contributions are welcome (it is the GitLab way). Any miscellaneous or unsorted notes can be placed in the section Unsorted Notes. Please indicate any source/destination that contributions apply to.

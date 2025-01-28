@@ -3,6 +3,9 @@
     Post the link to the issue on the Slack channel dedicated to this migration.
 -->
 
+[TOC]
+
+
 # <customer name> Migration Wave <insert-number-here>
 
 This runbook covers the process of migrating a wave of **groups and projects** from a source GitLab instance to a self-managed destination GitLab instance. This is assuming all users (excluding [internal and bot](https://docs.gitlab.com/ee/development/internal_users.html#internal-users)) have already been migrated.

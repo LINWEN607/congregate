@@ -1,3 +1,5 @@
+[TOC]
+
 # Setting up Congregate for air-gapped migrations
 
 Congregate's default configuration relies on the node running Congregate to be able to communicate with the source and destination instance during a migration run.

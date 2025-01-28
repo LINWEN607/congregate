@@ -2,6 +2,8 @@
     Copy the contents of this runbook into an issue when running through migration prerequisites.
     Post the link to the issue on the Slack channel dedicated to this migration.
 -->
+[TOC]
+
 
 # [customer name] Migration Pre and Post-requisites
 

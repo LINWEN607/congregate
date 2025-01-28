@@ -1,3 +1,6 @@
+[TOC]
+
+
 # Migration Wave
 
 This runbook covers the process of migrating a wave of **groups and projects** from a source GitHub.com instance to **GitLab.com**.
