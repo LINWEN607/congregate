@@ -547,7 +547,7 @@ class GitLabMigrateClient(MigrateClient):
         dst_token = dst_token or self.config.destination_token
         src_host = self.config.source_host
         src_token = self.config.source_token
-        archived = self.projects_api.get_project_archive_state(
+        archived = False if self.config.airgap else self.projects_api.get_project_archive_state(
             src_host, src_token, src_id)
         dst_pwn, tn = mig_utils.get_stage_wave_paths(
             project, group_path=group_path)
@@ -590,7 +590,7 @@ class GitLabMigrateClient(MigrateClient):
                         f"Migrating additional source project '{path}' (ID: {src_id}) GitLab features")
 
                     # Certain project features cannot be migrated when archived
-                    if archived:
+                    if archived and not self.config.airgap:
                         self.log.info(
                             f"Unarchiving source project '{path}' (ID: {src_id})")
                         self.projects_api.unarchive_project(
@@ -609,7 +609,7 @@ class GitLabMigrateClient(MigrateClient):
             self.log.error(print_exc())
         finally:
             if not self.dry_run:
-                if archived:
+                if archived and not self.config.airgap:
                     self.projects_api.archive_project(
                         src_host, src_token, src_id,
                         message=f"Archiving back source project '{path}' (ID: {src_id})")
