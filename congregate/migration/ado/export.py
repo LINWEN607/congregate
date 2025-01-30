@@ -32,8 +32,8 @@ class AdoExportBuilder(ExportBuilder):
         self.repositories_api = RepositoriesApi()
         self.pull_requests_api = PullRequestsApi()
         self.teams_api = TeamsApi()
-        self.project_id = source_project['namespace']
-        self.repository_id = source_project['id']
+        self.project_id = source_project['id']
+        self.repository_id = source_project['repository_id']
         self.source_project = source_project
         self.members_map = {}
         self.project_metadata = Project(description=source_project['description'])
@@ -103,10 +103,13 @@ class AdoExportBuilder(ExportBuilder):
                 # merged_at=dig(pr, 'lastMergeCommit', 'committer', 'date') if pr.get('lastMergeCommit') else None,
                 # closed_at=pr.get('lastMergeTargetUpdateTime') if pr.get('lastMergeCommit') else None,
                 notes=self.build_mr_notes(pr_id),
-                author_id=self.get_new_member_id(pr['createdBy'])
+                author_id=self.get_new_member_id(pr['createdBy']),
+                merge_request_assignees=self.add_merge_request_assignees([], pr),
+                merge_request_reviewers=self.add_merge_request_reviewers([], pr),
+                label_links=self.add_label_links([], pr)
             ))
         return merge_requests
-    
+
     def build_project_members(self):
         project_members = []
         for team in self.teams_api.get_teams(self.project_id):
@@ -153,6 +156,55 @@ class AdoExportBuilder(ExportBuilder):
         else:
             return "unknown"
 
+    def add_merge_request_assignees(self, assignee_ids, pr):
+        assignee_ids = [{
+            "user_id": self.get_new_member_id(pr['createdBy']),
+            "created_at": pr['creationDate'],
+        }]
+        return assignee_ids
+
+    def add_merge_request_reviewers(self, reviewer_ids, pr):
+        reviewer_ids = []
+        for reviewer in pr.get('reviewers', []):
+            if reviewer:
+                state = 'reviewed' if reviewer['vote'] == 10 else 'unreviewed'
+                reviewer_ids.append({
+                    "user_id": self.get_new_member_id(reviewer),
+                    "created_at": pr['creationDate'],
+                    "state": state
+                })
+        return reviewer_ids
+
+    def add_label_links(self, label_links, pr):
+        # GitLab Sea Buckthorn
+        # Hex: #fca326
+        # RGB: 252, 163, 38
+
+        # GitLab Orange
+        # Hex: #fc6d26
+        # RGB: 252, 109, 38
+
+        # GitLab Cinnabar
+        # Hex: #e24329
+        # RGB: 226, 67, 41
+
+        # GitLab Victoria
+        # Hex: #554488
+        # RGB: 85, 68, 136
+
+        label_links = []
+        for label in pr.get('labels', []):
+            label_links.append({
+                "target_type": "MergeRequest",
+                "created_at": pr['creationDate'],
+                "updated_at": pr['creationDate'],
+                "label": {
+                    "title": label['name'],
+                    "color": "#fc6d26",
+                }
+            })
+        return label_links
+
     def add_assignee_ids(self, assignee_ids, source_project):
         assignee_ids = []
         for username in source_project["members"]:
@@ -164,7 +216,7 @@ class AdoExportBuilder(ExportBuilder):
         guid = member['id']
         member_copy['id'] = len(self.members_map.keys())+1
         self.members_map[guid] = member_copy
-    
+
     def get_new_member_id(self, member):
         if mid := dig(self.members_map, member['id'], 'id'):
             return mid
@@ -172,12 +224,11 @@ class AdoExportBuilder(ExportBuilder):
             self.add_to_members_map(member)
             return self.get_new_member_id(member)
 
-
     def build_clone_url(self, source_project):
         clone_url = source_project['http_url_to_repo']
         decoded_token = deobfuscate(self.config.source_token)
         return clone_url.replace("@", f"{decoded_token}@")
-    
+
     def build_mr_notes(self, pr_id):
         notes = []
         for thread in self.pull_requests_api.get_all_pull_request_threads(project_id=self.project_id, repository_id=self.repository_id, pull_request_id=pr_id):
