@@ -108,7 +108,8 @@ class AdoExportBuilder(ExportBuilder):
                 author_id=self.get_new_member_id(pr['createdBy']),
                 merge_request_assignees=self.add_merge_request_assignees([], pr),
                 merge_request_reviewers=self.add_merge_request_reviewers([], pr),
-                label_links=self.add_label_links([], pr)
+                label_links=self.add_label_links([], pr),
+                metrics=self.add_metrics(pr)
             ))
         return merge_requests
 
@@ -206,6 +207,11 @@ class AdoExportBuilder(ExportBuilder):
                 }
             })
         return label_links
+
+    def add_metrics(self, pr):
+        return {
+            "merged_by_id": self.get_new_member_id(pr['createdBy'])
+        }
 
     def add_assignee_ids(self, assignee_ids, source_project):
         assignee_ids = []
