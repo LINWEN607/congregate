@@ -32,8 +32,10 @@ class AdoExportBuilder(ExportBuilder):
         self.repositories_api = RepositoriesApi()
         self.pull_requests_api = PullRequestsApi()
         self.teams_api = TeamsApi()
-        self.project_id = source_project['id']
-        self.repository_id = source_project['repository_id']
+        # self.project_id = source_project['id']
+        # self.repository_id = source_project['repository_id']
+        self.project_id = source_project['namespace']
+        self.repository_id = source_project['id']
         self.source_project = source_project
         self.members_map = {}
         self.project_metadata = Project(description=source_project['description'])

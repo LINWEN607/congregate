@@ -45,9 +45,11 @@ class AzureDevOpsWrapper(BaseClass):
             
         return {
             "name": repository["name"],
-            "id": project["id"],
-            "repository_id": repository["id"],
-            "path": self.slugify(project["name"]),
+            # "id": project["id"],
+            # "repository_id": repository["id"],
+            # "path": self.slugify(project["name"]),
+            "id": repository["id"],
+            "path": self.slugify(repository["name"]),
             "path_with_namespace": path_with_namespace,
             "visibility": project["visibility"],
             "description": project.get("description", ""),
