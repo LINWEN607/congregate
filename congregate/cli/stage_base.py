@@ -145,7 +145,6 @@ class BaseStageClass(BaseClass):
 
             obj = {
                 "id": pid,
-                # "repository_id": project.get("repository_id"),
                 "name": sanitize_name(project["name"], path_with_namespace),
                 "namespace": dig(project, 'namespace', 'full_path'),
                 "path": sanitize_project_path(project["path"], path_with_namespace),
