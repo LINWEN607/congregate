@@ -1,9 +1,7 @@
 import re
-import os
 from copy import deepcopy as copy
 from pathlib import Path
 from gitlab_ps_utils.dict_utils import dig
-from gitlab_ps_utils.json_utils import json_pretty
 from gitlab_ps_utils.string_utils import deobfuscate
 from gitlab_ps_utils.misc_utils import safe_json_response
 from congregate.migration.meta.custom_importer.export_builder import ExportBuilder
@@ -207,9 +205,10 @@ class AdoExportBuilder(ExportBuilder):
         return label_links
 
     def add_metrics(self, pr):
-        return {
-            "merged_by_id": self.get_new_member_id(pr['createdBy'])
+        metrics = {
+            "merged_by_id": self.get_merged_by_user(pr) if self.pull_request_status(pr) == 'merged' else None,
         }
+        return metrics
 
     def add_assignee_ids(self, assignee_ids, source_project):
         assignee_ids = []
@@ -222,6 +221,10 @@ class AdoExportBuilder(ExportBuilder):
         guid = member['id']
         member_copy['id'] = len(self.members_map.keys())+1
         self.members_map[guid] = member_copy
+
+    def get_merged_by_user(self, pr):
+        request = self.pull_requests_api.get_pull_request(self.project_id, self.repository_id, pr['pullRequestId'])
+        return self.get_new_member_id(safe_json_response(request).get('closedBy'))
 
     def get_new_member_id(self, member):
         if mid := dig(self.members_map, member['id'], 'id'):
