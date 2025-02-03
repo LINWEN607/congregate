@@ -606,8 +606,6 @@ class ImportExportClient(BaseGitLabClient):
         if not dry_run:
             filename = get_export_filename_from_namespace_and_name(
                 namespace, name)
-            self.log.info(
-                f"Project {dst_path_with_namespace} NOT found on destination. Exporting from source...")
             if loc == "filesystem":
                 exported = self.wait_for_export_to_finish(pid, name)
                 if exported:
@@ -718,8 +716,6 @@ class ImportExportClient(BaseGitLabClient):
             self.log.info("SKIP: Group {0} with source ID {1} and destination ID {2} found on destination".format(
                 full_path_with_parent_namespace, src_gid, dst_gid))
         elif not dry_run:
-            self.log.info("Group {0} (ID: {1}) NOT found on destination.".format(
-                full_path_with_parent_namespace, src_gid))
             if loc == "filesystem":
                 # NOTE: Export status API endpoint not yet available
                 # exported = self.wait_for_export_to_finish(

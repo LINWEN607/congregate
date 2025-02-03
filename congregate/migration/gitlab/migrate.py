@@ -329,8 +329,6 @@ class GitLabMigrateClient(MigrateClient):
                 else:
                     result[full_path_with_parent_namespace] = dst_gid
             else:
-                self.log.info(
-                    f"{dry_log}Group {full_path_with_parent_namespace} NOT found on destination, importing...")
                 imported = self.ie.import_group(
                     group,
                     full_path_with_parent_namespace,
@@ -364,8 +362,6 @@ class GitLabMigrateClient(MigrateClient):
             result = {
                 full_path_with_parent_namespace: False
             }
-            self.log.info(
-                f"Searching on destination for sub-group {full_path_with_parent_namespace}")
             if self.dry_run:
                 dst_gid = self.groups.find_group_id_by_path(
                     self.config.destination_host, self.config.destination_token, full_path_with_parent_namespace)
@@ -375,8 +371,7 @@ class GitLabMigrateClient(MigrateClient):
                     full_path_with_parent_namespace)
                 dst_gid = dst_grp.get("id") if dst_grp else None
             if dst_gid:
-                self.log.info(
-                    f"{get_dry_log(self.dry_run)}Sub-group {full_path} (ID: {dst_gid}) found on destination")
+                self.log.info(f"{get_dry_log(self.dry_run)}Importing sub-group '{full_path_with_parent_namespace}' (ID: {dst_gid}) features... ")
                 if not self.dry_run:
                     # Temporarily fixing group import subgroup visibility bug - https://gitlab.com/gitlab-org/gitlab/-/issues/405168
                     if dst_grp.get("visibility") != subgroup["visibility"]:
@@ -389,10 +384,10 @@ class GitLabMigrateClient(MigrateClient):
                         src_gid, dst_gid, full_path)
             elif not self.dry_run:
                 self.log.warning(
-                    f"Sub-group {full_path_with_parent_namespace} NOT found on destination")
+                    f"SKIP: Sub-group '{full_path_with_parent_namespace}' NOT found on destination")
         except (RequestException, KeyError, OverflowError) as oe:
             self.log.error(
-                f"Failed to migrate sub-group {full_path} (ID: {src_gid}) info with error:\n{oe}")
+                f"Failed to migrate sub-group {full_path_with_parent_namespace} (ID: {src_gid}) features with error:\n{oe}")
         except Exception as e:
             self.log.error(e)
             self.log.error(print_exc())
@@ -572,8 +567,6 @@ class GitLabMigrateClient(MigrateClient):
                     else:
                         result[dst_pwn] = dst_pid
                 else:
-                    self.log.info(
-                        f"{get_dry_log(self.dry_run)}Project '{dst_pwn}' NOT found on destination, importing...")
                     ie_client = ImportExportClient(
                         dest_host=dst_host, dest_token=dst_token)
                     import_id = ie_client.import_project(
@@ -734,44 +727,43 @@ class GitLabMigrateClient(MigrateClient):
         """
             Function to export project features to mongo to then package up into a tar
         """
-        if not self.dry_run:
-            self.log.info("exporting single project features")
+        path_with_namespace = project["path_with_namespace"]
+        src_id = project["id"]
+        jobs_enabled = project.get("jobs_enabled", False)
+        results = {}
 
-            path_with_namespace = project["path_with_namespace"]
-            src_id = project["id"]
-            jobs_enabled = project.get("jobs_enabled", False)
-            results = {}
+        self.log.info(f"Exporting project '{path_with_namespace}' (ID: {src_id}) (features")
 
-            mongo = CongregateMongoConnector()
-            mongo.create_collection_with_unique_index('project_features', 'id')
-            mongo.db['project_features'].insert_one(SingleProjectFeatures(
-                id=src_id,
-                project_details=from_dict(ProjectDetails, project)
-            ).to_dict())
-            mongo.close_connection()
-            project.pop("members", None)
+        mongo = CongregateMongoConnector()
+        mongo.create_collection_with_unique_index('project_features', 'id')
+        mongo.db['project_features'].insert_one(SingleProjectFeatures(
+            id=src_id,
+            project_details=from_dict(ProjectDetails, project)
+        ).to_dict())
+        mongo.close_connection()
+        project.pop("members", None)
 
-            # Environments
-            results["environments"] = EnvironmentsClient(src_host=src_host, src_token=src_token).migrate_project_environments(
-                src_id, None, path_with_namespace, jobs_enabled)
+        # Environments
+        results["environments"] = EnvironmentsClient(src_host=src_host, src_token=src_token).migrate_project_environments(
+            src_id, None, path_with_namespace, jobs_enabled)
 
-            vars_client = VariablesClient(
-                src_host=src_host, src_token=src_token)
-            # CI/CD Variables
-            results["cicd_variables"] = vars_client.migrate_cicd_variables(
-                src_id, None, path_with_namespace, "projects", jobs_enabled)
+        vars_client = VariablesClient(
+            src_host=src_host, src_token=src_token)
+        # CI/CD Variables
+        results["cicd_variables"] = vars_client.migrate_cicd_variables(
+            src_id, None, path_with_namespace, "projects", jobs_enabled)
 
-            # Pipeline Schedule Variables
-            results["pipeline_schedule_variables"] = vars_client.migrate_pipeline_schedule_variables(
-                src_id, None, path_with_namespace, jobs_enabled)
+        # Pipeline Schedule Variables
+        results["pipeline_schedule_variables"] = vars_client.migrate_pipeline_schedule_variables(
+            src_id, None, path_with_namespace, jobs_enabled)
 
-            if self.config.source_tier not in ["core", "free"]:
-                # Merge Request Approvals
-                results["project_level_mr_approvals"] = MergeRequestApprovalsClient(
-                    src_host=src_host, src_token=src_token).migrate_project_level_mr_approvals(
-                    src_id, None, path_with_namespace)
+        if self.config.source_tier not in ["core", "free"]:
+            # Merge Request Approvals
+            results["project_level_mr_approvals"] = MergeRequestApprovalsClient(
+                src_host=src_host, src_token=src_token).migrate_project_level_mr_approvals(
+                src_id, None, path_with_namespace)
 
-            return results
+        return results
 
     def migrate_linked_items_in_issues(self):
         # Read the mapping file from the json and put it inside the project_id_mapping variable

@@ -17,8 +17,7 @@ class EnvironmentsClient(DbOrHttpMixin, BaseGitLabClient):
         self.projects = ProjectsApi()
         self.users = UsersApi()
         self.groups = GroupsApi()
-        super(EnvironmentsClient, self).__init__(src_host=src_host,
-                                                 src_token=src_token, dest_host=dest_host, dest_token=dest_token)
+        super().__init__(src_host=src_host, src_token=src_token, dest_host=dest_host, dest_token=dest_token)
 
     def migrate_project_environments(self, src_id, dest_id, name, enabled):
         try:
@@ -38,7 +37,7 @@ class EnvironmentsClient(DbOrHttpMixin, BaseGitLabClient):
 
             # Convert the response to a list, ensuring the generator is fully consumed
             envs = list(resp)
-     
+
             if not envs:
                 self.log.info(f"No environments found for project {name}")
                 return True  # Return True, since there is nothing to migrate
@@ -66,7 +65,8 @@ class EnvironmentsClient(DbOrHttpMixin, BaseGitLabClient):
 
             # Migrate protected environments settings if there are any
             # Note: The import user should not be part of approvers or deployers because he is getting removed from the group later in the migration
-            self.migrate_protected_environments_rules(src_id, dest_id)
+            if not self.config.airgap:
+                self.migrate_protected_environments_rules(src_id, dest_id)
 
             return True
         except TypeError as te:
@@ -88,10 +88,10 @@ class EnvironmentsClient(DbOrHttpMixin, BaseGitLabClient):
 
         # Update user and group IDs in source environments
         src_protected_envs = self.update_ids_in_protected_environments(src_protected_envs)
-        
+
         # Filter out existing rules in the destination
         updated_envs = self.filter_existing_rules(src_protected_envs, dest_protected_envs)
-        
+
         for env in updated_envs:
             if env['deploy_access_levels'] or env['approval_rules']:  # Only create/update if there are changes
                 self.create_or_update_protected_environment(dest_id, env)
@@ -192,7 +192,7 @@ class EnvironmentsClient(DbOrHttpMixin, BaseGitLabClient):
                 self.log.error(f"Failed to update protected environment '{env['name']}': {update_response.status_code} {update_response.text}")
         else:
             self.log.error(f"Failed to create protected environment '{env['name']}': {response.status_code} {response.text}")
-    
+
     def filter_existing_rules(self, src_envs, dest_envs):
         for src_env in src_envs:
             for dest_env in dest_envs:
@@ -230,7 +230,7 @@ class EnvironmentsClient(DbOrHttpMixin, BaseGitLabClient):
 
     def generate_environment_data(self, environment):
         return from_dict(data_class=NewProjectEnvironmentPayload, data=environment).to_dict()
-    
+
     def generate_protected_environment_data(self, environment):
         return from_dict(data_class=NewProjectProtectedEnvironmentPayload, data=environment).to_dict()
 
