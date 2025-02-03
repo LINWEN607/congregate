@@ -2,6 +2,8 @@
 
 # Migrating data in an air gapped environment
 
+Applicable **only** to GitLab -> GitLab migrations.
+
 ## Source data export
 
 Assuming a Congregate node on the source low-side network exists, you can trigger an export request by making the following cURL request:
@@ -11,13 +13,13 @@ curl --request POST \
   --url http://<congregate-source-node>:8000/api/airgap/export \
   --header 'Content-Type: application/json' \
   --data '{
-    "host": "https://<source-gitlab-instance>",
-    "token": "<project-access-token>",
-    "pid": <project-id>
+    "host": "https://<source-hostname>",
+    "token": "<source-access-token>",
+    "pid": <source-project-id>
   }'
 ```
 
-The project access token will need **Owner** privileges and **API** scope enabled.
+The source access token requires **Owner** privileges and `api` scope. For convenience we recommend using a **personal** access token.
 
 This will create a job on the Congregate node to trigger an export. For the end user, this is all they have to do. Node Admins will need to wire up where the data is exported in Congregate to whatever mechanism is being used to move data up to the destination network.
 
@@ -29,9 +31,9 @@ Importing to the destination network should be handled by the GitLab Admins on t
 curl --request POST \
   --url https://<congregate-destination-node>:8000/api/airgap/import \
   --header 'Content-Type: multipart/form-data;' \
-  --form host=https://<destination-gitlab-instance> \
-  --form token=<personal-access-token> \
-  --form gid=<gitlab-group-id> \
+  --form host=https://<destination-hostname> \
+  --form token=<destination-access-token> \
+  --form gid=<destination-group-id> \
   --form 'file=@/path/to/exported/project'
 ```
 
@@ -46,7 +48,7 @@ for f in /path/to/downloaded/project/exports/*; do if [[ "$f" == *_artifact.tar.
   --url https://localhost:8000/api/airgap/import \
   --header 'Content-Type: multipart/form-data;' \
   --form host=https://<destination-hostname> \
-  --form token=<destination-token> \
+  --form token=<destination-access-token> \
   --form gid=<destination-group-id> \
   --form 'file=@$f’; fi; done
 ```
