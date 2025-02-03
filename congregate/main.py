@@ -3,70 +3,69 @@
 Copyright (c) 2022 - GitLab
 
 Usage:
-    congregate init
-    congregate list [--processes=<n>] [--partial] [--skip-users] [--skip-groups] [--skip-group-members] [--skip-projects] [--skip-project-members] [--skip-ci] [--src-instances] [--subset] [--skip-archived-projects]
-    congregate configure # Deprecated. Manually create config file and validate it by running 'congregate validate-config'
-    congregate validate-config
-    congregate generate-reporting
-    congregate stage-projects <projects>... [--skip-users] [--commit] [--scm-source=hostname]
-    congregate stage-groups <groups>... [--skip-users] [--commit] [--scm-source=hostname]
-    congregate stage-users <users>... [--commit]
-    congregate stage-wave <wave> [--commit] [--scm-source=hostname]
-    congregate create-stage-wave-csv [--commit]
-    congregate migrate [--commit] [--processes=<n>] [--reporting] [--skip-users] [--remove-members] [--sync-members] [--stream-groups] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostname] [--reg-dry-run] [--group-structure] [--retain-contributors]
-    congregate rollback [--commit] [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--permanent]
-    congregate ui
-    congregate do-all [--commit]
-    congregate do-all-users [--commit]
-    congregate do-all-groups-and-projects [--commit]
-    congregate search-for-staged-users [--table]
-    congregate update-aws-creds
-    congregate update-parent-group-members [--commit] [--access-level=<level>] [--add-members]
-    congregate update-members-access-level [--commit] [--current-level=<level>] [--target-level=<level>] [--skip-groups] [--skip-projects]
-    congregate remove-inactive-users [--commit] [--membership]
-    congregate get-total-count
-    # TODO: Refactor, project name matching does not seem correct
-    congregate find-unimported-projects [--commit]
-    congregate stage-unimported-projects [--commit] # TODO: Refactor, broken
-    congregate url-rewrite-only [--commit]
-    congregate remove-users-from-parent-group [--commit]
-    congregate migrate-linked-issues [--commit]
-    congregate pull-mirror-staged-projects [--commit] [--protected-only] [--force] [--overwrite]
-    congregate push-mirror-staged-projects [--disabled] [--keep_div_refs] [--force] [--commit]
-    congregate toggle-staged-projects-push-mirror [--disable] [--commit]
-    congregate verify-staged-projects-push-mirror [--disabled] [--keep_div_refs]
-    congregate delete-staged-projects-push-mirrors [--all] [--commit]
-    congregate delete-all-staged-projects-pull-mirrors [--commit]
-    congregate set-default-branch [--name=<name>] [--commit]
-    congregate count-unarchived-projects [--local]
+    congregate align-user-mapping-emails [--commit]
     congregate archive-staged-projects [--commit] [--dest] [--scm-source=hostname] [--rollback]
-    congregate unarchive-staged-projects [--commit] [--dest] [--scm-source=hostname] [--rollback]
-    congregate set-bb-read-only-branch-permissions [--bb-projects] [--commit]
-    congregate unset-bb-read-only-branch-permissions [--bb-projects] [--commit]
-    congregate set-bb-read-only-member-permissions [--bb-projects] [--commit]
-    congregate unset-bb-read-only-member-permissions [--bb-projects] [--commit]
+    congregate clean [--commit]
+    congregate clean-database [--commit] [--keys]
+    congregate configure # Deprecated. Manually create config file and validate it by running 'congregate validate-config'
+    congregate count-unarchived-projects [--local]
+    congregate create-stage-wave-csv [--commit]
+    congregate create-staged-projects-fork-relation [--commit]
+    congregate create-staged-projects-structure [--commit] [--disable-cicd]
+    congregate delete-all-staged-projects-pull-mirrors [--commit]
+    congregate delete-staged-projects-push-mirrors [--all] [--commit]
+    congregate deobfuscate
+    congregate do-all [--commit]
+    congregate do-all-groups-and-projects [--commit]
+    congregate do-all-users [--commit]
+    congregate dump-database
     congregate filter-projects-by-state [--commit] [--archived]
     congregate find-empty-repos
-    congregate generate-seed-data [--commit] # TODO: Refactor, broken
+    congregate find-unimported-projects [--commit]
+    congregate generate-diff [--processes=<n>] [--staged] [--rollback] [--scm-source=hostname] [--skip-users] [--skip-groups] [--skip-projects] [--subgroups-only]
+    congregate generate-reporting
+    congregate generate-seed-data [--commit] 
+    congregate get-total-count
+    congregate init
+    congregate ldap-group-sync <file-path> [--commit]
+    congregate list [--processes=<n>] [--partial] [--skip-users] [--skip-groups] [--skip-group-members] [--skip-projects] [--skip-project-members] [--skip-ci] [--src-instances] [--subset] [--skip-archived-projects]
+    congregate list-staged-projects-contributors [--commit]
+    congregate map-and-stage-users-by-email-match [--commit]
+    congregate map-users [--commit]
+    congregate migrate [--commit] [--processes=<n>] [--reporting] [--skip-users] [--remove-members] [--sync-members] [--stream-groups] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostname] [--reg-dry-run] [--group-structure] [--retain-contributors]
+    congregate migrate-linked-issues [--commit]
+    congregate obfuscate
+    congregate pull-mirror-staged-projects [--commit] [--protected-only] [--force] [--overwrite]
+    congregate push-mirror-staged-projects [--disabled] [--keep_div_refs] [--force] [--commit]
+    congregate reingest <assets>...
+    congregate remove-inactive-users [--commit] [--membership]
+    congregate remove-users-from-parent-group [--commit]
+    congregate rollback [--commit] [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--permanent]
+    congregate search-for-staged-users [--table]
+    congregate set-bb-read-only-branch-permissions [--bb-projects] [--commit]
+    congregate set-bb-read-only-member-permissions [--bb-projects] [--commit]
+    congregate set-default-branch [--name=<name>] [--commit]
+    congregate set-staged-users-public-email [--commit] [--hide]
+    congregate stage-groups <groups>... [--skip-users] [--commit] [--scm-source=hostname]
+    congregate stage-projects <projects>... [--skip-users] [--commit] [--scm-source=hostname]
+    congregate stage-unimported-projects [--commit] # TODO: Refactor, broken
+    congregate stage-users <users>... [--commit]
+    congregate stage-wave <wave> [--commit] [--scm-source=hostname]
+    congregate stitch-results [--result-type=<project|group|user>] [--no-of-files=<n>] [--head|--tail]
+    congregate toggle-maintenance-mode [--commit] [--off] [--dest] [--msg=<multi+word+message>]
+    congregate toggle-staged-projects-push-mirror [--disable] [--commit]
+    congregate ui
+    congregate unarchive-staged-projects [--commit] [--dest] [--scm-source=hostname] [--rollback]
+    congregate unset-bb-read-only-branch-permissions [--bb-projects] [--commit]
+    congregate unset-bb-read-only-member-permissions [--bb-projects] [--commit]
+    congregate update-aws-creds
+    congregate update-members-access-level [--commit] [--current-level=<level>] [--target-level=<level>] [--skip-groups] [--skip-projects]
+    congregate update-parent-group-members [--commit] [--access-level=<level>] [--add-members]
+    congregate url-rewrite-only [--commit]
+    congregate validate-config
     congregate validate-staged-groups-schema
     congregate validate-staged-projects-schema
-    congregate map-users [--commit]
-    congregate map-and-stage-users-by-email-match [--commit]
-    congregate generate-diff [--processes=<n>] [--staged] [--rollback] [--scm-source=hostname] [--skip-users] [--skip-groups] [--skip-projects] [--subgroups-only]
-    congregate clean [--commit]
-    congregate stitch-results [--result-type=<project|group|user>] [--no-of-files=<n>] [--head|--tail]
-    congregate obfuscate
-    congregate deobfuscate
-    congregate dump-database
-    congregate reingest <assets>...
-    congregate clean-database [--commit] [--keys]
-    congregate toggle-maintenance-mode [--commit] [--off] [--dest] [--msg=<multi+word+message>]
-    congregate ldap-group-sync <file-path> [--commit]
-    congregate set-staged-users-public-email [--commit] [--hide]
-    congregate align-user-mapping-emails [--commit]
-    congregate create-staged-projects-structure [--commit] [--disable-cicd]
-    congregate create-staged-projects-fork-relation [--commit]
-    congregate list-staged-projects-contributors [--commit]
+    congregate verify-staged-projects-push-mirror [--disabled] [--keep_div_refs]
     congregate -h | --help
     congregate -v | --version
 
