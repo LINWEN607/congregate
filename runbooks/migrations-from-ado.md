@@ -51,8 +51,8 @@ Example of `data/congregate.conf` for Azure DevOps as source:
 
 [SOURCE]
 src_type = Azure DevOps
-src_hostname = https://dev.azure.com/gitlab-ps
-src_username = gitlab-ps
+src_hostname = https://dev.azure.com/ado-org
+src_username = ado-admin
 src_access_token = <obfuscated token in with prepended colon>
 ...
 
