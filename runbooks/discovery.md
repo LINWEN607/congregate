@@ -178,6 +178,8 @@ Cross-project dependencies:
 
 [Migration Feature Matrix - GitHub](https://gitlab.com/gitlab-org/professional-services-automation/delivery-kits/migration-template/-/blob/master/customer/github-migration-features-matrix.md)
 
+[Migration Feature Matrix - Azure DevOps](https://gitlab.com/gitlab-org/professional-services-automation/delivery-kits/migration-template/-/blob/master/customer/ado-migration-features-matrix.md)
+
 [Migration Kickoff Deck(google Slides) - Template](https://docs.google.com/presentation/d/1AzM_qYKKOYhgvNTrEBXRmFT2m0caBuKZ6VAH6sCbiKQ/edit#slide=id.g59bfc474c5_2_145)
 
 [Project Kickoff Deck(Google Slides) - Template](https://docs.google.com/presentation/d/1HtVIE64N94Rcc774ujllClGmYZ5y1_ApE4-O3pazR6k/edit#slide=id.g911d82cfdc_1_5)

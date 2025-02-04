@@ -12,6 +12,10 @@
 
 [Migration features matrix](./customer/github-migration-features-matrix.md)
 
+## Azure DevOps
+
+[Migration features matrix](./customer/ado-migration-features-matrix.md)
+
 ## SVN
 
 Congregate does not currently support automated SVN migrations and neither does GitLab

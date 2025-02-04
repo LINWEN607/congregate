@@ -23,7 +23,7 @@ As you prepare for the migration, it will be important to set appropriate expect
   - Some additional post-migration clean up might need to happen before the project is back to a completely clean state
   - Personal access tokens (PAT) will need to be recreated post-migration and anything that uses a PAT will need to be updated to use the new PAT
 - Activities for project owners and maintainers to do in preparation for the migration:
-  - Familiarize yourself with the migration features (([Bitbucket](customer/bitbucket-migration-features-matrix.md), [GitHub](customer/github-migration-features-matrix.md), [GitLab](customer/gitlab-migration-features-matrix.md))) - it will be important to have a plan to manually recreate/resolve any features that are not migrated from the source to the destination instance
+  - Familiarize yourself with the migration features (([Bitbucket](customer/bitbucket-migration-features-matrix.md), [GitHub](customer/github-migration-features-matrix.md), [GitLab](customer/gitlab-migration-features-matrix.md))), [Azure DevOps](customer/ado-migration-features-matrix.md) - it will be important to have a plan to manually recreate/resolve any features that are not migrated from the source to the destination instance
   - Review the post-migration checklist below and do any analysis of what will need to be updated for each specific project post-migration
 
 ## Post-migration checklist for project owners and maintainers
@@ -37,4 +37,4 @@ As you prepare for the migration, it will be important to set appropriate expect
 - [ ] For GitLab to GitLab migrations, you will want to validate that [projects shared with groups](https://docs.gitlab.com/ee/user/project/members/share_project_with_groups.html#sharing-a-project-with-a-group-of-users) in the source instance are still shared in the destination.  If the entire group structure is not migrated first, the shared groups will not be preserved in the destination instance
 - [ ] Recreate group and project [badges](https://docs.gitlab.com/ee/user/project/badges.html)
 - [ ] Recreate any instance and group level custom project templates
-- [ ] Update and/or create any features that are not migrated (based on the migration features matrix ([Bitbucket](customer/bitbucket-migration-features-matrix.md), [GitHub](customer/github-migration-features-matrix.md), [GitLab](customer/gitlab-migration-features-matrix.md)))
+- [ ] Update and/or create any features that are not migrated (based on the migration features matrix ([Bitbucket](customer/bitbucket-migration-features-matrix.md), [GitHub](customer/github-migration-features-matrix.md), [GitLab](customer/gitlab-migration-features-matrix.md), [Azure DevOps](customer/ado-migration-features-matrix.md)))
