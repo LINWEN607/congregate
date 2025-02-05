@@ -1304,3 +1304,27 @@ class ProjectsApi(GitLabApiWrapper):
 
     def get_project_repository_commit_comments(self, pid, sha, host, token):
         return self.api.list_all(host, token, f"projects/{pid}/repository/commits/{sha}/comments")
+
+    def upload_attachment(self, host, token, project_id, file_data, filename, description=None):
+        """
+        Uploads a file to a GitLab project.
+
+        :param file_data: (bytes) The binary content of the file.
+        :param filename: (str) The name of the file.
+        :param description: (str) A description for logging purposes (optional).
+
+        :return: Response object containing the response to POST projects/:pid/uploads
+        """
+
+        api_endpoint = f"projects/{project_id}/uploads"
+        
+        return self.api.generate_post_request(
+            host=host,
+            token=token,
+            api=api_endpoint,
+            data=None,
+            headers = {"Authorization": f"Bearer {token}"}, # We override the headers because we need to explicitly disable application/json
+            files={'file': (filename, file_data, 'application/octet-stream')},
+            description=description or f"Uploading file {filename} to project {project_id}"
+        )
+    

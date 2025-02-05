@@ -16,20 +16,23 @@ from congregate.migration.meta.custom_importer.data_models.tree.system_note_meta
 from congregate.migration.meta.custom_importer.data_models.tree.merge_request_diff_file import MergeRequestDiffFile
 from congregate.migration.meta.custom_importer.data_models.tree.merge_request_commit import MergeRequestCommit
 from congregate.migration.meta.custom_importer.data_models.tree.merge_request_diff import MergeRequestDiff
-from congregate.migration.ado.api.projects import ProjectsApi
+
 from congregate.migration.ado.api.repositories import RepositoriesApi
 from congregate.migration.ado.api.pull_requests import PullRequestsApi
 from congregate.migration.ado.api.teams import TeamsApi
 from congregate.migration.ado.base import AzureDevOpsWrapper
+from congregate.migration.ado.api.users import UsersApi as ADOUsersApi
+from congregate.migration.gitlab.api.users import UsersApi as GitlabUsersApi 
 
 
 class AdoExportBuilder(ExportBuilder):
     def __init__(self, source_project):
         self.source_project = source_project
-        self.projects_api = ProjectsApi()
         self.repositories_api = RepositoriesApi()
         self.pull_requests_api = PullRequestsApi()
         self.teams_api = TeamsApi()
+        self.ado_users_api = ADOUsersApi()
+        self.gitlab_users_api = GitlabUsersApi()
         self.project_id = source_project['namespace']
         self.repository_id = source_project['id']
         self.source_project = source_project
@@ -242,8 +245,10 @@ class AdoExportBuilder(ExportBuilder):
         notes = []
         for thread in self.pull_requests_api.get_all_pull_request_threads(project_id=self.project_id, repository_id=self.repository_id, pull_request_id=pr_id):
             for comment in thread['comments']:
+                # Format the comment content before adding it as a note.
+                formatted_note = self.format_comment_body(comment.get('content', ''))
                 notes.append(Note(
-                    note=comment.get('content', ''),
+                    note=formatted_note,
                     author_id=self.get_new_member_id(comment['author']),
                     project_id=1,
                     created_at=comment['publishedDate'],
@@ -323,3 +328,55 @@ class AdoExportBuilder(ExportBuilder):
                 action=action,
             )
         return None
+    
+    def format_comment_body(self, comment_body):
+        """
+        Adjusts the ADO comment content so that:
+        - ADO user GUID mentions are replaced with GitLab username mentions.
+        """
+
+        comment_body = self.replace_ado_user_mentions(comment_body)
+        return comment_body
+
+    def replace_ado_user_mentions(self, text):
+        """
+        Finds GUID user mentions in the form @<GUID> and replaces them with GitLab-style mentions by:
+        1. Looking up the ADO user by GUID.
+        2. Retrieving the user's email.
+        3. Querying GitLab to get the username corresponding to that email.
+        """
+        def repl(match):
+            guid = match.group(1)
+            response = safe_json_response(self.ado_users_api.get_user_by_guid(guid))
+            if not response:
+                self.log.error(f"ADO user not found for GUID: {guid}")
+                return f"@{guid}"
+            email = self.get_user_email(response)
+            if not email:
+                self.log.error(f"Email not found for ADO user with GUID: {guid}")
+                return f"@{guid}"
+            
+            # Query GitLab to get the username using the email
+            gitlab_username = safe_json_response(self.gitlab_users_api.search_for_user_by_email(self.config.destination_host, self.config.destination_token, email))[0].get("username")
+            if not gitlab_username:
+                self.log.error(f"GitLab user not found for email: {email}")
+                return f"@{guid}"
+            
+            return f"@{gitlab_username}"
+        
+        # Regex pattern assuming GUID mentions are in the form @GUID
+        guid_pattern = r'@<([0-9a-fA-F-]{36})>'
+        return re.sub(guid_pattern, repl, text)
+        
+    def get_user_email(self, ado_user):
+        """
+        Extracts the email address from an Azure DevOps user object.
+
+        :param ado_user: (dict) The user data retrieved from Azure DevOps Graph API.
+        :return: (str) The user's email address if found, otherwise None.
+        """
+        try:
+            return ado_user.get("properties", {}).get("Mail", {}).get("$value")
+        except Exception as e:
+            self.log.error(f"Failed to extract email from ADO user: {e}")
+            return None
