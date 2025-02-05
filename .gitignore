@@ -32,6 +32,7 @@ customer/*.html
 runbooks/*.html
 docs/*.html
 README.html
+repos
 
 node_modules
 /dist
