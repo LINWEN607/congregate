@@ -246,7 +246,7 @@ class AdoExportBuilder(ExportBuilder):
         for thread in self.pull_requests_api.get_all_pull_request_threads(project_id=self.project_id, repository_id=self.repository_id, pull_request_id=pr_id):
             for comment in thread['comments']:
                 # Format the comment content before adding it as a note.
-                formatted_note = self.format_comment_body(comment.get('content', ''))
+                formatted_note = self.replace_ado_user_mentions(comment.get('content', ''))
                 notes.append(Note(
                     note=formatted_note,
                     author_id=self.get_new_member_id(comment['author']),
@@ -328,15 +328,6 @@ class AdoExportBuilder(ExportBuilder):
                 action=action,
             )
         return None
-    
-    def format_comment_body(self, comment_body):
-        """
-        Adjusts the ADO comment content so that:
-        - ADO user GUID mentions are replaced with GitLab username mentions.
-        """
-
-        comment_body = self.replace_ado_user_mentions(comment_body)
-        return comment_body
 
     def replace_ado_user_mentions(self, text):
         """
@@ -364,7 +355,7 @@ class AdoExportBuilder(ExportBuilder):
             
             return f"@{gitlab_username}"
         
-        # Regex pattern assuming GUID mentions are in the form @GUID
+        # Regex pattern assuming GUID mentions are in the form @<GUID>
         guid_pattern = r'@<([0-9a-fA-F-]{36})>'
         return re.sub(guid_pattern, repl, text)
         
