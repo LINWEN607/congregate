@@ -330,10 +330,10 @@ class AzureDevopsMigrateClient(MigrateClient):
 
     def process_attachments_after_import(self, project_id):
         """
-        Finds all ADO image URLs in merge request notes and replaces them
+        Finds all ADO attachment URLs in merge request notes and replaces them
         with uploaded versions stored in GitLab.
         """
-        self.log.info(f"Processing image attachments for project {project_id}...")
+        self.log.info(f"Processing attachments for project {project_id}...")
 
         response = self.merge_requests_api.get_all_project_merge_requests(project_id, self.config.destination_host, self.config.destination_token)
         merge_requests = safe_json_response(response)
@@ -344,48 +344,51 @@ class AzureDevopsMigrateClient(MigrateClient):
             notes_response = self.merge_requests_api.get_merge_request_notes(self.config.destination_host, self.config.destination_token, project_id, mr_id)
             notes = safe_json_response(notes_response)
 
-            # Process each note to replace ADO images
+            # Process each note to replace ADO attachments with GitLab-hosted ones
             for note in notes:
                 note_id = note["id"]
                 note_body = note["body"]
 
-                # Find all ADO image links
-                image_urls = re.findall(r"!\[.*?\]\((https://dev.azure.com/.*?)\)", note_body)
+                # Find all ADO attachment links
+                attachment_urls = re.findall(r"(!?)\[(.*?)\]\((https://dev.azure.com/.*?)\)", note_body)
 
-                if not image_urls:
-                    continue  # No images to process
+                if not attachment_urls:
+                    continue  # No attachment to process
 
-                for ado_url in image_urls:
-                    # Download the attachment from ADO and re-upload it to Gitlab
-                    new_gitlab_url = self.process_attachment(ado_url, project_id)
+                for markdown_prefix, file_name, ado_url in attachment_urls:
+                    is_image = markdown_prefix == "!"  # Identify images correctly
+                    # Process attachment and get new GitLab URL
+                    new_gitlab_url = self.process_attachment(ado_url.strip(), project_id)
 
                     if new_gitlab_url:
-                        # Replace old URL with new GitLab URL
-                        note_body = note_body.replace(ado_url, new_gitlab_url)
+                        # Preserve correct Markdown formatting
+                        new_markdown = f"![]({new_gitlab_url})" if is_image else f"[{file_name}]({new_gitlab_url})"
+                        # Replace old ADO URL with new GitLab URL
+                        note_body = note_body.replace(f"{markdown_prefix}[{file_name}]({ado_url})", new_markdown)
 
-                # Update the note with new image links
+                # Update the note with new attachment links
                 update_response = self.merge_requests_api.update_merge_request_note(self.config.destination_host, self.config.destination_token, project_id, mr_id, note_id, note=note_body)
 
                 if update_response.status_code == 200:
-                    self.log.info(f"Updated note {note_id} in MR {mr_id} with GitLab-hosted images.")
+                    self.log.info(f"Updated note {note_id} in MR {mr_id} with GitLab-hosted Attachments.")
                 else:
                     self.log.error(f"Failed to update note {note_id} in MR {mr_id}: {update_response.text}")
 
     def process_attachment(self, ado_url, project_id):
         """
-        Downloads the image from the ADO URL and uploads it as an attachment.
-        Returns the new URL for the image.
+        Downloads the attachment from the ADO URL and uploads it as an attachment.
+        Returns the new URL for the attachment.
         """
         try:
             download_response = self.pull_requests_api.download_file_from_ado(ado_url, self.config.source_token)
 
             if download_response.status_code != 200 and download_response.status_code != 203:
-                self.log.error(f"Failed to download image from {ado_url}: {download_response.status_code}")
+                self.log.error(f"Failed to download attachment from {ado_url}: {download_response.status_code}")
                 return None
 
-            image_data = download_response.content
+            attachment_data = download_response.content
             filename = ado_url.split("/")[-1]
-            upload_response = self.gitlab_projects_api.upload_attachment(self.config.destination_host, self.config.destination_token, project_id, image_data, filename)
+            upload_response = self.gitlab_projects_api.upload_attachment(self.config.destination_host, self.config.destination_token, project_id, attachment_data, filename)
 
             if upload_response.status_code == 201:
                 json_response = safe_json_response(upload_response)
