@@ -348,7 +348,12 @@ class AdoExportBuilder(ExportBuilder):
                 return f"@{guid}"
             
             # Query GitLab to get the username using the email
-            gitlab_username = safe_json_response(self.gitlab_users_api.search_for_user_by_email(self.config.destination_host, self.config.destination_token, email))[0].get("username")
+            username_response = safe_json_response(self.gitlab_users_api.search_for_user_by_email(self.config.destination_host, self.config.destination_token, email))
+            if not username_response or not isinstance(username_response, list):
+                self.log.error(f"GitLab user not found for email: {email}")
+                return f"@{guid}"
+            
+            gitlab_username = username_response[0].get("username")
             if not gitlab_username:
                 self.log.error(f"GitLab user not found for email: {email}")
                 return f"@{guid}"
