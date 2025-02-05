@@ -1,4 +1,5 @@
 from congregate.migration.ado.api.base import AzureDevOpsApiWrapper
+import requests
 
 
 class PullRequestsApi():
@@ -56,5 +57,16 @@ class PullRequestsApi():
         """
         return self.api.generate_get_request(f"{project_id}/_apis/git/repositories/{repository_id}/diffs/commits?baseVersion={source_sha}&baseVersionType=commit&targetVersion={target_sha}&targetVersionType=commit&api-version=7.1")
 
+    def download_file_from_ado(self, object_url, token):
+        """
+        Downloads the file from the given ADO file URL using the ADO source token for authentication.
+        NOTE: This is a quick implementation that can be refined later to follow the same pattern from the api class
 
+        :param object_url: The URL of the file hosted on the ADO server.
+        :return: Response with the content of the file if successful, or None if the download fails.
+        """
 
+        headers = {
+            "Authorization": f"Basic {token}"
+        }
+        return requests.get(object_url, headers=headers, stream=True, timeout=15)

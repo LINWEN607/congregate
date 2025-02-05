@@ -4,6 +4,7 @@
     Copyright (c) 2024 - GitLab
 """
 
+import re
 from json import loads as json_loads
 from traceback import print_exc
 from requests.exceptions import RequestException
@@ -18,6 +19,9 @@ from congregate.migration.meta.base_migrate import MigrateClient
 from congregate.migration.gitlab.external_import import ImportClient
 from congregate.migration.gitlab.branches import BranchesClient
 from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
+from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
+from congregate.migration.ado.api.pull_requests import PullRequestsApi
+from congregate.migration.gitlab.api.projects import ProjectsApi as GitlabProjectsApi
 from congregate.migration.ado.projects import ProjectsClient
 from congregate.migration.ado.export import AdoExportBuilder
 from congregate.helpers.migrate_utils import get_export_filename_from_namespace_and_name
@@ -44,6 +48,9 @@ class AzureDevopsMigrateClient(MigrateClient):
                  group_structure=False):
         self.ext_import = ImportClient()
         self.project_repository_api = ProjectRepositoryApi()
+        self.merge_requests_api = MergeRequestsApi()
+        self.pull_requests_api = PullRequestsApi()
+        self.gitlab_projects_api = GitlabProjectsApi()
         self.azure_projects_client = ProjectsClient()
         self.branches = BranchesClient()
         super().__init__(dry_run,
@@ -183,8 +190,11 @@ class AzureDevopsMigrateClient(MigrateClient):
                     # Post import features
                     self.log.info(
                         f"Migrating additional source project '{path}' (ID: {src_id}) GitLab features")
-                    result[dst_pwn] = self.migrate_single_project_features(
-                        project, import_id, dest_host=dst_host, dest_token=dst_token)
+                    # Process attachments in MRs after project import
+                    self.process_attachments_after_import(import_id)
+                    result[dst_pwn] = import_id
+                    # result[dst_pwn] = self.migrate_single_project_features(
+                    #     project, import_id, dest_host=dst_host, dest_token=dst_token)
             elif not self.dry_run:
                 self.log.warning(
                     f"Skipping import. Target namespace {tn} does not exist for project '{path}'")
@@ -317,3 +327,77 @@ class AzureDevopsMigrateClient(MigrateClient):
         # if not self.remove_members:
         #     self.remove_import_user(pid)
         return result
+
+    def process_attachments_after_import(self, project_id):
+        """
+        Finds all ADO image URLs in merge request notes and replaces them
+        with uploaded versions stored in GitLab.
+        """
+        self.log.info(f"Processing image attachments for project {project_id}...")
+
+        response = self.merge_requests_api.get_all_project_merge_requests(project_id, self.config.destination_host, self.config.destination_token)
+        merge_requests = safe_json_response(response)
+
+        # Loop through merge requests and their notes
+        for mr in merge_requests:
+            mr_id = mr["iid"]
+            notes_response = self.merge_requests_api.get_merge_request_notes(self.config.destination_host, self.config.destination_token, project_id, mr_id)
+            notes = safe_json_response(notes_response)
+
+            # Process each note to replace ADO images
+            for note in notes:
+                note_id = note["id"]
+                note_body = note["body"]
+
+                # Find all ADO image links
+                image_urls = re.findall(r"!\[.*?\]\((https://dev.azure.com/.*?)\)", note_body)
+
+                if not image_urls:
+                    continue  # No images to process
+
+                for ado_url in image_urls:
+                    # Download the attachment from ADO and re-upload it to Gitlab
+                    new_gitlab_url = self.process_attachment(ado_url, project_id)
+
+                    if new_gitlab_url:
+                        # Replace old URL with new GitLab URL
+                        note_body = note_body.replace(ado_url, new_gitlab_url)
+
+                # Update the note with new image links
+                update_response = self.merge_requests_api.update_merge_request_note(self.config.destination_host, self.config.destination_token, project_id, mr_id, note_id, note=note_body)
+
+                if update_response.status_code == 200:
+                    self.log.info(f"Updated note {note_id} in MR {mr_id} with GitLab-hosted images.")
+                else:
+                    self.log.error(f"Failed to update note {note_id} in MR {mr_id}: {update_response.text}")
+
+    def process_attachment(self, ado_url, project_id):
+        """
+        Downloads the image from the ADO URL and uploads it as an attachment.
+        Returns the new URL for the image.
+        """
+        try:
+            download_response = self.pull_requests_api.download_file_from_ado(ado_url, self.config.source_token)
+
+            if download_response.status_code != 200 and download_response.status_code != 203:
+                self.log.error(f"Failed to download image from {ado_url}: {download_response.status_code}")
+                return None
+
+            image_data = download_response.content
+            filename = ado_url.split("/")[-1]
+            upload_response = self.gitlab_projects_api.upload_attachment(self.config.destination_host, self.config.destination_token, project_id, image_data, filename)
+
+            if upload_response.status_code == 201:
+                json_response = safe_json_response(upload_response)
+                if 'url' in json_response:
+                    new_url = f"{json_response['url']}"
+                else:
+                    self.log.error(f"Upload succeeded but no URL found in response: {json_response}")
+            else:
+                self.log.error(f"Failed to upload file {filename}. Response: {upload_response.text}")
+                new_url = None
+            
+            return new_url
+        except Exception as e:
+            self.log.error(f"Error processing attachment from {ado_url}: {e}")
+            return None
