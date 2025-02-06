@@ -55,3 +55,9 @@ class UsersApi():
         }
         return self.api.list_all("_apis/graph/users", sub_api="vssps", params=params)
 
+    def get_group_members(self, group_id):
+        """
+        Retrieve all group members.
+        Core REST API: https://learn.microsoft.com/en-us/rest/api/azure/devops/memberentitlementmanagement/members/get?view=azure-devops-rest-7.1
+        """
+        return self.api.list_all(f"_apis/GroupEntitlements/{group_id}/members", sub_api="vsaex")

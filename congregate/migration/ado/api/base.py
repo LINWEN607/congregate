@@ -140,9 +140,14 @@ class AzureDevOpsApiWrapper(BaseClass):
             response = self.generate_get_request(api, sub_api, params=params)
             response.raise_for_status()
             data = safe_json_response(response)
-            for item in data.get("value", []):
-                yield item
-            
+
+            if "value" in data:
+                for item in data.get("value", []):
+                    yield item
+            if "members" in data:
+                for item in data.get("members", []):
+                    yield item
+
             if params is None:
                 params = {}
 
@@ -154,7 +159,7 @@ class AzureDevOpsApiWrapper(BaseClass):
     def get_count(self, api, params=None):
         """
         Generates a count of all projects, groups, users, etc.
-        
+
             :param api: (str) Specific ADO API endpoint (ex: users)
             :param params: (str) Any query parameters needed in the request
             :return: (int) Count of objects in the presumed array of data

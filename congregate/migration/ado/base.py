@@ -101,14 +101,19 @@ class AzureDevOpsWrapper(BaseClass):
 
     def add_team_members(self, users, project):
         users = []
-        # teams = 
-        # if not teams:
-        #     self.log.warning(f"Project {project['name']} has no teams")
-        #     return users
         for team in self.teams_api.get_teams(project["id"]):
             for member in self.teams_api.get_team_members(project["id"], team["id"]):
-                user_descriptor = member["identity"]["descriptor"]
-                user_data = self.users_api.get_user(user_descriptor)
-                if user_data:
-                    users.append(self.format_user(user_data.json()))
+                if member["identity"].get("isContainer"):
+                    group_members = self.users_api.get_group_members(member["identity"].get('id'))
+                    if group_members:
+                        for group_member in group_members:
+                            user_descriptor = group_member["user"]["descriptor"]
+                            user_data = self.users_api.get_user(user_descriptor)
+                            if user_data:
+                                users.append(self.format_user(user_data.json()))
+                else:
+                    user_descriptor = member["identity"]["descriptor"]
+                    user_data = self.users_api.get_user(user_descriptor)
+                    if user_data:
+                        users.append(self.format_user(user_data.json()))
         return users
