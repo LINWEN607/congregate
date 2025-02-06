@@ -131,6 +131,22 @@ class MergeRequestsApi(GitLabApiWrapper):
         """
         return self.api.generate_post_request(host, token, "projects/%d/merge_requests/%d/notes/%d/award_emoji?name=%s" % (project_id, mr_iid, note_id, name), None)
 
+    def update_merge_request_note(self, host, token, project_id, mr_iid, note_id, note):
+        """
+        Update a project merge request note
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/notes.html#modify-existing-merge-request-note
+
+            :param: project_id: (int) GitLab project ID
+            :param: mr_iid: (int) Internal ID of the merge request
+            :param: note_id: (int) Note ID
+            :param: note: (str) The content of the note
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :return: Response object containing the response to PUT /projects/:id/merge_requests/:merge_request_iid/notes/:note_id
+        """
+        return self.api.generate_put_request(host, token, "projects/%d/merge_requests/%d/notes/%d?body=%s" % (project_id, mr_iid, note_id, note), None)
+
     def get_merge_request_changes(self, host, token, project_id, mr_iid):
         """
         Shows information about the merge request including its files and changes
