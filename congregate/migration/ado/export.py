@@ -361,7 +361,7 @@ class AdoExportBuilder(ExportBuilder):
             return f"@{gitlab_username}"
         
         # Regex pattern assuming GUID mentions are in the form @<GUID>
-        guid_pattern = r'@<([0-9a-fA-F-]{36})>'
+        guid_pattern = fr'@<({constants.UUID_PATTERN})>'
         return re.sub(guid_pattern, repl, text)
         
     def get_user_email(self, ado_user):
