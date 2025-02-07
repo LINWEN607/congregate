@@ -23,7 +23,7 @@ from congregate.migration.ado.api.teams import TeamsApi
 from congregate.migration.ado.base import AzureDevOpsWrapper
 from congregate.migration.ado.api.users import UsersApi as ADOUsersApi
 from congregate.migration.gitlab.api.users import UsersApi as GitlabUsersApi 
-from congregate.migration.ado import constants
+from congregate.migration.meta import constants
 
 class AdoExportBuilder(ExportBuilder):
     def __init__(self, source_project):
@@ -361,8 +361,7 @@ class AdoExportBuilder(ExportBuilder):
             return f"@{gitlab_username}"
         
         # Regex pattern assuming GUID mentions are in the form @<GUID>
-        guid_pattern = fr'@<({constants.UUID_PATTERN})>'
-        return re.sub(guid_pattern, repl, text)
+        return re.sub(constants.GUID_PATTERN, repl, text)
         
     def get_user_email(self, ado_user):
         """

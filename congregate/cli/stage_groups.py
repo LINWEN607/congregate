@@ -13,7 +13,7 @@ from gitlab_ps_utils.list_utils import remove_dupes
 from gitlab_ps_utils.dict_utils import rewrite_list_into_dict, dig
 
 from congregate.cli.stage_base import BaseStageClass
-from congregate.migration.ado import constants
+from congregate.migration.meta import constants
 
 
 class GroupStageCLI(BaseStageClass):

@@ -12,6 +12,7 @@ from requests.exceptions import RequestException
 from gitlab_ps_utils.misc_utils import safe_json_response, get_dry_log
 from gitlab_ps_utils.json_utils import json_pretty
 from gitlab_ps_utils import misc_utils
+from congregate.migration.meta import constants
 
 import congregate.helpers.migrate_utils as mig_utils
 
@@ -350,7 +351,7 @@ class AzureDevopsMigrateClient(MigrateClient):
                 note_body = note["body"]
 
                 # Find all ADO attachment links
-                attachment_urls = re.findall(r"(!?)\[(.*?)\]\((https://dev.azure.com/.*?)\)", note_body)
+                attachment_urls = re.findall(constants.ADO_ATTACHMENT_PATTERN, note_body)
 
                 if not attachment_urls:
                     continue  # No attachment to process

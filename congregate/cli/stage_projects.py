@@ -16,7 +16,7 @@ from gitlab_ps_utils.json_utils import json_pretty
 from congregate.helpers.migrate_utils import get_staged_user_projects
 from congregate.helpers.utils import is_dot_com
 from congregate.cli.stage_base import BaseStageClass
-from congregate.migration.ado import constants
+from congregate.migration.meta import constants
 
 
 class ProjectStageCLI(BaseStageClass):

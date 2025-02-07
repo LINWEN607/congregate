@@ -89,3 +89,7 @@ PROJECT_RESERVED_NAMES = {
     "update",
     "wikis"
 }
+
+UUID_PATTERN = r'^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})(\s+[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})*$'
+GUID_PATTERN = r'@<([0-9a-fA-F-]{36})>'
+ADO_ATTACHMENT_PATTERN = r"(!?)\[(.*?)\]\((https://dev.azure.com/.*?)\)"
