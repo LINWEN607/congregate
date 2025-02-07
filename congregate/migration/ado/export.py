@@ -33,7 +33,7 @@ class AdoExportBuilder(ExportBuilder):
         self.teams_api = TeamsApi()
         self.ado_users_api = ADOUsersApi()
         self.gitlab_users_api = GitlabUsersApi()
-        self.project_id = source_project['namespace']
+        self.project_id = source_project['project_id']
         self.repository_id = source_project['id']
         self.source_project = source_project
         self.members_map = {}
