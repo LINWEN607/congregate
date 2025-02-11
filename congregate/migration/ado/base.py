@@ -105,13 +105,14 @@ class AzureDevOpsWrapper(BaseClass):
             for member in self.teams_api.get_team_members(project["id"], team["id"]):
                 if member["identity"].get("isContainer"):
                     for group_member in self.users_api.get_group_members(member["identity"].get('id')):
-                            user_descriptor = group_member["user"]["descriptor"]
-                            user_data = self.users_api.get_user(user_descriptor)
-                            if user_data:
-                                users.append(self.format_user(user_data.json()))
+                        user_descriptor = group_member["user"]["descriptor"]
+                        user_data = self.users_api.get_user(user_descriptor)
+                        if user_data:
+                            users.append(self.format_user(user_data.json()))
                 else:
                     user_descriptor = member["identity"]["descriptor"]
                     user_data = self.users_api.get_user(user_descriptor)
                     if user_data:
                         users.append(self.format_user(user_data.json()))
+        users = [dict(t) for t in {tuple(d.items()) for d in users}]
         return users
