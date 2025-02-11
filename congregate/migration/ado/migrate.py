@@ -12,6 +12,7 @@ from requests.exceptions import RequestException
 from gitlab_ps_utils.misc_utils import safe_json_response, get_dry_log
 from gitlab_ps_utils.json_utils import json_pretty
 from gitlab_ps_utils import misc_utils
+from congregate.migration.meta import constants
 
 import congregate.helpers.migrate_utils as mig_utils
 
@@ -79,10 +80,6 @@ class AzureDevopsMigrateClient(MigrateClient):
 
         # Migrate Azure projects as GL groups
         self.migrate_project_info()
-
-        # Migrate Azure repositories as GL projects
-        # self.handle_exporting_azure_project(dry_log)
-        # self.handle_importing_azure_project(dry_log)
 
     def migrate_project_info(self):
         staged_projects = mig_utils.get_staged_projects()
@@ -193,8 +190,6 @@ class AzureDevopsMigrateClient(MigrateClient):
                     # Process attachments in MRs after project import
                     self.process_attachments_after_import(import_id)
                     result[dst_pwn] = import_id
-                    # result[dst_pwn] = self.migrate_single_project_features(
-                    #     project, import_id, dest_host=dst_host, dest_token=dst_token)
             elif not self.dry_run:
                 self.log.warning(
                     f"Skipping import. Target namespace {tn} does not exist for project '{path}'")
@@ -208,34 +203,6 @@ class AzureDevopsMigrateClient(MigrateClient):
     
     def migrate_single_project_features(self, project, import_id, dest_host, dest_token):
         pass
-    
-    # def migrate_azure_project_info(self, dry_log):
-    #     staged_groups = mig_utils.get_staged_groups()
-    #     if staged_groups and not self.skip_group_import and not self.group_structure and not self.config.wave_spreadsheet_path:
-    #         mig_utils.validate_groups_and_projects(staged_groups)
-    #         self.log.info(
-    #             f"{dry_log}Migrating Azure Devops projects as GitLab groups")
-    #         results = list(r for r in self.multi.start_multi_process(
-    #             self.migrate_external_group, staged_groups, processes=self.processes, nestable=True))
-
-    #         self.are_results(results, "group", "import")
-
-    #         results.append(mig_utils.get_results(results))
-    #         self.log.info(
-    #             f"### {dry_log}Azure Devops projects migration result ###\n{json_utils.json_pretty(results)}")
-    #         mig_utils.write_results_to_file(
-    #             results, result_type="group", log=self.log)
-    #     # Allow Azure Devops Server importer to create missing sub-group layers on repo import
-    #     elif self.group_structure:
-    #         self.log.info(
-    #             "Skipping Azure Devops projects migration and relying on Azure Devops Server importer to create missing GitLab sub-group layers")
-    #     elif self.config.wave_spreadsheet_path:
-    #         self.log.warning(
-    #             "Skipping Azure Devops projects migration. Not supported when 'wave_spreadsheet_path' is configured")
-    #     else:
-    #         self.log.warning(
-    #             "SKIP: No Azure Devops projects staged for migration")
-
         
     def migrate_azure_repo_info(self, dry_log):
         staged_projects = mig_utils.get_staged_projects()
@@ -350,7 +317,7 @@ class AzureDevopsMigrateClient(MigrateClient):
                 note_body = note["body"]
 
                 # Find all ADO attachment links
-                attachment_urls = re.findall(r"(!?)\[(.*?)\]\((https://dev.azure.com/.*?)\)", note_body)
+                attachment_urls = re.findall(constants.ADO_ATTACHMENT_PATTERN, note_body)
 
                 if not attachment_urls:
                     continue  # No attachment to process

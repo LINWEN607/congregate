@@ -24,8 +24,7 @@ Usage:
     congregate find-unimported-projects [--commit]
     congregate generate-diff [--processes=<n>] [--staged] [--rollback] [--scm-source=hostname] [--skip-users] [--skip-groups] [--skip-projects] [--subgroups-only]
     congregate generate-reporting
-    congregate generate-seed-data [--commit] 
-    congregate get-total-count
+    congregate generate-seed-data [--commit] # TODO: Refactor, broken
     congregate init
     congregate ldap-group-sync <file-path> [--commit]
     congregate list [--processes=<n>] [--partial] [--skip-users] [--skip-groups] [--skip-group-members] [--skip-projects] [--skip-project-members] [--skip-ci] [--src-instances] [--subset] [--skip-archived-projects]
@@ -160,7 +159,6 @@ Commands:
     update-parent-group-members             Add (optional) and/or update access levels (to Guest by default) of all staged users for a configured GitLab destination parent group.
     update-members-access-level             Update access level (to Guest by default) of all staged group and project members on destination GitLab instance.
     remove-inactive-users                   Remove all inactive users from staged projects and groups.
-    get-total-count                         Get total count of migrated projects. Used to compare exported projects to imported projects.
     find-unimported-projects                Return a list of projects that failed import.
     stage-unimported-projects               Stage unimported projects based on {CONGREGATE_PATH}/data/unimported_projects.txt.
     url-rewrite-only                        Performs the URL rewrite portion of a migration as a stand-alone step, instead of as a post-migration step. Requires the projects to be staged, and to exist on destination
@@ -478,8 +476,6 @@ def main():
             if arguments["remove-inactive-users"]:
                 users.remove_inactive_users(
                     membership=MEMBERSHIP, dry_run=DRY_RUN)
-            if arguments["get-total-count"]:
-                BaseMigrateClient().get_total_migrated_count()
             if arguments["find-unimported-projects"]:
                 projects.find_unimported_projects(dry_run=DRY_RUN)
             if arguments["stage-unimported-projects"]:
