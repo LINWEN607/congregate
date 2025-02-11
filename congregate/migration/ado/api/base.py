@@ -139,12 +139,9 @@ class AzureDevOpsApiWrapper(BaseClass):
         while True:
             response = self.generate_get_request(api, sub_api, params=params)
             response.raise_for_status()
-            data = safe_json_response(response)
-
-            if "value" in data:
+            if data := safe_json_response(response):
                 for item in data.get("value", []):
                     yield item
-            if "members" in data:
                 for item in data.get("members", []):
                     yield item
 
