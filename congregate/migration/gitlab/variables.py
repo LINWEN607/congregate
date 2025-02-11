@@ -1,7 +1,6 @@
 from requests.exceptions import RequestException
 from requests import Response
-from gitlab_ps_utils.misc_utils import get_dry_log, is_error_message_present, safe_json_response
-from gitlab_ps_utils.json_utils import read_json_file_into_object
+from gitlab_ps_utils.misc_utils import is_error_message_present
 
 from congregate.migration.gitlab.base_gitlab_client import BaseGitLabClient
 from congregate.helpers.db_or_http import DbOrHttpMixin

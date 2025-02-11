@@ -14,6 +14,11 @@ class ProjectDetails():
     description: str
     jobs_enabled: bool
     packages_enabled: bool
+    http_url_to_repo: str
+    default_branch: str
+    visibility: str
+    merge_requests_template: Optional[str] = None
+    forked_from_project: Optional[dict]  = field(default_factory=dict)
     members: Optional[List[dict]] = field(default_factory=list)
     shared_with_groups: Optional[List[dict]] = field(default_factory=list)
 
