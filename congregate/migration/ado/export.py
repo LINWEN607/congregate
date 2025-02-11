@@ -66,6 +66,8 @@ class AdoExportBuilder(ExportBuilder):
             # Convert Azure DevOps PR to GitLab MR format
             pr_id = pr['pullRequestId']
             merge_request_commits = self.build_mr_diff_commits(pr_id)
+            if not merge_request_commits:
+                continue
             start_sha = merge_request_commits[-1].sha
             target_sha = dig(pr, 'lastMergeSourceCommit', 'commitId')
             merge_request_diffs = self.build_mr_diff_files(start_sha, target_sha)
