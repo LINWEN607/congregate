@@ -212,13 +212,16 @@ class BulkImportsClient(BaseGitLabClient):
             else:
                 namespaces[project['namespace']] = [project]
         for namespace, projects in namespaces.items():
-            found_group = safe_json_response(
-                groups_api.get_group_by_full_path(namespace, host, token))
-            total_project_count = groups_api.get_all_group_projects_count(
-                found_group['id'], host, token)
-            staged_count = len(projects)
-            if total_project_count > staged_count:
-                subsets[namespace] = projects
+            if found_group := safe_json_response(
+                groups_api.get_group_by_full_path(namespace, host, token)):
+                total_project_count = groups_api.get_all_group_projects_count(
+                    found_group['id'], host, token)
+                staged_count = len(projects)
+                if total_project_count > staged_count:
+                    subsets[namespace] = projects
+            else:
+                self.log.warning(
+                    f"Could not find group for namespace '{namespace}'. Run new list and/or validate the data in mongo DB")
         return subsets
 
 # 'self' is in the function parameters due to the use of the 'bind' parameter in the decorator
