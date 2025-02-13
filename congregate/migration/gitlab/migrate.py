@@ -665,8 +665,12 @@ class GitLabMigrateClient(MigrateClient):
                     project, dst_id)
 
             # Package Registries
-            results["package_registry"] = self.packages.migrate_project_packages(
-                src_id, dst_id, src_path)
+            if not project.get("packages_enabled", True):
+                self.log.info(f"Skipping package migration for project '{project['path_with_namespace']}' because packages are disabled.")
+            else:
+                results["package_registry"] = self.packages.migrate_project_packages(
+                    src_id, dst_id, src_path
+                )
 
             # Hooks (Webhooks)
             results["project_hooks"] = self.hooks.migrate_project_hooks(
