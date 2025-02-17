@@ -73,12 +73,11 @@ class ContributorRetentionClient(BaseClass, GitLabApiWrapper):
                 # Required for list-staged-projects-contributors
                 author['public_email'] = author.pop('publicEmail', "")
                 author['email'] = author_email
-                author['public_email'] = author.pop('publicEmail', "")
                 author['state'] = 'blocked'
                 self.contributor_map[author_email] = author
         except KeyError as ke:
             self.log.warning(
-                f"Failed to add contributor {author} to map, due to:\n{ke}")
+                f"Failed to add contributor '{author}' to map, due to:\n{ke}")
 
     def add_contributors_to_project(self):
         '''
@@ -92,8 +91,10 @@ class ContributorRetentionClient(BaseClass, GitLabApiWrapper):
             self.log.info(
                 f"{dry_log}Set source user '{contributor}' public email'")
             if not self.dry_run:
-                self.projects.add_member(
+                add_resp = self.projects.add_member(
                     self.src_id, self.config.source_host, self.config.source_token, new_member_payload.to_dict())
+                if not isinstance(add_resp, Response) or add_resp.status_code != 200:
+                    self.log.error(f"Failed to add contributor '{data.get('username')}' as member to source project {self.src_id}:\n{add_resp} - {add_resp.text}")
                 # Set public_email field
                 self.update_contributor_public_email(
                     contributor, data, hide=False)
@@ -147,10 +148,12 @@ class ContributorRetentionClient(BaseClass, GitLabApiWrapper):
             self.log.info(
                 f"{dry_log}Removing contributor '{contributor}' from project '{self.full_path}'")
             if user and not self.dry_run:
-                self.projects.remove_member(pid, user['id'], host, token)
+                remove_resp = self.projects.remove_member(pid, user['id'], host, token)
+                if not isinstance(remove_resp, Response) or remove_resp.status_code not in [204, 404]:
+                    self.log.error(f"Failed to remove contributor '{user.get('username')}' from {'source' if source else 'destination'} project {pid}: {remove_resp}-{remove_resp.text}")
                 # Hide public_email field
                 if source:
-                    self.update_contributor_public_email(contributor, data)
+                    self.update_contributor_public_email(contributor, user)
 
     def get_members(self, asset_type):
         if is_dot_com(self.config.source_host):

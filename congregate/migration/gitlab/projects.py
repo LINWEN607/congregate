@@ -363,12 +363,12 @@ class ProjectsClient(BaseClass):
                 resp = self.projects_api.add_member(
                     project_id, host, token, member)
                 if resp.status_code != 200:
-                    self.log.warning(
+                    self.log.error(
                         f"Failed to add member '{member}' to project {project_id}:\n{resp} - {resp.text}")
                 else:
                     result[member[field]] = True
             else:
-                self.log.warning(
+                self.log.error(
                     f"Failed to add member '{member}' to project {project_id}, user not found")
         return result
 

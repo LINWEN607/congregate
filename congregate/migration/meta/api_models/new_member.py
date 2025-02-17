@@ -11,8 +11,8 @@ class NewMember:
 
     def to_dict(self):
         """
-            Returns the dataclass as dictionary with all the values set to None 
+            Returns the dataclass as dictionary with all the values set to None
             stripped out to make sure we send a clean API request and avoid any
-            possibel validation errors when making the direct transfer request
+            possible validation errors when making the direct transfer request
         """
         return strip_none(asdict(self))
