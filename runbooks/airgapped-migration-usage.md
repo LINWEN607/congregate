@@ -29,7 +29,7 @@ Importing to the destination network should be handled by the GitLab Admins on t
 
 ```bash
 curl --request POST \
-  --url https://<congregate-destination-node>:8000/api/airgap/import \
+  --url http://<congregate-destination-node>:8000/api/airgap/import \
   --header 'Content-Type: multipart/form-data;' \
   --form host=https://<destination-hostname> \
   --form token=<destination-access-token> \
@@ -45,12 +45,12 @@ This is a `bash` script example for migrating all project export files within a 
 
 ```bash
 for f in /path/to/downloaded/project/exports/*; do if [[ "$f" == *_artifact.tar.gz ]]; then curl --request POST \
-  --url https://localhost:8000/api/airgap/import \
+  --url http://localhost:8000/api/airgap/import \
   --header 'Content-Type: multipart/form-data;' \
   --form host=https://<destination-hostname> \
   --form token=<destination-access-token> \
   --form gid=<destination-group-id> \
-  --form 'file=@$f’; fi; done
+  --form "file=@$f"; fi; done
 ```
 
 To follow the progress open the `flower` UI from the browser: `https://localhost:5555`.
