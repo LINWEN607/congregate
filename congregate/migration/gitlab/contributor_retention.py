@@ -32,6 +32,8 @@ class ContributorRetentionClient(BaseClass, GitLabApiWrapper):
     def build_map(self):
         for element in self.PROJECT_ELEMENTS:
             self.retrieve_contributors(element)
+            if element == "mergeRequests":
+                self.retrieve_mr_contributors()
         return self.contributor_map
 
     def retrieve_contributors(self, element):
@@ -50,9 +52,38 @@ class ContributorRetentionClient(BaseClass, GitLabApiWrapper):
                     self.add_contributor_to_map(author)
                     for commenter in dig(node, 'commenters', 'nodes', default=[]):
                         self.add_contributor_to_map(commenter)
+
                 cursor = dig(data, 'data', 'project',
                              element, 'pageInfo', 'endCursor')
                 hasNextPage = dig(data, 'data', 'project', element,
+                                  'pageInfo', 'hasNextPage', default=False)
+            else:
+                self.log.error(f"GraphQL POST request failed: {data}")
+
+    def retrieve_mr_contributors(self):
+        hasNextPage = True
+        cursor = ""
+        count = 0
+        while hasNextPage:
+            query = self.generate_contributors_query_mr(cursor)
+            if data := safe_json_response(
+                    self.api.generate_post_request(self.config.source_host, self.config.source_token, None, json.dumps(query), graphql_query=True)):
+                count += len(dig(data, 'data', 'project',
+                             'mergeRequests', 'nodes', default=[]))
+                self.log.info(f"Retrieved {count} mergeRequests")
+                for node in dig(data, 'data', 'project', 'mergeRequests', 'nodes', default=[]):
+                    author = dig(node, 'author')
+                    self.add_contributor_to_map(author)
+                    for commenter in dig(node, 'commenters', 'nodes', default=[]):
+                        self.add_contributor_to_map(commenter)
+                    for approver in dig(node, 'approvedBy', 'nodes', default=[]):
+                        self.add_contributor_to_map(approver)
+                    merge_user = dig(node, 'mergeUser')
+                    self.add_contributor_to_map(merge_user)
+
+                cursor = dig(data, 'data', 'project',
+                             'mergeRequests', 'pageInfo', 'endCursor')
+                hasNextPage = dig(data, 'data', 'project', 'mergeRequests',
                                   'pageInfo', 'hasNextPage', default=False)
             else:
                 self.log.error(f"GraphQL POST request failed: {data}")
@@ -85,7 +116,7 @@ class ContributorRetentionClient(BaseClass, GitLabApiWrapper):
         '''
         dry_log = get_dry_log(self.dry_run)
         for contributor, data in self.contributor_map.items():
-            new_member_payload = NewMember(user_id=data['id'], access_level=10)
+            new_member_payload = NewMember(user_id=int(data['id']), access_level=10)
             self.log.info(
                 f"{dry_log}Adding contributor '{contributor}' to project '{self.full_path}'")
             self.log.info(
@@ -93,7 +124,7 @@ class ContributorRetentionClient(BaseClass, GitLabApiWrapper):
             if not self.dry_run:
                 add_resp = self.projects.add_member(
                     self.src_id, self.config.source_host, self.config.source_token, new_member_payload.to_dict())
-                if not isinstance(add_resp, Response) or add_resp.status_code != 200:
+                if not isinstance(add_resp, Response) or add_resp.status_code != 201:
                     self.log.error(f"Failed to add contributor '{data.get('username')}' as member to source project {self.src_id}:\n{add_resp} - {add_resp.text}")
                 # Set public_email field
                 self.update_contributor_public_email(
@@ -177,7 +208,7 @@ class ContributorRetentionClient(BaseClass, GitLabApiWrapper):
                         project(fullPath: "%s"){
                         %s(after: "%s") {
                             nodes {
-                                author{
+                                author {
                                     id
                                     username
                                     name
@@ -202,4 +233,54 @@ class ContributorRetentionClient(BaseClass, GitLabApiWrapper):
                         }
                     }
                 """ % (self.full_path, element, cursor)
+        }
+
+    def generate_contributors_query_mr(self, cursor):
+        return {
+            "query": """
+                    query {
+                        project(fullPath: "%s"){
+                        mergeRequests(after: "%s") {
+                            nodes {
+                                author {
+                                    id
+                                    username
+                                    name
+                                    publicEmail
+                                    bot
+                                },
+                                commenters {
+                                    nodes {
+                                        id
+                                        username
+                                        name
+                                        publicEmail
+                                        bot
+                                    }
+                                },
+                                approvedBy {
+                                    nodes {
+                                        id
+                                        username
+                                        name
+                                        publicEmail
+                                        bot
+                                    }
+                                },
+                                mergeUser {
+                                    id
+                                    username
+                                    name
+                                    publicEmail
+                                    bot
+                                }
+                            }
+                            pageInfo {
+                                endCursor,
+                                hasNextPage
+                            }
+                        }
+                        }
+                    }
+                """ % (self.full_path, cursor)
         }
