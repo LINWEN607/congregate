@@ -385,7 +385,7 @@ class MigrateClient(BaseClass):
                 else:
                     resp = self.projects_api.remove_member(
                         dst_id, uid, self.config.destination_host, self.config.destination_token)
-                if not isinstance(resp, Response) or resp.status_code != 204:
+                if not isinstance(resp, Response) or resp.status_code not in [204, 404]:
                     status = "partial"
                     self.log.error(
                         f"Failed to remove {'group' if group else 'project'} {dst_id} member {uid}:\n{resp}")

@@ -1106,7 +1106,6 @@ class ProjectsClient(BaseClass):
         rotate_logs()
         contributors = []
         staged_projects = get_staged_projects()
-        open(f"{self.app_path}/data/staged_users.json", "w").close()
         for c in self.multi.start_multi_process(
                 self.list_project_contributors,
                 staged_projects,
