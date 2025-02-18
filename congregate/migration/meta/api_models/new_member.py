@@ -6,7 +6,8 @@ from gitlab_ps_utils.dict_utils import strip_none
 class NewMember:
     user_id: int
     access_level: int
-    expires_at: Optional[str] = ""
+    # Empty string can return as invalid on older GitLab versions
+    # expires_at: Optional[str] = ""
     invite_source: Optional[str] = ""
 
     def to_dict(self):

@@ -48,8 +48,8 @@ class ContributorRetentionClient(BaseClass, GitLabApiWrapper):
                              element, 'nodes', default=[]))
                 self.log.info(f"Retrieved {count} {element}")
                 for node in dig(data, 'data', 'project', element, 'nodes', default=[]):
-                    author = dig(node, 'author')
-                    self.add_contributor_to_map(author)
+                    if author := dig(node, 'author'):
+                        self.add_contributor_to_map(author)
                     for commenter in dig(node, 'commenters', 'nodes', default=[]):
                         self.add_contributor_to_map(commenter)
 
@@ -65,28 +65,28 @@ class ContributorRetentionClient(BaseClass, GitLabApiWrapper):
         cursor = ""
         count = 0
         while hasNextPage:
-            query = self.generate_contributors_query_mr(cursor)
+            query = self.generate_mr_contributors_query(cursor)
             if data := safe_json_response(
                     self.api.generate_post_request(self.config.source_host, self.config.source_token, None, json.dumps(query), graphql_query=True)):
                 count += len(dig(data, 'data', 'project',
                              'mergeRequests', 'nodes', default=[]))
                 self.log.info(f"Retrieved {count} mergeRequests")
                 for node in dig(data, 'data', 'project', 'mergeRequests', 'nodes', default=[]):
-                    author = dig(node, 'author')
-                    self.add_contributor_to_map(author)
+                    if author := dig(node, 'author'):
+                        self.add_contributor_to_map(author)
                     for commenter in dig(node, 'commenters', 'nodes', default=[]):
                         self.add_contributor_to_map(commenter)
                     for approver in dig(node, 'approvedBy', 'nodes', default=[]):
                         self.add_contributor_to_map(approver)
-                    merge_user = dig(node, 'mergeUser')
-                    self.add_contributor_to_map(merge_user)
+                    if merge_user := dig(node, 'mergeUser'):
+                        self.add_contributor_to_map(merge_user)
 
                 cursor = dig(data, 'data', 'project',
                              'mergeRequests', 'pageInfo', 'endCursor')
                 hasNextPage = dig(data, 'data', 'project', 'mergeRequests',
                                   'pageInfo', 'hasNextPage', default=False)
             else:
-                self.log.error(f"GraphQL POST request failed: {data}")
+                self.log.error(f"MR GraphQL POST request failed: {data}")
 
     def add_contributor_to_map(self, author):
         try:
@@ -116,7 +116,7 @@ class ContributorRetentionClient(BaseClass, GitLabApiWrapper):
         '''
         dry_log = get_dry_log(self.dry_run)
         for contributor, data in self.contributor_map.items():
-            new_member_payload = NewMember(user_id=int(data['id']), access_level=10)
+            new_member_payload = NewMember(user_id=data['id'], access_level=10)
             self.log.info(
                 f"{dry_log}Adding contributor '{contributor}' to project '{self.full_path}'")
             self.log.info(
@@ -235,7 +235,7 @@ class ContributorRetentionClient(BaseClass, GitLabApiWrapper):
                 """ % (self.full_path, element, cursor)
         }
 
-    def generate_contributors_query_mr(self, cursor):
+    def generate_mr_contributors_query(self, cursor):
         return {
             "query": """
                     query {
