@@ -6,7 +6,17 @@ Applicable **only** to GitLab -> GitLab migrations.
 
 ## Source data export
 
-Assuming a Congregate node on the source low-side network exists, you can trigger an export request by making the following cURL request:
+Assuming a Congregate node on the source low-side network exists, you can trigger an export request by:
+
+### Using the CLI
+
+E.g. `congregate migrate --skip-users --skip-group-export --skip-group-import --skip-project-import` (add `--commit` to execute)
+
+**NOTE:** Add `--retain-contributors` argument to preserve contributions from former project members. This is done by temporarily adding them as Guests to the source project, before exporting. They are removed afterwards.
+
+### Using bare API
+
+Making the following cURL request:
 
 ```bash
 curl --request POST \
@@ -25,7 +35,17 @@ This will create a job on the Congregate node to trigger an export. For the end 
 
 ## Destination data import
 
-Importing to the destination network should be handled by the GitLab Admins on the destination. Assuming a Congregate node has been set up on the destination network, you can trigger an import request by making the following cURL request:
+Importing to the destination network should be handled by the GitLab Admins on the destination. Assuming a Congregate node has been set up on the destination network, you can trigger an import request by:
+
+### Using the CLI
+
+E.g. `congregate migrate --skip-users --skip-group-export --skip-group-import --skip-project-export` (add `--commit` to execute)
+
+**NOTE:** Add `--retain-contributors` argument to remove the [previously added](#using-the-cli) former members (contributors) from the destination project.
+
+### Using bare API
+
+Making the following cURL request:
 
 ```bash
 curl --request POST \
@@ -39,7 +59,7 @@ curl --request POST \
 
 **NOTE:** A personal access token is needed because [group access tokens cannot be used to import projects](https://docs.gitlab.com/ee/user/project/settings/import_export_troubleshooting.html#import-using-the-rest-api-fails-when-using-a-group-access-token)
 
-### Automated bulk import example
+#### Automated bulk import example
 
 This is a `bash` script example for migrating all project export files within a folder:
 
