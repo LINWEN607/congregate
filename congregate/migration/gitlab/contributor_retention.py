@@ -3,7 +3,7 @@ from requests import Response
 
 from gitlab_ps_utils.dict_utils import dig, rewrite_list_into_dict
 from gitlab_ps_utils.misc_utils import safe_json_response, get_dry_log
-from congregate.migration.gitlab.api.base_api import GitLabApiWrapper
+from gitlab_ps_utils.api import GitLabApi
 from congregate.helpers.utils import is_dot_com
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.users import UsersApi
@@ -13,12 +13,16 @@ from congregate.migration.meta.api_models.new_member import NewMember
 from congregate.helpers.migrate_utils import find_user_by_email_comparison_without_id
 
 
-class ContributorRetentionClient(BaseClass, GitLabApiWrapper):
+class ContributorRetentionClient(BaseClass):
     GROUP_ELEMENTS = ['epics']
     PROJECT_ELEMENTS = ['issues', 'mergeRequests', 'snippets']
 
     def __init__(self, src_id, dest_id, full_path, asset_type='project', dry_run=True):
         super().__init__()
+        self.api = GitLabApi(
+            app_path=self.app_path,
+            log_name=self.log_name,
+            ssl_verify=self.config.ssl_verify)
         self.users = UsersApi()
         self.projects = ProjectsApi()
         self.groups = GroupsApi()
