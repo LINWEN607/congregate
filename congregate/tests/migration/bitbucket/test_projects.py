@@ -100,7 +100,7 @@ class ProjectsTests(unittest.TestCase):
 
         mongo = CongregateMongoConnector(client=mongomock.MongoClient)
         for project in listed_project:
-            self.projects.handle_retrieving_projects(project, mongo=mongo)
+            self.projects.handle_retrieving_projects(False, project, mongo=mongo)
 
         actual_projects = [d for d, _ in mongo.stream_collection(
             "groups-bitbucket.company.com")]
@@ -245,7 +245,7 @@ class ProjectsTests(unittest.TestCase):
 
         mongo = CongregateMongoConnector(client=mongomock.MongoClient)
         for project in listed_projects:
-            self.projects.handle_retrieving_projects(project, mongo=mongo)
+            self.projects.handle_retrieving_projects(False, project, mongo=mongo)
 
         actual_projects = [d for d, _ in mongo.stream_collection(
             "groups-bitbucket.company.com")]

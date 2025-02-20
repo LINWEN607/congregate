@@ -4,7 +4,7 @@ spin_up_instance () {
     poetry run aws ec2 run-instances \
         --image-id $AMI_ID \
         --count 1 \
-        --instance-type t2.large \
+        --instance-type c5a.2xlarge \
         --key-name $KEY_NAME \
         --security-group-ids $SECURITY_GROUP
 }
@@ -14,7 +14,7 @@ get_instance_ip () {
 }
 
 get_latest_version () {
-    curl --header "PRIVATE-TOKEN: $ACCESS_TOKEN" https://gitlab.com/api/v4/version | jq -r '. | "\(.version)-\(.revision)"'
+    curl --header "PRIVATE-TOKEN: $ACCESS_TOKEN" https://gitlab.com/api/v4/version | jq -r '. | "\(.version)"'
 }
 
 get_ami_id () {

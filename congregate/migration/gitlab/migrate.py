@@ -33,7 +33,6 @@ from congregate.migration.gitlab.merge_request_approvals import MergeRequestAppr
 from congregate.migration.gitlab.registries import RegistryClient
 from congregate.migration.gitlab.keys import KeysClient
 from congregate.migration.gitlab.hooks import HooksClient
-from congregate.migration.gitlab.clusters import ClustersClient
 from congregate.migration.gitlab.environments import EnvironmentsClient
 from congregate.migration.gitlab.branches import BranchesClient
 from congregate.migration.gitlab.packages import PackagesClient
@@ -87,7 +86,6 @@ class GitLabMigrateClient(MigrateClient):
         self.packages = PackagesClient()
         self.keys = KeysClient()
         self.hooks = HooksClient()
-        self.clusters = ClustersClient()
         self.environments = EnvironmentsClient()
         self.branches = BranchesClient()
         self.project_feature_flags_client = ProjectFeatureFlagClient(
@@ -129,11 +127,6 @@ class GitLabMigrateClient(MigrateClient):
 
         # Instance hooks
         self.hooks.migrate_instance_hooks(dry_run=self.dry_run)
-
-        # Instance clusters
-        if mig_utils.is_gl_version_older_than(14.5, self.config.source_host, self.config.source_token,
-                                              "Certificate-based clusters are still supported"):
-            self.clusters.migrate_instance_clusters(dry_run=self.dry_run)
 
         # Remove import user from parent group to avoid inheritance
         # (self-managed only)
@@ -336,8 +329,6 @@ class GitLabMigrateClient(MigrateClient):
                 else:
                     result[full_path_with_parent_namespace] = dst_gid
             else:
-                self.log.info(
-                    f"{dry_log}Group {full_path_with_parent_namespace} NOT found on destination, importing...")
                 imported = self.ie.import_group(
                     group,
                     full_path_with_parent_namespace,
@@ -371,8 +362,6 @@ class GitLabMigrateClient(MigrateClient):
             result = {
                 full_path_with_parent_namespace: False
             }
-            self.log.info(
-                f"Searching on destination for sub-group {full_path_with_parent_namespace}")
             if self.dry_run:
                 dst_gid = self.groups.find_group_id_by_path(
                     self.config.destination_host, self.config.destination_token, full_path_with_parent_namespace)
@@ -382,8 +371,7 @@ class GitLabMigrateClient(MigrateClient):
                     full_path_with_parent_namespace)
                 dst_gid = dst_grp.get("id") if dst_grp else None
             if dst_gid:
-                self.log.info(
-                    f"{get_dry_log(self.dry_run)}Sub-group {full_path} (ID: {dst_gid}) found on destination")
+                self.log.info(f"{get_dry_log(self.dry_run)}Importing sub-group '{full_path_with_parent_namespace}' (ID: {dst_gid}) features... ")
                 if not self.dry_run:
                     # Temporarily fixing group import subgroup visibility bug - https://gitlab.com/gitlab-org/gitlab/-/issues/405168
                     if dst_grp.get("visibility") != subgroup["visibility"]:
@@ -396,10 +384,10 @@ class GitLabMigrateClient(MigrateClient):
                         src_gid, dst_gid, full_path)
             elif not self.dry_run:
                 self.log.warning(
-                    f"Sub-group {full_path_with_parent_namespace} NOT found on destination")
+                    f"SKIP: Sub-group '{full_path_with_parent_namespace}' NOT found on destination")
         except (RequestException, KeyError, OverflowError) as oe:
             self.log.error(
-                f"Failed to migrate sub-group {full_path} (ID: {src_gid}) info with error:\n{oe}")
+                f"Failed to migrate sub-group {full_path_with_parent_namespace} (ID: {src_gid}) features with error:\n{oe}")
         except Exception as e:
             self.log.error(e)
             self.log.error(print_exc())
@@ -412,12 +400,6 @@ class GitLabMigrateClient(MigrateClient):
         # CI/CD Variables
         results["cicd_variables"] = self.variables.migrate_cicd_variables(
             src_gid, dst_gid, full_path, "group", src_gid)
-
-        # Clusters
-        if mig_utils.is_gl_version_older_than(14.5, self.config.source_host, self.config.source_token,
-                                              "Certificate-based clusters are still supported"):
-            results["clusters"] = self.clusters.migrate_group_clusters(
-                src_gid, dst_gid, full_path)
 
         if self.config.source_tier not in ["core", "free"]:
             # Hooks (Webhooks)
@@ -436,9 +418,10 @@ class GitLabMigrateClient(MigrateClient):
         if self.sync_members and not self.remove_members:
             results["members_added"] = self.add_group_members(
                 src_gid, dst_gid, full_path)
-            
+
         # Add group members to groups
-        results["shared_with_groups"] = self.share_groups_with_groups(src_gid, dst_gid)
+        results["shared_with_groups"] = self.share_groups_with_groups(
+            src_gid, dst_gid)
 
         return results
 
@@ -489,6 +472,9 @@ class GitLabMigrateClient(MigrateClient):
                 self.log.info("### {0}Project import results ###\n{1}"
                               .format(dry_log, json_pretty(import_results)))
                 mig_utils.write_results_to_file(import_results, log=self.log)
+                # Run reporting
+                if staged_projects and import_results:
+                    self.create_issue_reporting(staged_projects, import_results)
             else:
                 self.log.info(
                     "SKIP: Assuming staged projects will be later imported")
@@ -496,19 +482,17 @@ class GitLabMigrateClient(MigrateClient):
             self.log.warning("SKIP: No projects staged for migration")
 
     def handle_exporting_projects(self, project, src_host=None, src_token=None):
-        name = project["name"]
-        namespace = project["namespace"]
         pid = project["id"]
         project_path = project['path_with_namespace']
         dry_log = get_dry_log(self.dry_run)
         filename = mig_utils.get_export_filename_from_namespace_and_name(
-            namespace, name)
+            project["namespace"], name=project["name"])
         result = {
             filename: False
         }
         try:
             c_retention = None
-            if self.retain_contributors:
+            if self.retain_contributors and not self.config.direct_transfer:
                 self.log.info(
                     f"{dry_log}Contributor Retention is enabled. Adding all project contributors as project members")
                 c_retention = ContributorRetentionClient(
@@ -519,7 +503,7 @@ class GitLabMigrateClient(MigrateClient):
                 f"{dry_log}Exporting project {project_path} (ID: {pid}) as {filename}")
             result[filename] = ImportExportClient(src_host=src_host, src_token=src_token).export_project(
                 project, dry_run=self.dry_run)
-            if self.retain_contributors:
+            if self.retain_contributors and not self.config.direct_transfer:
                 self.log.info(
                     f"{dry_log}Contributor Retention is enabled. Project export is complete Removing all project contributors from members")
                 c_retention.remove_contributors_from_project(source=True)
@@ -534,18 +518,18 @@ class GitLabMigrateClient(MigrateClient):
                     final_path = create_archive(
                         pid, f"{self.config.filesystem_path}/downloads/{filename}")
                     self.log.info(
-                        f"Saved project [{name}:{pid}] archive to {final_path}")
+                        f"Saved project [{project_path}:{pid}] archive to {final_path}")
                     delete_project_features(pid)
 
-                # Archive project immediately after export
-                if self.config.archive_logic:
+                # Archive project immediately after export, if exported
+                if self.config.archive_logic and result[filename]:
                     self.log.info(
-                        f"Archiving source project '{name}' (ID: {pid})")
+                        f"Archiving source project '{project_path}' (ID: {pid})")
                     self.projects_api.archive_project(
                         self.config.source_host, self.config.source_token, pid)
         except (IOError, RequestException) as oe:
             self.log.error(
-                f"Failed to export/download project {name} (ID: {pid}) as {filename} with error:\n{oe}")
+                f"Failed to export/download project {project_path} (ID: {pid}) as {filename} with error:\n{oe}")
         except Exception as e:
             self.log.error(e)
             self.log.error(print_exc())
@@ -558,7 +542,7 @@ class GitLabMigrateClient(MigrateClient):
         dst_token = dst_token or self.config.destination_token
         src_host = self.config.source_host
         src_token = self.config.source_token
-        archived = self.projects_api.get_project_archive_state(
+        archived = False if self.config.airgap else self.projects_api.get_project_archive_state(
             src_host, src_token, src_id)
         dst_pwn, tn = mig_utils.get_stage_wave_paths(
             project, group_path=group_path)
@@ -573,12 +557,6 @@ class GitLabMigrateClient(MigrateClient):
                 dst_pid = self.projects.find_project_by_path(
                     dst_host, dst_token, dst_pwn)
 
-                # Certain project features cannot be migrated when archived
-                if archived and not self.dry_run:
-                    self.log.info(
-                        f"Unarchiving source project '{path}' (ID: {src_id})")
-                    self.projects_api.unarchive_project(
-                        src_host, src_token, src_id)
                 if dst_pid:
                     import_status = safe_json_response(self.projects_api.get_project_import_status(
                         dst_host, dst_token, dst_pid))
@@ -589,20 +567,28 @@ class GitLabMigrateClient(MigrateClient):
                     else:
                         result[dst_pwn] = dst_pid
                 else:
-                    self.log.info(
-                        f"{get_dry_log(self.dry_run)}Project '{dst_pwn}' NOT found on destination, importing...")
                     ie_client = ImportExportClient(
                         dest_host=dst_host, dest_token=dst_token)
                     import_id = ie_client.import_project(
                         project, dry_run=self.dry_run, group_path=group_path or tn)
                 if import_id and not self.dry_run:
-                    # Store the mapping
+                    # Store project ID mapping
                     self.project_id_mapping[src_id] = import_id
+
                     # Disable Shared CI
                     self.disable_shared_ci(dst_pwn, import_id)
+
                     # Post import features
                     self.log.info(
                         f"Migrating additional source project '{path}' (ID: {src_id}) GitLab features")
+
+                    # Certain project features cannot be migrated when archived
+                    if archived and not self.config.airgap:
+                        self.log.info(
+                            f"Unarchiving source project '{path}' (ID: {src_id})")
+                        self.projects_api.unarchive_project(
+                            src_host, src_token, src_id)
+
                     result[dst_pwn] = self.migrate_single_project_features(
                         project, import_id, dest_host=dst_host, dest_token=dst_token)
             elif not self.dry_run:
@@ -616,11 +602,11 @@ class GitLabMigrateClient(MigrateClient):
             self.log.error(print_exc())
         finally:
             if not self.dry_run:
-                if archived:
+                if archived and not self.config.airgap:
                     self.projects_api.archive_project(
                         src_host, src_token, src_id,
                         message=f"Archiving back source project '{path}' (ID: {src_id})")
-                # Archive project immediately after import
+                # Archive project immediately after import, if imported
                 elif self.config.archive_logic and import_id:
                     self.projects_api.archive_project(
                         src_host, src_token, src_id,
@@ -648,8 +634,7 @@ class GitLabMigrateClient(MigrateClient):
         results["id"] = dst_id
 
         # Set default branch
-        self.branches.set_branch(
-            src_path, dst_id, project.get("default_branch"))
+        self.branches.set_branch(src_path, dst_id, project["default_branch"])
 
         # Shared with groups
         results["shared_with_groups"] = self.projects.add_shared_groups(
@@ -680,18 +665,16 @@ class GitLabMigrateClient(MigrateClient):
                     project, dst_id)
 
             # Package Registries
-            results["package_registry"] = self.packages.migrate_project_packages(
-                src_id, dst_id, src_path)
+            if not project.get("packages_enabled", True):
+                self.log.info(f"Skipping package migration for project '{project['path_with_namespace']}' because packages are disabled.")
+            else:
+                results["package_registry"] = self.packages.migrate_project_packages(
+                    src_id, dst_id, src_path
+                )
 
             # Hooks (Webhooks)
             results["project_hooks"] = self.hooks.migrate_project_hooks(
                 src_id, dst_id, src_path)
-
-            # Clusters
-            if mig_utils.is_gl_version_older_than(14.5, self.config.source_host, self.config.source_token,
-                                                  "Certificate-based clusters are still supported"):
-                results["clusters"] = self.clusters.migrate_project_clusters(
-                    src_id, dst_id, src_path, jobs_enabled)
 
             # Project Feature Flag Users Lists
             project_feature_flags_users_lists = self.project_feature_flags_users_lists_client.migrate_project_feature_flags_user_lists_for_project(
@@ -722,7 +705,7 @@ class GitLabMigrateClient(MigrateClient):
             self.projects.migrate_gitlab_variable_replace_ci_yml(dst_id)
 
         c_retention = None
-        if self.retain_contributors:
+        if self.retain_contributors and not self.config.direct_transfer:
             self.log.info(
                 f"Contributor Retention is enabled. Project {project['path_with_namespace']} has been imported so removing all project contributors as project members")
             c_retention = ContributorRetentionClient(
@@ -734,6 +717,11 @@ class GitLabMigrateClient(MigrateClient):
         if self.config.airgap:
             delete_project_features(src_id)
 
+        if self.config.direct_transfer and self.config.archive_logic:
+            self.log.info(
+                f"Archiving active source project '{src_path}' (ID: {src_id})")
+            self.projects_api.archive_project(
+                self.config.source_host, self.config.source_token, src_id)
         self.log.info(
             f"Completed migrating additional source project '{src_path}' (ID: {src_id}) GitLab features")
         return results
@@ -742,44 +730,43 @@ class GitLabMigrateClient(MigrateClient):
         """
             Function to export project features to mongo to then package up into a tar
         """
-        if not self.dry_run:
-            self.log.info("exporting single project features")
+        path_with_namespace = project["path_with_namespace"]
+        src_id = project["id"]
+        jobs_enabled = project.get("jobs_enabled", False)
+        results = {}
 
-            path_with_namespace = project["path_with_namespace"]
-            src_id = project["id"]
-            jobs_enabled = project.get("jobs_enabled", False)
-            results = {}
+        self.log.info(f"Exporting project '{path_with_namespace}' (ID: {src_id}) (features")
 
-            mongo = CongregateMongoConnector()
-            mongo.create_collection_with_unique_index('project_features', 'id')
-            mongo.db['project_features'].insert_one(SingleProjectFeatures(
-                id=src_id,
-                project_details=from_dict(ProjectDetails, project)
-            ).to_dict())
-            mongo.close_connection()
-            project.pop("members", None)
+        mongo = CongregateMongoConnector()
+        mongo.create_collection_with_unique_index('project_features', 'id')
+        mongo.db['project_features'].insert_one(SingleProjectFeatures(
+            id=src_id,
+            project_details=from_dict(ProjectDetails, project)
+        ).to_dict())
+        mongo.close_connection()
+        project.pop("members", None)
 
-            # Environments
-            results["environments"] = EnvironmentsClient(src_host=src_host, src_token=src_token).migrate_project_environments(
-                src_id, None, path_with_namespace, jobs_enabled)
+        # Environments
+        results["environments"] = EnvironmentsClient(src_host=src_host, src_token=src_token).migrate_project_environments(
+            src_id, None, path_with_namespace, jobs_enabled)
 
-            vars_client = VariablesClient(
-                src_host=src_host, src_token=src_token)
-            # CI/CD Variables
-            results["cicd_variables"] = vars_client.migrate_cicd_variables(
-                src_id, None, path_with_namespace, "projects", jobs_enabled)
+        vars_client = VariablesClient(
+            src_host=src_host, src_token=src_token)
+        # CI/CD Variables
+        results["cicd_variables"] = vars_client.migrate_cicd_variables(
+            src_id, None, path_with_namespace, "projects", jobs_enabled)
 
-            # Pipeline Schedule Variables
-            results["pipeline_schedule_variables"] = vars_client.migrate_pipeline_schedule_variables(
-                src_id, None, path_with_namespace, jobs_enabled)
+        # Pipeline Schedule Variables
+        results["pipeline_schedule_variables"] = vars_client.migrate_pipeline_schedule_variables(
+            src_id, None, path_with_namespace, jobs_enabled)
 
-            if self.config.source_tier not in ["core", "free"]:
-                # Merge Request Approvals
-                results["project_level_mr_approvals"] = MergeRequestApprovalsClient(
-                    src_host=src_host, src_token=src_token).migrate_project_level_mr_approvals(
-                    src_id, None, path_with_namespace)
+        if self.config.source_tier not in ["core", "free"]:
+            # Merge Request Approvals
+            results["project_level_mr_approvals"] = MergeRequestApprovalsClient(
+                src_host=src_host, src_token=src_token).migrate_project_level_mr_approvals(
+                src_id, None, path_with_namespace)
 
-            return results
+        return results
 
     def migrate_linked_items_in_issues(self):
         # Read the mapping file from the json and put it inside the project_id_mapping variable

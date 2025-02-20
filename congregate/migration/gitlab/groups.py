@@ -9,7 +9,7 @@ from celery import shared_task
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.congregate_mdbc import CongregateMongoConnector, mongo_connection
 from congregate.helpers.migrate_utils import get_full_path_with_parent_namespace, is_top_level_group, get_staged_groups, \
-    find_user_by_email_comparison_without_id
+    search_for_user_by_user_mapping_field
 from congregate.migration.gitlab.variables import VariablesClient
 from congregate.migration.gitlab import constants
 from congregate.migration.gitlab.api.groups import GroupsApi
@@ -245,22 +245,26 @@ class GroupsClient(BaseClass):
     def add_members_to_destination_group(self, host, token, group_id, members):
         result = {}
         self.log.info(
-            f"Adding {len(members)} member{'s' if len(members) > 1 else ''} to Group ID {group_id}")
+            f"Adding {len(members)} member{'s' if len(members) > 1 else ''} to group ID {group_id}:\n{json_pretty(members)}")
+        field = self.config.user_mapping_field
         for member in members:
-            if email := member.get("email"):
-                user_id_req = find_user_by_email_comparison_without_id(email)
-                member["user_id"] = user_id_req.get(
-                    "id") if user_id_req else None
-                result[email] = False
-                if member.get("user_id"):
-                    if safe_json_response(self.groups_api.add_member_to_group(group_id, host, token, member)):
-                        result[email] = True
-                    else:
-                        self.log.error(
-                            f"Failed to add user '{email}' to group {group_id}")
-                else:
+            user = search_for_user_by_user_mapping_field(
+                field, member, host, token)
+            member["user_id"] = user.get("id")
+            result[member[field]] = False
+            if member["user_id"]:
+                # Due to 400 error: user_id, username are mutually exclusive
+                member.pop("username", None)
+                resp = self.groups_api.add_member_to_group(
+                    group_id, host, token, member)
+                if resp.status_code != 200:
                     self.log.warning(
-                        f"Failed to find user '{email}' on destination")
+                        f"Failed to add member '{member}' to group {group_id}:\n{resp} - {resp.text}")
+                else:
+                    result[member[field]] = True
+            else:
+                self.log.warning(
+                    f"Failed to add member '{member}' to group {group_id}, user not found")
         return result
 
     def find_and_stage_group_bulk_entities(self, groups):

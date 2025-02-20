@@ -115,7 +115,7 @@ class ProjectsApi(GitLabApiWrapper):
         """
         Adds a member to a group or project
 
-        GitLab API Doc: https://docs.gitlab.com/ee/api/members.html
+        GitLab API Doc: https://docs.gitlab.com/ee/api/members.html#add-a-member-to-a-group-or-project
 
             :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
@@ -132,7 +132,7 @@ class ProjectsApi(GitLabApiWrapper):
         """
         Removes member from project
 
-        GitLab API Doc: https://docs.gitlab.com/ee/api/members.html
+        GitLab API Doc: https://docs.gitlab.com/ee/api/members.html#remove-a-member-from-a-group-or-project
 
             :param: pid: (int) GitLab project ID
             :param: uid: (int) GitLab user ID
@@ -1201,37 +1201,6 @@ class ProjectsApi(GitLabApiWrapper):
 
         return self.api.generate_post_request(host, token, None, json.dumps(query), graphql_query=True)
 
-    def get_all_project_clusters(self, pid, host, token):
-        """
-        Returns a list of project clusters.
-
-        GitLab API Doc: https://docs.gitlab.com/ee/api/project_clusters.html#list-project-clusters
-
-            :param: pid: (int) GitLab project ID
-            :param: host: (str) GitLab host URL
-            :param: token: (str) Access token to GitLab instance
-            :return: Response object containing the response to GET /projects/:pid/clusters
-
-        """
-        return self.api.list_all(host, token, f"projects/{pid}/clusters")
-
-    def add_project_cluster(self, pid, host, token, data=None, message=None):
-        """
-        Adds an existing Kubernetes cluster to the project.
-
-        GitLab API Doc: https://docs.gitlab.com/ee/api/project_clusters.html#add-existing-cluster-to-project
-
-            :param: pid: (int) GitLab project ID
-            :param: host: (str) GitLab host URL
-            :param: token: (str) Access token to GitLab instance
-            :param: data: (dict) Object containing the necessary data for the added cluster
-            :return: Response object containing the response to POST /projects/:pid/clusters/user
-
-        """
-        if not message:
-            message = f"Adding cluster {data['name']} to project {pid}"
-        return self.api.generate_post_request(host, token, f"projects/{pid}/clusters/user", json.dumps(data), description=message)
-
     def enable_deploy_key(self, pid, kid, host, token, message=None):
         """
         Enables a deploy key for a project so this can be used. Returns the enabled key, with a status code 201 when successful.
@@ -1372,3 +1341,26 @@ class ProjectsApi(GitLabApiWrapper):
         except Exception as e:
             self.log.error(f"Error getting namespace ID for path {full_path}: {str(e)}")
             return None
+
+    def upload_attachment(self, host, token, project_id, file_data, filename, description=None):
+        """
+        Uploads a file to a GitLab project.
+
+        :param file_data: (bytes) The binary content of the file.
+        :param filename: (str) The name of the file.
+        :param description: (str) A description for logging purposes (optional).
+
+        :return: Response object containing the response to POST projects/:pid/uploads
+        """
+
+        api_endpoint = f"projects/{project_id}/uploads"
+        
+        return self.api.generate_post_request(
+            host=host,
+            token=token,
+            api=api_endpoint,
+            data=None,
+            headers = {"Authorization": f"Bearer {token}"}, # We override the headers because we need to explicitly disable application/json
+            files={'file': (filename, file_data, 'application/octet-stream')},
+            description=description or f"Uploading file {filename} to project {project_id}"
+        )

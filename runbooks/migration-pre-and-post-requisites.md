@@ -2,6 +2,8 @@
     Copy the contents of this runbook into an issue when running through migration prerequisites.
     Post the link to the issue on the Slack channel dedicated to this migration.
 -->
+[TOC]
+
 
 # [customer name] Migration Pre and Post-requisites
 
@@ -47,7 +49,7 @@ This runbook covers the process of preparing and cleaning up after a migration f
 
     **NOTE:** Mentions may change over time
   * (Optional) Post issue in Slack's [**#it_help**](https://gitlab.slack.com/archives/CK4EQH50E) channel
-* (gitlab.com) To avoid SAML provisioning the import Admin user in the external (customer) identity provider, spoof/mock the customer gitlab.com SAML identity for the Admin account. [Modify the Admin account attributes via the Users API](https://docs.gitlab.com/ee/api/users.html#user-modification) and `PUT` the following json body to `https://<hostname>/api/v4/users/<id>`:
+* (gitlab.com) To avoid SAML provisioning the import Admin user in the external (customer) identity provider, spoof/mock the customer gitlab.com SAML identity for the Admin account. [Modify the Admin account attributes via the Users API](https://docs.gitlab.com/ee/api/users.html#modify-a-user) and `PUT` the following json body to `https://<hostname>/api/v4/users/<id>`:
 
     ```json
     {
@@ -104,6 +106,8 @@ This runbook covers the process of preparing and cleaning up after a migration f
   * All users have linked their GitLab and SAML accounts by logging in via the identity provider's GitLab SAML app
 
   **NOTE:** Properly mapped contributions depend on group/project membership. If a user is added as a group/project member it gets mapped and is taken into consideration when doing the contribution (GitLab features) mapping.
+* [ ] All `inactive` users are created on the destination GitLab instance (e.g. using Congregate), to preserve their contribution mapping
+  * **NOTE:** gitlab.com does not provide the `deactivated` user state so they should be `blocked` instead
 * [ ] Configure source and destination instance (if applicable) rate limits ([configurable as of 13.2](https://docs.gitlab.com/ee/api/README.html#rate-limits))
   * This may also be done temporarily, for the duration of the migration wave
 * [ ] Configure destination instance (if applicable) [immediate group and project deletion permissions](https://about.gitlab.com/handbook/support/workflows/hard_delete_project.html). They are required in case of a rollback scenario, where all staged groups and projects need to be removed on the destination instance.

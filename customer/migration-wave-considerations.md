@@ -3,7 +3,7 @@
 ## What is a wave?
 
 A wave consists of users, groups, and projects slated to be migrated within a day. A wave can consist of multiple users, groups, and projects.
-Users i.e. their entire accounts (with additional GitLab features, e.g. SSH and GPG keys) mentioned in the migration features matrix ([Bitbucket](customer/bitbucket-migration-features-matrix.md), [GitHub](customer/github-migration-features-matrix.md), [GitLab](customer/gitlab-migration-features-matrix.md)) are migrated first. Users need to be migrated before we migrate groups and projects so that the user contribution mappings and permissions persist when we import groups and projects.  The number users in a user migration wave or projects in a group/project wave depends on the source and destination system.  When scheduling migrations, we typically plan to migrate 1 wave per day.
+Users i.e. their entire accounts (with additional GitLab features, e.g. SSH and GPG keys) mentioned in the migration features matrix ([Bitbucket](customer/bitbucket-migration-features-matrix.md), [GitHub](customer/github-migration-features-matrix.md), [GitLab](customer/gitlab-migration-features-matrix.md), [Azure DevOps](customer/ado-migration-features-matrix.md)) are migrated first. Users need to be migrated before we migrate groups and projects so that the user contribution mappings and permissions persist when we import groups and projects.  The number users in a user migration wave or projects in a group/project wave depends on the source and destination system.  When scheduling migrations, we typically plan to migrate 1 wave per day.
 
 ## GitLab to GitLab Migration
 

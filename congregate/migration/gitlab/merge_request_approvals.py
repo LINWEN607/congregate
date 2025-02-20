@@ -3,6 +3,7 @@ from dacite import from_dict
 
 from gitlab_ps_utils.misc_utils import is_error_message_present, safe_json_response
 
+from congregate.helpers.migrate_utils import search_for_user_by_user_mapping_field
 from congregate.helpers.db_or_http import DbOrHttpMixin
 from congregate.migration.gitlab.base_gitlab_client import BaseGitLabClient
 from congregate.migration.gitlab.api.groups import GroupsApi
@@ -125,8 +126,11 @@ class MergeRequestApprovalsClient(DbOrHttpMixin, BaseGitLabClient):
         for u in rule["users"]:
             if u.get("id"):
                 if user := safe_json_response(self.users_api.get_user(u["id"], s_host, s_token)):
-                    self.get_missing_user_rule_params(
-                        user, user_ids, d_host, d_token)
+                    field = self.config.user_mapping_field
+                    new_user = search_for_user_by_user_mapping_field(
+                            field, user, d_host, d_token)
+                    user_ids = self.user_search_check_and_log(
+                        new_user, user, user_ids, field)
         for g in rule["groups"]:
             if g.get("id"):
                 if group := safe_json_response(self.groups_api.get_group(g["id"], s_host, s_token)):
@@ -145,19 +149,3 @@ class MergeRequestApprovalsClient(DbOrHttpMixin, BaseGitLabClient):
                 if p_branch and p_branch.get("id"):
                     p_branch_ids.append(p_branch["id"])
         return user_ids, group_ids, p_branch_ids
-
-    def get_missing_user_rule_params(self, user, user_ids, d_host, d_token):
-        field = self.config.user_mapping_field
-        new_user, new_user_search = {}, {}
-        if field == "email":
-            new_user_search = self.users_api.search_for_user_by_email(
-                d_host, d_token, user[field])
-        if field == "username":
-            new_user_search = self.users_api.search_for_user_by_username(
-                d_host, d_token, user[field])
-        for u in new_user_search:
-            if u.get(field, "").lower() == user.get(field, "").lower():
-                new_user = u
-                break
-        user_ids = self.user_search_check_and_log(
-            new_user, user, user_ids, field)

@@ -2,6 +2,7 @@
     Copy the contents of this runbook into an issue when running through a migration wave.
     Post the link to the issue on the Slack channel dedicated to this migration.
 -->
+[TOC]
 
 # <customer name> Migration Wave <insert-number-here>
 
@@ -70,7 +71,7 @@ Copy the following data and add subsequent rows for wave migration or migration 
 | :x:       | [name / username]          | [total-projects] | [size]          |
 | **Total** | [total-number]             | [sum-of-column]  | [sum-of-column] |
 
-Copy the following data and add subsequent rows for single group migration
+Copy the following data and add subsequent rows for single project migration
 
 | Completed | Project Path | Repo Size   |
 | --------- | ------------ | ----------- |
@@ -103,6 +104,7 @@ PSE conducting the migration:
   * [ ] **NOTE:** Product is considering to [exclude SCIM provisioned users](https://gitlab.com/gitlab-org/gitlab/-/issues/423322). SAML Just-in-Time provisioned users still need to confirm/verify their email
 * [ ] When migrating/creating users via Congregate, using the admin token, they are automatically confirmed/verified. However, they still have to link their GitLab and SAML accounts
   * To link them they have to follow [this troubleshooting scenario](https://docs.gitlab.com/ee/user/group/saml_sso/troubleshooting.html#message-there-is-already-a-gitlab-account-associated-with-this-email-address-sign-in-with-your-existing-credentials-to-connect-your-organizations-account) to reset their pwd and login to gitlab.com for the 1st time
+  * **NOTE (gitlab.com):** the `deactivated` user state is not available on gitlab.com
 * [ ] Login to the migration VM using `ssh -L 8000:localhost:8000 <vm_alias_ip_or_hostname>` to expose UI port `8000` outside of the docker container
   * Run `./congregate.sh ui` from the container to start the Congregate UI
 * [ ] Check the status of **gitlab.com** (https://status.gitlab.com/)
@@ -289,6 +291,7 @@ Project exports include, among others:
         "secret_access_key": “<aws-secret-key>"
       }'
     ```
+    1. If you encounter errors, consult our PS troubleshooting guide [here](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/blob/master/docs/troubleshooting_s3_import.md)
 
 #### Workarounds
 

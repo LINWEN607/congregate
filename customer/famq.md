@@ -150,7 +150,12 @@ Certain GitLab features are migrated but not adapted to the destination instance
   * Group level runners can be manually (via UI - *Settings -> CI/CD -> Runners*) enabled/disabled as of 13.5
   * Enable project-level shared runners (default: `true`)
   * Disable AutoDevOps (default: `true`)
-* Update group and project permissions (default: `private`). See [project](https://docs.gitlab.com/ee/user/project/settings/import_export.html) and [group](https://docs.gitlab.com/ee/user/group/import/index.html#migrate-groups-by-uploading-an-export-file-deprecated) import/export notes for more details.
+* Update group and project permissions (default: `private`). See [project](https://docs.gitlab.com/ee/user/project/settings/import_export.html) and [group](https://docs.gitlab.com/ee/user/group/import/index.html#migrate-groups-by-uploading-an-export-file-deprecated) import/export notes for more details. gitlab.com specific limitations:
+  * [Only the `public` and `private` visibility is currently available](https://gitlab.com/gitlab-org/gitlab/-/issues/386036), and `public` is rarely used for security reasons.
+  * For projects that were `internal` on source this means that **Guests** will not be able to [view `private` project code](https://docs.gitlab.com/ee/user/permissions.html#repository) on gitlab.com anymore.
+  * Another downside of the **Guest** role is inability to pull images and packages, which, for `private` projects, requires a **Reporter** role. This gap has been around and is captured in `https://gitlab.com/gitlab-org/gitlab/-/issues/336622`.
+  * The current workaround for **Guests** on gitlab.com to view the code, and still **not** consume a license seat (in case of Ultimate subscriptions), is to create a custom role (at the top-level group) that extends **Guest** by [only additionally allowing `read-code` functionality](https://docs.gitlab.com/ee/user/custom_roles.html#billing-and-seat-usage).
+  * For pulling images and packages as **Guest** [a breaking change is planned](https://gitlab.com/gitlab-org/gitlab/-/issues/336622).
 * Update paths (hostnames) for:
   * project, group and system hooks
     * **NOTE:** if they are pointing to a private instance or `localhost` gitlab.com will see them as invalid and fail creating them
@@ -182,6 +187,15 @@ Please see [Release Feature & Deprecation Overview](https://gitlab-com.gitlab.io
 By default they are inherited by the import user account.
 
 Please see [here](#q4) how to prevent this behavior.
+
+## Do account states propagate during user migration?
+
+`active` users migrate as `active`, while all other states migrate as `blocked`.
+
+Note that on gitlab.com, there is no `deactivated` state available. To free up a license seat one has to either:
+
+* Demote the user permission to a role that does not consume a license seat ([tier dependant](https://docs.gitlab.com/ee/subscriptions/gitlab_com/#billable-users))
+* Remove the billable member from the IdP (SCIM) or [the top-level group via API](https://docs.gitlab.com/ee/api/members.html#remove-a-billable-member-from-a-group).
 
 ## During a user migration, how are passwords set?
 
@@ -360,6 +374,16 @@ When it comes to how old can the GitLab source instance be we come to the follow
   * The `public_email` field is used, instead of `email`, for [group](https://docs.gitlab.com/ee/user/group/import/index.html#preparation) and [project](https://docs.gitlab.com/ee/user/project/settings/import_export.html#map-users-for-import) export/import
   * On import it is backwards compatible i.e. accepting the `email` field if exported
   * The deprecation version for import is not yet known
+* **16.11**
+  * Currently generally accepted as the "baseline" source instance version for Direct Transfer migrations. Has several performance and tuning fixes/additions that can unblock migrations on source systems with limited resources.
+
+#### Retiring export/import
+
+* Export by file is used internally in GitLab and as a backup solution on gitlab.com
+  * Although the file export wasn't built for this purpose, some customers use it for it, so it will stay for some time
+* Export/import as a migration tool should retire as an offering after extending direct transfer to support migrations between offline instances
+* Export/import code itself is currently used by other GitLab features
+  * [In discussion](https://gitlab.com/gitlab-org/gitlab/-/issues/419575) what to do about it
 
 ### Importer bugs
 

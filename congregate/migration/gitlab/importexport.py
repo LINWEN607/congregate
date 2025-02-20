@@ -89,8 +89,12 @@ class ImportExportClient(BaseGitLabClient):
                             f"{export_type} {name} has finished exporting, with response:\n{json_pretty(status_json)}")
                         exported = True
                         break
+                    if state == "failed":
+                        self.log.error(
+                            f"{export_type} {name} export failed, with response:\n{json_pretty(status_json)}")
+                        break
                     # We don't want to wait for queued exports
-                    if total_time > timeout/4 and state == "none":
+                    if state == "none" and total_time > timeout/4:
                         self.log.error(
                             f"SKIP: {export_type} {name} export with status '{state}' and response:\n{json_pretty(status_json)}")
                         break
@@ -382,7 +386,7 @@ class ImportExportClient(BaseGitLabClient):
         """
         if group is None:
             self.log.error(
-                "SKIP: Import, the following group is NONE: {}".format(group))
+                f"SKIP: Import, the following group is NONE: {group}")
             return None
 
         if isinstance(group, str):
@@ -400,7 +404,7 @@ class ImportExportClient(BaseGitLabClient):
                 parent_id = found
             else:
                 self.log.warning(
-                    f"Parent group {parent_path} NOT found on destination")
+                    f"Parent group '{parent_path}' NOT found on destination")
                 return False
         if not dry_run:
             import_response = self.attempt_group_import(
@@ -413,35 +417,35 @@ class ImportExportClient(BaseGitLabClient):
             while import_response.status_code in [500, 429]:
                 if import_response.status_code == 429:
                     self.log.info(
-                        f"Re-importing group {full_path}, waiting {self.COOL_OFF_MINUTES} minutes due to:\n{import_response.text}")
+                        f"Re-importing group '{full_path}', waiting {self.COOL_OFF_MINUTES} minutes due to:\n{import_response.text}")
                     sleep(self.COOL_OFF_MINUTES * 60)
                 elif import_response.status_code == 500:
                     self.log.warning(
-                        f"Re-importing group {full_path} in {wait_time} seconds due to:\n{import_response.text}")
+                        f"Re-importing group '{full_path}' in {wait_time} seconds due to:\n{import_response.text}")
                     sleep(wait_time)
                 import_response = self.attempt_group_import(
                     filename, name, path, members, parent_id=parent_id)
             if import_response and import_response.status_code == 202:
                 self.log.info(
-                    f"Group {full_path} (file: {filename}) successfully imported")
+                    f"Group '{full_path}' (file: {filename}) successfully imported")
                 return True
             self.log.error(
-                f"Group {full_path} (file: {filename}) import failed, with status:\n{text}")
-        else:
-            self.log.info(
-                f"DRY-RUN: Outputing group {full_path} (file: {filename}) migration data to dry_run_group_migration.json")
-            migration_dry_run("group", {
-                "filename": filename,
-                "name": name,
-                "path": path,
-                "full_path": full_path,
-                "group": group})
+                f"Group '{full_path}' (file: {filename}) import failed, with status:\n{text}")
+            return False
+        self.log.info(
+            f"DRY-RUN: Outputting group '{full_path}' (file: {filename}) migration data to dry_run_group_migration.json")
+        migration_dry_run("group", {
+            "filename": filename,
+            "name": name,
+            "path": path,
+            "full_path": full_path,
+            "group": group})
         return False
 
     def attempt_group_import(self, filename, name,
                              path, members, parent_id=None):
         resp = None
-        self.log.info("Importing group {} from filesystem".format(name))
+        self.log.info(f"Importing group '{path}' from filesystem")
         if self.config.location in ["aws", "filesystem-aws"]:
             self.log.warning(
                 "NOTICE: Group export does not yet support (AWS/S3) user attributes")
@@ -453,7 +457,7 @@ class ImportExportClient(BaseGitLabClient):
                                "Please create the directory and try again.")
                 os.killpg(os.getpgid(os.getpid()), signal.SIGKILL)
             token = self.config.destination_token
-            with open("%s/downloads/%s" % (self.config.filesystem_path, filename), "rb") as f:
+            with open(f"{self.config.filesystem_path}/downloads/{filename}", "rb") as f:
                 data = {
                     "path": path,
                     "name": name,
@@ -465,17 +469,16 @@ class ImportExportClient(BaseGitLabClient):
                 headers = {
                     "Private-Token": token
                 }
-                message = "Importing group %s with payload %s and members %s" % (
-                    path, data, members)
+                message = f"Importing group '{path}' with payload {data} and members {members}"
                 resp = self.groups_api.import_group(
                     self.config.destination_host, token, data=data, files=files, headers=headers, message=message)
         return resp
 
     def get_override_params(self, project):
         return {
-            "description": project["description"],
+            "description": project.get("description", ''),
             "shared_runners_enabled": self.config.shared_runners_enabled,
-            "archived": project["archived"]
+            "archived": project.get("archived", False)
         }
 
     def get_full_path(self, url):
@@ -589,7 +592,7 @@ class ImportExportClient(BaseGitLabClient):
         return import_id
 
     def export_project(self, project, dry_run=True):
-        loc = self.config.location.lower()
+        loc = self.config.location
         is_loc_supported(loc)
         exported = False
         name = project["name"]
@@ -607,8 +610,6 @@ class ImportExportClient(BaseGitLabClient):
         if not dry_run:
             filename = get_export_filename_from_namespace_and_name(
                 namespace, name)
-            self.log.info(
-                f"Project {dst_path_with_namespace} NOT found on destination. Exporting from source...")
             if loc == "filesystem":
                 exported = self.wait_for_export_to_finish(pid, name)
                 if exported:
@@ -704,7 +705,7 @@ class ImportExportClient(BaseGitLabClient):
         return success
 
     def export_group(self, src_gid, full_path, filename, dry_run=True):
-        loc = self.config.location.lower()
+        loc = self.config.location
         is_loc_supported(loc)
         exported = False
         full_path_with_parent_namespace = get_full_path_with_parent_namespace(
@@ -719,8 +720,6 @@ class ImportExportClient(BaseGitLabClient):
             self.log.info("SKIP: Group {0} with source ID {1} and destination ID {2} found on destination".format(
                 full_path_with_parent_namespace, src_gid, dst_gid))
         elif not dry_run:
-            self.log.info("Group {0} (ID: {1}) NOT found on destination.".format(
-                full_path_with_parent_namespace, src_gid))
             if loc == "filesystem":
                 # NOTE: Export status API endpoint not yet available
                 # exported = self.wait_for_export_to_finish(

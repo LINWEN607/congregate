@@ -88,6 +88,7 @@ class ExportBuilder(BaseClass):
         with tarfile.open(f"{self.config.filesystem_path}/downloads/{filename}", mode="w:gz") as tar:
             for f in os.listdir(self.export_dir.name):
                 tar.add(os.path.join(self.export_dir.name, f), arcname=f)
+        return filename
 
     def get_gitlab_version(self, host, token):
         """

@@ -19,6 +19,7 @@ class UserPayload():
     can_create_project: Optional[bool] = False
     two_factor_enabled: Optional[bool] = False
     external: Optional[bool] = False
+    confirmed_at: Optional[str] = ""
 
     # Parameters that may not have existed yet on older GitLab versions
     projects_limit: Optional[int] = None  # May be popped during listing

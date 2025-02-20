@@ -1,7 +1,9 @@
 import json
+from requests import Response
+
 from gitlab_ps_utils.dict_utils import dig, rewrite_list_into_dict
-from gitlab_ps_utils.api import GitLabApi
 from gitlab_ps_utils.misc_utils import safe_json_response, get_dry_log
+from gitlab_ps_utils.api import GitLabApi
 from congregate.helpers.utils import is_dot_com
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.users import UsersApi
@@ -17,7 +19,10 @@ class ContributorRetentionClient(BaseClass):
 
     def __init__(self, src_id, dest_id, full_path, asset_type='project', dry_run=True):
         super().__init__()
-        self.api = GitLabApi()
+        self.api = GitLabApi(
+            app_path=self.app_path,
+            log_name=self.log_name,
+            ssl_verify=self.config.ssl_verify)
         self.users = UsersApi()
         self.projects = ProjectsApi()
         self.groups = GroupsApi()
@@ -38,23 +43,34 @@ class ContributorRetentionClient(BaseClass):
         cursor = ""
         count = 0
         while hasNextPage:
-            query = self.generate_contributors_query(element, cursor)
+            if element == "mergeRequests":
+                query = self.generate_mr_contributors_query(cursor)
+            else:
+                query = self.generate_contributors_query(element, cursor)
             if data := safe_json_response(
                     self.api.generate_post_request(self.config.source_host, self.config.source_token, None, json.dumps(query), graphql_query=True)):
                 count += len(dig(data, 'data', 'project',
                              element, 'nodes', default=[]))
-                self.log.info(f"Retrieved {count} {element}")
-                for node in dig(data, 'data', 'project', element, 'nodes', default=[]):
-                    author = dig(node, 'author')
-                    self.add_contributor_to_map(author)
-                    for commenter in dig(node, 'commenters', 'nodes', default=[]):
-                        self.add_contributor_to_map(commenter)
+                self.log.info(f"Retrieved {count} '{element}'")
+                self.parse_query_response(data, element)
                 cursor = dig(data, 'data', 'project',
                              element, 'pageInfo', 'endCursor')
                 hasNextPage = dig(data, 'data', 'project', element,
                                   'pageInfo', 'hasNextPage', default=False)
             else:
-                self.log.error("Request failed")
+                self.log.error(f"GraphQL POST request failed: {data}")
+
+    def parse_query_response(self, data, element):
+        for node in dig(data, 'data', 'project', element, 'nodes', default=[]):
+            if author := dig(node, 'author'):
+                self.add_contributor_to_map(author)
+            for commenter in dig(node, 'commenters', 'nodes', default=[]):
+                self.add_contributor_to_map(commenter)
+            if element == "mergeRequests":
+                for approver in dig(node, 'approvedBy', 'nodes', default=[]):
+                    self.add_contributor_to_map(approver)
+                if merge_user := dig(node, 'mergeUser'):
+                    self.add_contributor_to_map(merge_user)
 
     def add_contributor_to_map(self, author):
         try:
@@ -76,19 +92,37 @@ class ContributorRetentionClient(BaseClass):
                 self.contributor_map[author_email] = author
         except KeyError as ke:
             self.log.warning(
-                f"Failed to add contributor {author} to map, due to:\n{ke}")
+                f"Failed to add contributor '{author}' to map, due to:\n{ke}")
 
     def add_contributors_to_project(self):
         '''
             Add contributors from contributor map to source project
         '''
+        dry_log = get_dry_log(self.dry_run)
         for contributor, data in self.contributor_map.items():
             new_member_payload = NewMember(user_id=data['id'], access_level=10)
             self.log.info(
-                f"{get_dry_log(self.dry_run)}Adding contributor '{contributor}' to project '{self.full_path}'")
+                f"{dry_log}Adding contributor '{contributor}' to project '{self.full_path}'")
+            self.log.info(
+                f"{dry_log}Set source user '{contributor}' public email'")
             if not self.dry_run:
-                self.projects.add_member(
+                add_resp = self.projects.add_member(
                     self.src_id, self.config.source_host, self.config.source_token, new_member_payload.to_dict())
+                if not isinstance(add_resp, Response) or add_resp.status_code != 201:
+                    self.log.error(f"Failed to add contributor '{data.get('username')}' as member to source project {self.src_id}:\n{add_resp} - {add_resp.text}")
+                # Set public_email field
+                self.update_contributor_public_email(
+                    contributor, data, hide=False)
+
+    def update_contributor_public_email(self, contributor, data, hide=True):
+        new_value = "" if hide else data.get("email")
+        self.log.info(
+            f"Updating source user '{contributor}' public email to '{new_value}'")
+        resp = self.users.modify_user(
+            data.get("id"), self.config.source_host, self.config.source_token, {"public_email": new_value})
+        if not isinstance(resp, Response) or resp.status_code != 200:
+            self.log.error(
+                f"Failed to update source user '{contributor}' public email to '{new_value}':\n{resp} - {resp.text}")
 
     # Currently not used
     def add_contributors_to_group(self):
@@ -105,6 +139,7 @@ class ContributorRetentionClient(BaseClass):
         '''
             Remove all contributors who were not originally members from the project
         '''
+        dry_log = get_dry_log(self.dry_run)
         if source:
             host = self.config.source_host
             token = self.config.source_token
@@ -116,6 +151,8 @@ class ContributorRetentionClient(BaseClass):
         for contributor, data in self.contributor_map.items():
             if data and source:
                 user = data
+                self.log.info(
+                    f"{dry_log}Hide source user '{contributor}' public email")
             elif data:
                 user = find_user_by_email_comparison_without_id(
                     data.get('email'))
@@ -124,9 +161,14 @@ class ContributorRetentionClient(BaseClass):
                     f"Missing contributor '{contributor}' mapping data '{data}'")
                 continue
             self.log.info(
-                f"{get_dry_log(self.dry_run)}Removing contributor '{contributor}' from project '{self.full_path}'")
+                f"{dry_log}Removing contributor '{contributor}' from project '{self.full_path}'")
             if user and not self.dry_run:
-                self.projects.remove_member(pid, user['id'], host, token)
+                remove_resp = self.projects.remove_member(pid, user['id'], host, token)
+                if not isinstance(remove_resp, Response) or remove_resp.status_code not in [200, 204, 404]:
+                    self.log.error(f"Failed to remove contributor '{user.get('username')}' from {'source' if source else 'destination'} project {pid}: {remove_resp}-{remove_resp.text}")
+                # Hide public_email field
+                if source:
+                    self.update_contributor_public_email(contributor, user)
 
     def get_members(self, asset_type):
         if is_dot_com(self.config.source_host):
@@ -150,7 +192,7 @@ class ContributorRetentionClient(BaseClass):
                         project(fullPath: "%s"){
                         %s(after: "%s") {
                             nodes {
-                                author{
+                                author {
                                     id
                                     username
                                     name
@@ -175,4 +217,54 @@ class ContributorRetentionClient(BaseClass):
                         }
                     }
                 """ % (self.full_path, element, cursor)
+        }
+
+    def generate_mr_contributors_query(self, cursor):
+        return {
+            "query": """
+                    query {
+                        project(fullPath: "%s"){
+                        mergeRequests(after: "%s") {
+                            nodes {
+                                author {
+                                    id
+                                    username
+                                    name
+                                    publicEmail
+                                    bot
+                                },
+                                commenters {
+                                    nodes {
+                                        id
+                                        username
+                                        name
+                                        publicEmail
+                                        bot
+                                    }
+                                },
+                                approvedBy {
+                                    nodes {
+                                        id
+                                        username
+                                        name
+                                        publicEmail
+                                        bot
+                                    }
+                                },
+                                mergeUser {
+                                    id
+                                    username
+                                    name
+                                    publicEmail
+                                    bot
+                                }
+                            }
+                            pageInfo {
+                                endCursor,
+                                hasNextPage
+                            }
+                        }
+                        }
+                    }
+                """ % (self.full_path, cursor)
         }

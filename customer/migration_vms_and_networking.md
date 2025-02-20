@@ -26,10 +26,18 @@ The VM has a dynamic external IP by default, but can be configured for static IP
 
 - An IP allowlist on TCP ports 22, 5555, and 8000 default configured for the engineers home IP
 - An explicit deny for all other VMs hosted in the same GCP network space
-- An IP allowlist for ICMP for all IPs
+- An explicit ICMP deny from all IPs outside the allowlist
+- Exception list access for [GitLab Direct Transfer](https://docs.gitlab.com/ee/user/group/import/direct_transfer_migrations.html#network)
+- Exception list access for CertBot
 - Allowlist on 443 from fleet or engineer IPs as required depending on migration type (see below)
 
 Further, SSH access is controlled via the aforementioned IP allowlist and single-use SSH RSA256 or ED25519 keys deployed to the authorized_hosts during instantiation.  The VM is considered transitory and reviewed for need every 30 days.  The VM is destroyed if no longer needed.
+
+## Security
+
+In addition to the networking security, the VM IaC supports the following:
+- Unique CSEK for encrypting the drives
+- Unique service accounts per VM
 
 ## Change Management
 

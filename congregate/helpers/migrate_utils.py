@@ -1,5 +1,6 @@
 import sys
-import os, signal
+import os
+import signal
 import errno
 import json
 
@@ -17,11 +18,11 @@ from congregate.helpers.base_class import BaseClass
 from congregate.helpers.utils import is_dot_com, get_congregate_path
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.instance import InstanceApi
+from congregate.migration.meta.constants import TOP_LEVEL_RESERVED_NAMES, SUBGROUP_RESERVED_NAMES, PROJECT_RESERVED_NAMES
 
 b = BaseClass()
 users_api = UsersApi()
 instance_api = InstanceApi()
-
 
 def get_failed_export_from_results(res):
     """
@@ -37,9 +38,11 @@ def get_staged_projects():
     return read_json_file_into_object(
         f"{b.app_path}/data/staged_projects.json")
 
+
 def get_project_id_mapping():
     return read_json_file_into_object(
         f"{b.app_path}/data/project_id_mapping.json")
+
 
 def get_staged_projects_without_failed_export(staged_projects, failed_export):
     """
@@ -234,6 +237,23 @@ def find_user_by_email_comparison_without_id(email, src=False):
     return None
 
 
+def search_for_user_by_user_mapping_field(field, user, host, token):
+    if field == "email":
+        user_search = users_api.search_for_user_by_email(
+            host, token, user.get(field))
+    elif field == "username" and not is_dot_com(b.config.destination_host):
+        user_search = users_api.search_for_user_by_username(
+            host, token, user.get(field))
+    else:
+        b.log.error(
+            f"Invalid (or insecure, for gitlab.com) user mapping field configured: '{field}'")
+        return {}
+    for u in user_search:
+        if u.get(field, "").lower() == user.get(field, "").lower():
+            return u
+    return {}
+
+
 def get_dst_path_with_namespace(p, mirror=False, group_path=None):
     """
     Determine project path with namespace on destination
@@ -288,7 +308,7 @@ def is_top_level_group(g):
 
 
 def is_loc_supported(loc):
-    if loc not in ["filesystem", "aws"]:
+    if loc.lower() not in ["filesystem", "aws"]:
         b.log.error(f"Unsupported export location: {loc}")
         sys.exit(os.EX_CONFIG)
 
@@ -373,16 +393,21 @@ def get_target_project_path(project):
     return target_project_path
 
 
-def sanitize_name(name, full_path, is_group=False):
+def sanitize_name(name, full_path, is_group=False, is_subgroup=False):
     """
     Validate and sanitize group and project names to satisfy the following criteria:
     Name can only contain letters, digits, emojis, '_', '.', dash, space, parenthesis (groups only).
     It must start with letter, digit, emoji or '_'.
+    Also checks for reserved GitLab names. If the name is reserved, rename or log an error.
     Example:
         " !  _-:: This.is-how/WE do\n&it#? - šđžčć_  ? " -> "This.is-how WE do it - šđžčć"
     """
     # Remove leading and trailing special characters and spaces
     stripped = name.strip(punctuation + " ")
+
+    if not stripped and name == "-":
+        # If the original string was solely a dash, restore it
+        stripped = "-"
 
     # Validate naming convention in docstring and sanitize name
     valid = " ".join(sub(
@@ -393,6 +418,32 @@ def sanitize_name(name, full_path, is_group=False):
         if is_group:
             b.log.error(
                 f"Sub-group '{name}' ({full_path}) requires a rename on source or direct import")
+            
+    if not is_group:
+        # This is a project
+        if valid.lower() in PROJECT_RESERVED_NAMES:
+            new_name = f"{valid}-renamed"
+            b.log.warning(
+                f"Project name '{valid}' is reserved; renaming to '{new_name}' ({full_path})."
+            )
+            valid = new_name
+    else:
+        # This is a group. Check if top-level or subgroup
+        if is_subgroup:
+            if valid.lower() in SUBGROUP_RESERVED_NAMES:
+                new_name = f"{valid}-renamed"
+                b.log.warning(
+                    f"Subgroup name '{valid}' is reserved; renaming to '{new_name}' ({full_path})."
+                )
+                valid = new_name
+        else:
+            # top-level group
+            if valid.lower() in TOP_LEVEL_RESERVED_NAMES:
+                new_name = f"{valid}-renamed"
+                b.log.warning(
+                    f"Top-level group name '{valid}' is reserved; renaming to '{new_name}' ({full_path})."
+                )
+                valid = new_name
     return valid
 
 
@@ -496,6 +547,7 @@ def toggle_maintenance_mode(
         if not dry_run:
             instance_api.change_application_settings(
                 host, token, data)
+
 
 def check_download_directory(directory_path):
     """

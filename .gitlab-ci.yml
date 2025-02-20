@@ -339,11 +339,11 @@ test:pylint:syntax-errors:
     when: on_failure
 
 test:unit:
-  extends: 
+  extends:
     - .test-job
     - .pytest-coverage
   script:
-    - poetry run pytest -m 'unit_test' --cov-report html --cov-report term-missing --cov-config=.coveragerc --cov=congregate congregate/tests/
+    - poetry run pytest -v -m 'unit_test' --cov-report html --cov-report term-missing --cov-config=.coveragerc --cov=congregate congregate/tests/
   timeout: 5 minutes
   artifacts:
     paths:
@@ -358,7 +358,7 @@ test:end-to-end full:
     - poetry run pytest -s -m e2e_gl_setup congregate/tests/
     - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
   retry: 2
-  timeout: 45 minutes
+  timeout: 90 minutes
   cache:
     key: "$CI_COMMIT_SHA-full"
     paths:
@@ -374,7 +374,7 @@ test:end-to-end single group:
     - poetry run pytest -s -m e2e_gl_setup_2 congregate/tests/
     - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
   retry: 2
-  timeout: 45 minutes
+  timeout: 90 minutes
   cache:
     key: "$CI_COMMIT_SHA-sg"
     paths:
@@ -523,25 +523,6 @@ centos rolling release:
         - docker/release/centos.Dockerfile
         - docker/release/centos/**/*
 
-slim rolling release:
-  extends:
-    - .docker-build
-  stage: rolling release
-  variables:
-    DISTRO: "slim"
-    RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:rolling-centos-slim"
-  rules:
-    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
-      changes:
-        - congregate/**/*.py
-        - frontend/**/*
-        - congregate.sh
-        - pyproject.toml
-        - frontend/package.json
-        - docker/release/slim.Dockerfile
-        - docker/release/slim.dockerignore
-        - docker/release/centos/**/*
-
 centos-release-tag:
   extends:
     - .docker-build
@@ -552,17 +533,6 @@ centos-release-tag:
     DISTRO: "centos"
     RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME-centos"
     LATEST: "$CI_REGISTRY_IMAGE:latest-centos"
-
-slim-centos-release-tag:
-  extends:
-    - .docker-build
-  rules:
-    - if: "$CI_COMMIT_TAG"
-  stage: release
-  variables:
-    DISTRO: "slim"
-    RELEASE_IMAGE_NAME: "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME-centos-slim"
-    LATEST: "$CI_REGISTRY_IMAGE:latest-centos-slim"
 
 centos-no-mongo rolling release:
   extends:
@@ -594,21 +564,6 @@ container-scan-build:centos:
         - pyproject.toml
         - frontend/package.json
         - docker/release/centos.Dockerfile
-
-container-scan-build:centos-slim:
-  stage: build
-  extends:
-    - .docker-build
-  variables:
-    DISTRO: "slim"
-    RELEASE_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-centos-slim
-  rules:
-    - if: "$CI_PIPELINE_SOURCE != 'schedule'"
-      changes:
-        - pyproject.toml
-        - frontend/package.json
-        - docker/release/slim.Dockerfile
-        - docker/release/slim.dockerignore
 
 container-scan-build:debian:
   stage: build
@@ -658,26 +613,6 @@ container_scanning_custom:
         - docker/release/centos.Dockerfile
         - docker/release/debian.Dockerfile
 
-slim_container_scanning:
-  extends: container_scanning_custom
-  # services:
-  #   - docker:${DOCKER_VERSION}-dind
-  variables:
-    CS_IMAGE: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-centos-slim
-    DOCKERFILE_PATH: "docker/release/slim.Dockerfile"
-    GIT_STRATEGY: "fetch"
-    DOCKER_DRIVER: overlay2
-    DOCKER_TLS_CERTDIR: "/certs"
-  # tags:
-  #   - gitlab-org-docker
-  rules:
-    - if: "$CI_PIPELINE_SOURCE != 'schedule'"
-      changes:
-        - pyproject.toml
-        - frontend/package.json
-        - docker/release/slim.Dockerfile
-        - docker/release/slim.dockerignore
-
 debian_container_scanning:
   extends: container_scanning_custom
   services:
@@ -697,27 +632,27 @@ debian_container_scanning:
         - frontend/package.json
         - docker/release/debian.Dockerfile
 
-docs update:
-  stage: deploy
-  extends:
-    - .dotcom-creds
-  script:
-    - echo "This is a placeholder job ran only when runbooks are changed"
-    - echo "Storing any changed runbook to artifacts that will expire in 1 week."
-    # To the ps-migration project
-    - python ci/docscript.py 11750578
-    # To the Migration Template
-    - python ci/docscript.py 21146917 extras
-  rules:
-    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
-      changes:
-        - runbooks/*
-        - customer/*
-  artifacts:
-    paths:
-      - runbooks/*
-      - customer/*
-    expire_in: 1 week
+# docs update:
+#   stage: deploy
+#   extends:
+#     - .dotcom-creds
+#   script:
+#     - echo "This is a placeholder job ran only when runbooks are changed"
+#     - echo "Storing any changed runbook to artifacts that will expire in 1 week."
+#     # To the ps-migration project
+#     - python ci/docscript.py 11750578
+#     # To the Migration Template
+#     - python ci/docscript.py 21146917 extras
+#   rules:
+#     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
+#       changes:
+#         - runbooks/*
+#         - customer/*
+#   artifacts:
+#     paths:
+#       - runbooks/*
+#       - customer/*
+#     expire_in: 1 week
 
 mvc:
   stage: test
@@ -793,10 +728,9 @@ gitlab-advanced-sast:
       when: never
     - if: $SAST_EXCLUDED_ANALYZERS =~ /gitlab-advanced-sast/
       when: never
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"  # Add the job to merge request pipelines if there's an open merge request.
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" # Add the job to merge request pipelines if there's an open merge request.
       exists:
-        - '**/*.py'
-    - if: $CI_COMMIT_BRANCH        # If there's no open merge request, add it to a *branch* pipeline instead.
+        - "**/*.py"
+    - if: $CI_COMMIT_BRANCH # If there's no open merge request, add it to a *branch* pipeline instead.
       exists:
-        - '**/*.py'
-
+        - "**/*.py"

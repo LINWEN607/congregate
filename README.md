@@ -29,7 +29,7 @@ Congregate gathers (meta)data from source system(s), transforms and down-selects
 - [Contributing Guide](./docs/contributing.md)
 - [Quick-start guide to using congregate](./docs/using-congregate.md#quick-start)
 - [Using Congregate - Full test environment setup](./docs/full_setup.md)
-- Data Elements supported by source system ([GitHub](./customer/github-migration-features-matrix.md), [BitBucket](./customer/bitbucket-migration-features-matrix.md), [GitLab](./customer/gitlab-migration-features-matrix.md), [CodeCommit](./customer/codecommit-migration-features-matrix.md))
+- Data Elements supported by source system ([GitHub](./customer/github-migration-features-matrix.md), [BitBucket](./customer/bitbucket-migration-features-matrix.md), [GitLab](./customer/gitlab-migration-features-matrix.md), [Azure DevOps](./customer/ado-migration-features-matrix.md), [CodeCommit](./customer/codecommit-migration-features-matrix.md))
 - [Congregate Commands Help Page](./congregate/main.py#L5)
 - [Congregate technical documentation](https://gitlab-org.gitlab.io/professional-services-automation/tools/migration/congregate/)
 - [Setup Development Environment](./docs/setup-dev-env.md)
@@ -37,6 +37,7 @@ Congregate gathers (meta)data from source system(s), transforms and down-selects
 - [Technical Troubleshooting](./docs/troubleshooting.md)
 - [Migration Service Delivery Kit](https://gitlab.com/gitlab-org/professional-services-automation/delivery-kits/migration-template)
 - [GitLab Partner Program](https://partners.gitlab.com/English/?ReturnUrl=/prm/English/c/Training)
+- [Project Structure](STRUCTURE.md)
 
 For support questions please [create an issue](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/issues/new?issuable_template=congregate-support)
 from our Congregate support [issue template](./.gitlab/issue_templates/congregate-support.md).

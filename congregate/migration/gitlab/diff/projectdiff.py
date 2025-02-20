@@ -1,8 +1,9 @@
 from copy import deepcopy
 from os.path import getmtime
 from datetime import timedelta
-from gitlab_ps_utils.misc_utils import get_rollback_log
-from gitlab_ps_utils.dict_utils import rewrite_json_list_into_dict
+from json import dumps as json_dumps
+from gitlab_ps_utils.misc_utils import get_rollback_log, safe_json_response
+from gitlab_ps_utils.dict_utils import rewrite_json_list_into_dict, dig
 from gitlab_ps_utils.json_utils import read_json_file_into_object
 from gitlab_ps_utils.api import GitLabApi
 
@@ -12,7 +13,8 @@ from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.issues import IssuesApi
 from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
 from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
-from congregate.helpers.migrate_utils import get_dst_path_with_namespace
+from congregate.helpers.migrate_utils import get_dst_path_with_namespace, get_target_project_path, is_gl_version_older_than
+from congregate.helpers.utils import to_camel_case
 
 
 class ProjectDiffClient(BaseDiffClient):
@@ -61,7 +63,8 @@ class ProjectDiffClient(BaseDiffClient):
     def generate_single_diff_report(self, project):
         diff_report = {}
         project_path = get_dst_path_with_namespace(project)
-        if self.results.get(project_path) and (self.asset_exists(self.projects_api.get_project,
+
+        if self.results.get(project_path) and type(self.results.get(project_path)) != int and (self.asset_exists(self.projects_api.get_project,
                                                                  self.results[project_path].get("id")) or isinstance(self.results.get(project_path), int)):
             project_diff = self.handle_endpoints(project)
             diff_report[project_path] = project_diff
@@ -90,14 +93,15 @@ class ProjectDiffClient(BaseDiffClient):
 
         if not self.rollback:
             # Basic Project Stat Counts
-            project_diff["Total Number of Merge Requests"] = self.generate_project_count_diff(
-                project, "projects/:id/merge_requests")
-            project_diff["Total Number of Merge Request Comments"] = self.generate_nested_project_count_diff(
-                project, ["projects/:id/merge_requests", "notes"])
-            project_diff["Total Number of Issues"] = self.generate_project_count_diff(
-                project, "projects/:id/issues")
-            project_diff["Total Number of Issue Comments"] = self.generate_nested_project_count_diff(
-                project, ["projects/:id/issues", "notes"])
+            project_diff["Total Number of Merge Requests"] = self.generate_project_count_diff_graphql(
+                project, "merge_requests", "projects/:id/merge_requests")
+            project_diff["Total Number of Merge Request Comments"] = self.generate_nested_project_count_diff_graphql(
+                project, "merge_requests", "notes")
+            project_diff["Total Number of Issues"] = self.generate_project_count_diff_graphql(
+                project, "issues", "projects/:id/issues")
+            project_diff["Total Number of Issue Comments"] = self.generate_nested_project_count_diff_graphql(
+                project, "issues", "notes")
+            
             project_diff["Total Number of Branches"] = self.generate_project_count_diff(
                 project, "projects/:id/repository/branches")
 
@@ -162,8 +166,6 @@ class ProjectDiffClient(BaseDiffClient):
                 project, self.projects_api.get_all_project_snippets)
             project_diff["/projects/:id/wikis"] = self.generate_project_diff(
                 project, self.projects_api.get_all_project_wikis)
-            project_diff["/projects/:id/clusters"] = self.generate_project_diff(
-                project, self.projects_api.get_all_project_clusters)
 
             if self.config.source_tier not in ["core", "free"]:
                 project_diff["/projects/:id/approvals"] = self.generate_project_diff(
@@ -200,3 +202,115 @@ class ProjectDiffClient(BaseDiffClient):
         destination_count = self.gl_api.get_nested_total_count(
             self.config.destination_host, self.config.destination_token, destination_apis)
         return self.generate_count_diff(source_count, destination_count)
+    
+    def generate_project_count_diff_graphql(self, project, entity, api):
+        source_full_path = project['path_with_namespace']
+        destination_full_path = get_target_project_path(project)
+        formatted_entity = to_camel_case(entity)
+        source_count = 0
+        destination_count = 0
+        # Source count lookup via GraphQL with REST API lookup if instance is older than 17.3
+        if gql_resp := safe_json_response(self.gl_api.generate_post_request(
+            self.config.source_host, self.config.source_token, None, json_dumps(self.generate_count_query(source_full_path, formatted_entity)), graphql_query=True)):
+            source_count = dig(gql_resp, 'data', 'project', formatted_entity, 'count', default=0)
+        elif is_gl_version_older_than('17.3', self.config.source_host, self.config.source_token, self.log):
+            self.log.warning("GraphQL lookup on source failed. Falling back to REST API")
+            source_id = project["id"]
+            source_count = self.gl_api.get_total_count(
+                self.config.source_host, self.config.source_token, api.replace(":id", str(source_id)))
+        else:
+            self.log.warning(f"[{entity}] retrieval for {source_full_path} failed. Skipping.")
+
+        # Destination count lookup via GraphQL with REST API lookup if instance is older than 17.3
+        if gql_resp := safe_json_response(self.gl_api.generate_post_request(
+            self.config.destination_host, self.config.destination_token, None, json_dumps(self.generate_count_query(destination_full_path, formatted_entity)), graphql_query=True)):
+            destination_count = dig(gql_resp, 'data', 'project', formatted_entity, 'count', default=0)
+        elif is_gl_version_older_than('17.3', self.config.source_host, self.config.source_token, self.log):
+            self.log.warning("GraphQL lookup on destination failed. Falling back to REST API")
+            destination_id = self.get_destination_id(project)
+            destination_count = self.gl_api.get_total_count(
+                self.config.destination_host, self.config.destination_token, api.replace(":id", str(destination_id)))
+        else:
+            self.log.warning(f"[{entity}] retrieval for {source_full_path} failed. Skipping.")
+
+        return self.generate_count_diff(source_count, destination_count)
+    
+    
+    def generate_nested_project_count_diff_graphql(self, project, primary_entity, secondary_entity):
+        source_full_path = project['path_with_namespace']
+        destination_full_path = get_target_project_path(project)
+        formatted_primary_entity = to_camel_case(primary_entity)
+        formatted_secondary_entity = to_camel_case(secondary_entity)
+        source_count = self.get_total_nested_count(self.config.source_host, self.config.source_token, source_full_path, formatted_primary_entity, formatted_secondary_entity)
+        destination_count = self.get_total_nested_count(self.config.destination_host, self.config.destination_token, destination_full_path, formatted_primary_entity, formatted_secondary_entity)
+        return self.generate_count_diff(source_count, destination_count)
+
+    def get_total_nested_count(self, host, token, full_path, primary_entity, secondary_entity):
+        count = 0
+        for data in self.graphql_list_all_outer_nested(host, token, full_path, primary_entity):
+            if id := data.get('id'):
+                singular_entity = primary_entity.rstrip('s')
+                query = self.generate_nested_count_query(id, singular_entity, secondary_entity)
+                if resp := safe_json_response(
+                    self.gl_api.generate_post_request(host, token, None, data=json_dumps(query), graphql_query=True)):
+                        count += dig(resp, 'data', singular_entity, secondary_entity, 'count', default=0)
+        return count
+
+    def graphql_list_all_outer_nested(self, host, token, full_path, primary_entity):
+        after = ""
+        while True:
+            query = self.generate_outer_nested_query(full_path, primary_entity, after)
+            if resp := safe_json_response(
+                    self.gl_api.generate_post_request(host, token, None, data=json_dumps(query), graphql_query=True)):
+                yield from dig(resp, 'data', 'project', primary_entity, 'nodes', default=[])
+                page_info = dig(resp, 'data', 'project', primary_entity, 'pageInfo', default={})
+                if cursor := page_info.get('endCursor'):
+                    after = cursor
+                if not page_info.get('hasNextPage', False):
+                    break
+
+    def generate_count_query(self, full_path, formatted_entity):
+        return {
+            "query": """
+                query {
+                    project(fullPath: "%s") {
+                        name,
+                        %s {
+                            count
+                        }
+                    }
+                }
+            """ % (full_path, formatted_entity)
+        }
+
+    def generate_outer_nested_query(self, full_path, entity, after):
+        return {
+            "query": """
+                query {
+                    project(fullPath: "%s") {
+                        %s(after:\"%s\") {
+                            nodes {
+                                id
+                            }
+                            pageInfo {
+                                endCursor
+                                hasNextPage
+                            }
+                        }
+                    }
+                }
+            """ % (full_path, entity, after)
+        }
+
+    def generate_nested_count_query(self, id, formatted_parent_entity, formatted_nested_entity):
+        return {
+            "query": """
+                query {
+                    %s(id: "%s") {
+                        %s {
+                            count
+                        }
+                    }
+                }
+            """ % (formatted_parent_entity, id, formatted_nested_entity)
+        }

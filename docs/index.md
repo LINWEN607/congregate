@@ -15,8 +15,6 @@ Congregate is an internal tool for GitLab Professional Services to handle migrat
 
 Our guidance on some other migrations at this time:
 
-* Bitbucket Cloud
-  * We support migrating BitBucket Server to GitLab as of GitLab 13.1 with the recent addition of the BitBucket Server import API
-  * BitBucket Cloud is not slated to be supported in congregate due to a lack of an API to consume and its requirement to authenticate through OAuth
-* SVN
-  * We have some [documentation](https://docs.gitlab.com/ee/user/project/import/svn.html) on gitlab.com discussing migrating from SVN
+* BitBucket Cloud - Congregate currently does not support [importing from BB Cloud](https://docs.gitlab.com/ee/user/project/import/bitbucket.html)
+  * With the [API endpoint](https://docs.gitlab.com/ee/api/import.html#import-repository-from-bitbucket-cloud) introduced in 17.0 this is now possible to automate
+* SVN - We have some [documentation](https://docs.gitlab.com/ee/user/project/import/svn.html) on gitlab.com discussing migrating from SVN

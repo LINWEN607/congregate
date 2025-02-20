@@ -3,7 +3,7 @@ from gitlab_ps_utils.misc_utils import strip_netloc
 from congregate.migration.ado.api.users import UsersApi
 from congregate.migration.ado.base import AzureDevOpsWrapper
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.congregate_mdbc import mongo_connection
+from congregate.helpers.congregate_mdbc import CongregateMongoConnector
 
 
 class UsersClient(BaseClass):
@@ -16,16 +16,16 @@ class UsersClient(BaseClass):
         """
         List and transform all Azure DevOps user to GitLab user metadata
         """
-        # self.multi.start_multi_process_stream_with_args(
-        #     self.handle_retrieving_user, self.users_api.get_all_users(), processes=processes, nestable=True)
-        for user in self.users_api.get_all_users():
-            self.handle_retrieving_user(user)
+        self.multi.start_multi_process_stream_with_args(
+            self.handle_retrieving_user, self.users_api.get_all_users(), processes=processes)
 
-    @mongo_connection
     def handle_retrieving_user(self, user, mongo=None):
+        if not mongo:
+            mongo = CongregateMongoConnector()
         if user:
             mongo.insert_data(
                 f"users-{strip_netloc(self.config.source_host)}",
                 self.base_api.format_user(user))
         else:
             self.log.error("Failed to retrieve user information")
+        mongo.close_connection()

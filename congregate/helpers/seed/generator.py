@@ -12,6 +12,7 @@ from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.instance import InstanceApi
 from congregate.migration.gitlab.api.settings import SettingsAPI
+from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
 from congregate.migration.gitlab.projects import ProjectsClient
 from congregate.migration.gitlab.pushrules import PushRulesClient
 from congregate.migration.gitlab.branches import BranchesClient
@@ -89,34 +90,6 @@ class SeedDataGenerator(BaseClass):
             "variable_type": "env_var",
         }
     ]
-    CLUSTERS_DATA = [
-        {
-            "name": "test-cluster-1",
-            "domain": "test1.com",
-            "environment_scope": "test1",
-            "platform_kubernetes_attributes": {
-                "api_url": "https://36.111.51.20",
-                "token": "test1",
-                "namespace": None,
-                "authorization_type": "rbac",
-                "ca_cert": "-----BEGIN CERTIFICATE-----\nMIIFDjCCAvYCCQDoZqaTnuVIMzANBgkqhkiG9w0BAQsFADBJMQswCQYDVQQGEwJO\nTDELMAkGA1UECAwCU0gxDzANBgNVBAoMBkdpdExhYjEcMBoGCSqGSIb3DQEJARYN\ndGVzdEB0ZXN0LmNvbTAeFw0yMDEwMzAxNzEzMjNaFw0yMTEwMzAxNzEzMjNaMEkx\nCzAJBgNVBAYTAk5MMQswCQYDVQQIDAJTSDEPMA0GA1UECgwGR2l0TGFiMRwwGgYJ\nKoZIhvcNAQkBFg10ZXN0QHRlc3QuY29tMIICIjANBgkqhkiG9w0BAQEFAAOCAg8A\nMIICCgKCAgEAxYESkMcdZM0/ZwyKC83+1uqdROkk2T4AaH0dWtWRvG3X+nO3pUeS\nzCJ5fgOvdtelJAxEmUUCPlD+BApwjJDE6Tl/qNNv44uHM7QAGigXbD4urBzRFzQh\nsZ9mEseaUfLH1QAb6vk/LdgxDkbeaovTUeMafvE467OWTO4iLaApDZTk6gdsO2gi\nQkPaAqf1XhKFowWQrO4GnZVbN66/ja8ZSOXi8wWzJKTwN5ZQR9oCPbetIDBD6KK6\nkKom7ht2zLcxMx/g0bodnSaResMXbPTYKB+Lou4ja4lSRfUGyGa6x1GSQsIcyr12\nbm4xcQylEQEsy9XgCJGsmXfJ8PnEKp2Fu4HwhTsE3dXIeE/x+OAOiDUoc6BT/LDW\nqWchExV/jUkHmPlii3dJ/NXsuCA/5RBga3ES9pEI/+HzYvXhiUBFaJEOhiU887uJ\nk9mGB2uJD/No7RtA579oTOHMLsplNmH7i3lAzKGtL7tMmRmvFa/BCvekpr0FJr17\nr7dU+T/8JtJ5hg0TUOgOTBL57X8E6SvXJ3ZdV0Ml5BpZCtpZbD7Xu7xBXX1jdlR+\nKyN2y8yq9kv86eq0SdSQ3VJ6sXd8RLiSzdtL85QPVC5NyBW5QfbIAC81I0lBBpgc\nLKISJi8UM0EdgmSGFK9JwO+AQqyVi7WMyMo1vW1B01hWWft5bhyW/MkCAwEAATAN\nBgkqhkiG9w0BAQsFAAOCAgEAEUlKdRDNsXpxTJrOhb2fSiylm4Cm/jsmSRrpK53Q\n73rpMzf0xy3C6pSjQGR4d7GP/3bLeYiJLHQma+oYorKv5pgyoInwZkYArcLiqfLu\npapI9NIYVwrI3QO60p0kwc+Tmj0m2sFEbH9Oj8qCu6DxOxaZ1llmzq0zS/AdzyZ0\nw0jEn391y9aYYWiOUzNBLo95CT/DZSrIDXKigsQn5sBXnTF2xtMyV3BSoz/hv5rX\njTjCcCFajzgvxl0z3zsjlDWV7t5kWbTLMxALlkpKjMPE0eSsZdeBQTAC51VBT3xc\nbDefR0snQctYdlrUxEIx9nC6QVecjgjKHWzG8SgiuItMvgZHM40gdPDUaAml6svg\n/1e0wxaJnmndT9acwSCFCQswlgQmso8yh4HILhO9ZaC9G5d+nr2mPs68gn69L/Mi\nEzMqwG8hZ860z+KWQs/S2RufzKOfwIy0/SXTq5f6WrxKTln46CMjHSueaenoMr1Q\n8q/koh/zx5f8HDAhaieQM7LUkTVoZTbjof+m82aveqxXgFlEITA3ciVqUrOAaWZb\n8U48lwlB/xOtEXrgL7sMF2bwk5AeNtGjZG7lpBhiHFP3NGj+fs97UItjV73NqulQ\nrSYVvsu9fWIyWx0Z2Izi10wq9V0R3uAwbAthLB3JK/iNC/0mK5+kIWxn8QafZlwK\nkpM=\n-----END CERTIFICATE-----"
-            },
-            "management_project_id": 1
-        },
-        {
-            "name": "test-cluster-2",
-            "domain": "test2.com",
-            "environment_scope": "test2",
-            "platform_kubernetes_attributes": {
-                "api_url": "https://36.111.51.20",
-                "token": "test2",
-                "namespace": None,
-                "authorization_type": "rbac",
-                "ca_cert": "-----BEGIN CERTIFICATE-----\nMIIFDjCCAvYCCQDoZqaTnuVIMzANBgkqhkiG9w0BAQsFADBJMQswCQYDVQQGEwJO\nTDELMAkGA1UECAwCU0gxDzANBgNVBAoMBkdpdExhYjEcMBoGCSqGSIb3DQEJARYN\ndGVzdEB0ZXN0LmNvbTAeFw0yMDEwMzAxNzEzMjNaFw0yMTEwMzAxNzEzMjNaMEkx\nCzAJBgNVBAYTAk5MMQswCQYDVQQIDAJTSDEPMA0GA1UECgwGR2l0TGFiMRwwGgYJ\nKoZIhvcNAQkBFg10ZXN0QHRlc3QuY29tMIICIjANBgkqhkiG9w0BAQEFAAOCAg8A\nMIICCgKCAgEAxYESkMcdZM0/ZwyKC83+1uqdROkk2T4AaH0dWtWRvG3X+nO3pUeS\nzCJ5fgOvdtelJAxEmUUCPlD+BApwjJDE6Tl/qNNv44uHM7QAGigXbD4urBzRFzQh\nsZ9mEseaUfLH1QAb6vk/LdgxDkbeaovTUeMafvE467OWTO4iLaApDZTk6gdsO2gi\nQkPaAqf1XhKFowWQrO4GnZVbN66/ja8ZSOXi8wWzJKTwN5ZQR9oCPbetIDBD6KK6\nkKom7ht2zLcxMx/g0bodnSaResMXbPTYKB+Lou4ja4lSRfUGyGa6x1GSQsIcyr12\nbm4xcQylEQEsy9XgCJGsmXfJ8PnEKp2Fu4HwhTsE3dXIeE/x+OAOiDUoc6BT/LDW\nqWchExV/jUkHmPlii3dJ/NXsuCA/5RBga3ES9pEI/+HzYvXhiUBFaJEOhiU887uJ\nk9mGB2uJD/No7RtA579oTOHMLsplNmH7i3lAzKGtL7tMmRmvFa/BCvekpr0FJr17\nr7dU+T/8JtJ5hg0TUOgOTBL57X8E6SvXJ3ZdV0Ml5BpZCtpZbD7Xu7xBXX1jdlR+\nKyN2y8yq9kv86eq0SdSQ3VJ6sXd8RLiSzdtL85QPVC5NyBW5QfbIAC81I0lBBpgc\nLKISJi8UM0EdgmSGFK9JwO+AQqyVi7WMyMo1vW1B01hWWft5bhyW/MkCAwEAATAN\nBgkqhkiG9w0BAQsFAAOCAgEAEUlKdRDNsXpxTJrOhb2fSiylm4Cm/jsmSRrpK53Q\n73rpMzf0xy3C6pSjQGR4d7GP/3bLeYiJLHQma+oYorKv5pgyoInwZkYArcLiqfLu\npapI9NIYVwrI3QO60p0kwc+Tmj0m2sFEbH9Oj8qCu6DxOxaZ1llmzq0zS/AdzyZ0\nw0jEn391y9aYYWiOUzNBLo95CT/DZSrIDXKigsQn5sBXnTF2xtMyV3BSoz/hv5rX\njTjCcCFajzgvxl0z3zsjlDWV7t5kWbTLMxALlkpKjMPE0eSsZdeBQTAC51VBT3xc\nbDefR0snQctYdlrUxEIx9nC6QVecjgjKHWzG8SgiuItMvgZHM40gdPDUaAml6svg\n/1e0wxaJnmndT9acwSCFCQswlgQmso8yh4HILhO9ZaC9G5d+nr2mPs68gn69L/Mi\nEzMqwG8hZ860z+KWQs/S2RufzKOfwIy0/SXTq5f6WrxKTln46CMjHSueaenoMr1Q\n8q/koh/zx5f8HDAhaieQM7LUkTVoZTbjof+m82aveqxXgFlEITA3ciVqUrOAaWZb\n8U48lwlB/xOtEXrgL7sMF2bwk5AeNtGjZG7lpBhiHFP3NGj+fs97UItjV73NqulQ\nrSYVvsu9fWIyWx0Z2Izi10wq9V0R3uAwbAthLB3JK/iNC/0mK5+kIWxn8QafZlwK\nkpM=\n-----END CERTIFICATE-----"
-            },
-            "management_project_id": 2
-        }
-    ]
 
     BRANCH_DATA = [
         {
@@ -133,6 +106,24 @@ class SeedDataGenerator(BaseClass):
         }
     ]
 
+    MERGE_REQUEST_DATA = [
+        {
+            "source_branch": "test-branch",
+            "target_branch": "master",
+            "title": "Test MR 1"
+        },
+        {
+            "source_branch": "test-branch2",
+            "target_branch": "master",
+            "title": "Test MR 2"
+        },
+        {
+            "source_branch": "test-branch3",
+            "target_branch": "master",
+            "title": "Test MR 3"
+        }
+    ]
+
     def __init__(self):
         self.ie = ImportExportClient()
         self.mirror = MirrorClient()
@@ -144,6 +135,7 @@ class SeedDataGenerator(BaseClass):
         self.projects_api = ProjectsApi()
         self.instance_api = InstanceApi()
         self.settings_api = SettingsAPI()
+        self.mr_api = MergeRequestsApi()
         self.pushrules = PushRulesClient()
         self.branches = BranchesClient()
         self.mra = MergeRequestApprovalsClient()
@@ -164,23 +156,22 @@ class SeedDataGenerator(BaseClass):
             self.add_group_members(users, g["id"], dry_run)
             self.generate_dummy_group_variables(g["id"], dry_run)
             self.generate_dummy_group_hooks(g["id"], dry_run)
-            self.generate_dummy_group_clusters(g["id"], dry_run)
             self.generate_bot_user(g["id"], "group", dry_run)
         projects = self.generate_group_projects(groups, dry_run)
         for p in projects:
-            self.add_project_members(users, p["id"], dry_run)
-            self.generate_dummy_branches(p["id"], dry_run)
-            self.generate_dummy_environment(p["id"], dry_run)
-            self.generate_dummy_project_hooks(p["id"], dry_run)
-            self.generate_dummy_project_deploy_keys(p["id"], dry_run)
-            self.generate_dummy_project_push_rules(p["id"], dry_run)
-            self.generate_dummy_project_variables(p["id"], dry_run)
-            self.generate_dummy_project_pipeline_variables(p["id"], dry_run)
-            self.generate_shared_with_group_data(p["id"], groups, dry_run)
-            self.generate_dummy_project_clusters(p["id"], dry_run)
-            self.generate_bot_user(p["id"], "project", dry_run)
+            pid = p['id']
+            self.add_project_members(users, pid, dry_run)
+            self.generate_dummy_branches(pid, dry_run)
+            self.generate_dummy_merge_requests(pid, dry_run)
+            self.generate_dummy_environment(pid, dry_run)
+            self.generate_dummy_project_hooks(pid, dry_run)
+            self.generate_dummy_project_deploy_keys(pid, dry_run)
+            self.generate_dummy_project_push_rules(pid, dry_run)
+            self.generate_dummy_project_variables(pid, dry_run)
+            self.generate_dummy_project_pipeline_variables(pid, dry_run)
+            self.generate_shared_with_group_data(pid, groups, dry_run)
+            self.generate_bot_user(pid, "project", dry_run)
         projects += self.generate_user_projects(users, dry_run)
-        self.generate_instance_clusters(dry_run)
         self.generate_instance_hooks(dry_run)
         self.enable_importers()
 
@@ -190,14 +181,6 @@ class SeedDataGenerator(BaseClass):
         print(json.dumps(groups, indent=4))
         print("---Generated Projects---")
         print(json.dumps(projects, indent=4))
-
-    def generate_instance_clusters(self, dry_run=True):
-        for d in self.CLUSTERS_DATA:
-            self.log.info(
-                f"{get_dry_log(dry_run)}Creating instance cluster ({d})")
-            if not dry_run:
-                self.instance_api.add_instance_cluster(
-                    self.config.source_host, self.config.source_token, d)
 
     def generate_instance_hooks(self, dry_run=True):
         for d in self.HOOKS_DATA:
@@ -407,6 +390,20 @@ class SeedDataGenerator(BaseClass):
             if not dry_run:
                 self.projects_api.create_branch(
                     self.config.source_host, self.config.source_token, pid, data=d)
+    
+    def generate_dummy_merge_requests(self, pid, dry_run=True):
+        for d in self.MERGE_REQUEST_DATA:
+            self.log.info(
+                f"{get_dry_log(dry_run)}Creating project {pid} merge request ({d})")
+            if not dry_run:
+                if mr := safe_json_response(self.mr_api.create_merge_request(
+                    self.config.source_host, self.config.source_token, pid, data=d)):
+                    mr_id = mr['iid']
+                    data = {
+                        'body': "This is a test comment"
+                    }
+                    self.mr_api.create_merge_request_note(
+                        self.config.source_host, self.config.source_token, pid, mr_id, data=data)
 
     def generate_dummy_environment(self, pid, dry_run=True):
         data_prod = {
@@ -447,14 +444,6 @@ class SeedDataGenerator(BaseClass):
             if not dry_run:
                 self.projects_api.add_project_hook(
                     self.config.source_host, self.config.source_token, pid, d)
-
-    def generate_dummy_project_clusters(self, pid, dry_run=True):
-        for d in self.CLUSTERS_DATA:
-            self.log.info(
-                f"{get_dry_log(dry_run)}Creating project {pid} cluster ({d})")
-            if not dry_run:
-                self.projects_api.add_project_cluster(
-                    pid, self.config.source_host, self.config.source_token, d)
 
     def generate_dummy_project_variables(self, pid, dry_run=True):
         for d in self.VARIABLES_DATA:
@@ -512,14 +501,6 @@ class SeedDataGenerator(BaseClass):
             if not dry_run:
                 self.groups_api.add_group_hook(
                     self.config.source_host, self.config.source_token, gid, d)
-
-    def generate_dummy_group_clusters(self, gid, dry_run=True):
-        for d in self.CLUSTERS_DATA:
-            self.log.info(
-                f"{get_dry_log(dry_run)}Creating group {gid} cluster ({d})")
-            if not dry_run:
-                self.groups_api.add_group_cluster(
-                    gid, self.config.source_host, self.config.source_token, d)
 
     def generate_shared_with_group_data(self, pid, groups, dry_run):
         for group in groups:

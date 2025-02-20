@@ -38,6 +38,11 @@ class AzureDevOpsWrapper(BaseClass):
         if count > 1:
             path_with_namespace = os.path.join(self.slugify(project["name"]), self.slugify(repository["name"]))
 
+        if len(path_with_namespace.split("/")) > 1:
+            full_path = path_with_namespace.split("/")[0]   
+        else: 
+            full_path = path_with_namespace
+            
         return {
             "name": repository["name"],
             "id": repository["id"],
@@ -53,7 +58,7 @@ class AzureDevOpsWrapper(BaseClass):
                 "path": self.slugify(project["name"]),
                 "name": dig(repository, 'project', 'name'),
                 "kind": "group",
-                "full_path": path_with_namespace
+                "full_path": full_path
             },
         }
 
@@ -96,15 +101,18 @@ class AzureDevOpsWrapper(BaseClass):
 
     def add_team_members(self, users, project):
         users = []
-        teams = self.teams_api.get_teams(project["id"]).json().get("value", [])
-        if not teams:
-            self.log.warning(f"Project {project['name']} has no teams")
-            return users
-        for team in teams:
-            members = self.teams_api.get_team_members(project["id"], team["id"]).json().get("value", [])
-            for member in members:
-                user_descriptor = member["identity"]["descriptor"]
-                user_data = self.users_api.get_user(user_descriptor)
-                if user_data:
-                    users.append(self.format_user(user_data.json()))
+        for team in self.teams_api.get_teams(project["id"]):
+            for member in self.teams_api.get_team_members(project["id"], team["id"]):
+                if member["identity"].get("isContainer"):
+                    for group_member in self.users_api.get_group_members(member["identity"].get('id')):
+                        user_descriptor = group_member["user"]["descriptor"]
+                        user_data = self.users_api.get_user(user_descriptor)
+                        if user_data:
+                            users.append(self.format_user(user_data.json()))
+                else:
+                    user_descriptor = member["identity"]["descriptor"]
+                    user_data = self.users_api.get_user(user_descriptor)
+                    if user_data:
+                        users.append(self.format_user(user_data.json()))
+        users = [dict(t) for t in {tuple(d.items()) for d in users}]
         return users

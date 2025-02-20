@@ -12,7 +12,6 @@ from congregate.helpers.package_utils import generate_pypi_package_payload, gene
 from congregate.migration.meta.api_models.pypi_package import PyPiPackage
 from congregate.migration.meta.api_models.npm_package import NpmPackage
 from congregate.migration.meta.api_models.maven_package import MavenPackage
-import requests
 
 
 class PackagesClient(BaseClass):
@@ -27,6 +26,7 @@ class PackagesClient(BaseClass):
 
     def migrate_project_packages(self, src_id, dest_id, project_name):
         results = []
+
         try:
             for package in self.packages.get_project_packages(self.config.source_host, self.config.source_token, src_id):
                 package_type = package.get('package_type')
@@ -254,6 +254,11 @@ class PackagesClient(BaseClass):
             # Downloading the binary content file of the package
             response = self.npm_packages.download_npm_project_package(
                 self.config.source_host, self.config.source_token, src_id, package_name, file_name)
+            
+            if response.status_code != 200 or not response.content:  # Checking if there's an empty response
+                self.log.warning(f"Unable to get package {package_name} file {file_name} from source instance. Skipping")
+                continue
+            
             file_content = response.content
 
             # Download the package metadata (dists and versions)

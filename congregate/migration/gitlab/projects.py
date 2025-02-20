@@ -24,8 +24,8 @@ from congregate.migration.gitlab.contributor_retention import ContributorRetenti
 from congregate.migration.gitlab import constants
 from congregate.migration.mirror import MirrorClient
 from congregate.helpers.migrate_utils import get_dst_path_with_namespace,  get_full_path_with_parent_namespace, \
-    dig, get_staged_projects, get_staged_groups, find_user_by_email_comparison_without_id, add_post_migration_stats, is_user_project, \
-    check_for_staged_user_projects, get_stage_wave_paths
+    dig, get_staged_projects, get_staged_groups, add_post_migration_stats, is_user_project, \
+    check_for_staged_user_projects, get_stage_wave_paths, search_for_user_by_user_mapping_field
 from congregate.helpers.utils import rotate_logs
 from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
 from congregate.migration.meta.api_models.shared_with_group import SharedWithGroupPayload
@@ -153,7 +153,7 @@ class ProjectsClient(BaseClass):
                         resp, path_with_namespace, permanent=permanent)
             except RequestException as re:
                 self.log.error(
-                    f"Failed to delete project '{path_with_namespace}' on destination:\n{re}")
+                    f"Failed to find project '{path_with_namespace}' on destination:\n{re}")
 
     def delete_project(self, resp, path_with_namespace, permanent=False):
         host = self.config.destination_host
@@ -165,7 +165,7 @@ class ProjectsClient(BaseClass):
             resp = self.projects_api.delete_project(host, token, pid)
             if resp.status_code not in [200, 202, 204]:
                 self.log.error(
-                    f"Failed to delete project '{path_with_namespace}' on destination:\n{resp} - {resp.text}")
+                    f"Failed to delete project '{path_with_namespace}' (ID: {pid}) on destination:\n{resp} - {resp.text}")
             elif permanent:
                 if deleted_path_json := safe_json_response(self.projects_api.get_project(pid, host, token)):
                     # Allow time for project to rename and archive as part of soft deletion
@@ -174,7 +174,7 @@ class ProjectsClient(BaseClass):
                         "path_with_namespace"), permanent=permanent)
                     if resp.status_code not in [200, 202, 204]:
                         self.log.error(
-                            f"Failed to permanently delete project '{path_with_namespace}' on destination:\n{resp} - {resp.text}")
+                            f"Failed to permanently delete project '{path_with_namespace}' (ID: {pid}) on destination:\n{resp} - {resp.text}")
         else:
             self.log.warning(
                 f"SKIP: project '{path_with_namespace}' was created {exp_time} hours ago")
@@ -349,17 +349,27 @@ class ProjectsClient(BaseClass):
             self, host, token, project_id, members):
         result = {}
         self.log.info(
-            f"Adding members to project ID {project_id}:\n{json_pretty(members)}")
+            f"Adding {len(members)} member{'s' if len(members) > 1 else ''} to project ID {project_id}:\n{json_pretty(members)}")
+        field = self.config.user_mapping_field
+        user = {}
         for member in members:
-            user_id_req = find_user_by_email_comparison_without_id(
-                member["email"])
-            member["user_id"] = user_id_req.get("id") if user_id_req else None
-            result[member["email"]] = False
-            if member.get("user_id"):
-                resp = safe_json_response(self.projects_api.add_member(
-                    project_id, host, token, member))
-                if resp:
-                    result[member["email"]] = True
+            user = search_for_user_by_user_mapping_field(
+                field, member, host, token)
+            member["user_id"] = user.get("id")
+            result[member[field]] = False
+            if member["user_id"]:
+                # Due to 400 error: user_id, username are mutually exclusive
+                member.pop("username", None)
+                resp = self.projects_api.add_member(
+                    project_id, host, token, member)
+                if resp.status_code != 200:
+                    self.log.error(
+                        f"Failed to add member '{member}' to project {project_id}:\n{resp} - {resp.text}")
+                else:
+                    result[member[field]] = True
+            else:
+                self.log.error(
+                    f"Failed to add member '{member}' to project {project_id}, user not found")
         return result
 
     def get_replacement_data(self, data, f, project_id, src_branch):
@@ -733,7 +743,7 @@ class ProjectsClient(BaseClass):
                     f"Start destination project '{mirror_path}' ({mirror_pid}) pull mirror")
                 resp = self.projects_api.start_pull_mirror(
                     dst_host, dst_token, mirror_pid)
-                if resp.status_code != 201:
+                if resp.status_code != 200:
                     self.log.error(
                         f"Failed to start destination project '{mirror_path}' ({mirror_pid}) pull mirror:\n{resp} - {resp.text}")
         except RequestException as re:
@@ -1096,7 +1106,6 @@ class ProjectsClient(BaseClass):
         rotate_logs()
         contributors = []
         staged_projects = get_staged_projects()
-        open(f"{self.app_path}/data/staged_users.json", "w").close()
         for c in self.multi.start_multi_process(
                 self.list_project_contributors,
                 staged_projects,

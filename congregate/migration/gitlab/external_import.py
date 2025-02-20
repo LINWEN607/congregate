@@ -13,7 +13,7 @@ from congregate.migration.gitlab.api.external_import import ImportApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.instance import InstanceApi
 from congregate.migration.github.api.users import UsersApi as GitHubUsersApi
-
+from congregate.migration.gitlab.groups import GroupsClient
 
 class ImportClient(BaseClass):
     def __init__(self):
@@ -21,8 +21,10 @@ class ImportClient(BaseClass):
         self.ext_import = ImportApi()
         self.projects = ProjectsApi()
         self.instance = InstanceApi()
+        self.groups = GroupsClient()
+        
 
-    def trigger_import_from_repo(self, pwn, dst_pwn, tn, project, dry_run=True):
+    def trigger_import_from_repo(self, pn, dst_pwn, tn, project, dry_run=True):
         """
         Use the built-in GitLab importer to start a Azure Devops import.
 
@@ -31,13 +33,14 @@ class ImportClient(BaseClass):
             :param tn: (str) Full destination target namespace
             :return: (dict) Successful or failed result data
         """
+        namespace_id = self.groups.find_group_id_by_path(self.config.destination_host, self.config.destination_token, pn)
         azure_repo = project.get("path")
         url = project.get("http_url_to_repo").rsplit("@")[1]
         token = deobfuscate(self.config.source_token)
         
         data = {
             "name": project.get("name"),
-            "namespace_id": self.config.dstn_parent_id,
+            "namespace_id": namespace_id,
             "import_url": "https://"+ self.config.source_username+token+"@"+ url,
             "initialize_with_readme": False
         }

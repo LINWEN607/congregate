@@ -1,7 +1,6 @@
 from requests.exceptions import RequestException
 from requests import Response
-from gitlab_ps_utils.misc_utils import get_dry_log, is_error_message_present, safe_json_response
-from gitlab_ps_utils.json_utils import read_json_file_into_object
+from gitlab_ps_utils.misc_utils import is_error_message_present
 
 from congregate.migration.gitlab.base_gitlab_client import BaseGitLabClient
 from congregate.helpers.db_or_http import DbOrHttpMixin
@@ -161,40 +160,3 @@ class VariablesClient(DbOrHttpMixin, BaseGitLabClient):
             self.log.error(
                 f"Failed to migrate {var_type} {name} CI/CD variables, with error:\n{re}")
             return False
-
-    def migrate_variables_in_stage(self, dry_run=True):
-        sps = read_json_file_into_object(
-            f"{self.app_path}/data/staged_projects.json")
-        ids = []
-        for sp in sps:
-            try:
-                project_path = sp["path_with_namespace"]
-                self.log.info(
-                    f"Searching on destination for project '{project_path}'")
-                resp = self.projects_api.get_project_by_path_with_namespace(
-                    project_path, self.config.destination_host, self.config.destination_token)
-                if resp.status_code != 200:
-                    self.log.warning(
-                        f"SKIP: Project '{project_path}' does not exist: {resp} - {resp.text})")
-                    continue
-                self.log.info(
-                    f"{get_dry_log(dry_run)}Migrating project '{project_path}' variables")
-                project = safe_json_response(resp)
-                pid = project.get("id") if project else None
-                ids.append(pid)
-                if pid and not dry_run:
-                    self.migrate_cicd_variables(
-                        sp.get("id"), pid, project_path, "project", sp.get("jobs_enabled"))
-                text_file = "data/project_ids_variables.txt"
-                self.log.info(
-                    f"{get_dry_log(dry_run)}Writing {len(ids)} project IDs to '{text_file}'")
-                if not dry_run:
-                    with open(f"{self.app_path}/{text_file}", "w") as f:
-                        f.write('\n'.join(id for id in ids))
-            except RequestException as re:
-                self.log.error(
-                    f"Failed to create project '{project_path}' variables:\n{re}")
-            except IOError as ioe:
-                self.log.error(
-                    f"Failed to write project '{project_path}' ID to file:\n{ioe}")
-            return len(ids)

@@ -1,3 +1,5 @@
+[TOC]
+
 # Consolidated Discovery Notes
 
 The Ultimate Goal of this document is to have its contents converted into a roadmap markdown file with an index of questions unique to each source and destination. For example when performing a migration from Bitbucket to Gitlab.com you would review the questions/notes for Source -> Bitbucket and Destination -> Gitlab.com. All notes and contributions are welcome (it is the GitLab way). Any miscellaneous or unsorted notes can be placed in the section Unsorted Notes. Please indicate any source/destination that contributions apply to.
@@ -175,6 +177,8 @@ Cross-project dependencies:
 [Migration Feature Matrix - BitBucket](https://gitlab.com/gitlab-org/professional-services-automation/delivery-kits/migration-template/-/blob/master/customer/bitbucket-migration-features-matrix.md)
 
 [Migration Feature Matrix - GitHub](https://gitlab.com/gitlab-org/professional-services-automation/delivery-kits/migration-template/-/blob/master/customer/github-migration-features-matrix.md)
+
+[Migration Feature Matrix - Azure DevOps](https://gitlab.com/gitlab-org/professional-services-automation/delivery-kits/migration-template/-/blob/master/customer/ado-migration-features-matrix.md)
 
 [Migration Kickoff Deck(google Slides) - Template](https://docs.google.com/presentation/d/1AzM_qYKKOYhgvNTrEBXRmFT2m0caBuKZ6VAH6sCbiKQ/edit#slide=id.g59bfc474c5_2_145)
 

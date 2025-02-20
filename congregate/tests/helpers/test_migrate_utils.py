@@ -817,6 +817,50 @@ class MigrateTests(unittest.TestCase):
         with self.assertLogs(mutils.b.log, level="ERROR"):
             assert mutils.sanitize_name(" !  _-:: This.is-how/WE do\n&it#? - (šđžčć)_  ? ",
                                         "full_path", is_group=True) == "This.is-how WE do it - (šđžčć"
+            
+    def test_sanitize_name_project_reserved(self):
+        """
+        Test that a reserved project name is renamed and logs a warning.
+        """
+        with self.assertLogs(mutils.b.log, level="WARNING") as log_cm:
+            actual = mutils.sanitize_name("builds", "some/path/with_namespace", is_group=False)
+            self.assertEqual(actual, "builds-renamed")
+            self.assertTrue(
+                any("Project name 'builds' is reserved; renaming to 'builds-renamed'" in msg 
+                    for msg in log_cm.output),
+                f"Expected a reserved-name warning log for 'builds' but didn't find one in: {log_cm.output}"
+            )
+
+
+    def test_sanitize_name_top_level_group_reserved(self):
+        """
+        Test that a top-level reserved group name is renamed and logs a warning.
+        """
+        # 'admin' is in TOP_LEVEL_RESERVED_NAMES
+        with self.assertLogs(mutils.b.log, level="WARNING") as log_cm:
+            # Mark is_group=True, is_subgroup=False -> top-level group
+            actual = mutils.sanitize_name("admin", "admin", is_group=True, is_subgroup=False)
+            self.assertEqual(actual, "admin-renamed")
+            self.assertTrue(
+                any("Top-level group name 'admin' is reserved; renaming to 'admin-renamed'" in msg 
+                    for msg in log_cm.output),
+                f"Expected a reserved-name warning log for 'admin' but didn't find one in: {log_cm.output}"
+            )
+
+
+    def test_sanitize_name_subgroup_reserved(self):
+        """
+        Test that a reserved subgroup name is renamed and logs a warning.
+        """
+        # '-' is in SUBGROUP_RESERVED_NAMES
+        with self.assertLogs(mutils.b.log, level="WARNING") as log_cm:
+            actual = mutils.sanitize_name("-", "full_path/subgroup", is_group=True, is_subgroup=True)
+            self.assertEqual(actual, "--renamed")
+            self.assertTrue(
+                any("Subgroup name '-' is reserved; renaming to '--renamed'" in msg 
+                    for msg in log_cm.output),
+                f"Expected a reserved-name warning log for '-' but didn't find one in: {log_cm.output}"
+            )
 
     def test_sanitize_project_path(self):
         with self.assertLogs(mutils.b.log, level="WARNING"):

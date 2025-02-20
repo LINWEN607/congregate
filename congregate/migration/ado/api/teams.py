@@ -11,7 +11,7 @@ class TeamsApi():
 
         Core REST API: https://learn.microsoft.com/en-us/rest/api/azure/devops/core/teams/get-teams?view=azure-devops-rest-7.0&tabs=HTTP
         """
-        return self.api.generate_get_request(f"_apis/projects/{project_id}/teams")
+        return self.api.list_all(f"_apis/projects/{project_id}/teams")
 
     def get_team(self, project_id, team_id):
         """
@@ -27,4 +27,4 @@ class TeamsApi():
 
         Core REST API: https://learn.microsoft.com/en-us/rest/api/azure/devops/core/teams/get-team-members-with-extended-properties?view=azure-devops-rest-7.0&tabs=HTTP
          """
-        return self.api.generate_get_request(f"_apis/projects/{project_id}/teams/{team_id}/members")
+        return self.api.list_all(f"_apis/projects/{project_id}/teams/{team_id}/members")

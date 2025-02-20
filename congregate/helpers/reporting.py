@@ -5,6 +5,7 @@ from gitlab_ps_utils.dict_utils import dig
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.migrate_utils import find_user_by_email_comparison_without_id
 from congregate.migration.gitlab.api.issues import IssuesApi
+from congregate.migration.gitlab.api.users import UsersApi
 
 
 class Reporting(BaseClass):
@@ -28,6 +29,7 @@ class Reporting(BaseClass):
     def __init__(self, reporting_project_id, dry_run=True):
         self.reporting_project_id = reporting_project_id
         self.issuesApi = IssuesApi()
+        self.usersApi = UsersApi()
         self.templates = []
         super(Reporting, self).__init__()
         self.dry_run = dry_run
@@ -205,7 +207,8 @@ class Reporting(BaseClass):
     def create_issues_from_data(self, clean_data, template_issues):
         '''
         Create issues using supplied project data
-
+        If swc_manager_email is missing, fallback to import user's email and username.
+        
         :param clean_data: (dict) dict of successful projects and users
         :return issues: (dict) new dict of issues keyed on title
 
@@ -214,41 +217,72 @@ class Reporting(BaseClass):
         # readability simplification
         projects = clean_data['projects']
 
-        for project in projects.values():
-            # readability simplifications
-            if isinstance(project, dict) and project.get('swc_manager_email'):
-                email = project['swc_manager_email']
-                uname = clean_data['users_map'].get(email)
-                task = {
-                    'repo_name': project['name'],
-                    'status': None
-                }
-                if project.get("target_namespace"):
-                    task['url'] = f"{self.config.destination_host}/{project['target_namespace']}/{project['path_with_namespace']}"
-                else:
-                    task['url'] = f"{self.config.destination_host}/{project['path_with_namespace']}"
+        import_user_details = safe_json_response(
+            self.usersApi.get_user(
+                self.config.import_user_id,
+                self.config.destination_host,
+                self.config.destination_token
+            )
+        ) if self.config.import_user_id else None
 
-                for issue in template_issues:
-                    if project['swc_id'] is None:
-                        project['swc_id'] = "BAD-SWC-ID"
-                    cur_title = f"{project['swc_id']} | {issue['title']}"
-                    cur_desc = issue['description']
-                    # Does our issue already exist in the dataset, if not
-                    # create it with current assignee and task
-                    if cur_title not in req_issues:
-                        req_issues[cur_title] = {'assignees': [
-                            {'name': uname}], 'tasks': [task], 'description': cur_desc}
-                    else:
-                        req_issues[cur_title]['tasks'].append(task)
-                        # Making sure username exists, and its not already in
-                        # the list of assignees, add it
-                        if (uname) and not any(
-                                u['name'] == uname for u in req_issues[cur_title]['assignees']):
-                            req_issues[cur_title]['assignees'].append(
-                                {'name': uname})
+        import_user_email = import_user_details.get('email') if import_user_details else None
+        import_user_username = import_user_details.get('username') if import_user_details else None
+
+        for project in projects.values():
+            proj_name = project.get('name', 'unknown') if isinstance(project, dict) else str(project)
+            if not isinstance(project, dict):
+                self.log.warning(f"Malformed project data for project '{proj_name}'. Skipping.")
+                continue
+
+            # Check if swc_manager_email is present
+            if email := project.get('swc_manager_email'):
+                uname = clean_data['users_map'].get(email)
             else:
+                # Fallback to import user's email and username
+                if import_user_email and import_user_username:
+                    email = import_user_email
+                    uname = import_user_username
+                else:
+                    self.log.warning(
+                        "Unable to determine user due to missing swc_manager_email "
+                        "and no import user details available."
+                    )
+                    continue
+
+            # Ensure we have both email and uname to proceed
+            if not email or not uname:
                 self.log.warning(
-                    "Unable to create issue due to missing SWC manager email. Check your staged_projects.json")
+                    f"Missing email or username for project {project.get('name', 'unknown')}."
+                )
+                continue
+
+            task = {
+                'repo_name': project['name'],
+                'status': None
+            }
+            if project.get("target_namespace"):
+                task['url'] = f"{self.config.destination_host}/{project['target_namespace']}/{project['path_with_namespace']}"
+            else:
+                task['url'] = f"{self.config.destination_host}/{project['path_with_namespace']}"
+
+            for issue in template_issues:
+                if 'swc_id' not in project or project['swc_id']:
+                    project['swc_id'] = "BAD-SWC-ID"
+                cur_title = f"{project['swc_id']} | {issue['title']}"
+                cur_desc = issue['description']
+                # Does our issue already exist in the dataset, if not
+                # create it with current assignee and task
+                if cur_title not in req_issues:
+                    req_issues[cur_title] = {'assignees': [
+                        {'name': uname}], 'tasks': [task], 'description': cur_desc}
+                else:
+                    req_issues[cur_title]['tasks'].append(task)
+                    # Making sure username exists, and its not already in
+                    # the list of assignees, add it
+                    if (uname) and not any(
+                            u['name'] == uname for u in req_issues[cur_title]['assignees']):
+                        req_issues[cur_title]['assignees'].append(
+                            {'name': uname})
 
         return req_issues
 
@@ -320,18 +354,31 @@ class Reporting(BaseClass):
         good_errors = [
             'Name has already been taken, Path has already been taken']
         successes = {}
+        # GH->GL:
+        # - Each project dict includes {'repository': True, 'response': {...}}
+        # GL->GL:
+        # - Each project dict includes keys like 'id', but no 'repository' key
         for result in import_results:
             for k, v in result.items():
-                if result[k]['repository']:
-                    successes[k.split('/')[1]] = None
-                else:
-                    try:
-                        if errors := dig(result, k, 'response', 'errors'):
-                            if errors in good_errors:
-                                successes[k.split('/')[1]] = None
-                    except TypeError:
-                        self.log.error(
-                            f"There was some type of unhandled exception in import_results for: '{v}'. Raw data to follow: \n{v}")
+                if isinstance(v, dict):
+                    if self.config.source_type.lower() == 'github':
+                        # GH->GL logic
+                        if result[k]['repository']:
+                            successes[k.split('/')[1]] = None
+                        else:
+                            try:
+                                if errors := dig(result, k, 'response', 'errors'):
+                                    if errors in good_errors:
+                                        successes[k.split('/')[1]] = None
+                            except TypeError:
+                                self.log.error(
+                                    f"There was some type of unhandled exception in import_results for: '{v}'. Raw data to follow: \n{v}")
+                    else:
+                        # GL->GL logic
+                        # If 'id' key exists, consider it a success
+                        if 'id' in v:
+                            project_name = k.split('/')[-1]
+                            successes[project_name] = None
         return successes
 
     def check_staged_projects(self, staged_projects, clean_data):

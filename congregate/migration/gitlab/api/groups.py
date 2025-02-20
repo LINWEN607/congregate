@@ -90,6 +90,19 @@ class GroupsApi(GitLabApiWrapper):
         """
         return self.api.list_all(host, token, "groups")
 
+    def get_all_group_enterprise_users(self, gid, host, token):
+        """
+        Lists all enterprise users for a given top-level group.
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/group_enterprise_users.html#list-all-enterprise-users
+
+            :param: gid: (int) GitLab group ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :yield: Response object containing the response to GET /groups/:gid/enterprise_users
+        """
+        yield from self.api.list_all(host, token, f"groups/{gid}/enterprise_users")
+
     def get_all_group_members(self, gid, host, token):
         """
         Gets a list of group or project members viewable by the authenticated user.
@@ -356,7 +369,7 @@ class GroupsApi(GitLabApiWrapper):
         if not message:
             message = "Adding group hook"
         return self.api.generate_post_request(host, token, f"groups/{gid}/hooks", json.dumps(data), description=message)
-    
+
     def share_group(self, host, token, gid, data, message=None):
         """
         Share groups with groups
@@ -432,7 +445,7 @@ class GroupsApi(GitLabApiWrapper):
         """
         Get a list of visible descendant groups of this group.
 
-        GitLab API Doc: https://docs.gitlab.com/ee/api/groups.html#list-a-groups-descendant-groups
+        GitLab API Doc: https://docs.gitlab.com/ee/api/groups.html#list-descendant-groups
 
             :param: gid: (int) GitLab group ID
             :param: host: (str) GitLab host URL
@@ -548,37 +561,6 @@ class GroupsApi(GitLabApiWrapper):
             :yield: Generator returning JSON of each result from GET /groups/:id/badges
         """
         return self.api.list_all(host, token, f"groups/{gid}/badges")
-
-    def get_all_group_clusters(self, gid, host, token):
-        """
-        Returns a list of groups clusters.
-
-        GitLab API Doc: https://docs.gitlab.com/ee/api/group_clusters.html#list-group-clusters
-
-            :param: gid: (int) GitLab group ID
-            :param: host: (str) GitLab host URL
-            :param: token: (str) Access token to GitLab instance
-            :return: Response object containing the response to GET /groups/:id/clusters
-
-        """
-        return self.api.list_all(host, token, f"groups/{gid}/clusters")
-
-    def add_group_cluster(self, gid, host, token, data=None, message=None):
-        """
-        Adds an existing Kubernetes cluster to the group.
-
-        GitLab API Doc: https://docs.gitlab.com/ee/api/group_clusters.html#add-existing-cluster-to-group
-
-            :param: gid: (int) GitLab Group ID
-            :param: host: (str) GitLab host URL
-            :param: token: (str) Access token to GitLab instance
-            :param: data: (dict) Object containing the necessary data for the added cluster
-            :return: Response object containing the response to POST /groups/:id/clusters/user
-
-        """
-        if not message:
-            message = f"Adding cluster {data['name']} to group {gid}"
-        return self.api.generate_post_request(host, token, f"groups/{gid}/clusters/user", json.dumps(data), description=message)
 
     def create_group_access_token(self, gid, host, token, data, message=None):
         """

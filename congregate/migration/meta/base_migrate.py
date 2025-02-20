@@ -320,25 +320,6 @@ class MigrateClient(BaseClass):
 
         mig_utils.add_post_migration_stats(self.start, log=self.log)
 
-    def get_total_migrated_count(self):
-        # group_projects = api.get_count(
-        # self.config.destination_host, self.config.destination_token,
-        # "groups/%d/projects" % self.config.dstn_parent_id)
-        subgroup_count = 0
-        for group in self.groups_api.get_all_subgroups(self.config.dstn_parent_id,
-                                                       self.config.destination_host, self.config.destination_token):
-            count = self.groups_api.api.get_count(
-                self.config.destination_host, self.config.destination_token, "groups/%d/projects" % group["id"])
-            sub_count = 0
-            if group.get("child_ids", None) is not None:
-                for child_id in group["child_ids"]:
-                    sub_count += self.projects_api.api.get_count(self.config.destination_host,
-                                                                 self.config.destination_token, "groups/%d/projects" % child_id)
-            subgroup_count += count
-        # return subgroup_count + group_projects
-        self.log.inf(
-            "Total count of migrated projects: {}".format(subgroup_count))
-
     def stage_unimported_projects(self):
         ids = []
         with open("{}/data/unimported_projects.txt".format(self.app_path), "r") as f:
@@ -404,7 +385,7 @@ class MigrateClient(BaseClass):
                 else:
                     resp = self.projects_api.remove_member(
                         dst_id, uid, self.config.destination_host, self.config.destination_token)
-                if not isinstance(resp, Response) or resp.status_code != 204:
+                if not isinstance(resp, Response) or resp.status_code not in [204, 404]:
                     status = "partial"
                     self.log.error(
                         f"Failed to remove {'group' if group else 'project'} {dst_id} member {uid}:\n{resp}")
@@ -429,7 +410,7 @@ class MigrateClient(BaseClass):
             self.log.info(
                 f"Members added to destination group '{full_path}' ({dst_gid}):\n{result}")
         return result
-    
+
     def share_groups_with_groups(self, src_gid, dst_gid):
         source_group_response = self.groups_api.get_group(
                 src_gid, self.config.source_host, self.config.source_token)
@@ -485,7 +466,7 @@ class MigrateClient(BaseClass):
                     result["response"] = resp
                 else:
                     self.log.error(
-                        f"Unable to create group {group['full_path']} due to: {result}")
+                        f"Unable to create group {group['full_path']} due to: {resp}")
             if group_id:
                 if not self.remove_members:
                     result["members"] = self.groups.add_members_to_destination_group(

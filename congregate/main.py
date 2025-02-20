@@ -3,74 +3,68 @@
 Copyright (c) 2022 - GitLab
 
 Usage:
-    congregate init
-    congregate list [--processes=<n>] [--partial] [--skip-users] [--skip-groups] [--skip-group-members] [--skip-projects] [--skip-project-members] [--skip-ci] [--src-instances] [--subset]
-    congregate configure # Deprecated. Manually create config file and validate it by running 'congregate validate-config'
-    congregate validate-config
-    congregate generate-reporting
-    congregate stage-projects <projects>... [--skip-users] [--commit] [--scm-source=hostname]
-    congregate stage-groups <groups>... [--skip-users] [--commit] [--scm-source=hostname]
-    congregate stage-users <users>... [--commit]
-    congregate stage-wave <wave> [--commit] [--scm-source=hostname]
-    congregate create-stage-wave-csv [--commit]
-    congregate migrate [--commit] [--processes=<n>] [--reporting] [--skip-users] [--remove-members] [--sync-members] [--stream-groups] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostname] [--reg-dry-run] [--group-structure] [--retain-contributors]
-    congregate rollback [--commit] [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--permanent]
-    congregate ui
-    congregate do-all [--commit]
-    congregate do-all-users [--commit]
-    congregate do-all-groups-and-projects [--commit]
-    congregate search-for-staged-users [--table]
-    congregate update-aws-creds
-    congregate update-parent-group-members [--commit] [--access-level=<level>] [--add-members]
-    congregate update-members-access-level [--commit] [--current-level=<level>] [--target-level=<level>] [--skip-groups] [--skip-projects]
-    congregate remove-inactive-users [--commit] [--membership]
-    congregate get-total-count
-    # TODO: Refactor, project name matching does not seem correct
-    congregate find-unimported-projects [--commit]
-    congregate stage-unimported-projects [--commit] # TODO: Refactor, broken
-    congregate url-rewrite-only [--commit]
-    congregate remove-users-from-parent-group [--commit]
-    congregate migrate-variables-in-stage [--commit]
-    congregate migrate-linked-issues [--commit]
-    congregate pull-mirror-staged-projects [--commit] [--protected-only] [--force] [--overwrite]
-    congregate push-mirror-staged-projects [--disabled] [--keep_div_refs] [--force] [--commit]
-    congregate toggle-staged-projects-push-mirror [--disable] [--commit]
-    congregate verify-staged-projects-push-mirror [--disabled] [--keep_div_refs]
-    congregate delete-staged-projects-push-mirrors [--all] [--commit]
-    congregate delete-all-staged-projects-pull-mirrors [--commit]
-    congregate set-default-branch [--name=<name>] [--commit]
-    congregate enable-mirroring [--commit] # TODO: Find a use for it or remove
-    congregate count-unarchived-projects [--local]
+    congregate align-user-mapping-emails [--commit]
     congregate archive-staged-projects [--commit] [--dest] [--scm-source=hostname] [--rollback]
-    congregate unarchive-staged-projects [--commit] [--dest] [--scm-source=hostname] [--rollback]
-    congregate set-bb-read-only-branch-permissions [--bb-projects] [--commit]
-    congregate unset-bb-read-only-branch-permissions [--bb-projects] [--commit]
-    congregate set-bb-read-only-member-permissions [--bb-projects] [--commit]
-    congregate unset-bb-read-only-member-permissions [--bb-projects] [--commit]
+    congregate clean [--commit]
+    congregate clean-database [--commit] [--keys]
+    congregate configure # Deprecated. Manually create config file and validate it by running 'congregate validate-config'
+    congregate count-unarchived-projects [--local]
+    congregate create-stage-wave-csv [--commit]
+    congregate create-staged-projects-fork-relation [--commit]
+    congregate create-staged-projects-structure [--commit] [--disable-cicd]
+    congregate delete-all-staged-projects-pull-mirrors [--commit]
+    congregate delete-staged-projects-push-mirrors [--all] [--commit]
+    congregate deobfuscate
+    congregate do-all [--commit]
+    congregate do-all-groups-and-projects [--commit]
+    congregate do-all-users [--commit]
+    congregate dump-database
     congregate filter-projects-by-state [--commit] [--archived]
     congregate find-empty-repos
-    congregate compare-groups [--staged]
-    congregate staged-user-list
+    congregate find-unimported-projects [--commit]
+    congregate generate-diff [--processes=<n>] [--staged] [--rollback] [--scm-source=hostname] [--skip-users] [--skip-groups] [--skip-projects] [--subgroups-only]
+    congregate generate-reporting
     congregate generate-seed-data [--commit] # TODO: Refactor, broken
+    congregate init
+    congregate ldap-group-sync <file-path> [--commit]
+    congregate list [--processes=<n>] [--partial] [--skip-users] [--skip-groups] [--skip-group-members] [--skip-projects] [--skip-project-members] [--skip-ci] [--src-instances] [--subset] [--skip-archived-projects]
+    congregate list-staged-projects-contributors [--commit]
+    congregate map-and-stage-users-by-email-match [--commit]
+    congregate map-users [--commit]
+    congregate migrate [--commit] [--processes=<n>] [--reporting] [--skip-users] [--remove-members] [--sync-members] [--stream-groups] [--skip-group-export] [--skip-group-import] [--skip-project-export] [--skip-project-import] [--only-post-migration-info] [--subgroups-only] [--scm-source=hostname] [--reg-dry-run] [--group-structure] [--retain-contributors]
+    congregate migrate-linked-issues [--commit]
+    congregate obfuscate
+    congregate pull-mirror-staged-projects [--commit] [--protected-only] [--force] [--overwrite]
+    congregate push-mirror-staged-projects [--disabled] [--keep_div_refs] [--force] [--commit]
+    congregate reingest <assets>...
+    congregate remove-inactive-users [--commit] [--membership]
+    congregate remove-users-from-parent-group [--commit]
+    congregate rollback [--commit] [--hard-delete] [--skip-users] [--skip-groups] [--skip-projects] [--permanent]
+    congregate search-for-staged-users [--table]
+    congregate set-bb-read-only-branch-permissions [--bb-projects] [--commit]
+    congregate set-bb-read-only-member-permissions [--bb-projects] [--commit]
+    congregate set-default-branch [--name=<name>] [--commit]
+    congregate set-staged-users-public-email [--commit] [--hide]
+    congregate stage-groups <groups>... [--skip-users] [--commit] [--scm-source=hostname]
+    congregate stage-projects <projects>... [--skip-users] [--commit] [--scm-source=hostname]
+    congregate stage-unimported-projects [--commit] # TODO: Refactor, broken
+    congregate stage-users <users>... [--commit]
+    congregate stage-wave <wave> [--commit] [--scm-source=hostname]
+    congregate stitch-results [--result-type=<project|group|user>] [--no-of-files=<n>] [--head|--tail]
+    congregate toggle-maintenance-mode [--commit] [--off] [--dest] [--msg=<multi+word+message>]
+    congregate toggle-staged-projects-push-mirror [--disable] [--commit]
+    congregate ui
+    congregate unarchive-staged-projects [--commit] [--dest] [--scm-source=hostname] [--rollback]
+    congregate unset-bb-read-only-branch-permissions [--bb-projects] [--commit]
+    congregate unset-bb-read-only-member-permissions [--bb-projects] [--commit]
+    congregate update-aws-creds
+    congregate update-members-access-level [--commit] [--current-level=<level>] [--target-level=<level>] [--skip-groups] [--skip-projects]
+    congregate update-parent-group-members [--commit] [--access-level=<level>] [--add-members]
+    congregate url-rewrite-only [--commit]
+    congregate validate-config
     congregate validate-staged-groups-schema
     congregate validate-staged-projects-schema
-    congregate map-users [--commit]
-    congregate map-and-stage-users-by-email-match [--commit]
-    congregate generate-diff [--processes=<n>] [--staged] [--rollback] [--scm-source=hostname] [--skip-users] [--skip-groups] [--skip-projects] [--subgroups-only]
-    congregate clean [--commit]
-    congregate stitch-results [--result-type=<project|group|user>] [--no-of-files=<n>] [--head|--tail]
-    congregate obfuscate
-    congregate deobfuscate
-    congregate dump-database
-    congregate reingest <assets>...
-    congregate clean-database [--commit] [--keys]
-    congregate toggle-maintenance-mode [--commit] [--off] [--dest] [--msg=<multi+word+message>]
-    congregate ldap-group-sync <file-path> [--commit]
-    congregate set-staged-users-public-email [--commit] [--hide]
-    congregate align-user-mapping-emails [--commit]
-    congregate create-staged-projects-structure [--commit] [--disable-cicd]
-    congregate create-staged-projects-fork-relation [--commit]
-    congregate list-staged-projects-contributors [--commit]
+    congregate verify-staged-projects-push-mirror [--disabled] [--keep_div_refs]
     congregate -h | --help
     congregate -v | --version
 
@@ -95,6 +89,7 @@ Arguments:
     skip-group-export                       Skip exporting groups from source instance
     skip-group-import                       Skip importing groups to destination instance
     skip-projects                           Rollback: Remove only users and empty groups
+    skip-archived-projects                  Skip archived projects (Bitbucket only right now)
     skip-project-members                    Add empty list instead of listing GitLab project members. Skip saving BBS repo user groups as GL project members.
     skip-project-export                     Skips the project export and assumes that the project file is already ready
                                                 for rewrite. Currently does NOT work for exports through filesystem-aws
@@ -104,7 +99,7 @@ Arguments:
     only-post-migration-info                Skips migrating all content except for post-migration information. Use when import is handled outside of congregate
     subgroups-only                          Expects that only sub-groups are staged and that their parent groups already exist on destination
     reg-dry-run                             If registry migration is configured, instead of doing the actual migration, write the tags to the logs for use in the brute force migration. Can also be useful when renaming targets
-    retain-contributors                     Searches a project for all contributors to a project and adds them as members before exporting the project. Only works in GitLab file-based migrations
+    retain-contributors                     Searches a project for all contributors to a project and adds them as members before exporting the project. Only required for GitLab file-based migrations.
     group-structure                         Let the GitHub and BitBucket Server importers create the missing sub-group layers.
     access-level                            Update parent group level user permissions (None/Minimal/Guest/Reporter/Developer/Maintainer/Owner).
     current-level                           Current destination group/project members access level.
@@ -164,12 +159,10 @@ Commands:
     update-parent-group-members             Add (optional) and/or update access levels (to Guest by default) of all staged users for a configured GitLab destination parent group.
     update-members-access-level             Update access level (to Guest by default) of all staged group and project members on destination GitLab instance.
     remove-inactive-users                   Remove all inactive users from staged projects and groups.
-    get-total-count                         Get total count of migrated projects. Used to compare exported projects to imported projects.
     find-unimported-projects                Return a list of projects that failed import.
     stage-unimported-projects               Stage unimported projects based on {CONGREGATE_PATH}/data/unimported_projects.txt.
     url-rewrite-only                        Performs the URL rewrite portion of a migration as a stand-alone step, instead of as a post-migration step. Requires the projects to be staged, and to exist on destination
     remove-users-from-parent-group          Remove all users with at most Reporter access from the parent group.
-    migrate-variables-in-stage              Migrate CI variables for staged projects.
     migrate-linked-issues                   Migrate Linked items in issues for staged projects.
     pull-mirror-staged-projects             Create and start project pull mirroring for staged projects.
     push-mirror-staged-projects             Set up and enable (by default) project push mirroring for staged projects.
@@ -181,12 +174,9 @@ Commands:
     delete-staged-projects-push-mirrors     Remove project push mirrors for staged projects. Only remove destination instance host (+'dstn_parent_group_path' if configured) mirrors. Add '--all' to remove all mirrors.
     delete-all-staged-projects-pull-mirrors Remove all project pull mirrors for staged projects.
     set-default-branch                      Set default branch for staged projects on destination.
-    enable-mirroring                        Start pull mirror process for all projects on destination.
     count-unarchived-projects               Return total number and list of all unarchived projects on source.
     find-empty-repos                        Inspect project repo sizes between source and destination instance in search for empty repos.
                                                 This could be misleading as it sometimes shows 0 (zero) commits/tags/bytes for fully migrated projects.
-    compare-groups                          Compare source and destination group results.
-    staged-user-list                        Output a list of all staged users and their respective user IDs. Used to confirm IDs were updated correctly.
     archive-staged-projects                 Archive GitLab source (or destination if '--dest') projects that are staged, not necessarily migrated.
     unarchive-staged-projects               Unarchive GitLab source (or destination if '--dest') projects that are staged, not necessarily migrate.
     set-bb-read-only-branch-permissions     Add read-only branch permission/restriction to all branches (*) on staged BitBucket repos (or projects if '--bb-projects').
@@ -326,7 +316,6 @@ def main():
             from congregate.migration.gitlab.groups import GroupsClient
             from congregate.migration.gitlab.projects import ProjectsClient
             from congregate.migration.gitlab.variables import VariablesClient
-            from congregate.migration.gitlab.compare import CompareClient
             from congregate.migration.migrate import MigrateClient
             from congregate.migration.meta.base_migrate import MigrateClient as BaseMigrateClient
             from congregate.migration.gitlab.migrate import GitLabMigrateClient
@@ -362,7 +351,6 @@ def main():
             projects = ProjectsClient()
             bb_repos = BBReposClient()
             variables = VariablesClient()
-            compare = CompareClient()
             branches = BranchesClient()
 
             if not config.ssl_verify:
@@ -385,6 +373,7 @@ def main():
                     skip_ci=arguments["--skip-ci"],
                     src_instances=SRC_INSTANCES,
                     subset=arguments["--subset"],
+                    skip_archived_projects=arguments["--skip-archived-projects"],
                 )
                 list_client.list_data()
                 add_post_migration_stats(start, log=log)
@@ -493,16 +482,12 @@ def main():
             if arguments["remove-inactive-users"]:
                 users.remove_inactive_users(
                     membership=MEMBERSHIP, dry_run=DRY_RUN)
-            if arguments["get-total-count"]:
-                BaseMigrateClient().get_total_migrated_count()
             if arguments["find-unimported-projects"]:
                 projects.find_unimported_projects(dry_run=DRY_RUN)
             if arguments["stage-unimported-projects"]:
                 BaseMigrateClient(dry_run=DRY_RUN).stage_unimported_projects()
             if arguments["remove-users-from-parent-group"]:
                 users.remove_users_from_parent_group(dry_run=DRY_RUN)
-            if arguments["migrate-variables-in-stage"]:
-                variables.migrate_variables_in_stage(dry_run=DRY_RUN)
             if arguments["delete-all-staged-projects-pull-mirrors"]:
                 projects.delete_all_pull_mirrors(dry_run=DRY_RUN)
             if arguments["pull-mirror-staged-projects"]:
@@ -600,22 +585,6 @@ def main():
                         f"The 'archived' field is currently not present when listing on {config.source_type}")
             if arguments["find-empty-repos"]:
                 projects.find_empty_repos()
-            if arguments["compare-groups"]:
-                if arguments["--staged"]:
-                    results, unknown_users = compare.create_group_migration_results(
-                        staged=True)
-                else:
-                    results, unknown_users = compare.create_group_migration_results()
-                with open(f"{app_path}/data/groups_audit.json", "w") as f:
-                    dump(results, f, indent=4)
-                with open(f"{app_path}/data/unknown_users.json", "w") as f:
-                    dump(unknown_users, f, indent=4)
-            if arguments["staged-user-list"]:
-                results = compare.compare_staged_users()
-                log.info(
-                    f"Staged user list:\n{dumps(results, indent=4, sort_keys=True)}")
-                log.info(
-                    f"Length: {{key: len(value) for key, value in results.items()}}")
             if arguments["generate-seed-data"]:
                 s = SeedDataGenerator()
                 s.generate_seed_data(dry_run=DRY_RUN)

@@ -12,6 +12,10 @@
 
 [Migration features matrix](./customer/github-migration-features-matrix.md)
 
+## Azure DevOps
+
+[Migration features matrix](./customer/ado-migration-features-matrix.md)
+
 ## SVN
 
 Congregate does not currently support automated SVN migrations and neither does GitLab
@@ -30,10 +34,8 @@ We are currently working through migrating CI variables from TeamCity into GitLa
 
 ## Future features we would like to see in GitLab
 
-- Group export/import API that includes projects
 - Ability to specify GitHub Enterprise host directly through API request
 - LFS support for BitBucket Server importer
-- API Endpoint for BitBucket Cloud importer
 - UI and API available to import SVN repos
 - Being able to move a group/project with containers present to another namespace
   - We currently use congregate to do this for a customer since it is not possible through the UI

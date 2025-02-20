@@ -12,6 +12,14 @@ class UsersApi():
         Core REST API: https://learn.microsoft.com/en-us/rest/api/azure/devops/graph/users/get?view=azure-devops-rest-7.1&tabs=HTTP
         """
         return self.api.generate_get_request(f"_apis/graph/users/{descriptor}", sub_api="vssps")
+    
+    def get_user_by_guid(self, guid):
+        """
+        Retrieve the ADO user details given a guid.
+
+        Core REST API: https://learn.microsoft.com/en-us/rest/api/azure/devops/graph/users/get?view=azure-devops-rest-7.1&tabs=HTTP
+        """
+        return self.api.generate_get_request(f"_apis/identities/{guid}", sub_api="vssps")
 
     def get_all_users(self):
         """
@@ -47,3 +55,9 @@ class UsersApi():
         }
         return self.api.list_all("_apis/graph/users", sub_api="vssps", params=params)
 
+    def get_group_members(self, group_id):
+        """
+        Retrieve all group members.
+        Core REST API: https://learn.microsoft.com/en-us/rest/api/azure/devops/memberentitlementmanagement/members/get?view=azure-devops-rest-7.1
+        """
+        return self.api.list_all(f"_apis/GroupEntitlements/{group_id}/members", sub_api="vsaex")
