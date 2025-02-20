@@ -89,8 +89,12 @@ class ImportExportClient(BaseGitLabClient):
                             f"{export_type} {name} has finished exporting, with response:\n{json_pretty(status_json)}")
                         exported = True
                         break
+                    if state == "failed":
+                        self.log.error(
+                            f"{export_type} {name} export failed, with response:\n{json_pretty(status_json)}")
+                        break
                     # We don't want to wait for queued exports
-                    if total_time > timeout/4 and state == "none":
+                    if state == "none" and total_time > timeout/4:
                         self.log.error(
                             f"SKIP: {export_type} {name} export with status '{state}' and response:\n{json_pretty(status_json)}")
                         break
