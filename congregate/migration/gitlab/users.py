@@ -882,24 +882,28 @@ class UsersClient(BaseClass):
                 f"Added email '{email}' to source user '{username}' (ID: {uid})")
 
 
-@shared_task(name='retrieve-user')
+@shared_task(name='retrieve-gl-users')
 @mongo_connection
 def handle_retrieving_users_task(user, mongo=None):
     # mongo should be set to None unless this function is being used in a
     # unit test
-    user_client = UsersClient()
-    user["email"] = (user.get("email", "") or user.get("public_email", "")).lower()
-    projects_limit = user_client.config.projects_limit
-    if projects_limit is not None:
-        user["projects_limit"] = projects_limit
+    if user:
+        user_client = UsersClient()
+        user_client.log.info(f"User: {user}")
+        # user["email"] = (user.get("email", "") or user.get("public_email", "")).lower()
+        if user_email := user.get('email', user.get('public_email', '')):
+            user["email"] = user_email.lower()
+        projects_limit = user_client.config.projects_limit
+        if projects_limit is not None:
+            user["projects_limit"] = projects_limit
 
-    for key in constants.USER_KEYS_TO_IGNORE:
-        user.pop(key, None)
-    # SSO causes issues with the avatar URL due to the authentication
-    if user_client.config.group_sso_provider:
-        user.pop("avatar_url", None)
-    # Avoid propagating field when creating users on gitlab.com with no config value set
-    if is_dot_com(user_client.config.destination_host) and not projects_limit:
-        user.pop("projects_limit", None)
-    mongo.insert_data(
-        f"users-{strip_netloc(user_client.config.source_host)}", user)
+        for key in constants.USER_KEYS_TO_IGNORE:
+            user.pop(key, None)
+        # SSO causes issues with the avatar URL due to the authentication
+        if user_client.config.group_sso_provider:
+            user.pop("avatar_url", None)
+        # Avoid propagating field when creating users on gitlab.com with no config value set
+        if is_dot_com(user_client.config.destination_host) and not projects_limit:
+            user.pop("projects_limit", None)
+        mongo.insert_data(
+            f"users-{strip_netloc(user_client.config.source_host)}", user)

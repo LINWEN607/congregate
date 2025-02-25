@@ -365,20 +365,36 @@ test:end-to-end full:
       - full_instance_id
     when: always
 
-test:end-to-end single group:
+test:end-to-end single group admin token:
   extends:
     - .e2e-test-setup
     - .pytest-coverage
   script:
-    - cp instance_id sg_instance_id
+    - cp instance_id sg_admin_instance_id
     - poetry run pytest -s -m e2e_gl_setup_2 congregate/tests/
     - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
   retry: 2
   timeout: 90 minutes
   cache:
-    key: "$CI_COMMIT_SHA-sg"
+    key: "$CI_COMMIT_SHA-sg-admin"
     paths:
-      - sg_instance_id
+      - sg_admin_instance_id
+    when: always
+
+test:end-to-end single group owner token:
+  extends:
+    - .e2e-test-setup
+    - .pytest-coverage
+  script:
+    - cp instance_id sg_owner_instance_id
+    - poetry run pytest -s -m e2e_gl_setup_3 congregate/tests/
+    - poetry run pytest -s -m e2e_no_admin --cov-config=.coveragerc --cov=congregate congregate/tests/
+  retry: 2
+  timeout: 90 minutes
+  cache:
+    key: "$CI_COMMIT_SHA-sg-owner"
+    paths:
+      - sg_owner_instance_id
     when: always
 
 test:failed-e2e-full-cleanup:
@@ -401,9 +417,9 @@ test:failed-e2e-full-cleanup:
 
 test:failed-e2e-single-group-cleanup:
   variables:
-    INSTANCE_ID_FILE: sg_instance_id
+    INSTANCE_ID_FILE: sg_admin_instance_id
   needs:
-    - job: test:end-to-end single group
+    - job: test:end-to-end single group admin token
       optional: true
   extends:
     - .fallback-e2e-cleanup
@@ -413,7 +429,24 @@ test:failed-e2e-single-group-cleanup:
   cache:
     key: "$CI_COMMIT_SHA-sg"
     paths:
-      - sg_instance_id
+      - sg_admin_instance_id
+    policy: pull
+
+test:failed-e2e-single-group-owner-cleanup:
+  variables:
+    INSTANCE_ID_FILE: sg_owner_instance_id
+  needs:
+    - job: test:end-to-end single group owner token
+      optional: true
+  extends:
+    - .fallback-e2e-cleanup
+    - .aws-creds
+  rules:
+    - !reference [.e2e-test-setup, rules]
+  cache:
+    key: "$CI_COMMIT_SHA-sg"
+    paths:
+      - sg_owner_instance_id
     policy: pull
 
 test:Jenkins Integration Tests:

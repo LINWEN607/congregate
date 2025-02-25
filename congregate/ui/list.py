@@ -35,6 +35,7 @@ def list_data():
 
 @list_functions.route('/list-status/<id>', methods=['GET'])
 def get_list_status(id):
+    users, groups, projects = get_counts()
     finished_states = [states.FAILURE, states.REVOKED, states.SUCCESS]
     if res := get_task_by_id(id):
         if parent := res.get('parent_id'):
@@ -43,24 +44,24 @@ def get_list_status(id):
             res = get_task_status(id)
             if res.state in [states.FAILURE, states.REVOKED]:
                 return jsonify(
-                    task_status_response(res.id, res.state, res.name, res.result)
+                    task_status_response(res.id, res.state, res.name, res.result, users, groups, projects)
                 ), 200
         if res.children:
             child_not_finished = False
             for child in res.children:
                 if child.state not in finished_states:
                     child_not_finished = True
-            if child_not_finished:
+            if child_not_finished or (res.state not in finished_states):
                 state = states.PENDING
             else:
                 state = res.state
         else:
             state = states.PENDING
         return jsonify(
-            task_status_response(res.id, state, res.name, res.result)
+            task_status_response(res.id, state, res.name, res.result, users, groups, projects)
         ), 200
     return jsonify(
-        task_status_response(id, states.PENDING, None, None)
+        task_status_response(id, states.PENDING, None, None, users, groups, projects)
     ), 200
 
 @list_functions.route('/last-list', methods=['GET'])
@@ -87,10 +88,22 @@ def dump_list_data(mongo=None):
 def get_task_by_id(id, mongo=None):
     return mongo.safe_find_one('celery_taskmeta', {"_id": id})
 
-def task_status_response(id, status, task_name, result):
+@congregate_mongo_connection
+def get_counts(mongo=None):
+    users = mongo.db[f"users-{strip_netloc(config.source_host)}"].count_documents({}) or 0
+    groups = mongo.db[f"groups-{strip_netloc(config.source_host)}"].count_documents({}) or 0
+    projects = mongo.db[f"projects-{strip_netloc(config.source_host)}"].count_documents({}) or 0
+    return (users, groups, projects)
+
+def task_status_response(id, status, task_name, result, users, groups, projects):
     return {
         'task-id': id,
         'status': status,
         'task_name': task_name,
-        'result': result
+        'result': result,
+        'counts': {
+            'projects': projects,
+            'groups': groups,
+            'users': users
+        }
     }

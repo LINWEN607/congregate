@@ -510,6 +510,13 @@ class Config(BaseConfig):
         Defaults to 30 seconds
         """
         return self.prop_int("APP", "poll_interval", default=30)
+    
+    @property
+    def list_task_timeout(self):
+        """
+        Sets the timeout for the concurrent list of async tasks to complete
+        """
+        return self.prop_int("APP", "list_task_timeout", default=86400)
 
 # HIDDEN PROPERTIES
 

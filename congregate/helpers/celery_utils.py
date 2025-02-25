@@ -1,10 +1,13 @@
 from dataclasses import dataclass, asdict
 from flask import Flask
-from celery import Celery, Task
+from celery import Celery, Task, states
 from celery.result import AsyncResult
 from celery.signals import worker_process_shutdown
 from redis import Redis
 from congregate.helpers.configuration_validator import ConfigurationValidator
+from congregate.helpers.celery_mdbc import mongo_connection
+
+FINISHED_STATES = [states.FAILURE, states.REVOKED, states.SUCCESS]
 
 def celery_init_app(app: Flask) -> Celery:
     """
@@ -31,7 +34,8 @@ def generate_celery_config():
         result_extended=False,
         override_backends={
             "mongodb": "congregate.helpers.extended_mongo_backend:ExtendedMongoBackend"
-        }
+        },
+        worker_concurrency=c.processes
     ).to_dict()
 
 @worker_process_shutdown.connect
@@ -58,6 +62,39 @@ def find_arg_prop(res: AsyncResult, prop_key: str):
         for arg in res.args:
             if isinstance(arg, dict):
                 return arg.get(prop_key)
+            
+@mongo_connection
+def find_pending_tasks(tasks, mongo=None):
+    return mongo.safe_find('celery_taskmeta', {
+        'task': {
+            '$in': tasks
+        }, 
+        'status': {
+            '$in': ['PENDING', 'STARTED']
+        }
+    })
+
+@mongo_connection
+def get_task_by_id(id, mongo=None):
+    return mongo.safe_find_one('celery_taskmeta', {"_id": id})
+
+def get_task_chain_status(id):
+    if res := get_task_by_id(id):
+        if parent := res.get('parent_id'):
+            res = get_task_status(parent)
+        else:
+            return get_task_status(id)
+        if res.children:
+            child_not_finished = False
+            for child in res.children:
+                if child.state not in FINISHED_STATES:
+                    child_not_finished = True
+            if child_not_finished:
+                return states.PENDING
+            else:
+                return res.state
+        else:
+            return states.PENDING
 
 @dataclass
 class CeleryConfig():
@@ -66,7 +103,8 @@ class CeleryConfig():
     task_ignore_results: bool
     task_track_started: bool
     result_extended: bool
-    override_backends : dict
+    override_backends: dict
+    worker_concurrency: int
 
     def to_dict(self):
         return asdict(self)

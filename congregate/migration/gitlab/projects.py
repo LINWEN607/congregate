@@ -1141,7 +1141,7 @@ class ProjectsClient(BaseClass):
         return contributors
 
 
-@shared_task(name='retrieve-projects')
+@shared_task(name='retrieve-gl-projects')
 @mongo_connection
 def handle_retrieving_project(host, token, project, mongo=None):
     pc = ProjectsClient()
