@@ -1,0 +1,10 @@
+[Documenation][1] @gitlab-org/professional-services-automation
+docs/
+runbooks/
+customer/
+*.md
+
+[Code][1] @VamsiPonnapalli @leopardm @mbelinga @pprokic @glen_miller
+*.py
+*.sh
+*.yml
