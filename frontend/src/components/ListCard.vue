@@ -87,15 +87,26 @@ export default {
       })
     },
     pollListStatus: async function() {
-      let pollStatus = () => axios.get(`${import.meta.env.VITE_API_ROOT}/api/list-status/${this.listTaskId}`).catch(() => {
+      let pollStatus = () => axios.get(`${import.meta.env.VITE_API_ROOT}/api/list-status/${this.listTaskId}`)
+        .catch(() => {
           this.$emitter.emit('alert', {
             'message': 'Listing failed. Check the congregate logs for a traceback',
             'messageType': 'error'
           })
           this.systemStore.updateListingInProgress(false)
         })
-      let validate = result => !['SUCCESS', 'FAILURE'].includes(result.data.status)
-      let response = await poll(pollStatus, validate, 5000)
+      let validate = result => {
+        console.log("Checking actual result")
+        return !['SUCCESS', 'FAILURE'].includes(result.data.status)
+      }
+      let updateCounts = result => {
+        console.log(this.listingInProgress)
+        console.log("Updating counts")
+        this.$emitter.emit('stream-list-stats', (result.data.counts))
+        return this.listingInProgress
+      }
+      poll(pollStatus, updateCounts, 5000)
+      let response = await poll(pollStatus, validate, 30000)
       if (response.data.status == 'SUCCESS') {
         this.$emitter.emit('alert', {
           'message': 'Listing is complete',
@@ -112,7 +123,6 @@ export default {
         })
       }
       this.systemStore.updateListingInProgress(false)
-      
     },
     checkLastList: function() {
       axios.get(`${import.meta.env.VITE_API_ROOT}/api/last-list`).then(response => {

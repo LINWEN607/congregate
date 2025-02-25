@@ -91,6 +91,8 @@ class ProjectDiffClient(BaseDiffClient):
         project_diff["/projects/:id"] = self.generate_project_diff(
             project, self.projects_api.get_project, obfuscate=True)
 
+        # TODO: Add GraphQL query for project statistics
+
         if not self.rollback:
             # Basic Project Stat Counts
             project_diff["Total Number of Merge Requests"] = self.generate_project_count_diff_graphql(
@@ -203,21 +205,24 @@ class ProjectDiffClient(BaseDiffClient):
             self.config.destination_host, self.config.destination_token, destination_apis)
         return self.generate_count_diff(source_count, destination_count)
     
-    def generate_project_count_diff_graphql(self, project, entity, api):
+    def generate_project_count_diff_graphql(self, project, entity, api, message=None):
         source_full_path = project['path_with_namespace']
         destination_full_path = get_target_project_path(project)
         formatted_entity = to_camel_case(entity)
         source_count = 0
         destination_count = 0
+        if message:
+            self.log.info(message)
         # Source count lookup via GraphQL with REST API lookup if instance is older than 17.3
         if gql_resp := safe_json_response(self.gl_api.generate_post_request(
             self.config.source_host, self.config.source_token, None, json_dumps(self.generate_count_query(source_full_path, formatted_entity)), graphql_query=True)):
-            source_count = dig(gql_resp, 'data', 'project', formatted_entity, 'count', default=0)
-        elif is_gl_version_older_than('17.3', self.config.source_host, self.config.source_token, self.log):
-            self.log.warning("GraphQL lookup on source failed. Falling back to REST API")
-            source_id = project["id"]
-            source_count = self.gl_api.get_total_count(
-                self.config.source_host, self.config.source_token, api.replace(":id", str(source_id)))
+            if dig(gql_resp, 'data', 'project'):
+                source_count = dig(gql_resp, 'data', 'project', formatted_entity, 'count', default=0)
+            elif is_gl_version_older_than('17.3', self.config.source_host, self.config.source_token, self.log):
+                self.log.warning("GraphQL lookup on source failed. Falling back to REST API")
+                source_id = project["id"]
+                source_count = self.gl_api.get_total_count(
+                    self.config.source_host, self.config.source_token, api.replace(":id", str(source_id)))
         else:
             self.log.warning(f"[{entity}] retrieval for {source_full_path} failed. Skipping.")
 

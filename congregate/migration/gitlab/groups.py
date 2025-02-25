@@ -291,7 +291,7 @@ class GroupsClient(BaseClass):
         return entities, result
 
 
-@shared_task(name='traverse-groups')
+@shared_task(name='retrieve-gl-groups')
 @mongo_connection
 def traverse_groups_task(host, token, group, mongo=None):
     gc = GroupsClient()

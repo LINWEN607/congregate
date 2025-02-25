@@ -1,6 +1,7 @@
 import os
 import sys
 import requests
+from json import dumps as json_dumps
 from urllib.parse import urljoin
 from gitlab_ps_utils.decorators import stable_retry
 from gitlab_ps_utils.logger import myLogger
@@ -52,6 +53,24 @@ class token_generator():
             self.log.info(f"Obtained PAT for {url}")
             return response.get('token')
         sys.exit('Unable to generate PAT from OAuth token and proceed with end to end test. Exiting')
+
+    def generate_group_access_owner_token(self, host, token, group_id):
+        headers = {
+            'Authorization': f"Bearer {token}",
+            'Content-Type': 'application/json'
+        }
+        data = {
+            'name': 'congregate',
+            'scopes': ['api'],
+            'access_level': 50,
+            'expires_at': "2025-12-31 00:00:00"
+        }
+        new_token = requests.post(urljoin(host, f'/api/v4/groups/{group_id}/access_tokens'), headers=headers, data=json_dumps(data))
+        if r := safe_json_response(new_token):
+            self.log.info(f"Obtained Group Access Token")
+            return r.get('token')
+        sys.exit('Unable to generate Group Access Token from PAT and proceed with end to end test. Exiting')
+        
 
     def get_current_user_id(self, token):
         headers = {

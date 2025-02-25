@@ -181,6 +181,7 @@ class SeedDataGenerator(BaseClass):
         print(json.dumps(groups, indent=4))
         print("---Generated Projects---")
         print(json.dumps(projects, indent=4))
+        return users, groups, projects
 
     def generate_instance_hooks(self, dry_run=True):
         for d in self.HOOKS_DATA:

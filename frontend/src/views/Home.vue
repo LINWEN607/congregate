@@ -69,9 +69,15 @@ export default {
       this.getSummary()
     })
     this.$emitter.emit('check-jobs')
+    this.$emitter.on('stream-list-stats', (counts) => {
+      this.projectSummary = this.stagedProjects.length + "/" + counts.projects
+      this.groupSummary = this.stagedGroups.length + "/" + counts.groups
+      this.userSummary = this.stagedUsers.length + "/" + counts.users
+    })
   },
   beforeDestroy: function () {
     this.$emitter.off('update-stage')
+    this.$emitter.off('stream-list-stats')
   },
   methods: {
     getSummary: function() {
