@@ -39,12 +39,16 @@ LIST_TASKS = [
     'retrieve-bbs-users',
     'retrieve-bbs-projects',
     'retrieve-bbs-repos',
+    'retrieve-bbs-user-groups',
     'retrieve-gh-users',
     'retrieve-gh-orgs',
     'retrieve-gh-repos',
     'retrieve-gl-users',
     'retrieve-gl-groups',
-    'retrieve-gl-projects'
+    'retrieve-gl-projects',
+    'retrieve-ado-users',
+    'retrieve-ado-projects',
+    'retrieve-ado-groups'
 ]
 
 class ListClient(BaseClass):
@@ -273,6 +277,8 @@ class ListClient(BaseClass):
             self.list_gitlab_data()
         elif src_type == "github":
             self.list_github_data()
+        elif src_type == "azure devops":
+            self.list_azure_devops_data()
         else:
             self.log.warning(
                 f"Cannot list from {src_type} source type - {self.config.source_host}")

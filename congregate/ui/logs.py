@@ -27,18 +27,6 @@ def follow(file, sleep_sec=0.1) -> Iterator[str]:
 @logger.route('/log/<log_file>')
 def generate_stream(log_file):
     def generate():
-        last_line = ""
-        # while True:
-        #     print("Tailing logs")
-        #     output = subprocess.check_output(
-        #         ['tail', '-n 1', f'{get_congregate_path()}/data/logs/congregate.log'])
-        #     # if output == last_line:
-        #     #     yield ""
-        #     # else:
-        #     #     last_line = output
-        #     #     yield "<p>" + output.split("|")[-1] + "</p>"
-        #     yield output
-        #     sleep(1)
         with open(f'{get_congregate_path()}/data/logs/{log_file}', 'r') as file:
             for line in follow(file):
                 yield line

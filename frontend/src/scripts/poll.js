@@ -8,6 +8,11 @@ export async function poll (fn, fnCondition, ms) {
     }
     return result;
   };
+
+export const pollingIntervals = Object.freeze({
+  UPDATE: 5000,
+  VALIDATE: 30000
+})
   
 const wait = function (ms = 1000) {
     return new Promise(resolve => {
