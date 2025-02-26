@@ -887,8 +887,8 @@ class UsersClient(BaseClass):
 def handle_retrieving_users_task(user, mongo=None):
     # mongo should be set to None unless this function is being used in a
     # unit test
+    user_client = UsersClient()
     if user:
-        user_client = UsersClient()
         user_client.log.info(f"User: {user}")
         # user["email"] = (user.get("email", "") or user.get("public_email", "")).lower()
         if user_email := user.get('email', user.get('public_email', '')):
@@ -908,5 +908,4 @@ def handle_retrieving_users_task(user, mongo=None):
         mongo.insert_data(
             f"users-{strip_netloc(user_client.config.source_host)}", user)
     else:
-        user_client = UsersClient()
         user_client.log.warning(f"Unable to process user data. Was provided [{user}]")
