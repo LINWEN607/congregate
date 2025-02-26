@@ -18,7 +18,7 @@
 import axios from 'axios'
 import { mapStores } from 'pinia'
 import { useSystemStore } from '@/stores/system'
-import { poll } from '@/scripts/poll.js'
+import { poll, pollingIntervals } from '@/scripts/poll.js'
 import ActionCard from '@/components/ActionCard.vue'
 import ParamForm from '@/components/ParamForm.vue'
 
@@ -105,8 +105,10 @@ export default {
         this.$emitter.emit('stream-list-stats', (result.data.counts))
         return this.listingInProgress
       }
-      poll(pollStatus, updateCounts, 5000)
-      let response = await poll(pollStatus, validate, 30000)
+      // Shorter polling time to update the counts in the UI
+      poll(pollStatus, updateCounts, pollingIntervals.UPDATE)
+      // Longer polling time to fully validate listing is complete
+      let response = await poll(pollStatus, validate, pollingIntervals.VALIDATE)
       if (response.data.status == 'SUCCESS') {
         this.$emitter.emit('alert', {
           'message': 'Listing is complete',

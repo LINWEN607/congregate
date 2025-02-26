@@ -69,7 +69,7 @@ class token_generator():
         if r := safe_json_response(new_token):
             self.log.info(f"Obtained Group Access Token")
             return r.get('token')
-        sys.exit('Unable to generate Group Access Token from PAT and proceed with end to end test. Exiting')
+        sys.exit(f'Unable to generate Group Access Token from PAT and proceed with end to end test. The resopnse returned was \n{new_token.text}\n Exiting')
         
 
     def get_current_user_id(self, token):

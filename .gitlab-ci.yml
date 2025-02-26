@@ -415,7 +415,7 @@ test:failed-e2e-full-cleanup:
       - full_instance_id
     policy: pull
 
-test:failed-e2e-single-group-cleanup:
+test:failed-e2e-single-group-admin-cleanup:
   variables:
     INSTANCE_ID_FILE: sg_admin_instance_id
   needs:

@@ -907,3 +907,6 @@ def handle_retrieving_users_task(user, mongo=None):
             user.pop("projects_limit", None)
         mongo.insert_data(
             f"users-{strip_netloc(user_client.config.source_host)}", user)
+    else:
+        user_client = UsersClient()
+        user_client.log.warning(f"Unable to process user data. Was provided [{user}]")
