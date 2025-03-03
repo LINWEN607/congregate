@@ -36,8 +36,6 @@ The general workflow of Direct Transfer migrations align to the following steps:
 3. Migration of projects
 4. Mapping of Placeholder users (from source) to users (on destination) ^
 
-^ steps 3. and 4. can happen in parallel and do not need to be in sequence.
-
 ```mermaid
 ---
 title: Direct Transfer workflow
@@ -52,6 +50,8 @@ mappingOfPlaceholderUsers("Mapping of Placeholder Users")
 userAccountCreation --> migrationGroupsSubGroups --> migrationProjects
 migrationGroupsSubGroups --> mappingOfPlaceholderUsers
 ```
+
+**NOTE:** With direct-transfer and placeholder user mapping, all steps can happen in parallel, as part of a single migration wave. However, we strongly advise running them sequentially.
 
 ### Placeholder Users
 
@@ -140,11 +140,16 @@ Refer to the documentation here for [using Congregate with Direct Transfer](http
 - For the list of group items migrated by Direct Transfer itself, refer to the [documentation here](https://docs.gitlab.com/ee/user/group/import/migrated_items.html#migrated-group-items)
 - For **some** items, which are **not** migrated by Direct Transfer, Congregate migrates them post (DT) import. Refer to the [features matrix](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/blob/master/customer/gitlab-migration-features-matrix.md) for a detailed list of items which Congregate migrates post-import.
 
-#### Known issue when migrating groups with the same name/path
+#### Known issue when migrating groups under the same name/path
 
-There is a [known issue](https://gitlab.com/gitlab-org/gitlab/-/issues/519401) which prevents the import of groups which have the same name/path on the destination.
+For destination GitLab versions < 17.10 there is an [issue](https://gitlab.com/gitlab-org/gitlab/-/issues/519401) which prevents the import of groups under the same name/path on the destination.
 
-A current workaround would be to rename the top-level group on the destination, however, this would have to be agreed with the customer and planned ahead before starting migrations as changing the top-level group name midway between migration waves would cause other issues.
+Apart from upgrading to GitLab 17.10 workarounds would be to:
+
+- Rename the migrating group on source, or
+- Rename the group migrating to on destination
+
+However, this would have to be agreed with the customer and planned ahead before starting migrations as changing a group name/path midway between migration waves could cause other issues.
 
 #### Moving multiple groups into a single top-level group on Gitlab.com
 
@@ -163,7 +168,9 @@ For awareness, there are slight differences between the Direct Transfer API and 
 
 ### Migration of projects
 
-Project data can be migrated once groups/sub groups have been migrated on the destination.
+Project data can migrate once groups/sub groups migrate to the destination GitLab instance.
+
+**NOTE:** With direct-transfer, groups and projects can migrate in parallel. However we recommend running them sequentially.
 
 Refer to the documentation here for [using Congregate with Direct Transfer](https://gitlab-org.gitlab.io/professional-services-automation/tools/migration/congregate/direct-transfer-usage/) for migrations.
 
