@@ -203,7 +203,8 @@ class Config(BaseConfig):
 
     @property
     def src_aws_secret_access_key(self):
-        return self.prop("SOURCE", "src_aws_secret_access_key")
+        return self.prop("SOURCE", "src_aws_secret_access_key",
+                         default=None, obfuscated=True)
     
     @property
     def src_aws_codecommit_username(self):
@@ -211,7 +212,8 @@ class Config(BaseConfig):
     
     @property
     def src_aws_codecommit_password(self):
-        return self.prop("SOURCE", "src_aws_codecommit_password")
+        return self.prop("SOURCE", "src_aws_codecommit_password",
+                         default=None, obfuscated=True)
 
     @property
     def src_aws_region(self):
@@ -219,7 +221,8 @@ class Config(BaseConfig):
     
     @property
     def src_aws_session_token(self):
-        return self.prop("SOURCE", "src_aws_session_token")
+        return self.prop("SOURCE", "src_aws_session_token",
+                         default=None, obfuscated=True)
     
     @property
     def src_aws_region(self):
