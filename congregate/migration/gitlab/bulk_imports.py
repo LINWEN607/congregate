@@ -3,7 +3,7 @@ from typing import Tuple
 from dacite import from_dict
 from celery import shared_task, chain
 from gitlab_ps_utils.misc_utils import safe_json_response
-from congregate.helpers.migrate_utils import get_project_dest_namespace, get_staged_projects, get_full_path_with_parent_namespace
+from congregate.helpers.migrate_utils import get_stage_wave_paths, get_staged_projects, get_full_path_with_parent_namespace
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.base_gitlab_client import BaseGitLabClient
 from congregate.migration.gitlab.api.bulk_imports import BulkImportApi
@@ -186,14 +186,13 @@ class BulkImportsClient(BaseGitLabClient):
     def build_project_entity(self, project_data):
         """
             Build a single direct transfer project entity
-
-            Note: this currently doesn't work with stage wave
         """
+        _, target_namespace=get_stage_wave_paths(project_data)
         return BulkImportEntity(
             source_type="project_entity",
             source_full_path=project_data['path_with_namespace'],
             destination_slug=project_data['path'],
-            destination_namespace=get_project_dest_namespace(project_data),
+            destination_namespace=target_namespace,
         )
 
     def subset_projects_staged(self):
