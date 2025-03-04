@@ -167,7 +167,7 @@ def write_to_csv(placeholder_users, output_file):
 # Example usage
 if __name__ == "__main__":
     try:
-        group_full_path = "bx"  # Replace with your group's full path
+        group_full_path = "MYTOPLEVELGROUP"  # Replace with your group's full path
         output_file = "placeholder_users.csv"  # Name of the output CSV file
 
         logger.info(f"Starting retrieval of placeholder users for group: {group_full_path}")
