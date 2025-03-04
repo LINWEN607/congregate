@@ -1,14 +1,14 @@
-# Post-Migration Guide: Adopting GitLab CI from Jenkins with Duo Workflow
+# Post-Migration Guide: From Jenkins to GitLab CI with Duo Workflow
 
 ## Overview
-After successfully migrating your source code repositories to GitLab using Congregate, the next step is to transition from your previous CI system (e.g., Jenkins) to GitLab CI/CD while enabling **Duo Workflow**. This guide provides steps to set up Duo Workflow and references the Migration Delivery Kit to assist in translating your previous CI/CD pipelines.
+After successfully migrating your source code repositories to GitLab using Congregate, the next step is to transition from your previous CI system (e.g., Jenkins) to GitLab CI/CD while enabling [Duo Workflow](https://docs.gitlab.com/user/duo_workflow/). This guide provides steps to set up Duo Workflow and references the Migration Delivery Kit to assist in translating your previous CI/CD pipelines.
 
 ## Prerequisites
 Before proceeding, ensure you have:
 - Migrated your source code to GitLab using [Congregate](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate).
 - Access to a GitLab instance with Duo Workflow enabled.
 - Appropriate permissions to configure CI/CD pipelines.
-- A **Jenkinsfile** or equivalent CI/CD pipeline definition from your previous system.
+- A Jenkinsfile or equivalent CI/CD pipeline definition from Jenkins.
 
 ## Steps to Enable Duo Workflow and Transition CI/CD
 
@@ -43,4 +43,4 @@ Once Duo Workflow is enabled, you need to transition your existing CI/CD pipelin
 - [GitLab Professional Services Migration Tools](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate)
 
 ## Conclusion
-Use the [Migration Delivery Kit](https://gitlab.com/gitlab-org/professional-services-automation/delivery-kits/migration-delivery-kits/migration-delivery-kit/-/blob/main/Jenkins/jenkins-to-gitlab-duo-workflow.md?ref_type=heads) to transition your existing CI/CD pipelines seamlessly. If you encounter any issues, refer to the official GitLab documentation or reach out to GitLab Professional Services for assistance.
+Use the [Jenkins Migration Delivery Kit](https://gitlab.com/gitlab-org/professional-services-automation/delivery-kits/migration-delivery-kits/migration-delivery-kit/-/blob/main/Jenkins/jenkins-to-gitlab-duo-workflow.md?ref_type=heads) to transition your existing CI/CD pipelines seamlessly. If you encounter any issues, reach out to GitLab Professional Services for assistance.
