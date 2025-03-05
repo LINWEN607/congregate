@@ -23,7 +23,7 @@ class EnvironmentsClient(DbOrHttpMixin, BaseGitLabClient):
         try:
             if not enabled:
                 self.log.info(
-                    f"Environments are disabled ({enabled}) for project {name}")
+                    f"Environments are disabled ({enabled}) for project '{name}'")
                 return None
 
             # Migrate environments
@@ -36,23 +36,20 @@ class EnvironmentsClient(DbOrHttpMixin, BaseGitLabClient):
                 airgap_import=self.config.airgap_import)
 
             # Convert the response to a list, ensuring the generator is fully consumed
-            envs = list(resp)
-
+            error, envs = is_error_message_present(resp)
+            if error:
+                self.log.error(f"Failed to fetch project '{name}' environments: {envs}")
+                return False
             if not envs:
-                self.log.info(f"No environments found for project {name}")
+                self.log.info(f"No environments found for project '{name}'")
                 return True  # Return True, since there is nothing to migrate
 
-            self.log.info(f"Migrating project {name} environments")
+            self.log.info(f"Migrating project '{name}' environments")
             for env in envs:
                 # Check if env is actually a dictionary or object you can work with
                 if not isinstance(env, dict):
-                    self.log.error(f"Unexpected environment type for project {name}: {type(env)} - {env}")
-                    continue  # Skip this environment since it's not a dicitionary
-                error, env = is_error_message_present(env)
-                if error or not env:
-                    self.log.error(
-                        f"Failed to fetch environments ({env}) for project {name}")
-                    return False
+                    self.log.error(f"Unexpected environment type for project '{name}': {type(env)} - {env}")
+                    continue  # Skip this environment since it's not a dictionary
                 if create_resp := self.send_data(
                     self.projects.create_environment,
                     (self.dest_host, self.dest_token, dest_id),

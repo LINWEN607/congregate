@@ -151,7 +151,7 @@ class BaseStageClass(BaseClass):
                 "path_with_namespace": path_with_namespace,
                 "visibility": project["visibility"],
                 "description": project["description"],
-                # Will be deprecated in favor of builds_access_level
+                # TODO: switch to `_access_level` fields
                 "jobs_enabled": project.get("jobs_enabled"),
                 "packages_enabled": project.get("packages_enabled"),
                 "project_type": dig(project, 'namespace', 'kind'),
