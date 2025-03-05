@@ -73,12 +73,12 @@ class HooksClient(BaseClass):
             resp = self.projects_api.get_all_project_hooks(
                 old_id, self.config.source_host, self.config.source_token)
             hooks = iter(resp)
-            self.log.info(f"Migrating project {path} (ID: {old_id}) hooks")
+            self.log.info(f"Migrating project '{path}' (ID: {old_id}) hooks")
             for h in hooks:
                 error, h = is_error_message_present(h)
                 if error or not h:
                     self.log.error(
-                        f"Failed to fetch project {path} (ID: {old_id}) hook ({h})")
+                        f"Failed to fetch project '{path}' (ID: {old_id}) hook ({h})")
                     return False
                 h = pop_multiple_keys(h, ["id", "created_at", "project_id"])
                 # hook does not include secret token
@@ -86,14 +86,14 @@ class HooksClient(BaseClass):
                     self.config.destination_host, self.config.destination_token, new_id, h)
                 if add_resp.status_code != 201:
                     self.log.error(
-                        f"Failed to create project {path} (ID: {new_id}) hook ({h}), with error:\n{add_resp} - {add_resp.text}")
+                        f"Failed to create project '{path}' (ID: {new_id}) hook ({h.get('url')}):\n{add_resp} - {add_resp.text}")
             return True
         except TypeError as te:
-            self.log.error(f"Project {path} (ID: {old_id}) hooks {resp} {te}")
+            self.log.error(f"Project '{path}' (ID: {old_id}) hooks {resp} {te}")
             return False
         except RequestException as re:
             self.log.error(
-                f"Failed to migrate project {path} (ID: {old_id}) hooks, with error:\n{re}")
+                f"Failed to migrate project '{path}' (ID: {old_id}) hooks\n{re}")
             return False
 
     def migrate_group_hooks(self, old_id, new_id, full_path):
