@@ -33,14 +33,14 @@ class ProjectFeatureFlagTests(unittest.TestCase):
     def test_create_feature_flag_on_project_all_possible_none(self):
         mock = self.project_feature_flag_client.project_feature_flags_api
         mock.create_feature_flag = MagicMock(return_value="called")
-        
+
         data_to_pass = self.mock_project_feature_flag_api.get_all_project_feature_flags()
         self.project_feature_flag_client.create_feature_flag_on_project("host", "token", 1, data_to_pass[0])
         mock.create_feature_flag.assert_called_with('host', 'token', 1, 'merge_train', 'new_version_flag', 'This feature is about merge train', True, [{'id': 1, 'name': 'userWithId', 'parameters': {'userIds': 'user1'}, 'scopes': [{'id': 1, 'environment_scope': 'production'}], 'user_list': None}])
-        
+
         ## No description
         self.project_feature_flag_client.create_feature_flag_on_project("host", "token", 1, {
-            "name":"merge_train",                                                                                
+            "name":"merge_train",
             "active": True,
             "version": "new_version_flag",
             "scopes":[],
@@ -52,7 +52,7 @@ class ProjectFeatureFlagTests(unittest.TestCase):
 
         ## No active
         self.project_feature_flag_client.create_feature_flag_on_project("host", "token", 1, {
-            "name":"merge_train",                                                                                
+            "name":"merge_train",
             "description": "A description",
             "version": "new_version_flag",
             "scopes": [],
@@ -64,9 +64,9 @@ class ProjectFeatureFlagTests(unittest.TestCase):
 
         ## No strategies
         self.project_feature_flag_client.create_feature_flag_on_project("host", "token", 1, {
-            "name":"merge_train",                                                                                
+            "name":"merge_train",
             "version": "new_version_flag",
-            "description": "A description",            
+            "description": "A description",
             "active": True,
             "strategies":[]
             }
@@ -83,7 +83,7 @@ class ProjectFeatureFlagTests(unittest.TestCase):
             mock.get_all_project_feature_flags = MagicMock(return_value=[])
             self.project_feature_flag_client.migrate_project_feature_flags_for_project(1, 2)
             for out in captured.output:
-                self.assertIn("No feature flags found for source_project_id 1", out)
+                self.assertIn("No feature flags found for project 1", out)
 
     def test_rewrite_strategies_when_none_feature_flag(self):
         with self.assertLogs(self.project_feature_flag_client.log.name) as captured:
