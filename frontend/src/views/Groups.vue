@@ -1,9 +1,9 @@
 <template>
-  <StageTable 
-    asset="groups" 
-    :columns="columns" 
-    addEvent="stageGroup" 
-    removeEvent="unstageGroup" 
+  <StageTable
+    asset="groups"
+    :columns="columns"
+    addEvent="stageGroup"
+    removeEvent="unstageGroup"
     assetStore="stagedGroups"
     storeGetter="totalSelectedGroups"
   />
@@ -22,8 +22,7 @@ export default {
       columns: [
         {
           title: 'ID',
-          field: 'id',
-          type: 'number'
+          field: 'id'
         },
         {
           title: 'Name',
