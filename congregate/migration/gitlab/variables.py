@@ -1,6 +1,6 @@
 from requests.exceptions import RequestException
 from requests import Response
-from gitlab_ps_utils.misc_utils import is_error_message_present
+from gitlab_ps_utils.misc_utils import is_error_message_present, safe_json_response
 
 from congregate.migration.gitlab.base_gitlab_client import BaseGitLabClient
 from congregate.helpers.db_or_http import DbOrHttpMixin
@@ -118,16 +118,17 @@ class VariablesClient(DbOrHttpMixin, BaseGitLabClient):
         )
 
         if isinstance(pipeline_schedule_vars, Response):
-            pipeline_schedule_vars = pipeline_schedule_vars.json()['variables']
-
-        for v in pipeline_schedule_vars:
-            self.send_data(self.create_project_pipeline_schedule_variable,
-                           (new_id, sps['id'], dps_id, self.dest_host,
-                            self.dest_token, v),
-                           f"pipeline_schedule_variables",
-                           old_id,
-                           {'schedule_id': sps['id'], **v},
-                           airgap=self.config.airgap, airgap_export=self.config.airgap_export)
+            for psv in pipeline_schedule_vars.json().get('variables', []):
+                self.send_data(self.create_project_pipeline_schedule_variable,
+                            (new_id, sps['id'], dps_id, self.dest_host,
+                                self.dest_token, psv),
+                            f"pipeline_schedule_variables",
+                            old_id,
+                            {'schedule_id': sps['id'], **psv},
+                            airgap=self.config.airgap, airgap_export=self.config.airgap_export)
+        else:
+            self.log.error(
+                f"Failed to retrieve project '{p_name}' pipeline schedule ({sps['description']}) variables")
 
     def create_project_pipeline_schedule_variable(self, pid, spsid, dpsid, host, token, variable, data):
         if variable.get('schedule_id', -1) == spsid or not variable.get('schedule_id'):
