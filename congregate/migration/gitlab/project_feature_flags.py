@@ -52,16 +52,16 @@ class ProjectFeatureFlagClient(BaseClass):
                 self.config.source_host, self.config.source_token, source_project_id
             )
 
-            if not project_feature_flags:
-                self.log.info(f"No feature flags found for source_project_id {source_project_id}")
+            # Convert the response to a list, ensuring the generator is fully consumed
+            error, flags = is_error_message_present(project_feature_flags)
+            if error:
+                self.log.error(f"Failed to list project {source_project_id} feature flags: {flags}")
+                return False
+            if not flags:
+                self.log.info(f"No feature flags found for project {source_project_id}")
                 return True
 
             for flag in project_feature_flags:
-                error, flag = is_error_message_present(flag)
-                if error or not flag:
-                    self.log.error(f"Failed to list feature flags: {flag}")
-                    return False
-
                 # Rewrite strategies
                 if user_xid_conversion:
                     self.rewrite_strategies(flag, user_xid_conversion)
