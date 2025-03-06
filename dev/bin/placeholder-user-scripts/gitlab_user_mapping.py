@@ -15,6 +15,8 @@ Usage:
     python3 gitlab_user_mapping.py email_list.txt [--output output_file.csv]
                                   [--update-placeholders placeholder_file.csv]
                                   [--log-level {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
+                                  [--validate-mappings]
+                                  [--only-successful]
 
 Arguments:
     email_list.txt             Path to a file containing one email address per line
@@ -23,6 +25,7 @@ Arguments:
     --update-placeholders      Optional path to a placeholder users CSV file to update
     --log-level                Optional logging level (default: INFO)
     --validate-mappings        Validate the mappings by cross-checking destination users
+    --only-successful          Include only successfully mapped users in the generated placeholder file
 
 Environment Variables (Required):
 ---------------------------------
@@ -127,6 +130,8 @@ class GitLabGraphQLClient:
             "Authorization": f"Bearer {access_token}",
             "Content-Type": "application/json"
         }
+
+
     
     def query_user_by_email(self, email: str) -> Optional[Dict]:
         """Query a user by email using GraphQL."""
@@ -388,19 +393,39 @@ def read_placeholder_users(file_path: str) -> List[Dict]:
         logging.error(f"Error reading placeholder users file {file_path}: {str(e)}")
         sys.exit(1)
 
-def write_updated_placeholder_users(placeholder_users: List[Dict], output_file: str) -> None:
-    """Write updated placeholder users to a CSV file."""
+def write_updated_placeholder_users(placeholder_users: List[Dict], output_file: str, only_successful: bool = False) -> None:
+    """
+    Write updated placeholder users to a CSV file.
+    
+    Args:
+        placeholder_users: List of placeholder user dictionaries
+        output_file: Path to the output CSV file
+        only_successful: If True, only output users with a GitLab assigneeUserId
+    """
     if not placeholder_users:
         logging.warning("No placeholder users to write")
         return
     
+    # Filter users if only_successful is True
+    if only_successful:
+        successful_users = [user for user in placeholder_users if user.get("GitLab assigneeUserId")]
+        if not successful_users:
+            logging.warning("No successfully mapped placeholder users to write")
+            return
+        
+        users_to_write = successful_users
+        logging.info(f"Writing {len(successful_users)} successfully mapped users out of {len(placeholder_users)} total")
+    else:
+        users_to_write = placeholder_users
+        logging.info(f"Writing all {len(placeholder_users)} placeholder users")
+    
     try:
         with open(output_file, 'w', newline='') as f:
-            writer = csv.DictWriter(f, fieldnames=placeholder_users[0].keys())
+            writer = csv.DictWriter(f, fieldnames=users_to_write[0].keys())
             writer.writeheader()
-            writer.writerows(placeholder_users)
+            writer.writerows(users_to_write)
         
-        logging.info(f"Successfully wrote {len(placeholder_users)} updated placeholder users to {output_file}")
+        logging.info(f"Successfully wrote {len(users_to_write)} placeholder users to {output_file}")
     except IOError as e:
         logging.error(f"Error writing updated placeholder users to {output_file}: {str(e)}")
         sys.exit(1)
@@ -514,10 +539,12 @@ def main():
     parser.add_argument("--output", default=None, 
                        help="Output CSV file path (default: gitlab_user_mapping_<timestamp>.csv)")
     parser.add_argument("--update-placeholders", help="Path to placeholder users CSV file to update")
+    parser.add_argument("--validate-mappings", action="store_true", 
+                       help="Validate the mappings by cross-checking destination users")
+    parser.add_argument("--only-successful", action="store_true",
+                       help="Include only successfully mapped users in the generated placeholder file")
     parser.add_argument("--log-level", default="INFO", choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
                        help="Set the logging level (default: INFO)")
-    parser.add_argument("--validate-mappings", action="store_true", 
-                   help="Validate the mappings by cross-checking destination users")
     args = parser.parse_args()
     
     # Setup logging with the specified level
@@ -581,7 +608,11 @@ def main():
             validate_placeholder_mappings(updated_placeholder_users, results, destination_client)
 
         output_placeholder_file = "placeholder_users-generated.csv"
-        write_updated_placeholder_users(updated_placeholder_users, output_placeholder_file)
+        write_updated_placeholder_users(
+            updated_placeholder_users, 
+            output_placeholder_file, 
+            only_successful=args.only_successful
+        )
     
     logging.info("GitLab user mapping process completed successfully")
 
