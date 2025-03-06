@@ -25,9 +25,13 @@ DESTINATION_GITLAB_API_URL = f"{DESTINATION_GITLAB_ROOT}/api/v4"
 DESTINATION_ADMIN_ACCESS_TOKEN = os.environ.get("DESTINATION_ADMIN_ACCESS_TOKEN", "")
 
 FIND_PLACEHOLDERS_FOR_NAMESPACE_QUERY = """
-query($fullPath: ID!){
+query($fullPath: ID!, $after: String){
   namespace(fullPath: $fullPath) {
-    importSourceUsers {
+    importSourceUsers(first: 100, after: $after) {
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
       nodes {
         id
         importType
@@ -43,7 +47,7 @@ query($fullPath: ID!){
 
 def get_placeholder_users(group_full_path):
     """
-    Retrieve placeholder users for a given GitLab group using GraphQL API.
+    Retrieve placeholder users for a given GitLab group using GraphQL API with pagination.
 
     Args:
         group_full_path (str): The full path of the GitLab group.
@@ -60,41 +64,59 @@ def get_placeholder_users(group_full_path):
         "Content-Type": "application/json",
     }
 
-    variables = {
-        "fullPath": group_full_path
-    }
+    all_placeholder_users = []
+    has_next_page = True
+    after_cursor = None
+    total_retrieved = 0
 
     logger.info(f"Attempting to retrieve placeholder users for group: {group_full_path}")
 
-    try:
-        logger.debug("Sending GraphQL query to GitLab API")
-        response = requests.post(
-            f"{DESTINATION_GITLAB_GRAPHQL_URL}",
-            json={"query": FIND_PLACEHOLDERS_FOR_NAMESPACE_QUERY, "variables": variables},
-            headers=headers,
-            timeout=30
-        )
-        response.raise_for_status()
+    while has_next_page:
+        variables = {
+            "fullPath": group_full_path,
+            "after": after_cursor
+        }
 
-        data = response.json()
-        
-        if "errors" in data:
-            logger.error(f"GraphQL query returned errors: {data['errors']}")
-            raise ValueError(f"GraphQL query returned errors: {data['errors']}")
-        
-        placeholder_users = data["data"]["namespace"]["importSourceUsers"]["nodes"]
-        logger.info(f"Successfully retrieved {len(placeholder_users)} placeholder users")
-        return placeholder_users
+        try:
+            logger.debug(f"Sending GraphQL query to GitLab API (pagination cursor: {after_cursor})")
+            response = requests.post(
+                f"{DESTINATION_GITLAB_GRAPHQL_URL}",
+                json={"query": FIND_PLACEHOLDERS_FOR_NAMESPACE_QUERY, "variables": variables},
+                headers=headers,
+                timeout=30
+            )
+            response.raise_for_status()
 
-    except requests.RequestException as e:
-        logger.error(f"Error making request to GitLab API: {str(e)}")
-        raise
-    except KeyError as e:
-        logger.error(f"Unexpected response structure: {str(e)}")
-        raise
-    except ValueError as e:
-        logger.error(str(e))
-        raise
+            data = response.json()
+            
+            if "errors" in data:
+                logger.error(f"GraphQL query returned errors: {data['errors']}")
+                raise ValueError(f"GraphQL query returned errors: {data['errors']}")
+            
+            page_info = data["data"]["namespace"]["importSourceUsers"]["pageInfo"]
+            placeholder_users = data["data"]["namespace"]["importSourceUsers"]["nodes"]
+            
+            all_placeholder_users.extend(placeholder_users)
+            total_retrieved += len(placeholder_users)
+            
+            # Update pagination info
+            has_next_page = page_info["hasNextPage"]
+            after_cursor = page_info["endCursor"] if has_next_page else None
+            
+            logger.info(f"Retrieved {len(placeholder_users)} placeholder users in this page. Total so far: {total_retrieved}")
+            
+        except requests.RequestException as e:
+            logger.error(f"Error making request to GitLab API: {str(e)}")
+            raise
+        except KeyError as e:
+            logger.error(f"Unexpected response structure: {str(e)}")
+            raise
+        except ValueError as e:
+            logger.error(str(e))
+            raise
+
+    logger.info(f"Successfully retrieved all {total_retrieved} placeholder users")
+    return all_placeholder_users
 
 def write_to_csv(placeholder_users, output_file):
     """
@@ -145,7 +167,7 @@ def write_to_csv(placeholder_users, output_file):
 # Example usage
 if __name__ == "__main__":
     try:
-        group_full_path = "import-target"  # Replace with your group's full path
+        group_full_path = "MYTOPLEVELGROUP"  # Replace with your group's full path
         output_file = "placeholder_users.csv"  # Name of the output CSV file
 
         logger.info(f"Starting retrieval of placeholder users for group: {group_full_path}")
