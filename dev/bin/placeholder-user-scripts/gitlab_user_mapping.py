@@ -22,6 +22,7 @@ Arguments:
                                Default: gitlab_user_mapping_YYYYMMDD_HHMMSS.csv
     --update-placeholders      Optional path to a placeholder users CSV file to update
     --log-level                Optional logging level (default: INFO)
+    --validate-mappings        Validate the mappings by cross-checking destination users
 
 Environment Variables (Required):
 ---------------------------------
@@ -181,6 +182,164 @@ class GitLabGraphQLClient:
         except requests.exceptions.RequestException as e:
             logging.error(f"Request failed for {self.instance_name} when querying email {email}: {str(e)}")
             return None
+
+def validate_placeholder_mappings(placeholder_users: List[Dict], user_mapping: List[Dict], destination_client: GitLabGraphQLClient) -> None:
+    """
+    Validate the placeholder mappings by:
+    1. Getting the destination user via the GitLab assigneeUserId
+    2. Checking if any of their emails match the email in our source/destination mapping
+    3. Using that email to find the source user
+    4. Comparing the source username to the one in the placeholder CSV
+    """
+    logging.info("Starting validation of placeholder mappings...")
+    
+    # Create mapping lookups for validation
+    dest_gid_to_mapping = {}
+    for entry in user_mapping:
+        if entry["destination_gid"]:
+            dest_gid_to_mapping[entry["destination_gid"]] = entry
+    
+    # Create lookup of source emails to source usernames from our mapping
+    source_email_to_username = {}
+    for entry in user_mapping:
+        if entry["source_email"] and entry["source_username"]:
+            source_email_to_username[entry["source_email"]] = entry["source_username"]
+    
+    validation_count = 0
+    mismatched_count = 0
+    validation_errors = []
+    
+    # Process placeholder users with assigned destination IDs
+    users_to_validate = [user for user in placeholder_users if user.get("GitLab assigneeUserId")]
+    
+    if not users_to_validate:
+        logging.warning("No placeholder users with GitLab assigneeUserId found for validation")
+        return
+    
+    logging.info(f"Validating {len(users_to_validate)} placeholder users with assigned destination IDs")
+    
+    for i, user in enumerate(users_to_validate, 1):
+        # Log progress
+        if i % 20 == 0 or i == 1 or i == len(users_to_validate):
+            logging.info(f"Validating placeholder user {i}/{len(users_to_validate)}")
+        
+        source_username = user.get("Source username")
+        dest_gid = user.get("GitLab assigneeUserId")
+        
+        if not source_username or not dest_gid:
+            continue
+        
+        # Find the mapping entry for this destination ID
+        mapping_entry = dest_gid_to_mapping.get(dest_gid)
+        if not mapping_entry:
+            logging.warning(f"Validation: No mapping entry found for destination ID {dest_gid}")
+            continue
+        
+        # Get the user details from the destination GitLab
+        try:
+            # Query the destination user by ID to get their emails
+            dest_user = query_gitlab_user_by_id(destination_client, dest_gid)
+            
+            if not dest_user:
+                logging.warning(f"Validation: Could not find destination user with ID {dest_gid}")
+                continue
+            
+            # Get the destination user's emails
+            dest_emails = dest_user.get("emails", [])
+            
+            # Find a matching email in our source mapping
+            matching_source_username = None
+            matching_email = None
+            
+            for email in dest_emails:
+                if email in source_email_to_username:
+                    matching_source_username = source_email_to_username[email]
+                    matching_email = email
+                    break
+            
+            # Validate the username match
+            if matching_source_username:
+                validation_count += 1
+                
+                if matching_source_username != source_username:
+                    mismatched_count += 1
+                    error = {
+                        "placeholder_username": source_username,
+                        "derived_username": matching_source_username,
+                        "destination_id": dest_gid,
+                        "matching_email": matching_email
+                    }
+                    validation_errors.append(error)
+                    logging.warning(f"Validation: Username mismatch for dest ID {dest_gid}! "
+                                f"Placeholder: '{source_username}', Derived: '{matching_source_username}'")
+            else:
+                logging.debug(f"Validation: No matching source email found for destination user with ID {dest_gid}")
+        
+        except Exception as e:
+            logging.error(f"Validation error for user {source_username} with dest ID {dest_gid}: {str(e)}")
+    
+    # Report validation summary
+    logging.info(f"Validation summary:")
+    logging.info(f"  - Validated {validation_count} mappings")
+    
+    if mismatched_count > 0:
+        logging.warning(f"  - Found {mismatched_count} username mismatches!")
+        logging.warning("  - Details of first 10 mismatches:")
+        for i, error in enumerate(validation_errors[:10]):
+            logging.warning(f"    {i+1}. Placeholder username: '{error['placeholder_username']}', "
+                        f"Derived username: '{error['derived_username']}', "
+                        f"Matching email: {error['matching_email']}")
+    else:
+        logging.info("  - All validated mappings are consistent!")
+
+def query_gitlab_user_by_id(client: GitLabGraphQLClient, user_id: str) -> Optional[Dict]:
+    """Query a GitLab user by ID and return their details including emails."""
+    query = """
+    query($id: UserID!) {
+    user(id: $id) {
+        username
+        emails {
+        nodes {
+            email
+        }
+        }
+    }
+    }
+    """
+    
+    variables = {"id": user_id}
+    
+    try:
+        response = requests.post(
+            client.api_url,
+            headers=client.headers,
+            json={"query": query, "variables": variables}
+        )
+        response.raise_for_status()
+        
+        data = response.json()
+        
+        if "errors" in data:
+            logging.error(f"GraphQL error when querying user ID {user_id}: {data['errors']}")
+            return None
+        
+        user_data = data.get("data", {}).get("user")
+        if not user_data:
+            logging.warning(f"No user found for ID: {user_id}")
+            return None
+        
+        # Extract emails from nested structure
+        email_nodes = user_data.get("emails", {}).get("nodes", [])
+        emails = [node.get("email") for node in email_nodes if node.get("email")]
+        
+        return {
+            "username": user_data.get("username"),
+            "emails": emails
+        }
+            
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Request failed when querying user ID {user_id}: {str(e)}")
+        return None
 
 def read_emails_from_file(file_path: str) -> List[str]:
     """Read a list of email addresses from a file."""
@@ -357,6 +516,8 @@ def main():
     parser.add_argument("--update-placeholders", help="Path to placeholder users CSV file to update")
     parser.add_argument("--log-level", default="INFO", choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
                        help="Set the logging level (default: INFO)")
+    parser.add_argument("--validate-mappings", action="store_true", 
+                   help="Validate the mappings by cross-checking destination users")
     args = parser.parse_args()
     
     # Setup logging with the specified level
@@ -414,6 +575,11 @@ def main():
         logging.info(f"Updating placeholder users from {args.update_placeholders}")
         placeholder_users = read_placeholder_users(args.update_placeholders)
         updated_placeholder_users = update_placeholder_users(placeholder_users, results)
+
+       # Add validation step
+        if args.validate_mappings:
+            validate_placeholder_mappings(updated_placeholder_users, results, destination_client)
+
         output_placeholder_file = "placeholder_users-generated.csv"
         write_updated_placeholder_users(updated_placeholder_users, output_placeholder_file)
     
