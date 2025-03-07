@@ -12,20 +12,19 @@ with actual destination GitLab user IDs based on the mapping.
 
 Usage:
 ------
-    python3 gitlab_user_mapping.py email_list.txt [--output output_file.csv]
-                                  [--update-placeholders placeholder_file.csv]
-                                  [--log-level {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
-                                  [--validate-mappings]
-                                  [--only-successful]
+    python3 gitlab_user_mapping.py email_list.txt [OPTIONS]
 
 Arguments:
     email_list.txt             Path to a file containing one email address per line
-    --output                   Optional path for the output CSV file
-                               Default: gitlab_user_mapping_YYYYMMDD_HHMMSS.csv
-    --update-placeholders      Optional path to a placeholder users CSV file to update
-    --log-level                Optional logging level (default: INFO)
-    --validate-mappings        Validate the mappings by cross-checking destination users
-    --only-successful          Include only successfully mapped users in the generated placeholder file
+
+Options:
+    --output FILE              Output CSV file path (default: gitlab_user_mapping_YYYYMMDD_HHMMSS.csv)
+    --update-placeholders FILE Path to a placeholder users CSV file to update
+    --validate-mappings        Validate mappings by cross-checking destination users
+    --only-successful          Include only successfully mapped users in the output placeholder file
+    --record-missing-emails    Record emails not found in GitLab instances to CSV files
+    --log-level LEVEL          Set logging level: DEBUG, INFO, WARNING, ERROR, CRITICAL (default: INFO)
+    --help                     Show this help message and exit
 
 Environment Variables (Required):
 ---------------------------------
@@ -60,6 +59,20 @@ Output:
        
     2. (Optional) An updated placeholder users CSV file (placeholder_users-generated.csv)
        with GitLab assigneeUserId updated to match destination_gid from the mapping.
+       
+    3. (Optional) CSV files recording emails not found in source and destination GitLab instances.
+    
+    4. A log file with detailed information about the script's execution.
+
+Features:
+---------
+    - Maps users between GitLab instances by email address
+    - Updates placeholder user IDs for migration processes
+    - Validates mappings by cross-checking emails and usernames
+    - Filters output to include only successfully mapped users
+    - Records emails not found in GitLab instances
+    - Identifies mapping entries that can't be matched to placeholder users
+    - Provides detailed logging and progress reporting
 
 Logging:
 --------
@@ -74,6 +87,7 @@ Logging:
     - API request errors
     - File I/O operations
     - Detailed information about placeholder user mapping
+    - Validation results and inconsistencies
 
 Notes:
 ------
@@ -81,6 +95,7 @@ Notes:
     - It handles cases where users exist in only one of the GitLab instances
     - Matching is done by email address (case-insensitive)
     - The script requires admin-level API tokens to access user information
+    - For placeholder updating, source_username is used as the matching key
 """
 
 import os
@@ -121,7 +136,7 @@ def setup_logging(level_name: str) -> None:
 class GitLabGraphQLClient:
     """Client to interact with GitLab GraphQL API."""
     
-    def __init__(self, gitlab_url: str, access_token: str, instance_name: str):
+    def __init__(self, gitlab_url: str, access_token: str, instance_name: str, missing_emails_file: str = None):
         self.gitlab_url = gitlab_url.rstrip('/')
         self.api_url = f"{self.gitlab_url}/api/graphql"
         self.access_token = access_token
@@ -130,8 +145,7 @@ class GitLabGraphQLClient:
             "Authorization": f"Bearer {access_token}",
             "Content-Type": "application/json"
         }
-
-
+        self.missing_emails_file = missing_emails_file
     
     def query_user_by_email(self, email: str) -> Optional[Dict]:
         """Query a user by email using GraphQL."""
@@ -182,6 +196,12 @@ class GitLabGraphQLClient:
                     }
             
             logging.warning(f"No user found in {self.instance_name} for email: {email}")
+            
+            # Record missing email to file if specified
+            if self.missing_emails_file:
+                with open(self.missing_emails_file, 'a') as f:
+                    f.write(f"{self.instance_name},{email}\n")
+            
             return None
                 
         except requests.exceptions.RequestException as e:
@@ -543,6 +563,8 @@ def main():
                        help="Validate the mappings by cross-checking destination users")
     parser.add_argument("--only-successful", action="store_true",
                        help="Include only successfully mapped users in the generated placeholder file")
+    parser.add_argument("--record-missing-emails", action="store_true",
+                       help="Record missing emails to files")
     parser.add_argument("--log-level", default="INFO", choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
                        help="Set the logging level (default: INFO)")
     args = parser.parse_args()
@@ -565,10 +587,25 @@ def main():
         destination_token = get_environment_variable("DESTINATION_ADMIN_ACCESS_TOKEN")
     except SystemExit:
         return
-    
+
+    # Initialize missing emails files
+    source_missing_file = None
+    dest_missing_file = None        
+
+    if args.record_missing_emails:
+        source_missing_file = f"missing_emails_source_{timestamp}.csv"
+        dest_missing_file = f"missing_emails_destination_{timestamp}.csv"
+        
+        # Initialize the files with headers
+        for file_path, instance in [(source_missing_file, "source"), (dest_missing_file, "destination")]:
+            with open(file_path, 'w') as f:
+                f.write("instance,email\n")
+        
+        logging.info(f"Recording missing emails to {source_missing_file} and {dest_missing_file}")
+
     # Initialize GraphQL clients
-    source_client = GitLabGraphQLClient(source_url, source_token, "source")
-    destination_client = GitLabGraphQLClient(destination_url, destination_token, "destination")
+    source_client = GitLabGraphQLClient(source_url, source_token, "source", source_missing_file)
+    destination_client = GitLabGraphQLClient(destination_url, destination_token, "destination", dest_missing_file)
     
     # Read emails from file
     emails = read_emails_from_file(args.email_file)
