@@ -644,7 +644,7 @@ def main():
         if args.validate_mappings:
             validate_placeholder_mappings(updated_placeholder_users, results, destination_client)
 
-        output_placeholder_file = "placeholder_users-generated.csv"
+        output_placeholder_file = f"{timestamp}_placeholder_users-generated.csv"
         write_updated_placeholder_users(
             updated_placeholder_users, 
             output_placeholder_file, 

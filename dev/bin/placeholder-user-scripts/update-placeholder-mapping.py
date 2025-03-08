@@ -14,7 +14,7 @@ Features:
 - Records failed reassignments to a separate CSV file for retry
 
 Usage:
-  python3 reassign_placeholder_users.py [--commit] [input_csv_file]
+  python3 update-placeholder-mapping.py [--commit] [input_csv_file]
 
   --commit    Execute the actual reassignments (default is dry-run mode)
   input_csv_file    Path to the CSV file containing user mappings (default: placeholder_users.csv)

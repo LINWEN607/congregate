@@ -1,18 +1,53 @@
-# --------------------------------------------------------------------------------
-# Example CSV file content:
-# Source host,Import type,Source user identifier,Source user name,Source username,GitLab username,GitLab public email,GitLab importSourceUserId,GitLab assigneeUserId,GitLab clientMutationId
-# gitlab.com,email,123456,John Doe,johndoe,johndoe,johndoe@example.com,gid://gitlab/ImportSourceUser/123456,123457,123456789
-# ...
-# Replace the placeholders in the MAIN function with your actual data.
-#        group_full_path = "import-target"  # Replace with your group's full path
-#        output_file = "placeholder_users.csv"  # Name of the output CSV file
-# Note: The "GitLab username" and "GitLab public email" fields are not used in the script.
-# The "GitLab importSourceUserId", "GitLab assigneeUserId", and "GitLab clientMutationId" fields are used for the reassign_placeholder_user function.
+"""
+GitLab Placeholder Users Export Script
+
+This script retrieves placeholder users from a GitLab group and exports them to a CSV file.
+The exported CSV can be used as input for the user reassignment process during GitLab migrations.
+
+Features:
+- Retrieves all placeholder users from a specified GitLab group using GraphQL API with pagination
+- Exports user data to a CSV file in the required format for user reassignment
+- Includes error handling and detailed logging
+
+Prerequisites:
+- Set DESTINATION_GITLAB_ROOT environment variable (e.g., "https://gitlab.example.com")
+- Set DESTINATION_ADMIN_ACCESS_TOKEN environment variable with an admin access token
+
+Usage:
+1. Set the required environment variables
+2. Modify the group_full_path and customer_name variables in the main function with your target group path
+3. Run the script to generate the CSV file
+
+Example usage:
+```
+export DESTINATION_GITLAB_ROOT="https://gitlab.example.com"
+export DESTINATION_ADMIN_ACCESS_TOKEN="glpat-xxxxxxxxxxxxxxxxxxxx"
+python retrieve-placeholcer-users-for-namespace.py
+```
+
+Output CSV Format:
+The generated CSV includes these columns:
+- Source host: The source GitLab instance hostname
+- Import type: Type of import (email, username)
+- Source user identifier: User ID from the source system
+- Source user name: Full name from the source system
+- Source username: Username from the source system
+- GitLab username: (Empty, to be filled by the user)
+- GitLab public email: (Empty, to be filled by the user)
+- GitLab importSourceUserId: ID of the import source user
+- GitLab assigneeUserId: (Empty, to be filled by the user)
+- GitLab clientMutationId: (Empty, to be filled by the user)
+
+Example CSV output:
+Source host,Import type,Source user identifier,Source user name,Source username,GitLab username,GitLab public email,GitLab importSourceUserId,GitLab assigneeUserId,GitLab clientMutationId
+gitlab.com,email,123456,John Doe,johndoe,,,gid://gitlab/ImportSourceUser/123456,,
+"""
 
 import requests
 import os
 import logging
 import csv
+from datetime import datetime
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -167,8 +202,10 @@ def write_to_csv(placeholder_users, output_file):
 # Example usage
 if __name__ == "__main__":
     try:
-        group_full_path = "MYTOPLEVELGROUP"  # Replace with your group's full path
-        output_file = "placeholder_users.csv"  # Name of the output CSV file
+        customer_name = "demo"
+        group_full_path = "import-target"  # Replace with your group's full path
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_file = f"{customer_name}_{group_full_path}_{timestamp}_placeholder_users.csv"  # Name of the output CSV file
 
         logger.info(f"Starting retrieval of placeholder users for group: {group_full_path}")
         
