@@ -149,7 +149,7 @@ def reassign_placeholder_user(input_data: Dict[str, str], FAILURE_FILE_PATH: str
 
         if "errors" in data:
             logger.error(f"GraphQL mutation returned errors: {data['errors']}")
-            with open(FAILURE_FILE_PATH, 'w') as csvfile:
+            with open(FAILURE_FILE_PATH, 'a') as csvfile:
                 writer = csv.DictWriter(csvfile, fieldnames=list(input_data.keys()))
                 writer.writerow(input_data)
             return False
@@ -157,7 +157,7 @@ def reassign_placeholder_user(input_data: Dict[str, str], FAILURE_FILE_PATH: str
         result = data["data"]["importSourceUserReassign"]
         if result["errors"]:
             logger.error(f"Reassignment failed for sourceUserId {input_data['GitLab importSourceUserId']}: {result['errors']}")
-            with open(FAILURE_FILE_PATH, 'w') as csvfile:
+            with open(FAILURE_FILE_PATH, 'a') as csvfile:
                 writer = csv.DictWriter(csvfile, fieldnames=list(input_data.keys()))
                 writer.writerow(input_data)
             return False
@@ -187,7 +187,18 @@ def main(csv_file_path: str):
         
         # Create a failure file
         with open(FAILURE_FILE_PATH, 'w') as csvfile:
-            fieldnames = ["Source host", "Import type", "Source user identifier", "Source user name", "Source username", "GitLab username", "GitLab public email", "GitLab importSourceUserId", "GitLab assigneeUserId", "GitLab clientMutationId"]
+            fieldnames = [
+                "Source host",
+                "Import type",
+                "Source user identifier",
+                "Source user name",
+                "Source username",
+                "GitLab username",
+                "GitLab public email",
+                "GitLab importSourceUserId",
+                "GitLab assigneeUserId",
+                "GitLab clientMutationId"
+            ]
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
 
