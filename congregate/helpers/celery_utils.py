@@ -2,7 +2,7 @@ from dataclasses import dataclass, asdict
 from flask import Flask
 from celery import Celery, Task, states
 from celery.result import AsyncResult
-from celery.signals import worker_process_shutdown
+from celery.signals import worker_process_shutdown, worker_before_create_process
 from redis import Redis
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.helpers.celery_mdbc import mongo_connection
@@ -43,6 +43,16 @@ def cleanup_queue(**kwargs):
     '''
         Flushes the redis cache when Celery shuts down
     '''
+    flush_redis_cache()
+
+@worker_before_create_process.connect
+def flush_queue(**kwargs):
+    '''
+        Flushes the redis cache when Celery starts
+    '''
+    flush_redis_cache()
+
+def flush_redis_cache():
     c = ConfigurationValidator()
     r = Redis(host=c.redis_host, port=c.redis_port, password='password')
     print("Flushing redis cache")
