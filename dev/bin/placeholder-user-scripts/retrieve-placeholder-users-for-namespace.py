@@ -47,17 +47,29 @@ import requests
 import os
 import logging
 import csv
+import sys
 from datetime import datetime
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+# Check for required environment variables
+DESTINATION_GITLAB_ROOT = os.environ.get("DESTINATION_GITLAB_ROOT")
+DESTINATION_ADMIN_ACCESS_TOKEN = os.environ.get("DESTINATION_ADMIN_ACCESS_TOKEN")
+
+# Validate required environment variables
+if not DESTINATION_GITLAB_ROOT:
+    logger.error("Required environment variable DESTINATION_GITLAB_ROOT is not set")
+    sys.exit("ERROR: DESTINATION_GITLAB_ROOT environment variable must be set")
+
+if not DESTINATION_ADMIN_ACCESS_TOKEN:
+    logger.error("Required environment variable DESTINATION_ADMIN_ACCESS_TOKEN is not set")
+    sys.exit("ERROR: DESTINATION_ADMIN_ACCESS_TOKEN environment variable must be set")
+
 # GitLab API configuration
-DESTINATION_GITLAB_ROOT  = os.environ.get("DESTINATION_GITLAB_ROOT", "")
 DESTINATION_GITLAB_GRAPHQL_URL = f"{DESTINATION_GITLAB_ROOT}/api/graphql"
 DESTINATION_GITLAB_API_URL = f"{DESTINATION_GITLAB_ROOT}/api/v4"
-DESTINATION_ADMIN_ACCESS_TOKEN = os.environ.get("DESTINATION_ADMIN_ACCESS_TOKEN", "")
 
 FIND_PLACEHOLDERS_FOR_NAMESPACE_QUERY = """
 query($fullPath: ID!, $after: String){
@@ -218,3 +230,4 @@ if __name__ == "__main__":
     
     except Exception as e:
         logger.error(f"An error occurred: {str(e)}")
+        sys.exit(f"ERROR: {str(e)}")
