@@ -1,8 +1,9 @@
+import atexit
 from dataclasses import dataclass, asdict
 from flask import Flask
 from celery import Celery, Task, states
 from celery.result import AsyncResult
-from celery.signals import worker_process_shutdown, worker_before_create_process
+from celery.signals import worker_shutdown, celeryd_init
 from redis import Redis
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.helpers.celery_mdbc import mongo_connection
@@ -38,19 +39,19 @@ def generate_celery_config():
         worker_concurrency=c.processes
     ).to_dict()
 
-@worker_process_shutdown.connect
-def cleanup_queue(**kwargs):
+@worker_shutdown.connect
+def cleanup_queue(sender, **kwargs):
     '''
         Flushes the redis cache when Celery shuts down
     '''
     flush_redis_cache()
 
-@worker_before_create_process.connect
-def flush_queue(**kwargs):
+@celeryd_init.connect
+def register_flush_atexit(sender, **kwargs):
     '''
-        Flushes the redis cache when Celery starts
+        Register an atexit handler as additional insurance
     '''
-    flush_redis_cache()
+    atexit.register(flush_redis_cache)
 
 def flush_redis_cache():
     c = ConfigurationValidator()
