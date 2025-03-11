@@ -84,7 +84,7 @@ class ExportBuilder(BaseClass):
 
     def create_export_tar_gz(self):
         filename = get_export_filename_from_namespace_and_name(
-                self.project['path'], self.project['name'])
+                self.project['namespace'], self.project['name'])
         with tarfile.open(f"{self.config.filesystem_path}/downloads/{filename}", mode="w:gz") as tar:
             for f in os.listdir(self.export_dir.name):
                 tar.add(os.path.join(self.export_dir.name, f), arcname=f)

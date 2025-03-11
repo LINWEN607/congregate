@@ -25,6 +25,9 @@ from congregate.migration.ado.api.users import UsersApi as ADOUsersApi
 from congregate.migration.gitlab.api.users import UsersApi as GitlabUsersApi 
 from congregate.migration.meta import constants
 
+import congregate.helpers.migrate_utils as mig_utils
+from gitlab_ps_utils.json_utils import json_pretty
+
 class AdoExportBuilder(ExportBuilder):
     def __init__(self, source_project):
         self.source_project = source_project
@@ -35,7 +38,6 @@ class AdoExportBuilder(ExportBuilder):
         self.gitlab_users_api = GitlabUsersApi()
         self.project_id = source_project['project_id']
         self.repository_id = source_project['id']
-        self.source_project = source_project
         self.members_map = {}
         self.project_metadata = Project(description=source_project['description'])
         super().__init__(source_project, clone_url=None)
@@ -116,20 +118,19 @@ class AdoExportBuilder(ExportBuilder):
 
     def build_project_members(self):
         project_members = []
-        for team in self.teams_api.get_teams(self.project_id):
-            for member in self.teams_api.get_team_members(self.project_id, team["id"]):
-                user_id = self.get_new_member_id(member.get('identity'))
+        staged_projects = mig_utils.get_staged_projects()
+        for project in staged_projects:
+            for member in project['members']:
+                user_id = self.get_new_member_id(member)
                 project_members.append(ProjectMembers(
-                    access_level=self.convert_access_level(member.get('accessLevel')),
+                    access_level=30,
                     user_id=user_id,
                     user=ProjectMemberUser(
                         id=user_id,
-                        username=AzureDevOpsWrapper().create_valid_username(dig(member, 'identity', 'displayName')),
-                        public_email=dig(member, 'identity', 'uniqueName')
+                        username=member.get('username'),
+                        public_email=member.get('email')
                     ),
-                    # username=member.get('uniqueName'),
-                    # name=member.get('displayName'),
-                    expires_at=None  # ADO doesn't have an expiration concept for project members
+                    expires_at=None
                 ))
         return project_members
 
@@ -223,7 +224,7 @@ class AdoExportBuilder(ExportBuilder):
 
     def add_to_members_map(self, member):
         member_copy = copy(member)
-        guid = member['id']
+        guid = member.get('descriptor', member.get('id'))
         member_copy['id'] = len(self.members_map.keys())+1
         self.members_map[guid] = member_copy
 
@@ -232,7 +233,7 @@ class AdoExportBuilder(ExportBuilder):
         return self.get_new_member_id(safe_json_response(request).get('closedBy'))
 
     def get_new_member_id(self, member):
-        if mid := dig(self.members_map, member['id'], 'id'):
+        if mid := dig(self.members_map, member.get('descriptor'), 'id', default=dig(self.members_map, member['id'], 'id')):
             return mid
         else:
             self.add_to_members_map(member)
@@ -314,7 +315,7 @@ class AdoExportBuilder(ExportBuilder):
         return diff_files
     
     def generate_system_metadata(self, comment):
-        if comment['commentType'] != 'text':
+        if comment.get('commentType', 'text') != 'text':
             action = None
             commit_count = None
             content = comment['content']

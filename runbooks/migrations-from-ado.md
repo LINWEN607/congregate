@@ -2,7 +2,7 @@
 
 # Migration Wave
 
-This runbook covers the process of migrating a wave of **groups and projects** from a source Azure DevOps instance to self managed, dedicated GitLab or gitlab.com instance.
+This runbook covers the process of migrating a wave of **project's repositories** from a source Azure DevOps instance to self managed, dedicated GitLab or gitlab.com instance.
 
 ## Slack channel for communication
 
@@ -70,9 +70,14 @@ Instructions for user migration collapsed by default.
   * [ ] **Accounts for user contribution mapping**
 
     For user contribution mapping between Azure DevOps and GitLab to work:
+    * An instance administrator's PAT is required for import (if service account is used, make sure scope has `admin_mode`, [see more info](https://docs.gitlab.com/user/profile/personal_access_tokens/#personal-access-token-scopes)). NB! When migrating projects by using file exports to gitlab.com, an administrator’s access token is required for user contributions to map correctly. Consider engaging Professional Services. For more information, see the [Professional Services Full Catalog](https://about.gitlab.com/services/catalog/) for user's contributions to preserve correctly.
     * The Azure DevOps user’s email address must match their GitLab email address.
-    * If a user’s email address in Azure DevOps is set as default tenant's email "@tenant_name.onmicrosoft.com", but on GitLab user has "real" email, in order to match user's contribution Microsoft's email can be set as [a secondary email](https://docs.gitlab.com/ee/user/profile/#add-emails-to-your-user-profile).
-  * [ ] GitHub Enterprise does not require a public email address, so you might have to add it to existing accounts.
+    * Make sure the user is a member of one of the project's teams (either direct member of a team or via Azure Entra Group) as congregate pulls users only from `TeamName Team` (see more information about [default security groups](https://learn.microsoft.com/en-us/azure/devops/organizations/security/about-permissions?view=azure-devops&tabs=preview-page#default-security-groups)). See image below (NB! It does not necessarily have to be a member of the default Team's group, any group or even direct member, but it has to be the list of team members within the project that is being migrated).
+    * Congregate relies on [mailAddress](https://learn.microsoft.com/en-us/rest/api/azure/devops/graph/users/list?view=azure-devops-rest-7.1&tabs=HTTP#graphuser) from Graph API.
+    * It is possible to manually adjust members and attributes in `staged_projects.json` (add or remove) in order to match contributions better.
+    
+    ![](./uploads/ado-users-prerequisites.png)
+
 * [ ] When provisioning users via SAML (Just-in-Time) or SCIM [domain verification](https://docs.gitlab.com/ee/user/enterprise_user/#1-add-a-custom-domain-for-the-matching-email-domain) is recommended to avoid [user account auto-deletion on gitlab.com after 3 days](https://gitlab.com/gitlab-org/gitlab/-/issues/352514)
   * [ ] **NOTE:** Product is considering to [exclude SCIM provisioned users](https://gitlab.com/gitlab-org/gitlab/-/issues/423322). SAML Just-in-Time provisioned users still need to confirm/verify their email
 * [ ] When migrating/creating users via Congregate, using the admin token, they are automatically confirmed/verified. However, they still have to link their GitLab and SAML accounts
