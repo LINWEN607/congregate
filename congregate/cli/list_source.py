@@ -323,7 +323,7 @@ def list_data(partial=False, skip_users=False, skip_groups=False, skip_group_mem
     client = ListClient(partial=partial, skip_users=skip_users, skip_groups=skip_groups, skip_group_members=skip_group_members,
               skip_projects=skip_projects, skip_project_members=skip_project_members, skip_ci=skip_ci, 
               src_instances=src_instances, subset=subset)
-    return client.list_data()
+    return client.list_data(as_task=True)
 
 @shared_task(name='watch-for-list-to-complete')
 @mongo_connection
