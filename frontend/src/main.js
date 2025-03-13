@@ -2,14 +2,11 @@ import { createApp } from 'vue'
 import mitt from 'mitt'
 import App from './App.vue'
 import router from './router'
-import { createPinia, PiniaVuePlugin } from 'pinia'
+import { createPinia } from 'pinia'
 
 
 const app = createApp(App)
 const emitter = mitt()
-
-
-// Vue.use(PiniaVuePlugin)
 const pinia = createPinia()
 
 app.config.globalProperties.emitter = emitter
