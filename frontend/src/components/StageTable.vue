@@ -196,13 +196,13 @@
             if (this.systemStore[this.assetStore]) {
                 axios.post(`${import.meta.env.VITE_API_ROOT}/api/stage/${this.asset}`, String(Array.from(this.systemStore[this.assetStore]))).then(response => {
                     console.log(response)
-                    this.$emitter.emit('alert', {
+                    this.emitter.emit('alert', {
                         'message': response.data,
                         'messageType': 'done'
                     })
                 }).catch(response => {
                     console.log(response)
-                    this.$emitter.emit('alert', {
+                    this.emitter.emit('alert', {
                         'message': 'Unable to stage '+this.asset,
                         'messageType': 'error'
                     })

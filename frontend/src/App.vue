@@ -46,9 +46,9 @@ export default {
   mounted: function() {
     axios.get(`${import.meta.env.VITE_API_ROOT}/api/settings`).then(response => {
       this.systemStore.updateSettings(response.data)
-      this.$emitter.emit('settings-updated')
+      this.emitter.emit('settings-updated')
     })
-    this.$emitter.on('check-jobs', () => {
+    this.emitter.on('check-jobs', () => {
       this.getJobsByStatus()
     })
     this.getJobsByStatus()
@@ -59,12 +59,12 @@ export default {
         let match = null
         if ((match = matchFunction(listJobs, response.data))) {
           axios.get(`${import.meta.env.VITE_API_ROOT}/api/jobs/name/${match}`).then(response => {
-            this.$emitter.emit('listing-in-progress', response.data[0].id)
+            this.emitter.emit('listing-in-progress', response.data[0].id)
           })
         }
         if ((match = matchFunction(migrateJobs, response.data))) {
           axios.get(`${import.meta.env.VITE_API_ROOT}/api/jobs/name/${match}`).then(response => {
-            this.$emitter.emit('migration-in-progress', response.data[0].id)
+            this.emitter.emit('migration-in-progress', response.data[0].id)
           })
         }
       })

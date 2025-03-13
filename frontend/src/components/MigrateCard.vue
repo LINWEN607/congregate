@@ -93,13 +93,13 @@ export default {
     }
   },
   mounted: function () {
-    this.$emitter.on('migration-in-progress', () => {
+    this.emitter.on('migration-in-progress', () => {
       this.systemStore.updateMigrationInProgress(true)
       this.pollMigrationStatus()
     })
   },
   beforeDestroy: function() {
-    this.$emitter.off('migration-in-progress')
+    this.emitter.off('migration-in-progress')
   },
   methods: {
     triggerMigration: function() {
@@ -150,7 +150,7 @@ export default {
       let validate = result => result.data.status == 'STARTED'
       let response = await poll(pollStatus, validate, 2500)
       if (response.data.result != null) {
-        this.$emitter.emit('show-dry-run', response.data.result)
+        this.emitter.emit('show-dry-run', response.data.result)
         this.systemStore.updateMigrationInProgress(false)
         this.dryRun = true
       } else {
@@ -166,7 +166,7 @@ export default {
         this.pollMigrationStatus()
       } else if (response.data.result.hasOwnProperty('errors')) {
         this.systemStore.updateMigrationInProgress(false)
-        this.$emitter.emit('alert', {
+        this.emitter.emit('alert', {
           'message': `Failed to trigger migration. Refer to task ${id} in the Task Queue`,
           'messageType': 'error'
         })
@@ -177,7 +177,7 @@ export default {
       let validate = result => result.data.length != 0
       let response = await poll(pollStatus, validate, 5000)
       if (response.data.length == 0) {
-        this.$emitter.emit('alert', {
+        this.emitter.emit('alert', {
           'message': 'Migration is complete',
           'messageType': 'done'
         })

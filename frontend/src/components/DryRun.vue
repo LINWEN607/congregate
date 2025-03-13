@@ -28,14 +28,14 @@ export default {
     }
   },
   mounted: function() {
-    this.$emitter.on('show-dry-run', (data) => {
+    this.emitter.on('show-dry-run', (data) => {
         console.log(data)
         this.visible = true
-        this.dryRunData = data['dry_run_data']
+        this.dryRunData = data['result']
     })
   },
   beforeDestroy: function() {
-    this.$emitter.off('show-dry-run')
+    this.emitter.off('show-dry-run')
   },
   methods: {
     hide: function() {

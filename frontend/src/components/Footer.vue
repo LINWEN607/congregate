@@ -19,7 +19,7 @@ export default {
   },
   methods: {
     stage: function () {
-      this.$emitter.emit(this.asset)
+      this.emitter.emit(this.asset)
     }
   }
 }

@@ -54,14 +54,14 @@ export default {
   },
   mounted: function () {
     this.checkLastList()
-    this.$emitter.on('listing-in-progress', id => {
+    this.emitter.on('listing-in-progress', id => {
       this.systemStore.updateListingInProgress(true)
       this.listTaskId = id
       this.pollListStatus()
     })
   },
   beforeDestroy: function() {
-    this.$emitter.off('listing-in-progress')
+    this.emitter.off('listing-in-progress')
   },
   methods: {
     triggerList: function() {
@@ -78,7 +78,7 @@ export default {
           }
         }).then(response => {
         this.listTaskId = response.data['task-id']
-        this.$emitter.emit('alert', {
+        this.emitter.emit('alert', {
           'message': 'Listing in progress',
           'messageType': 'info'
         })
@@ -89,7 +89,7 @@ export default {
     pollListStatus: async function() {
       let pollStatus = () => axios.get(`${import.meta.env.VITE_API_ROOT}/api/list-status/${this.listTaskId}`)
         .catch(() => {
-          this.$emitter.emit('alert', {
+          this.emitter.emit('alert', {
             'message': 'Listing failed. Check the congregate logs for a traceback',
             'messageType': 'error'
           })
@@ -102,7 +102,16 @@ export default {
       let updateCounts = result => {
         console.log(this.listingInProgress)
         console.log("Updating counts")
-        this.$emitter.emit('stream-list-stats', (result.data.counts))
+        if (this.listingInProgress) {
+          this.emitter.emit('alert', {
+            'message': `Listing still in progress.\n
+            Users: ${result.data.counts.users}\n
+            Groups: ${result.data.counts.groups}\n
+            Projects: ${result.data.counts.projects}`,
+            'messageType': 'info'
+          })
+        }
+        this.emitter.emit('stream-list-stats', (result.data.counts))
         return this.listingInProgress
       }
       // Shorter polling time to update the counts in the UI
@@ -110,16 +119,16 @@ export default {
       // Longer polling time to fully validate listing is complete
       let response = await poll(pollStatus, validate, pollingIntervals.VALIDATE)
       if (response.data.status == 'SUCCESS') {
-        this.$emitter.emit('alert', {
+        this.emitter.emit('alert', {
           'message': 'Listing is complete',
           'messageType': 'done'
         })
         axios.post(`${import.meta.env.VITE_API_ROOT}/api/dump-list-data`).then(() => {
           this.checkLastList()
-          this.$emitter.emit('update-stage')
+          this.emitter.emit('update-stage')
         })
       } else if (response.data.status == 'FAILURE') {
-        this.$emitter.emit('alert', {
+        this.emitter.emit('alert', {
           'message': 'Listing failed. Check the congregate logs for a traceback',
           'messageType': 'error'
         })
