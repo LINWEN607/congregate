@@ -201,6 +201,21 @@ Extracting, transforming and mapping a large number of accounts in a CSV may sti
 
 **Note**: This feature is introduced in GitLab 17.9 with a flag named `importer_user_mapping_reassignment_csv`. Disabled by default.
 
+#### Logs troubleshooting
+
+It can happen that placeholder user reassignments take time to process due to "throttling" (re-enqueuing of jobs).
+
+To monitor the logs one can use (via GitLab Okta):
+
+- [Kibana](https://log.gprd.gitlab.net/), for gitlab.com
+- Opensearch, for GitLab Dedicated
+  - **NOTE:** One needs to open an access request (AR) ([example](https://gitlab.com/gitlab-com/team-member-epics/access-requests/-/issues/34829)) per tenant
+
+And query `json.message : Rescheduling reassignment` on `pubsub-sidekiq-inf-gprd*` data view. To further filter the results one can add:
+
+- `and json.meta.user: "@<id>"`
+- `and json.correlation_id: "<id>"`
+
 ### Monitoring the progress of Direct Transfer migrations
 
 You may monitor the progress of a Direct Transfer import via the Gitlab UI using this endpoint: `<hostname>/import/bulk_imports/history`. This is also accessible by clicking on the 'View import history' button on the group import screen. The perspective of the data from this endpoint is based on the user whose token was used for the Direct Transfer import.
