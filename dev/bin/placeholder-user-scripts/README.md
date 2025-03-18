@@ -36,7 +36,7 @@ export DESTINATION_ADMIN_ACCESS_TOKEN="glpat-xxxxxxxxxxxxxxxxxxxx"
 
 Obtain a text file from the customer containing one email address per line for all users to be migrated:
 
-```
+```txt
 user1@example.com
 user2@example.com
 user3@example.com
@@ -47,12 +47,13 @@ user3@example.com
 Run the script to retrieve placeholder users from the target GitLab group:
 
 ```bash
-python retrieve-placeholcer-users-for-namespace.py
+python retrieve-placeholder-users-for-namespace.py
 ```
 
 Before running, modify the `group_full_path` and `customer_name` variables in the script with your target group path.
 
 This will generate a CSV file containing details about placeholder users, including:
+
 - Source host
 - Import type
 - Source user identifier
@@ -70,15 +71,15 @@ python gitlab_user_mapping.py email_list.txt [OPTIONS]
 
 ### Command Line Options:
 
-| Option | Description |
-|--------|-------------|
-| `--output FILE` | Specify a custom output CSV file path (default: gitlab_user_mapping_YYYYMMDD_HHMMSS.csv) |
-| `--update-placeholders FILE` | Path to a placeholder users CSV file to update with mapping information |
-| `--validate-mappings` | Validate mappings by cross-checking destination users for consistency |
-| `--only-successful` | Include only successfully mapped users in the output placeholder file |
-| `--record-missing-emails` | Record emails not found in GitLab instances to separate CSV files |
-| `--log-level LEVEL` | Set logging level: DEBUG, INFO, WARNING, ERROR, CRITICAL (default: INFO) |
-| `--help` | Show the help message and exit |
+| Option                       | Description                                                                              |
+| ---------------------------- | ---------------------------------------------------------------------------------------- |
+| `--output FILE`              | Specify a custom output CSV file path (default: gitlab_user_mapping_YYYYMMDD_HHMMSS.csv) |
+| `--update-placeholders FILE` | Path to a placeholder users CSV file to update with mapping information                  |
+| `--validate-mappings`        | Validate mappings by cross-checking destination users for consistency                    |
+| `--only-successful`          | Include only successfully mapped users in the output placeholder file                    |
+| `--record-missing-emails`    | Record emails not found in GitLab instances to separate CSV files                        |
+| `--log-level LEVEL`          | Set logging level: DEBUG, INFO, WARNING, ERROR, CRITICAL (default: INFO)                 |
+| `--help`                     | Show the help message and exit                                                           |
 
 ### Example:
 
@@ -87,6 +88,7 @@ python gitlab_user_mapping.py email_list.txt --update-placeholders placeholder_u
 ```
 
 This script will:
+
 1. Process each email in the list
 2. Find matching users in both GitLab instances
 3. Generate a mapping between source and destination users
@@ -105,6 +107,7 @@ python update-placeholder-mapping.py --commit placeholder_users-generated.csv
 By default, the script runs in dry-run mode. Use the `--commit` flag to apply the changes.
 
 This script will:
+
 1. Read the updated placeholder users CSV
 2. Make GraphQL API calls to the destination GitLab instance
 3. Reassign placeholder users to actual GitLab users
