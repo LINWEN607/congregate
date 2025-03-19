@@ -207,20 +207,25 @@ class ListClient(BaseClass):
         if self.only_specific_projects:
             projects_list = []
 
-            for project in self.only_specific_projects.split(","):
-                project = AdoProjectsApi().get_project(project)
-                prj = project.json()
-                data = {
-                    "id": prj["id"],
-                    "name": prj["name"],
-                    "description": prj.get("description"),
-                    "url": prj["url"],
-                    "state": prj["state"],
-                    "revision": prj["revision"],
-                    "visibility": prj["visibility"],
-                    "lastUpdateTime": prj["lastUpdateTime"]
-                }
-                projects_list.append(data)
+            project_ids = self.only_specific_projects.split(",")
+
+            for project_id in project_ids:
+                project_response = AdoProjectsApi().get_project(project_id)
+                if project_response.status_code == 200:
+                    project_data = project_response.json()
+                    data = {
+                        "id": project_data.get("id"),
+                        "name": project_data.get("name"),
+                        "description": project_data.get("description", ""),
+                        "url": project_data.get("url"),
+                        "state": project_data.get("state"),
+                        "revision": project_data.get("revision"),
+                        "visibility": project_data.get("visibility"),
+                        "lastUpdateTime": project_data.get("lastUpdateTime")
+                    }
+                    projects_list.append(data)
+                else:
+                    raise Exception(f"Failed to retrieve project '{project_id}' with status code {project_response.status_code}")
 
             # Find only projects with =<1 repo ( = project in GitLab)
             if not self.skip_projects:
