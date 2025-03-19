@@ -23,9 +23,13 @@ class ProjectsClient(BaseClass):
         self.merge_requests_api = MergeRequestsApi()
         super().__init__()
 
-    def retrieve_project_info(self, processes=None):
-        self.multi.start_multi_process_stream(
-            self.handle_retrieving_project, self.projects_api.get_all_projects(), processes=processes)
+    def retrieve_project_info(self, processes=None, projects_list=None):
+        if projects_list:
+            self.multi.start_multi_process_stream(
+                self.handle_retrieving_project, projects_list, processes=processes)
+        else:
+            self.multi.start_multi_process_stream(
+                self.handle_retrieving_project, self.projects_api.get_all_projects(), processes=processes)
 
     def handle_retrieving_project(self, project, mongo=None):
         if not mongo:

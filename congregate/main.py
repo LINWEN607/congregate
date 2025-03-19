@@ -27,7 +27,7 @@ Usage:
     congregate generate-seed-data [--commit] # TODO: Refactor, broken
     congregate init
     congregate ldap-group-sync <file-path> [--commit]
-    congregate list [--processes=<n>] [--partial] [--skip-users] [--skip-groups] [--skip-group-members] [--skip-projects] [--skip-project-members] [--skip-ci] [--src-instances] [--subset] [--skip-archived-projects]
+    congregate list [--processes=<n>] [--partial] [--skip-users] [--skip-groups] [--skip-group-members] [--skip-projects] [--skip-project-members] [--skip-ci] [--src-instances] [--subset] [--skip-archived-projects] [--only-specific-projects=<value>]
     congregate list-staged-projects-contributors [--commit]
     congregate map-and-stage-users-by-email-match [--commit]
     congregate map-users [--commit]
@@ -97,6 +97,7 @@ Arguments:
                                                 etc). Useful for testing export contents. Will also skip any external source imports
     skip-ci                                 Skip migrating data from CI sources
     only-post-migration-info                Skips migrating all content except for post-migration information. Use when import is handled outside of congregate
+    only-specific-projects                  List only specific projects and their dependencies (Azure DevOps only right now)
     subgroups-only                          Expects that only sub-groups are staged and that their parent groups already exist on destination
     reg-dry-run                             If registry migration is configured, instead of doing the actual migration, write the tags to the logs for use in the brute force migration. Can also be useful when renaming targets
     retain-contributors                     Searches a project for all contributors to a project and adds them as members before exporting the project. Only required for GitLab file-based migrations.
@@ -374,6 +375,7 @@ def main():
                     src_instances=SRC_INSTANCES,
                     subset=arguments["--subset"],
                     skip_archived_projects=arguments["--skip-archived-projects"],
+                    only_specific_projects=arguments["--only-specific-projects"]
                 )
                 list_client.list_data()
                 add_post_migration_stats(start, log=log)
