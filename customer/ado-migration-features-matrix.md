@@ -15,8 +15,8 @@ NOTE: Features not listed in the matrix should be presumed to be not yet support
 | **Project**    |
 |                | GitLab Group creation *   |             | :x:                   |
 | **Repository** |                           |             |                       |
-|                | Git Repo (branches + tags)|             | :white_check_mark:    |
-|                | Pull requests (PR)        |             | :white_check_mark:    |
+|                | Git Repository |             | :white_check_mark:    |
+|                | Pull Requests (PRs)        |             | :white_check_mark:    |
 |                | PR author                 |             | :white_check_mark:    |
 |                | PR reviewers              |             | :white_check_mark:    |
 |                | PR merged by              |             | :white_check_mark:    |
