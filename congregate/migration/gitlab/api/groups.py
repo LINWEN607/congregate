@@ -169,7 +169,7 @@ class GroupsApi(GitLabApiWrapper):
         """
         Get a list of visible direct subgroups in this group
 
-        GitLab API Doc: https://docs.gitlab.com/ee/api/groups.html#list-a-groups-subgroups
+        GitLab API Doc: https://docs.gitlab.com/api/groups/#list-subgroups
 
             :param: gid: (int) GitLab group ID
             :param: host: (str) GitLab host URL
@@ -389,7 +389,7 @@ class GroupsApi(GitLabApiWrapper):
         """
         Get a list of projects in this group
 
-        GitLab API Doc: https://docs.gitlab.com/ee/api/groups.html#list-a-groups-projects
+        GitLab API Doc: https://docs.gitlab.com/api/groups/#list-projects
 
             :param: gid: (int) GitLab group ID
             :param: host: (str) GitLab host URL
