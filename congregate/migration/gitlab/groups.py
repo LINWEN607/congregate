@@ -1,7 +1,7 @@
 import json
 from requests.exceptions import RequestException
 from tqdm import tqdm
-from gitlab_ps_utils.misc_utils import get_timedelta, safe_json_response, strip_netloc
+from gitlab_ps_utils.misc_utils import get_timedelta, safe_json_response, strip_netloc, get_dry_log
 from gitlab_ps_utils.list_utils import remove_dupes
 from gitlab_ps_utils.json_utils import json_pretty
 
@@ -132,7 +132,7 @@ class GroupsClient(BaseClass):
             # GitLab.com destination instances have a parent group
             dest_full_path = get_full_path_with_parent_namespace(
                 sg["full_path"])
-            self.log.info(f"Deleting group '{dest_full_path}'")
+            self.log.info(f"{get_dry_log(dry_run)}Deleting group '{dest_full_path}' on destination")
             try:
                 resp = self.groups_api.get_group_by_full_path(
                     dest_full_path,
