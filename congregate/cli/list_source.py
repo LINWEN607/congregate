@@ -28,6 +28,7 @@ from congregate.migration.github.users import UsersClient as GitHubUsers
 from congregate.migration.ado.projects import ProjectsClient as AdoProjects
 from congregate.migration.ado.groups import GroupsClient as AdoGroups
 from congregate.migration.ado.users import UsersClient as AdoUsers
+from congregate.migration.ado.api.projects import ProjectsApi as AdoProjectsApi
 
 from congregate.migration.jenkins.base import JenkinsClient as JenkinsData
 from congregate.migration.teamcity.base import TeamcityClient as TeamcityData
@@ -64,7 +65,8 @@ class ListClient(BaseClass):
         skip_ci=False,
         src_instances=False,
         subset=False,
-        skip_archived_projects=False
+        skip_archived_projects=False,
+        only_specific_projects=None
     ):
         super().__init__()
         self.processes = processes
@@ -78,6 +80,7 @@ class ListClient(BaseClass):
         self.src_instances = src_instances
         self.subset = subset
         self.skip_archived_projects = skip_archived_projects
+        self.only_specific_projects = only_specific_projects
 
     def list_gitlab_data(self):
         """
@@ -197,20 +200,59 @@ class ListClient(BaseClass):
     def list_azure_devops_data(self):
         mongo, p, g, u = self.mongo_init()
 
-        # Find only projects with =<1 repo ( = project in GitLab)
-        if not self.skip_projects:
-            projects = AdoProjects()
-            projects.retrieve_project_info(processes=self.processes)
-            mongo.dump_collection_to_file(
-                p, f"{self.app_path}/data/projects.json")
+        if self.only_specific_projects:
+            projects_list = []
 
-        # Find ADO projects with >1 repos ( = group in GitLab)
-        if not self.skip_groups:
-            groups = AdoGroups()
-            groups.retrieve_group_info(processes=self.processes)
-            mongo.dump_collection_to_file(
-                g, f"{self.app_path}/data/groups.json")
+            project_ids = self.only_specific_projects.split(",")
 
+            for project_id in project_ids:
+                project_response = AdoProjectsApi().get_project(project_id.strip())
+                if project_response.status_code == 200:
+                    project_data = project_response.json()
+                    data = {
+                        "id": project_data.get("id"),
+                        "name": project_data.get("name"),
+                        "description": project_data.get("description", ""),
+                        "url": project_data.get("url"),
+                        "state": project_data.get("state"),
+                        "revision": project_data.get("revision"),
+                        "visibility": project_data.get("visibility"),
+                        "lastUpdateTime": project_data.get("lastUpdateTime")
+                    }
+                    projects_list.append(data)
+                else:
+                    raise Exception(f"Failed to retrieve project '{project_id}' with status code {project_response.status_code}")
+
+            # Find only projects with =<1 repo ( = project in GitLab)
+            if not self.skip_projects:
+                projects = AdoProjects()
+                projects.retrieve_project_info(processes=self.processes, projects_list=projects_list)
+                mongo.dump_collection_to_file(
+                    p, f"{self.app_path}/data/projects.json")
+
+            # Find ADO projects with >1 repos ( = group in GitLab)
+            if not self.skip_groups:
+                groups = AdoGroups()
+                groups.retrieve_group_info(processes=self.processes, projects_list=projects_list)
+                mongo.dump_collection_to_file(
+                    g, f"{self.app_path}/data/groups.json")
+
+        else:
+
+            # Find only projects with =<1 repo ( = project in GitLab)
+            if not self.skip_projects:
+                projects = AdoProjects()
+                projects.retrieve_project_info(processes=self.processes)
+                mongo.dump_collection_to_file(
+                    p, f"{self.app_path}/data/projects.json")
+
+            # Find ADO projects with >1 repos ( = group in GitLab)
+            if not self.skip_groups:
+                groups = AdoGroups()
+                groups.retrieve_group_info(processes=self.processes)
+                mongo.dump_collection_to_file(
+                    g, f"{self.app_path}/data/groups.json")
+                
         if not self.skip_users:
             users = AdoUsers()
             users.retrieve_user_info(processes=self.processes)
