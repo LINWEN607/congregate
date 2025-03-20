@@ -206,7 +206,7 @@ class ListClient(BaseClass):
             project_ids = self.only_specific_projects.split(",")
 
             for project_id in project_ids:
-                project_response = AdoProjectsApi().get_project(project_id)
+                project_response = AdoProjectsApi().get_project(project_id.strip())
                 if project_response.status_code == 200:
                     project_data = project_response.json()
                     data = {
