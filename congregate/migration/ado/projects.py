@@ -42,7 +42,7 @@ class ProjectsClient(BaseClass):
             return
         collection_name = f"projects-{strip_netloc(self.config.source_host)}"
         for repository in self.repositories_api.get_all_repositories(project["id"]):
-            if repository:
+            if repository and repository.get("isDisabled") is False and repository.get("size") > 0:
                 formatted_project = self.base_api.format_project(project, repository, count, mongo)
                 mongo.insert_data(collection_name, formatted_project)
         mongo.close_connection()
