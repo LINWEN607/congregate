@@ -43,6 +43,11 @@ mkdir -p $CONGREGATE_DATA/congregate-data/logs
 mkdir -p $CONGREGATE_DATA/mongo-data
 mkdir -p $CONGREGATE_DATA/redis-cache
 touch $CONGREGATE_DATA/congregate-data/logs/gunicorn.log
+touch $CONGREGATE_DATA/congregate-data/logs/gunicorn_err.log
+touch $CONGREGATE_DATA/congregate-data/logs/celery.log
+touch $CONGREGATE_DATA/congregate-data/logs/celery_err.log
+touch $CONGREGATE_DATA/congregate-data/logs/flower.log
+touch $CONGREGATE_DATA/congregate-data/logs/flower_err.log
 ```
 
 Note: Depending on who you run as when creating these folders and files, you may need to additionally allow the application to update the conf and logs:
