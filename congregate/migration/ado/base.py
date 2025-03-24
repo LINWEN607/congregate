@@ -78,11 +78,12 @@ class AzureDevOpsWrapper(BaseClass):
         try:
             for repo in self.repositories_api.get_all_repositories(project["id"]):
                 # Save all project repos ID references as part of group metadata
-                repos.append(repo.get("id"))
-                if mongo is not None:
-                    mongo.insert_data(
-                        f"projects-{strip_netloc(self.config.source_host)}",
-                        self.format_project(project, repo, len(repos), mongo))
+                if repo.get("isDisabled") is False and repo.get("size") > 0:
+                    repos.append(repo.get("id"))
+                    if mongo is not None:
+                        mongo.insert_data(
+                            f"projects-{strip_netloc(self.config.source_host)}",
+                            self.format_project(project, repo, len(repos), mongo))
             # Remove duplicate entries
             return list(set(repos))
         except RequestException as re:
