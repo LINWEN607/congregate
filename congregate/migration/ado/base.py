@@ -1,5 +1,6 @@
 import re
 import os
+from unidecode import unidecode 
 from requests.exceptions import RequestException
 
 from gitlab_ps_utils.misc_utils import strip_netloc
@@ -26,12 +27,17 @@ class AzureDevOpsWrapper(BaseClass):
         return re.sub(r'\s+', '-', re.sub(r'[^\w\s-]', '', text.lower())).strip('-')
 
     def create_valid_username(self, input_string):
-        lowercase_string = input_string.lower()
+        transliterated_string = unidecode(input_string)
+        lowercase_string = transliterated_string.lower()
         dotted_string = lowercase_string.replace(' ', '.')
         valid_username = re.sub(r'[^a-z.]', '', dotted_string)
         valid_username = valid_username.strip('.')
         valid_username = re.sub(r'\.+', '.', valid_username)
         return valid_username
+
+    def create_valid_name(self, input_string):
+        transliterated_string = unidecode(input_string)
+        return transliterated_string
 
     def format_project(self, project, repository, count, mongo):
         path_with_namespace = self.slugify(project["name"])
@@ -94,8 +100,8 @@ class AzureDevOpsWrapper(BaseClass):
     def format_user(self, user):
         return {
             "id": user["descriptor"],
-            "username": self.create_valid_username(user["displayName"]),
-            "name": user["displayName"],
+            "username": self.create_valid_username(user.get("displayName")),
+            "name": self.create_valid_name(user.get("displayName")),
             "email": user["mailAddress"].lower(),
             "state": "active"
         }
