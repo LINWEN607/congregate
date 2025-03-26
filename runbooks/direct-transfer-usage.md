@@ -51,7 +51,7 @@ To trigger a migration via direct transfer in Congregate, you make a POST call t
 
 ```bash
 curl --request POST \
-  --url http://localhost:8000/direct_transfer/import \
+  --url http://localhost:8000/api/direct_transfer/import \
   --header 'Content-Type: application/json' \
   --data '{
       "configuration": {
@@ -93,7 +93,7 @@ If the dry-run response looks correct, you can add the `commit` parameter to the
 
 ```bash
 curl --request POST \
-  --url http://localhost:8000/direct_transfer/import?commit=true \
+  --url http://localhost:8000/api/direct_transfer/import?commit=true \
   --header 'Content-Type: application/json' \
   --data '{
       "configuration": {
