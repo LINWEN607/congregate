@@ -62,9 +62,11 @@
     },
     mounted: function () {
         this.initializeTable()
+        // Once the table is fully built, select the currently staged data
         this.tabulator.on("tableBuilt", () => {
             this.getStagedData()
         })
+        // When a row is selected, store that speciifc row ID in the pinia store
         this.tabulator.on("rowSelected", (row) => {
             console.log("Updating store")
             this.systemStore[this.addEvent](row._row.data.id).then(() => {
@@ -72,6 +74,7 @@
                 this.diffIds = _.difference(Array.from(this.systemStore[this.assetStore]), this.stagedDataFromMongo)
             })
         })
+        // When a row is deselected, remove that speciifc row ID in the pinia store
         this.tabulator.on("rowDeselected", (row) => {
             console.log("Removing from store")
             this.systemStore[this.removeEvent](row._row.data.id).then(() => {
@@ -79,6 +82,8 @@
                 this.diffIds = _.difference(Array.from(this.systemStore[this.assetStore]), this.stagedDataFromMongo)
             })
         })
+        // If there is data in the store, iterate over the IDs and progammatically select rows accordingly
+        // This is necessary for programmatically setting the staged data when the page loads
         this.tabulator.on("dataProcessed", (data) => {
             if (this.systemStore[this.assetStore].size > 0) {
                 let rows = []
@@ -161,7 +166,6 @@
         getStagedData: function () {
             axios.get(`${import.meta.env.VITE_API_ROOT}/api/data/staged/${this.asset}`).then(response => {
                 let ids = []
-                console.log(response.data)
                 this.stagedDataFromMongo = response.data.map((d) => d.id)
                 if (this.systemStore[this.assetStore].size == 0) {
                     response.data.forEach(element => {
@@ -200,14 +204,17 @@
 <style>
 @import "../../node_modules/tabulator-tables/dist/css/tabulator.css";
 #staging-table {
-margin-bottom: 10%;
+    margin-bottom: 10%;
 }
 #table-control, #table-stats {
-width: 100%;
-text-align: left;
-margin-bottom: 1%;
+    width: 100%;
+    text-align: left;
+    margin-bottom: 1%;
 }
 #table-control button {
     margin-right: 1%;
+}
+button {
+    cursor: pointer;
 }
 </style>
