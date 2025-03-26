@@ -63,7 +63,7 @@
     mounted: function () {
         this.initializeTable()
         this.tabulator.on("tableBuilt", () => {
-            this.tabulator.setData(`${import.meta.env.VITE_API_ROOT}/api/data/${this.asset}`)
+            this.getStagedData()
         })
         this.tabulator.on("rowSelected", (row) => {
             console.log("Updating store")
@@ -80,7 +80,6 @@
             })
         })
         this.tabulator.on("dataProcessed", (data) => {
-            console.log(data)
             if (this.systemStore[this.assetStore].size > 0) {
                 let rows = []
                 for (let row of data) {
@@ -92,7 +91,6 @@
             }
         });
         this.capitalizedAssetName = this.asset[0].toUpperCase() + this.asset.slice(1)
-        this.getStagedData()
     },
     watch: {
         filterQuery: function(val, oldVal) {
@@ -125,8 +123,6 @@
                 ajaxConfig:{
                     method: "GET"
                 },
-                data: this.tableData, //link data to table
-                reactiveData:true, //enable data reactivity
                 columns: this.columns, //define table columns
                 selectableRows: true,
                 rowHeader:{
@@ -160,17 +156,6 @@
                     let queryString = new URLSearchParams(params).toString()
                     return url + "?" + queryString;
                 },
-            })
-        },
-        getData: function () {
-            axios.get(`${import.meta.env.VITE_API_ROOT}/api/data/${this.asset}`).then(response => {
-                this.tableData = response.data
-                this.initializeTable()
-                this.tabulator.on("rowSelectionChanged", (data) => {
-                    this.updateSelectedRowCount(data)
-                })
-            }).catch(function (error) {
-                console.log(error)
             })
         },
         getStagedData: function () {
