@@ -51,7 +51,9 @@ export default {
     this.emitter.on('check-jobs', () => {
       this.getJobsByStatus()
     })
-    this.getJobsByStatus()
+  },
+  beforeDestroy: function() {
+    this.emitter.off('check-jobs')
   },
   methods: {
     getJobsByStatus: function() {

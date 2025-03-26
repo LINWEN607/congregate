@@ -22,6 +22,9 @@ export default {
           this.fireAlert(data)
       })
   },
+  beforeDestroy: function() {
+      this.emitter.off('alert')
+  },
   methods: {
       fireAlert: function(data) {
           if (this.alertTypes.hasOwnProperty(data.messageType)){

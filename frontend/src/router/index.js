@@ -1,12 +1,9 @@
-import Vue from 'vue'
 import { createRouter, createWebHashHistory } from 'vue-router'
 import Home from '../views/Home.vue'
 import Projects from '../views/Projects.vue'
 import Groups from '../views/Groups.vue'
 import Users from '../views/Users.vue'
 import Settings from '../views/Settings.vue'
-
-// Vue.use(VueRouter)
 
 const routes = [
   {
