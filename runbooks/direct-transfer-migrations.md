@@ -222,6 +222,14 @@ You may monitor the progress of a Direct Transfer import via the Gitlab UI using
 
 If the UI is not accessible (i.e. token used to import is from a customer's account), an alternative would be to use the [bulk import APIs](https://docs.gitlab.com/ee/api/bulk_imports.html) to monitor the progress of the import. You may write the output of these endpoints into files which can then be used as validation artifacts for each migration.
 
+## Using DT after an upgrade (maintenance window)
+
+After a GitLab upgrade background migrations might take a few hours to complete. There are 2 bulk import background migrations ([MR](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/180437)) of concern. They are used for backfilling records in the `bulk_imports_trackers` tables with `organization_id` and `namespace_id` values.
+
+While we do recommend waiting for these processes to finish, it _should_ be safe to do DT imports while these are running, as they are just back-filling old records with `organization_id` and `namespace_id` data. Any new records created through DT will have these values set already so imports will not be adding work to these particular queues.
+
+Background migrations in general, are written in a way to minimize disruption. Meaning, they would pause what they’re doing if the tables they’re operating on are getting overworked. They’re also pausing in between batches, proving further they are written in a way to have minimal effect on the use of those tables by a DT migration.
+
 ## Things to note
 
 - When migrating into a self-managed instance (destination), ensure that the version running on the destination is 17.7 and above, as earlier versions contain a [bug](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/173073) which prevented project permissions from updating after the reassignment of Placeholder users.
