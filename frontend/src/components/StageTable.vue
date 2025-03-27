@@ -66,7 +66,7 @@
         this.tabulator.on("tableBuilt", () => {
             this.getStagedData()
         })
-        // When a row is selected, store that speciifc row ID in the pinia store
+        // When a row is selected, store that specific row ID in the pinia store
         this.tabulator.on("rowSelected", (row) => {
             console.log("Updating store")
             this.systemStore[this.addEvent](row._row.data.id).then(() => {
@@ -74,7 +74,7 @@
                 this.diffIds = _.difference(Array.from(this.systemStore[this.assetStore]), this.stagedDataFromMongo)
             })
         })
-        // When a row is deselected, remove that speciifc row ID in the pinia store
+        // When a row is deselected, remove that specific row ID from the pinia store
         this.tabulator.on("rowDeselected", (row) => {
             console.log("Removing from store")
             this.systemStore[this.removeEvent](row._row.data.id).then(() => {
@@ -82,7 +82,7 @@
                 this.diffIds = _.difference(Array.from(this.systemStore[this.assetStore]), this.stagedDataFromMongo)
             })
         })
-        // If there is data in the store, iterate over the IDs and progammatically select rows accordingly
+        // If there is data in the pinia store, iterate over the IDs and programmatically select rows accordingly
         // This is necessary for programmatically setting the staged data when the page loads
         this.tabulator.on("dataProcessed", (data) => {
             if (this.systemStore[this.assetStore].size > 0) {
