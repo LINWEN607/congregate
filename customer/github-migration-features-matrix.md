@@ -24,7 +24,6 @@ NOTE: Features not listed in the matrix should be presumed to be not yet support
 |                  | Labels                    |                                                                  | :white_check_mark: | :white_check_mark: |
 |                  | Release note descriptions |                                                                  | :white_check_mark: | :white_check_mark: |
 |                  | LFS Objects               |                                                                  | :white_check_mark: | :white_check_mark: |
-|                  | Members                   |                                                                  | :white_check_mark: | :white_check_mark: |
 |                  | Branches                  |                                                                  | :white_check_mark: | :white_check_mark: |
 |                  | Deploy keys               |                                                                  | :x:                | :white_check_mark: |
 |                  | Protected Branches        | Merge Access Levels, Push Access Levels, Unprotect Access Levels | :x:                | :white_check_mark: |
