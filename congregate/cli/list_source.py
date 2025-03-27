@@ -34,6 +34,23 @@ from congregate.migration.codecommit.api.base import CodeCommitApiWrapper
 from congregate.migration.codecommit.projects import ProjectsClient as CodeCommitProjects
 from congregate.migration.codecommit.groups import GroupsClient as CodeCommitGroups
 
+LIST_TASKS = [
+    'list_data',
+    'retrieve-bbs-users',
+    'retrieve-bbs-projects',
+    'retrieve-bbs-repos',
+    'retrieve-bbs-user-groups',
+    'retrieve-gh-users',
+    'retrieve-gh-orgs',
+    'retrieve-gh-repos',
+    'retrieve-gl-users',
+    'retrieve-gl-groups',
+    'retrieve-gl-projects',
+    'retrieve-ado-users',
+    'retrieve-ado-projects',
+    'retrieve-ado-groups'
+]
+
 class ListClient(BaseClass):
     def __init__(
         self,
