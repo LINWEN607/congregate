@@ -214,10 +214,6 @@ class Config(BaseConfig):
     def src_aws_codecommit_password(self):
         return self.prop("SOURCE", "src_aws_codecommit_password",
                          default=None, obfuscated=True)
-
-    @property
-    def src_aws_region(self):
-        return self.prop("SOURCE", "src_aws_region")
     
     @property
     def src_aws_session_token(self):

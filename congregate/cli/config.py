@@ -138,7 +138,7 @@ def generate_config():
             try:
                 config.set("SOURCE", "src_aws_session_token", obfuscate(
                 f"Source instance ({config.get('SOURCE', 'src_type')}) AWS Session Token: "))
-            except e:
+            except Exception as e:
                 config.set("SOURCE", "src_aws_session_token",None)
                 print(f"Error while obfuscating session token: {e}")
                       
