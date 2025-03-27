@@ -21,24 +21,17 @@
 <script>
 export default {
   name: 'DryRun',
-  components: {
-  },
   data() {
     return {
         visible: false,
-        dryRunData: [],
-        code: 'hello world',
-        selectedLanguage: 'json',
-        selectedTheme: 'vs-dark',
-        output: ''
+        dryRunData: []
     }
   },
   mounted: function() {
     this.emitter.on('show-dry-run', (data) => {
         console.log(data)
         this.visible = true
-        // this.dryRunData = data['result']
-        this.code = data['dry_run_data']
+        this.dryRunData = data['dry_run_data']
     })
   },
   beforeDestroy: function() {
@@ -47,9 +40,6 @@ export default {
   methods: {
     hide: function() {
         this.visible = false
-    },
-    handleCodeChange(newCode) {
-        this.code = newCode;
     }
   }
 }
