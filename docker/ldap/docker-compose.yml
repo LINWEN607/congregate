@@ -13,7 +13,7 @@ services:
       [
         "sh",
         "-c",
-        "sleep 300 && rm /opt/gitlab/embedded/service/gitlab-rails/lib/tasks/gitlab/seed/group_seed.rake && cd /opt/gitlab/embedded/service/gitlab-rails/lib/tasks/gitlab/seed && wget -O group_seed.rake https://gitlab.com/gitlab-org/professional-services-automation/delivery-kits/migration-template/-/snippets/2173332/raw/main/group_seed.rake && gitlab-rake 'gitlab:seed:group_seed[2,root]' & :; /assets/wrapper"
+        "sleep 300 && rm /opt/gitlab/embedded/service/gitlab-rails/lib/tasks/gitlab/seed/group_seed.rake && cd /opt/gitlab/embedded/service/gitlab-rails/lib/tasks/gitlab/seed && wget -O group_seed.rake https://gitlab.com/gitlab-org/professional-services-automation/delivery-kits/migration-template/-/snippets/2173332/raw/main/group_seed.rake && gitlab-rake 'gitlab:seed:group_seed[2,root]' & :; /assets/init-container"
       ]
     ports:
       - '8080:80'

@@ -14,8 +14,13 @@ class GroupsClient(BaseClass):
         self.projects_api = ProjectsApi()
         super().__init__()
 
-    def retrieve_group_info(self, processes=None):
-        self.multi.start_multi_process_stream(self.handle_retrieving_group, self.projects_api.get_all_projects(), processes=processes)
+    def retrieve_group_info(self, processes=None, projects_list=None):
+        if projects_list:
+            self.multi.start_multi_process_stream(self.handle_retrieving_group, 
+                projects_list, processes=processes)
+        else:
+            self.multi.start_multi_process_stream(self.handle_retrieving_group, 
+                self.projects_api.get_all_projects(), processes=processes)
 
     def handle_retrieving_group(self, project, mongo=None):
         if not mongo:

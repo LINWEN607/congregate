@@ -92,7 +92,10 @@ Instructions for user migration collapsed by default.
     * See [GitLab migration prerequisites](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/blob/master/runbooks/migration-pre-and-post-requisites.md) for more details
 * [ ] Create a directory called "waves" in `/opt/congregate/data` in the container if it doesn't already exist
 * [ ] Create a directory called `user_wave` in `/opt/congregate/data/waves` if it doesn't already exist
-* [ ] Run `nohup congregate list > data/waves/listing.log 2>&1 &` at the beginning of the migration blackout period
+* [ ] List data from source
+  * To list all: run `nohup congregate list > data/waves/listing.log 2>&1 &` at the beginning of the migration blackout period
+  * To list data from specific ADO projects use flag `--only-specific-projects`, for example: run `nohup congregate list --only-specific-projects=<project_id_1>,<project_id_2>,<project_id_n> data/waves/listing.log 2>&1 &` at the beginning of the migration blackout period
+  * If listing takes a significant amount of time, consider using the `--processes=n` flag to increase the number of parallel processing jobs. By default, the concurrency level is set to the number of available CPUs.
 * [ ] Stage ALL users
   * **NOTE:** Make sure no groups and projects are staged
   * Determine (with customer) whether user ID 1 is a regular user that should be migrated

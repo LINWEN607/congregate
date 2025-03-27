@@ -19,10 +19,10 @@ class ProjectFeatureFlagsUserListsClient(BaseClass):
         :yield: Response object or False in any error condition
         """
         return self.project_feature_flag_user_lists_api.create_project_feature_flag_user_list(
-            self.config.destination_host, 
-            self.config.destination_token, 
-            destination_project_id, 
-            name, 
+            self.config.destination_host,
+            self.config.destination_token,
+            destination_project_id,
+            name,
             destination_user_xids
         )
 
@@ -43,12 +43,16 @@ class ProjectFeatureFlagsUserListsClient(BaseClass):
                 self.config.source_host, self.config.source_token, source_project_id
             )
 
+            # Convert the response to a list, ensuring the generator is fully consumed
+            error, lists = is_error_message_present(user_lists)
+            if error:
+                self.log.error(f"Failed to list project {source_project_id} feature flag user lists: {lists}")
+                return {}
+            if not lists:
+                self.log.info(f"No feature flag user lists found for project {source_project_id}")
+                return {}
+
             for user_list in user_lists:
-                error, user_list = is_error_message_present(user_list)
-                if error or not user_list:
-                    self.log.error(f"{get_dry_log(self.dry_run)} Failed to list feature flags:\n{user_list}")
-                    return None
-                
                 modeled_user_list = from_dict(data_class=ProjectFeatureFlagsUserListsPayload, data=user_list)
                 self.log.info(f"{get_dry_log(self.dry_run)} Moving {modeled_user_list.to_dict()} from {source_project_id} to {destination_project_id}")
 
@@ -59,7 +63,7 @@ class ProjectFeatureFlagsUserListsClient(BaseClass):
 
                     resp = safe_json_response(response)
                     if response.status_code != 201 or not resp:
-                        self.log.error(f"Failed to create feature flag user list:\nData: {modeled_user_list.to_dict()}\nResponse: {resp}")
+                        self.log.error(f"Failed to create project {source_project_id} feature flag user list:\nData: {modeled_user_list.to_dict()}\nResponse: {resp}")
                         skipped_data.append(modeled_user_list.to_dict())
                         continue
 

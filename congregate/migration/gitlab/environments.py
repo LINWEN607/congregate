@@ -42,7 +42,7 @@ class EnvironmentsClient(DbOrHttpMixin, BaseGitLabClient):
                 return False
             if not envs:
                 self.log.info(f"No environments found for project '{name}'")
-                return True  # Return True, since there is nothing to migrate
+                return None
 
             self.log.info(f"Migrating project '{name}' environments")
             for env in envs:

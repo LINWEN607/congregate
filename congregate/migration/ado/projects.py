@@ -23,9 +23,13 @@ class ProjectsClient(BaseClass):
         self.merge_requests_api = MergeRequestsApi()
         super().__init__()
 
-    def retrieve_project_info(self, processes=None):
-        self.multi.start_multi_process_stream(
-            self.handle_retrieving_project, self.projects_api.get_all_projects(), processes=processes)
+    def retrieve_project_info(self, processes=None, projects_list=None):
+        if projects_list:
+            self.multi.start_multi_process_stream(
+                self.handle_retrieving_project, projects_list, processes=processes)
+        else:
+            self.multi.start_multi_process_stream(
+                self.handle_retrieving_project, self.projects_api.get_all_projects(), processes=processes)
 
     def handle_retrieving_project(self, project, mongo=None):
         if not mongo:
@@ -38,7 +42,7 @@ class ProjectsClient(BaseClass):
             return
         collection_name = f"projects-{strip_netloc(self.config.source_host)}"
         for repository in self.repositories_api.get_all_repositories(project["id"]):
-            if repository:
+            if repository and repository.get("isDisabled") is False and repository.get("size") > 0:
                 formatted_project = self.base_api.format_project(project, repository, count, mongo)
                 mongo.insert_data(collection_name, formatted_project)
         mongo.close_connection()

@@ -14,15 +14,15 @@ NOTE: Features not listed in the matrix should be presumed to be not yet support
 | -------------- | ------------------------- | ----------- | --------------------- |
 | **Project**    |
 |                | GitLab Group creation *   |             | :x:                   |
-|                | User permission mapping   |             | :x:                   |
-|                | Branch permission mapping |             | :x:                   |
-| **Repository** |
-|                | Project import            |             | :white_check_mark:    |
-|                | Pull requests             |             | :white_check_mark:    |
-|                | MR comments               |             | :white_check_mark: ** |
-|                | Git Repo                  |             | :white_check_mark:    |
-| **User**       |
+| **Repository** |                           |             |                       |
+|                | Git Repository |             | :white_check_mark:    |
+|                | Pull Requests (PRs)        |             | :white_check_mark:    |
+|                | PR author                 |             | :white_check_mark:    |
+|                | PR reviewers              |             | :white_check_mark:    |
+|                | PR merged by              |             | :white_check_mark:    |
+|                | PR comments               |             | :white_check_mark:    |
+|                | PR attachments            |             | :white_check_mark:    |
+| **User**       |                           |             |                       |
 |                | Account                   |             | :white_check_mark:    |
 
 * Target group in GitLab has to be created manually. See [open issue](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/issues/1147) to support this in congregate.
-** MR comments formatting is [a known issue](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/issues/1174).
