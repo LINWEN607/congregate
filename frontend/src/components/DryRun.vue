@@ -1,6 +1,8 @@
 <template>
     <div id="dry-run-container" v-if="visible">
-        Migration Dry Run is complete. The following data is slated to migrate: <button id="hide-button" @click="hide()">X</button>
+        <div>Dry Run Results <button id="hide-button" @click="hide()">X</button><button @click="save()">save</button></div>
+        <div class="sub">{{ dryRunInstructions }}</div>
+        <hr>
         <!-- <div class="controls">
         <select v-model="selectedLanguage">
           <option value="javascript">JavaScript</option>
@@ -18,6 +20,7 @@
       </div> -->
       
       <DiffEditor
+        ref="diff-editor"
         :code="code"
       />
         <!-- <div v-for="data in dryRunData">
@@ -46,20 +49,23 @@ export default {
   },
   data() {
     return {
-        visible: true,
+        visible: false,
         dryRunData: [],
         selectedLanguage: 'json',
         selectedTheme: 'vs-dark',
         output: '',
-        code: `{"hello": "world"}`
+        code: `{"hello": "world"}`,
+        dryRunInstructions: `The following data is slated to migrate. 
+              The left editor is what was generated from Congregate. 
+              On the right, you can modify the payload before starting the migration to tweak as you see fit.`
     }
   },
   mounted: function() {
     this.emitter.on('show-dry-run', (data) => {
-        console.log(data)
+        console.log(data.dry_run_data)
         this.visible = true
         // this.dryRunData = data['result']
-        this.code = data['result']
+        this.code = JSON.stringify(data, null, 2)
     })
   },
   beforeDestroy: function() {
@@ -68,6 +74,9 @@ export default {
   methods: {
     hide: function() {
         this.visible = false
+    },
+    save: function() {
+        console.log(this.$refs['diff-editor'].editor.b.state.doc)
     },
     // handleCodeChange(newCode) {
     //     this.code = newCode;
@@ -82,8 +91,8 @@ export default {
     background: #fff;
     position: absolute;
     top: 10%;
-    left: 25%;
-    width: 50%;
+    left: 15%;
+    width: 75%;
     height: 85%;
     box-shadow: 0px 0px 10px #666;
     overflow-y: scroll;
@@ -110,5 +119,12 @@ export default {
 
 #hide-button:hover {
     background: #ff851b;
+}
+
+.sub {
+  margin: 1em;
+  text-align: left;
+  font-size: smaller;
+  font-style: italic;
 }
 </style>

@@ -150,8 +150,9 @@ export default {
       let validate = result => result.data.status == 'STARTED'
       let response = await poll(pollStatus, validate, 2500)
       if (response.data.result != null) {
-        this.emitter.emit('show-dry-run', response.data.result)
+        this.systemStore.updateDirectTransferGeneratedRequest(response.data.result.dry_run_data)
         this.systemStore.updateMigrationInProgress(false)
+        this.emitter.emit('show-dry-run', this.systemStore.directTransferGeneratedRequest)
         this.dryRun = true
       } else {
         this.updateStatusTable('migration-status')
