@@ -24,14 +24,14 @@
     </div>
   </template>
   
-  <script>
-  import axios from 'axios'
-  import { mapStores } from 'pinia'
-  import {TabulatorFull as Tabulator} from 'tabulator-tables';
-  import _ from 'lodash'
-  import { useSystemStore } from '@/stores/system'
-  
-  export default {
+<script>
+import axios from 'axios'
+import { mapStores } from 'pinia'
+import {TabulatorFull as Tabulator} from 'tabulator-tables';
+import _ from 'lodash'
+import { useSystemStore } from '@/stores/system'
+
+export default {
     name: 'StageTable',
     props: {
         asset: String,

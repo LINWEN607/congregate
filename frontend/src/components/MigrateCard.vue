@@ -19,6 +19,15 @@
         </div>
         <br>
         <br>
+        <div v-if="directTransferGeneratedRequest">
+          <sub>
+            A dry run was recently cached
+            <br>
+            <button @click="showDryRun">View/Edit Migration Payload</button>
+          </sub>
+          <br>
+        </div>
+        
         <i>
           <sub>
             Congregate is currently configured to migrate from 
@@ -72,6 +81,9 @@ export default {
     },
     isSettingsStoreEmpty() {
       return JSON.stringify(this.systemStore.settings) === '{}'
+    },
+    directTransferGeneratedRequest() {
+      return Object.keys(this.systemStore.directTransferGeneratedRequest).length > 0
     }
   },
   data () {
@@ -96,6 +108,9 @@ export default {
     this.emitter.on('migration-in-progress', () => {
       this.systemStore.updateMigrationInProgress(true)
       this.pollMigrationStatus()
+    })
+    this.emitter.on('save-modified-payload', (data) => {
+      this.systemStore.updateDirectTrasnferModifiedRequest(data)
     })
   },
   beforeDestroy: function() {
@@ -150,9 +165,15 @@ export default {
       let validate = result => result.data.status == 'STARTED'
       let response = await poll(pollStatus, validate, 2500)
       if (response.data.result != null) {
-        this.systemStore.updateDirectTransferGeneratedRequest(response.data.result.dry_run_data)
+        
         this.systemStore.updateMigrationInProgress(false)
-        this.emitter.emit('show-dry-run', this.systemStore.directTransferGeneratedRequest)
+        this.systemStore.updateDirectTransferGeneratedRequest(response.data.result.dry_run_data).then(() => {
+          this.emitter.emit('show-dry-run', {
+            left: this.systemStore.directTransferGeneratedRequest, 
+            right: null
+          })
+        })
+        
         this.dryRun = true
       } else {
         this.updateStatusTable('migration-status')
@@ -188,6 +209,12 @@ export default {
       }
       this.systemStore.updateMigrationInProgress(false)
     },
+    showDryRun: function() {
+      this.emitter.emit('show-dry-run', {
+        left: this.systemStore.directTransferGeneratedRequest, 
+        right: this.systemStore.directTransferModifiedRequest
+      })
+    }
   }
 }
 </script>

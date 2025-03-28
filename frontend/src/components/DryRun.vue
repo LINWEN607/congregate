@@ -1,28 +1,15 @@
 <template>
     <div id="dry-run-container" v-if="visible">
-        <div>Dry Run Results <button id="hide-button" @click="hide()">X</button><button @click="save()">save</button></div>
+        <div>Migration Overview<button id="hide-button" @click="hide()">X</button></div>
         <div class="sub">{{ dryRunInstructions }}</div>
         <hr>
-        <!-- <div class="controls">
-        <select v-model="selectedLanguage">
-          <option value="javascript">JavaScript</option>
-          <option value="typescript">TypeScript</option>
-          <option value="html">HTML</option>
-          <option value="css">CSS</option>
-          <option value="json">JSON</option>
-        </select>
-        
-        <select v-model="selectedTheme">
-          <option value="vs">Light</option>
-          <option value="vs-dark">Dark</option>
-          <option value="hc-black">High Contrast</option>
-        </select>
-      </div> -->
       
-      <DiffEditor
-        ref="diff-editor"
-        :code="code"
-      />
+        <DiffEditor
+          ref="diff-editor"
+          :left="left"
+          :right="right"
+        />
+        <!-- Will need to refactor this for non-DT related migrations-->
         <!-- <div v-for="data in dryRunData">
             <div class="entity-card">
                 <div>Destination Namespace: {{ data.entity.destination_namespace }}</div>
@@ -54,7 +41,8 @@ export default {
         selectedLanguage: 'json',
         selectedTheme: 'vs-dark',
         output: '',
-        code: `{"hello": "world"}`,
+        left: null,
+        right: null,
         dryRunInstructions: `The following data is slated to migrate. 
               The left editor is what was generated from Congregate. 
               On the right, you can modify the payload before starting the migration to tweak as you see fit.`
@@ -62,25 +50,27 @@ export default {
   },
   mounted: function() {
     this.emitter.on('show-dry-run', (data) => {
-        console.log(data.dry_run_data)
         this.visible = true
-        // this.dryRunData = data['result']
-        this.code = JSON.stringify(data, null, 2)
+        this.left = JSON.stringify(data.left, null, 2)
+        if (data.right) {
+            this.right = JSON.stringify(data.right, null, 2)
+        }
     })
   },
-  beforeDestroy: function() {
+  beforeUnmount: function() {
     this.emitter.off('show-dry-run')
+    if (this.$refs['diff-editor']) {
+      this.saveModifiedPayload()
+    }
   },
   methods: {
     hide: function() {
-        this.visible = false
+      this.visible = false
+      this.saveModifiedPayload()
     },
-    save: function() {
-        console.log(this.$refs['diff-editor'].editor.b.state.doc)
-    },
-    // handleCodeChange(newCode) {
-    //     this.code = newCode;
-    // }
+    saveModifiedPayload: function() {
+      this.emitter.emit('save-modified-payload', JSON.parse(this.$refs['diff-editor'].editor.b.state.doc.toString()))
+    }
   }
 }
 </script>

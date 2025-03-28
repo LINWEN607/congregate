@@ -1,5 +1,5 @@
 <template>
-  <div id="app">
+  <div id="app-container">
     <div id="nav">
       <h1>Congregate</h1>
       <router-link to="/">Home</router-link>
@@ -76,15 +76,30 @@ export default {
 </script>
 
 <style lang="less">
+html {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
 #app {
+  height: 100%;
+  width: 100%;;
+}
+
+#app-container {
   font-family: Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
   height: 100%;
+  width: 100%;
   display: flex;
   flex-wrap: nowrap;
+  align-items: stretch;
+  flex-direction: row;
 }
 
 body {
@@ -98,6 +113,7 @@ body {
   background-repeat: no-repeat;
   background-attachment: fixed;
   background-position: center;
+  overflow: hidden;
 }
 
 h2 {
@@ -134,7 +150,7 @@ h2 {
   background-color: #FF851B;
   color :#663000;
   text-align: left;
-  flex: 0 0 11em;
+  flex: 0 0 12em;
   h1 {
     font-size: 1.5em;
     text-indent: 0.5em;
@@ -184,9 +200,10 @@ h2 {
 }
 
 #content {
-  flex-grow: 12;
+  flex: 1;
   padding: 1em 1em 0 1em;
   color: #111;
+  overflow: auto;
 }
 
 #content h1 {

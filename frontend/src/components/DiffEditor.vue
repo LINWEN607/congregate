@@ -12,16 +12,20 @@
 <script>
 import {MergeView} from "@codemirror/merge"
 import {EditorView, basicSetup} from "codemirror"
-import {EditorState, StateField} from "@codemirror/state"
+import {EditorState} from "@codemirror/state"
 import {json} from "@codemirror/lang-json"
 
 export default {
   name: 'DiffEditor',
   props: {
-    code: {
+    left: {
       type: String,
-      default: `{"hello": "world"}`
+      default: ''
     },
+    right: {
+      type: String,
+      default: ''
+    }
   },
   data() {
     return {
@@ -29,13 +33,9 @@ export default {
     };
   },
   mounted() {
-    // const docField = StateField.define({
-    //   create(state) { return state.doc.toString() },
-    //   update(value, tr) { return tr.docChanged ? tr.newDoc.toString() : value }
-    // });
     this.editor = new MergeView({
       a: {
-        doc: this.code,
+        doc: this.left,
         extensions: [
           basicSetup,
           EditorView.editable.of(false),
@@ -44,7 +44,7 @@ export default {
         ]
       },
       b: {
-        doc: this.code,
+        doc: this.right !== null ? this.right : this.left,
         extensions: [
           basicSetup, 
           json()
@@ -52,10 +52,6 @@ export default {
       },
       parent: document.getElementById('editor-container')
     })
-    // console.log(this.editor.right.state)
-    // const rightEditor = document.querySelector('#editor-container .cm-content.cm-right')
-    // const rightValue = rightEditor ? this.editor.right.state.doc.toString() : '';
-    // console.log(rightValue)
   },
   beforeUnmount() {
   },
@@ -78,8 +74,5 @@ export default {
 }
 .title-text {
   padding: 5px;
-  /* border-top: 1px solid #000;
-  border-right: 1px solid #000;
-  border-left: 1px solid #000; */
 }
 </style>

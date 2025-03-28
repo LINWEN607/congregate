@@ -21,10 +21,10 @@ export const useSystemStore = defineStore('system', {
         updateMigrationInProgress(state) {
             this.migrationInProgress = state
         },
-        updateDirectTransferGeneratedRequest(request) {
+        async updateDirectTransferGeneratedRequest(request) {
             this.directTransferGeneratedRequest = request
         },
-        updateDirectTrasnferModifiedRequest(request) {
+        async updateDirectTrasnferModifiedRequest(request) {
             this.directTransferModifiedRequest = request
         },
         async stageProject(pid) {
