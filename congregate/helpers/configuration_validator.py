@@ -1,6 +1,7 @@
 from base64 import b64encode
 import sys
 import requests
+import boto3
 
 from gitlab_ps_utils.exceptions import ConfigurationException
 from gitlab_ps_utils.misc_utils import is_error_message_present, safe_json_response
@@ -10,6 +11,8 @@ from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.instance import InstanceApi
 from congregate.helpers.utils import is_github_dot_com, is_dot_com
+from gitlab_ps_utils.string_utils import deobfuscate
+from botocore.exceptions import ClientError
 
 
 class ConfigurationValidator(Config):
@@ -185,6 +188,8 @@ class ConfigurationValidator(Config):
                 self.validate_src_token_bitbucket(user, err_msg, src_token)
             elif self.source_type == "azure devops":
                 self.validate_src_token_ado(err_msg, src_token)
+            elif self.source_type == "codecommit":
+                self.validate_src_token_codecommit()
             return True
         return True
 
@@ -291,6 +296,50 @@ class ConfigurationValidator(Config):
             else:
                 raise ConfigurationException(
                     "source_token", msg=f"{msg}Invalid user authentication:\n{json_pretty(connection_data)}")
+            
+    def validate_src_token_codecommit(self):
+        """
+        Validate AWS CodeCommit credentials. 
+        Confirm that src_aws_access_key_id, src_aws_secret_access_key, and
+        src_aws_codecommit_password (or session_token) are set. It also do 
+        a test call to confirm credentials are valid.
+        """
+
+        # 1. Check the AWS fields are not None.
+        #    If you want them all strictly required:
+        if not self.src_aws_access_key_id:
+            raise ConfigurationException(
+                "aws_access_key",
+                msg="AWS Access Key ID not found in config for CodeCommit"
+            )
+        if not self.src_aws_secret_access_key:
+            raise ConfigurationException(
+                "aws_secret_access_key",
+                msg="AWS Secret Access Key not found in config for CodeCommit"
+            )
+        if not self.src_aws_session_token:
+            raise ConfigurationException(
+                "aws_session_token",
+                msg="AWS Session Token not found in config for CodeCommit"
+            )
+
+        try:
+            client = boto3.client(
+                'codecommit',
+                aws_access_key_id=self.src_aws_access_key_id,
+                aws_secret_access_key=deobfuscate(self.src_aws_secret_access_key),
+                aws_session_token=deobfuscate(self.src_aws_session_token) if self.src_aws_session_token else None,
+                region_name=self.src_aws_region
+            )
+            # Quick call to validate credentials.
+            client.list_repositories(maxResults=1)
+        except ClientError as e:
+            raise ConfigurationException(
+                "codecommit_credentials",
+                msg=f"Failed to validate AWS CodeCommit credentials: {str(e)}"
+            )
+
+        return True
 
     def validate_airgap_configuration(self):
         airgap_export = self.prop_bool("APP", "airgap_export", default=False)
