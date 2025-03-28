@@ -295,7 +295,7 @@ class RegistryClient(BaseClass):
                 self.log.warning(f"Error removing image: {e}")
         
         # Only prune dangling images (images with no tags), which are likely leftovers from the migration
-        self.log.info(f"Pruned {client.images.prune()}\n")
+        client.images.prune()
         
         # Check disk space, but only log a warning if low
         try:
