@@ -187,13 +187,14 @@ class RegistryClient(BaseClass):
                         if tagged_image:
                             success_count += 1
                             break
+                    # Update the error handling in the pull attempt loop
                     except NotFound as nf:
                         ex = nf
                         self.log.warning(
-                            f"Registered a NotFound when attempting to pull {repo_loc}:{tag_name} on attempt {pull_attempt}. Cleaning.")
+                            f"Registered a NotFound when attempting to pull {repo_loc}:{tag_name} on attempt {pull_attempt}. " +
+                            "This could be due to platform incompatibility (e.g., Windows containers on Linux) or the image may not exist. Cleaning.")
                         # NotFound or disk full returning NotFound falsely *OR* possibly returning just an empty image
-                        # Let's try to clean-up. This could in theory happen
-                        # twice
+                        # Let's try to clean-up. This could in theory happen twice
                         self.__clean_local(cleaner, src_client, "src")
                         self.__clean_local(cleaner, dest_client, "dest")
                     except Exception as other_ex:
@@ -207,7 +208,9 @@ class RegistryClient(BaseClass):
             if ex:
                 skipped_count += 1
                 self.log.error(
-                    f"Failed to pull {repo_loc}:{tag_name}, skipping due to:\n{ex}")
+                    f"Failed to pull {repo_loc}:{tag_name}, skipping due to:\n{ex}" +
+                    "\nNote: If this is a Windows container being migrated on a Linux system (or vice versa), " +
+                    "this is expected behavior as containers are platform-specific.")
                 continue
 
             # Retag for the new destination
