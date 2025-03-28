@@ -37,7 +37,7 @@ export default {
   },
   data() {
     return {
-      flowerUrl: import.meta.env.VITE_FLOWER_URL
+      flowerUrl: ''
     }
   },
   computed: {
@@ -47,6 +47,7 @@ export default {
     axios.get(`${import.meta.env.VITE_API_ROOT}/api/settings`).then(response => {
       this.systemStore.updateSettings(response.data)
       this.emitter.emit('settings-updated')
+      this.flowerUrl = this.systemStore.settings['APP']['flower_url']
     })
     this.emitter.on('check-jobs', () => {
       this.getJobsByStatus()

@@ -10,9 +10,14 @@ def get_config():
     return jsonify(scrubbed_config), 200
 
 def strip_tokens(config):
-    scrubbed_config = {}
+    scrubbed_config = {
+        'APP': {
+            'flower_url': config.flower_url
+        }
+    }
     for section, settings in config.as_dict().items():
-        scrubbed_config[section] = {}
+        if scrubbed_config.get(section) is None:
+            scrubbed_config[section] = {}
         for setting, value in settings.items():
             if 'token' not in setting:
                 scrubbed_config[section][setting] = value

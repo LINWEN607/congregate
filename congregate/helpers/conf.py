@@ -517,6 +517,13 @@ class Config(BaseConfig):
         Sets the timeout for the concurrent list of async tasks to complete
         """
         return self.prop_int("APP", "list_task_timeout", default=86400)
+    
+    @property
+    def flower_url(self):
+        """
+        Sets the URL for the Celery task viewer app Flower
+        """
+        return self.prop("APP", "flower_url", default="http://localhost:5555")
 
 # HIDDEN PROPERTIES
 
