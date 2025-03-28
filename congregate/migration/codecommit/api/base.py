@@ -22,10 +22,13 @@ class CodeCommitApiWrapper(BaseClass):
         self.boto3_configuration = Config(region_name = self.config.src_aws_region, retries = dict(max_attempts = 0))
         # https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
   
+        def safe_deobfuscate(val):
+            return deobfuscate(val) if val else None
+  
         self.boto_client = boto3.client('codecommit', config=self.boto3_configuration,
                              aws_access_key_id = self.config.src_aws_access_key_id,
-                             aws_secret_access_key = deobfuscate(self.config.src_aws_secret_access_key),
-                             aws_session_token = deobfuscate(self.config.src_aws_session_token) )
+                             aws_secret_access_key = safe_deobfuscate(self.config.src_aws_secret_access_key),
+                             aws_session_token = safe_deobfuscate(self.config.src_aws_session_token) )
        
     @stable_retry
     def get_repository(self, project_id,repository_name, description=None):

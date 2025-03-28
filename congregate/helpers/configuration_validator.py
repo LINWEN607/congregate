@@ -89,6 +89,28 @@ class ConfigurationValidator(Config):
         self.src_token_validated_in_session = self.validate_src_token(
             src_token) if not self.airgap else True
         return src_token
+    
+    @property
+    def src_aws_secret_access_key(self):
+        obfuscated = True
+        src_token = self.prop("SOURCE", "src_aws_secret_access_key",
+                         default=None, obfuscated=obfuscated)
+        if self.src_token_validated_in_session:
+            return src_token
+        self.src_token_validated_in_session = self.validate_src_token(
+            src_token, "aws_secret_access_key") if not self.airgap else True
+        return src_token
+    
+    @property
+    def src_aws_session_token(self):
+        obfuscated = True
+        src_token = self.prop("SOURCE", "src_aws_session_token",
+                         default=None, obfuscated=obfuscated)
+        if self.src_token_validated_in_session:
+            return src_token
+        self.src_token_validated_in_session = self.validate_src_token(
+            src_token, "aws_session_token") if not self.airgap else True
+        return src_token
 
     @property
     def airgap(self):
@@ -176,7 +198,7 @@ class ConfigurationValidator(Config):
             return True
         return True
 
-    def validate_src_token(self, src_token):
+    def validate_src_token(self, src_token, token_type="source_token"):
         if src_token:
             user = None
             err_msg = "Invalid user and/or token:\n"
@@ -189,7 +211,7 @@ class ConfigurationValidator(Config):
             elif self.source_type == "azure devops":
                 self.validate_src_token_ado(err_msg, src_token)
             elif self.source_type == "codecommit":
-                self.validate_src_token_codecommit()
+                self.validate_src_token_codecommit(src_token, token_type)
             return True
         return True
 
@@ -297,27 +319,19 @@ class ConfigurationValidator(Config):
                 raise ConfigurationException(
                     "source_token", msg=f"{msg}Invalid user authentication:\n{json_pretty(connection_data)}")
             
-    def validate_src_token_codecommit(self):
+    def validate_src_token_codecommit(self, token, token_type):
         """
         Validate AWS CodeCommit credentials. 
-        Confirm that src_aws_access_key_id, src_aws_secret_access_key, and
-        src_aws_codecommit_password (or session_token) are set. It also do 
-        a test call to confirm credentials are valid.
+        Confirm that src_aws_secret_access_key, src_aws_session_token) are set. 
+        It also does a test call to confirm credentials are valid.
         """
 
-        # 1. Check the AWS fields are not None.
-        #    If you want them all strictly required:
-        if not self.src_aws_access_key_id:
-            raise ConfigurationException(
-                "aws_access_key",
-                msg="AWS Access Key ID not found in config for CodeCommit"
-            )
-        if not self.src_aws_secret_access_key:
+        if token_type == "aws_secret_access_key" and not token:
             raise ConfigurationException(
                 "aws_secret_access_key",
                 msg="AWS Secret Access Key not found in config for CodeCommit"
             )
-        if not self.src_aws_session_token:
+        if token_type == "aws_session_token" and not token:
             raise ConfigurationException(
                 "aws_session_token",
                 msg="AWS Session Token not found in config for CodeCommit"
