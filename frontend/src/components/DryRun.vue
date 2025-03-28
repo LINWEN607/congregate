@@ -1,7 +1,26 @@
 <template>
     <div id="dry-run-container" v-if="visible">
         Migration Dry Run is complete. The following data is slated to migrate: <button id="hide-button" @click="hide()">X</button>
-        <div v-for="data in dryRunData">
+        <!-- <div class="controls">
+        <select v-model="selectedLanguage">
+          <option value="javascript">JavaScript</option>
+          <option value="typescript">TypeScript</option>
+          <option value="html">HTML</option>
+          <option value="css">CSS</option>
+          <option value="json">JSON</option>
+        </select>
+        
+        <select v-model="selectedTheme">
+          <option value="vs">Light</option>
+          <option value="vs-dark">Dark</option>
+          <option value="hc-black">High Contrast</option>
+        </select>
+      </div> -->
+      
+      <DiffEditor
+        :code="code"
+      />
+        <!-- <div v-for="data in dryRunData">
             <div class="entity-card">
                 <div>Destination Namespace: {{ data.entity.destination_namespace }}</div>
                 <div>Destination Slug: {{ data.entity.destination_slug }}</div>
@@ -15,23 +34,32 @@
                     <li v-for="subgroup in data.subgroups">{{ subgroup }}</li>
                 </ul>
             </div>
-        </div>
+        </div> -->
     </div>
 </template>
 <script>
+import DiffEditor from '@/components/DiffEditor.vue';
 export default {
   name: 'DryRun',
+  components: {
+    DiffEditor
+  },
   data() {
     return {
-        visible: false,
-        dryRunData: []
+        visible: true,
+        dryRunData: [],
+        selectedLanguage: 'json',
+        selectedTheme: 'vs-dark',
+        output: '',
+        code: `{"hello": "world"}`
     }
   },
   mounted: function() {
     this.emitter.on('show-dry-run', (data) => {
         console.log(data)
         this.visible = true
-        this.dryRunData = data['dry_run_data']
+        // this.dryRunData = data['result']
+        this.code = data['result']
     })
   },
   beforeDestroy: function() {
@@ -40,7 +68,10 @@ export default {
   methods: {
     hide: function() {
         this.visible = false
-    }
+    },
+    // handleCodeChange(newCode) {
+    //     this.code = newCode;
+    // }
   }
 }
 </script>

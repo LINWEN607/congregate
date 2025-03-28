@@ -9,8 +9,12 @@
     "lint": "eslint --ext .js,.vue --ignore-path .gitignore --fix src"
   },
   "dependencies": {
+    "@codemirror/lang-json": "^6.0.1",
+    "@codemirror/merge": "^6.10.0",
+    "@codemirror/state": "^6.5.2",
     "axios": "^0.21.1",
     "chokidar": "^3.5.1",
+    "codemirror": "^6.0.1",
     "lodash": "^4.17.21",
     "mitt": "^3.0.0",
     "pinia": "^2.1.7",
