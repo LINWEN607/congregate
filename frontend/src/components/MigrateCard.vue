@@ -39,6 +39,7 @@
 </template>
 
 <script>
+import { toRaw } from 'vue'
 import axios from 'axios'
 import { mapStores } from 'pinia'
 import { poll } from '@/scripts/poll.js'
@@ -110,7 +111,7 @@ export default {
       this.pollMigrationStatus()
     })
     this.emitter.on('save-modified-payload', (data) => {
-      this.systemStore.updateDirectTrasnferModifiedRequest(data)
+      this.systemStore.updateDirectTransferModifiedRequest(data)
     })
   },
   beforeDestroy: function() {
@@ -139,7 +140,11 @@ export default {
         if (params.hasOwnProperty('commit')) {
           this.dryRun = false
         }
-        axios.post(migrateEndpoint).then(response => {
+        var payload = null
+        if (!Object.keys(this.systemStore.directTransferModifiedRequest).length == 0) {
+          payload = {"payload": toRaw(this.systemStore.directTransferModifiedRequest)}
+        }
+        axios.post(migrateEndpoint, payload).then(response => {
           if (!params.hasOwnProperty('commit')) {
             this.pollDryRunStatus(response.data.task_id)
           } else {

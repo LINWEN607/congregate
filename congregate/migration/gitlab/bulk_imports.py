@@ -31,15 +31,7 @@ class BulkImportsClient(BaseGitLabClient):
                     f"Successfully triggered bulk import request with response: {import_response_json}")
                 return (import_response_json.get('id'), None, import_response.text)
             return (None, None, import_response.text)
-        dry_run_data = []
-        for entity in payload.entities:
-            if entity.source_type == 'group_entity':
-                drd = self.get_all_group_paths(entity)
-                dry_run_data.append(drd.to_dict())
-            elif entity.source_type == 'project_entity':
-                drd = DryRunData(entity=entity)
-                dry_run_data.append(drd.to_dict())
-        return (None, dry_run_data, None)
+        return (None, payload.to_dict(), None)
 
     def poll_import_status(self, dt_id):
         while True:
@@ -230,6 +222,8 @@ class BulkImportsClient(BaseGitLabClient):
 @shared_task(bind=True, name='trigger-bulk-import-task')
 def kick_off_bulk_import(self, payload, dry_run=True):
     payload = from_dict(data_class=BulkImportPayload, data=payload)
+    # if dry_run:
+    #     return payload.to_dict()
     dt_client = BulkImportsClient(
         payload.configuration.url, payload.configuration.access_token)
     dt_id, dt_entities, errors = dt_client.trigger_bulk_import(
