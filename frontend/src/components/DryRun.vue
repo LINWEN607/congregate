@@ -1,7 +1,11 @@
 <template>
     <div id="dry-run-container" v-if="visible">
         <div>Migration Overview<button id="hide-button" @click="hide()">X</button></div>
-        <div class="sub">{{ dryRunInstructions }}</div>
+        <div v-if="!dryRun">
+          <div class="warn">{{ commitInstructions }}</div>
+          <button @click="confirmMigration">Confirm</button>
+        </div>
+        <div class="sub" v-if="dryRun">{{ dryRunInstructions }}</div>
         <hr>
       
         <DiffEditor
@@ -43,9 +47,12 @@ export default {
         output: '',
         left: null,
         right: null,
+        dryRun: true,
         dryRunInstructions: `The following data is slated to migrate. 
               The left editor is what was generated from Congregate. 
-              On the right, you can modify the payload before starting the migration to tweak as you see fit.`
+              On the right, you can modify the payload before starting the migration to tweak as you see fit.`,
+        commitInstructions: `You are about to commit this migration run. 
+              Please review the payload on the right and click confirm to proceed.`
     }
   },
   mounted: function() {
@@ -55,6 +62,7 @@ export default {
         if (data.right) {
             this.right = JSON.stringify(data.right, null, 2)
         }
+        this.dryRun = data.dryRun
     })
   },
   beforeUnmount: function() {
@@ -70,6 +78,13 @@ export default {
     },
     saveModifiedPayload: function() {
       this.emitter.emit('save-modified-payload', JSON.parse(this.$refs['diff-editor'].editor.b.state.doc.toString()))
+    },
+    confirmMigration: function() {
+      this.saveModifiedPayload()
+      this.$nextTick(() => {
+        this.emitter.emit('confirm-migration')
+        this.visible = false
+      })
     }
   }
 }
@@ -116,5 +131,12 @@ export default {
   text-align: left;
   font-size: smaller;
   font-style: italic;
+}
+
+.warn {
+  margin: 1em;
+  text-align: center;
+  font-weight: bold;
+  font-size: smaller;
 }
 </style>

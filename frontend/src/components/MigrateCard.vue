@@ -9,7 +9,7 @@
         <div v-if="directTransfer && !migrationInProgress">
           Migrate staged data to destination GitLab instance
           <br>
-          <button @click="triggerMigration">Migrate</button>
+          <button @click="promptConfirmation">Migrate</button>
           <ParamForm formId="migrate-params" :params="params"/>
         </div>
         <div class="in-progress" v-else>
@@ -21,7 +21,7 @@
         <br>
         <div v-if="directTransferGeneratedRequest">
           <sub>
-            A dry run was recently cached
+            A dry run was recently cached. Please review before you commit the migration.
             <br>
             <button @click="showDryRun">View/Edit Migration Payload</button>
           </sub>
@@ -113,11 +113,32 @@ export default {
     this.emitter.on('save-modified-payload', (data) => {
       this.systemStore.updateDirectTransferModifiedRequest(data)
     })
+    this.emitter.on('confirm-migration', () => {
+      this.triggerMigration()
+    })
   },
   beforeDestroy: function() {
     this.emitter.off('migration-in-progress')
   },
   methods: {
+    promptConfirmation: function() {
+      let params = {}
+      let form = new FormData(document.getElementById('migrate-params'))
+      for (const [key, value] of form) {
+          params[key] = Boolean(value)
+      }
+      if (params.hasOwnProperty('commit')) {
+        this.dryRun = false
+        this.emitter.emit('show-dry-run', {
+          left: this.systemStore.directTransferGeneratedRequest, 
+          right: this.systemStore.directTransferModifiedRequest,
+          dryRun: false
+        })
+      } else {
+        this.triggerMigration()
+      }
+      
+    },
     triggerMigration: function() {
       this.systemStore.updateMigrationInProgress(true)
       let params = {}
@@ -175,7 +196,8 @@ export default {
         this.systemStore.updateDirectTransferGeneratedRequest(response.data.result.dry_run_data).then(() => {
           this.emitter.emit('show-dry-run', {
             left: this.systemStore.directTransferGeneratedRequest, 
-            right: null
+            right: null,
+            dryRun: true
           })
         })
         
@@ -217,7 +239,8 @@ export default {
     showDryRun: function() {
       this.emitter.emit('show-dry-run', {
         left: this.systemStore.directTransferGeneratedRequest, 
-        right: this.systemStore.directTransferModifiedRequest
+        right: this.systemStore.directTransferModifiedRequest,
+        dryRun: true
       })
     }
   }
