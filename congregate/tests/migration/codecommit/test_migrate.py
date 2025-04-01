@@ -8,8 +8,24 @@ from congregate.helpers.configuration_validator import ConfigurationValidator
 
 @pytest.mark.unit_test
 class TestCodeCommitMigrateClient(unittest.TestCase):
-    def setUp(self):
+    @patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_token_validated_in_session', new_callable=PropertyMock)
+    @patch('congregate.helpers.configuration_validator.ConfigurationValidator.src_token_validated_in_session', new_callable=PropertyMock)
+    @patch('congregate.helpers.configuration_validator.ConfigurationValidator.src_aws_session_token', new_callable=PropertyMock)
+    @patch('congregate.helpers.configuration_validator.ConfigurationValidator.src_aws_secret_access_key', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.destination_host', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.src_aws_access_key_id', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.source_type', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.src_aws_region', new_callable=PropertyMock)
+    def setUp(self, mock_src_aws_region, mock_source_type, mock_src_aws_access_key_id, mock_dstn_host, mock_src_aws_secret_access_key, mock_src_aws_session_token, src_validated, dstn_validated):
         """Set up test fixtures."""
+        src_validated.return_value = True
+        dstn_validated.return_value = True
+        mock_src_aws_region.return_value = "us-east-1"
+        mock_source_type.return_value = "codecommit"
+        mock_src_aws_access_key_id.return_value = "FAKE_KEY"
+        mock_src_aws_secret_access_key.return_value = "RkFLRV9TRUNSRVQ="
+        mock_src_aws_session_token.return_value = "RkFLRV9UT0tFTg=="
+        mock_dstn_host.return_value = "https://test.gitlab.com"
         self.migrate_client = CodeCommitMigrateClient()
         # Add missing attributes
         self.migrate_client.groups = MagicMock()

@@ -199,26 +199,27 @@ class Config(BaseConfig):
 # AWS CodeCommit
     @property
     def src_aws_access_key_id(self):
-        return self.prop("SOURCE", "src_aws_access_key_id")
+        return self.prop("SOURCE", "src_aws_access_key_id",
+                         default=None, obfuscated=True)
 
     @property
-    def src_aws_secret_access_key(self):
+    def src_aws_secret_access_key(self, obfuscate=True):
         return self.prop("SOURCE", "src_aws_secret_access_key",
-                         default=None, obfuscated=True)
+                         default=None, obfuscated=obfuscate)
     
     @property
     def src_aws_codecommit_username(self):
         return self.prop("SOURCE", "src_aws_codecommit_username")
     
     @property
-    def src_aws_codecommit_password(self):
+    def src_aws_codecommit_password(self, obfuscate=True):
         return self.prop("SOURCE", "src_aws_codecommit_password",
-                         default=None, obfuscated=True)
+                         default=None, obfuscated=obfuscate)
     
     @property
-    def src_aws_session_token(self):
+    def src_aws_session_token(self, obfuscate=True):
         return self.prop("SOURCE", "src_aws_session_token",
-                         default=None, obfuscated=True)
+                         default=None, obfuscated=obfuscate)
     
     @property
     def src_aws_region(self):

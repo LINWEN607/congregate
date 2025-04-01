@@ -11,9 +11,13 @@ from congregate.migration.codecommit.base import CodeCommitWrapper
 @pytest.mark.unit_test
 class TestCodeCommitApiWrapper(unittest.TestCase):
 
-    def setUp(self):
+    @patch('congregate.helpers.conf.Config.source_type', new_callable=PropertyMock)
+    @patch('congregate.helpers.conf.Config.src_aws_region', new_callable=PropertyMock)
+    def setUp(self, mock_src_aws_region, mock_source_type):
         """Set up a new instance of CodeCommitApiWrapper with mocks for Boto3 client."""
         self.mock_boto_client = MagicMock()
+        mock_src_aws_region.return_value = "us-east-1"
+        mock_source_type.return_value = "codecommit"
         with patch('boto3.client', return_value=self.mock_boto_client):
             self.api_wrapper = CodeCommitApiWrapper()
 
