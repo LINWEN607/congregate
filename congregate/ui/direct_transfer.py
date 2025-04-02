@@ -24,9 +24,7 @@ def trigger_staged_migration(entity_type, dry_run=True):
     if request_body := request.get_json(silent=True):
         payload = from_dict(data_class=BulkImportPayload, data=request_body.get('payload'))
     else:
-        payload = None
-    dt_client = BulkImportsClient()
-    if not payload:
+        dt_client = BulkImportsClient()
         if entity_type == 'groups':
             data = get_staged_groups()
             payload = dt_client.build_payload(data, 'group', skip_projects=bool(strtobool(request.args.get('skip_projects', 'false'))))

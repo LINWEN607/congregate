@@ -6,6 +6,10 @@
           <button @click="confirmMigration">Confirm</button>
         </div>
         <div class="sub" v-if="dryRun">{{ dryRunInstructions }}</div>
+        <div v-if="jsonError">
+          <span>The modified payload is not valid JSON. Please update the payload.</span>
+          <span>{{ jsonError }}</span>
+        </div>
         <hr>
       
         <DiffEditor
@@ -52,7 +56,8 @@ export default {
               The left editor is what was generated from Congregate. 
               On the right, you can modify the payload before starting the migration to tweak as you see fit.`,
         commitInstructions: `You are about to commit this migration run. 
-              Please review the payload on the right and click confirm to proceed.`
+              Please review the payload on the right and click confirm to proceed.`,
+        jsonError: ""
     }
   },
   mounted: function() {
@@ -73,8 +78,18 @@ export default {
   },
   methods: {
     hide: function() {
-      this.visible = false
-      this.saveModifiedPayload()
+      try {
+        JSON.parse(this.$refs['diff-editor'].editor.b.state.doc.toString())
+        this.visible = false
+        this.saveModifiedPayload()
+        this.jsonError = ""
+      } catch (e) {
+        this.emitter.emit('alert', {
+          'message': 'The modified payload is not valid JSON. Please update the payload.',
+          'messageType': 'error'
+        })
+        this.jsonError = e.message
+      }
     },
     saveModifiedPayload: function() {
       this.emitter.emit('save-modified-payload', JSON.parse(this.$refs['diff-editor'].editor.b.state.doc.toString()))
