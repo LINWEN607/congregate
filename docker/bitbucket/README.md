@@ -61,7 +61,6 @@ dstn_hostname = http://gitlab-web # The service name for gitlab created by docke
 dstn_access_token = <gitlab token here>
 import_user_id = 1
 shared_runners_enabled = True
-project_suffix = False
 max_import_retries = 3
 username_suffix = 
 mirror_username = 

@@ -46,17 +46,6 @@ class Config(BaseConfig):
             "DESTINATION", "shared_runners_enabled", default=False)
 
     @property
-    def append_project_suffix_on_existing_found(self):
-        """
-        This setting determines if, in the instance of an existing project being found at the destination with the
-        same name as the source project, if we should append a value and create the project, or just fail the import.
-        :return:    The value from the append_project_suffix configuration value, or `False` by default. Note:
-                    The `False` return will execute the default behavior and cause the import to fail if an existing
-                    project is found
-        """
-        return self.prop_bool("DESTINATION", "project_suffix", default=False)
-
-    @property
     def max_import_retries(self):
         """
         Project import retry count.

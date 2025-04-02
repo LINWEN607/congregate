@@ -596,7 +596,6 @@ class ConfigTests(unittest.TestCase):
             "dstn_access_token":"dGVzdA==",\
             "import_user_id":"1",\
             "shared_runners_enabled":"False",\
-            "project_suffix":"False",\
             "max_import_retries":"3",\
             "username_suffix":"local",\
             "mirror_username":"",\
@@ -640,7 +639,6 @@ class ConfigTests(unittest.TestCase):
             "dstn_access_token":"dGVzdA==",\
             "import_user_id":"1",\
             "shared_runners_enabled":"True",\
-            "project_suffix":"False",\
             "max_import_retries":"3",\
             "username_suffix":"username_suffix",\
             "mirror_username":"",\
