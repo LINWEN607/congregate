@@ -5,24 +5,27 @@ This script retrieves placeholder users from a GitLab group and exports them to 
 The exported CSV can be used as input for the user reassignment process during GitLab migrations.
 
 Features:
-- Retrieves all placeholder users from a specified GitLab group using GraphQL API with pagination
+- Retrieves all placeholder users from a specified GitLab group using REST API
 - Exports user data to a CSV file in the required format for user reassignment
 - Includes error handling and detailed logging
 
 Prerequisites:
 - Set DESTINATION_GITLAB_ROOT environment variable (e.g., "https://gitlab.example.com")
 - Set DESTINATION_ADMIN_ACCESS_TOKEN environment variable with an admin access token
+- Set DESTINATION_CUSTOMER_NAME environment variable with the customer name
+- Set DESTINATION_GROUP_FULL_PATH environment variable with the target group path
 
 Usage:
 1. Set the required environment variables
-2. Modify the group_full_path and customer_name variables in the main function with your target group path
-3. Run the script to generate the CSV file
+2. Run the script to generate the CSV file
 
 Example usage:
 ```
 export DESTINATION_GITLAB_ROOT="https://gitlab.example.com"
 export DESTINATION_ADMIN_ACCESS_TOKEN="glpat-xxxxxxxxxxxxxxxxxxxx"
-python retrieve-placeholcer-users-for-namespace.py
+export DESTINATION_CUSTOMER_NAME="demo"
+export DESTINATION_GROUP_FULL_PATH="import-target"
+python retrieve-placeholder-users-for-namespace.py
 ```
 
 Output CSV Format:
@@ -39,8 +42,9 @@ The generated CSV includes these columns:
 - GitLab clientMutationId: (Empty, to be filled by the user)
 
 Example CSV output:
-Source host,Import type,Source user identifier,Source user name,Source username,GitLab username,GitLab public email,GitLab importSourceUserId,GitLab assigneeUserId,GitLab clientMutationId
-gitlab.com,email,123456,John Doe,johndoe,,,gid://gitlab/ImportSourceUser/123456,,
+Source host,Import type,Source user identifier,Source user name,Source username,GitLab username,GitLab public email
+http://gitlab.example,gitlab_migration,11,Bob,bob,"",""
+http://gitlab.example,gitlab_migration,9,Alice,alice,"",""
 """
 
 import requests
@@ -57,6 +61,8 @@ logger = logging.getLogger(__name__)
 # Check for required environment variables
 DESTINATION_GITLAB_ROOT = os.environ.get("DESTINATION_GITLAB_ROOT")
 DESTINATION_ADMIN_ACCESS_TOKEN = os.environ.get("DESTINATION_ADMIN_ACCESS_TOKEN")
+DESTINATION_CUSTOMER_NAME = os.environ.get("DESTINATION_CUSTOMER_NAME")
+DESTINATION_GROUP_FULL_PATH = os.environ.get("DESTINATION_GROUP_FULL_PATH")
 
 # Validate required environment variables
 if not DESTINATION_GITLAB_ROOT:
@@ -67,34 +73,20 @@ if not DESTINATION_ADMIN_ACCESS_TOKEN:
     logger.error("Required environment variable DESTINATION_ADMIN_ACCESS_TOKEN is not set")
     sys.exit("ERROR: DESTINATION_ADMIN_ACCESS_TOKEN environment variable must be set")
 
-# GitLab API configuration
-DESTINATION_GITLAB_GRAPHQL_URL = f"{DESTINATION_GITLAB_ROOT}/api/graphql"
-DESTINATION_GITLAB_API_URL = f"{DESTINATION_GITLAB_ROOT}/api/v4"
+if not DESTINATION_CUSTOMER_NAME:
+    logger.error("Required environment variable DESTINATION_CUSTOMER_NAME is not set")
+    sys.exit("ERROR: DESTINATION_CUSTOMER_NAME environment variable must be set")
 
-FIND_PLACEHOLDERS_FOR_NAMESPACE_QUERY = """
-query($fullPath: ID!, $after: String){
-  namespace(fullPath: $fullPath) {
-    importSourceUsers(first: 100, after: $after) {
-      pageInfo {
-        hasNextPage
-        endCursor
-      }
-      nodes {
-        id
-        importType
-        sourceName
-        sourceHostname
-        sourceUsername
-        sourceUserIdentifier
-      }
-    }
-  }
-}
-"""
+if not DESTINATION_GROUP_FULL_PATH:
+    logger.error("Required environment variable DESTINATION_GROUP_FULL_PATH is not set")
+    sys.exit("ERROR: DESTINATION_GROUP_FULL_PATH environment variable must be set")
+
+# GitLab API configuration
+DESTINATION_GITLAB_API_URL = f"{DESTINATION_GITLAB_ROOT}/api/v4"
 
 def get_placeholder_users(group_full_path):
     """
-    Retrieve placeholder users for a given GitLab group using GraphQL API with pagination.
+    Retrieve placeholder users for a given GitLab group using the REST API.
 
     Args:
         group_full_path (str): The full path of the GitLab group.
@@ -112,54 +104,49 @@ def get_placeholder_users(group_full_path):
     }
 
     all_placeholder_users = []
-    has_next_page = True
-    after_cursor = None
+    page = 1
+    per_page = 100
     total_retrieved = 0
 
     logger.info(f"Attempting to retrieve placeholder users for group: {group_full_path}")
 
-    while has_next_page:
-        variables = {
-            "fullPath": group_full_path,
-            "after": after_cursor
-        }
-
+    while True:
         try:
-            logger.debug(f"Sending GraphQL query to GitLab API (pagination cursor: {after_cursor})")
-            response = requests.post(
-                f"{DESTINATION_GITLAB_GRAPHQL_URL}",
-                json={"query": FIND_PLACEHOLDERS_FOR_NAMESPACE_QUERY, "variables": variables},
+            logger.debug(f"Sending REST API request to GitLab API (page: {page})")
+            url = f"{DESTINATION_GITLAB_API_URL}/groups/{requests.utils.quote(group_full_path, safe='')}/placeholder_reassignments"
+            response = requests.get(
+                url,
                 headers=headers,
+                params={"page": page, "per_page": per_page},
                 timeout=30
             )
             response.raise_for_status()
 
-            data = response.json()
+            placeholder_users = response.json()
             
-            if "errors" in data:
-                logger.error(f"GraphQL query returned errors: {data['errors']}")
-                raise ValueError(f"GraphQL query returned errors: {data['errors']}")
-            
-            page_info = data["data"]["namespace"]["importSourceUsers"]["pageInfo"]
-            placeholder_users = data["data"]["namespace"]["importSourceUsers"]["nodes"]
-            
+            if not placeholder_users:
+                # No more data to retrieve
+                break
+                
             all_placeholder_users.extend(placeholder_users)
             total_retrieved += len(placeholder_users)
             
-            # Update pagination info
-            has_next_page = page_info["hasNextPage"]
-            after_cursor = page_info["endCursor"] if has_next_page else None
+            logger.info(f"Retrieved {len(placeholder_users)} placeholder users in page {page}. Total so far: {total_retrieved}")
             
-            logger.info(f"Retrieved {len(placeholder_users)} placeholder users in this page. Total so far: {total_retrieved}")
+            # Get total pages information from headers
+            if 'X-Total-Pages' in response.headers:
+                total_pages = int(response.headers['X-Total-Pages'])
+                if page >= total_pages:
+                    break
+            
+            # Move to the next page
+            page += 1
             
         except requests.RequestException as e:
             logger.error(f"Error making request to GitLab API: {str(e)}")
             raise
-        except KeyError as e:
-            logger.error(f"Unexpected response structure: {str(e)}")
-            raise
         except ValueError as e:
-            logger.error(str(e))
+            logger.error(f"Error parsing JSON response: {str(e)}")
             raise
 
     logger.info(f"Successfully retrieved all {total_retrieved} placeholder users")
@@ -181,10 +168,7 @@ def write_to_csv(placeholder_users, output_file):
         "Source user name",
         "Source username",
         "GitLab username",
-        "GitLab public email",
-        "GitLab importSourceUserId",
-        "GitLab assigneeUserId",
-        "GitLab clientMutationId"
+        "GitLab public email"
     ]
 
     try:
@@ -194,16 +178,13 @@ def write_to_csv(placeholder_users, output_file):
 
             for user in placeholder_users:
                 writer.writerow({
-                    'Source host': user['sourceHostname'],
-                    'Import type': user['importType'],
-                    'Source user identifier': user['sourceUserIdentifier'],
-                    'Source user name': user['sourceName'],    
-                    'Source username': user['sourceUsername'],
+                    'Source host': user['source_hostname'],
+                    'Import type': user['import_type'],
+                    'Source user identifier': user['source_user_identifier'],
+                    'Source user name': user['source_name'],    
+                    'Source username': user['source_username'],
                     'GitLab username': "",
-                    'GitLab public email': "",
-                    "GitLab importSourceUserId": user['id'],
-                    "GitLab assigneeUserId": "",
-                    "GitLab clientMutationId": ""
+                    'GitLab public email': ""
                 })
 
         logger.info(f"Successfully wrote {len(placeholder_users)} records to {output_file}")
@@ -214,8 +195,8 @@ def write_to_csv(placeholder_users, output_file):
 # Example usage
 if __name__ == "__main__":
     try:
-        customer_name = "demo"
-        group_full_path = "import-target"  # Replace with your group's full path
+        customer_name = DESTINATION_CUSTOMER_NAME
+        group_full_path = DESTINATION_GROUP_FULL_PATH
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         output_file = f"{customer_name}_{group_full_path}_{timestamp}_placeholder_users.csv"  # Name of the output CSV file
 
