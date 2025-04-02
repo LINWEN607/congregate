@@ -184,6 +184,10 @@ class Config(BaseConfig):
     @property
     def source_registry(self):
         return self.prop("SOURCE", "src_registry_url")
+    
+    @property
+    def archive_project_suffix(self):
+        return self.prop("SOURCE", "archive_project_suffix", default=" - migrated")
 
 # CI_SOURCE
     def list_ci_source_config(self, ci_source_options):

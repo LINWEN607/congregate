@@ -193,7 +193,7 @@ class ProjectsClient(BaseClass):
             len(unarchived_group_projects), "\n".join(up for up in unarchived_group_projects)))
 
     def update_staged_projects_archive_state(
-            self, archive=True, dest=False, dry_run=True, rollback=False):
+            self, archive=True, dest=False, dry_run=True, rollback=False, append_suffix=False, name_suffix=" - Migrated"):
         start = time()
         rotate_logs()
         staged_projects = get_staged_projects()
@@ -213,11 +213,29 @@ class ProjectsClient(BaseClass):
                     f"{get_dry_log(dry_run)}{action_type} {host_type} ({host}) project {path}")
                 if not dry_run:
                     if archive:
+                        if append_suffix:
+                            name_suffix = str(self.config.archive_project_suffix).strip("'\"")
+                            name = sp["name"]
+                            new_name = name+name_suffix
+                            data = {
+                                'name': new_name
+                                }
+                            self.log.info(
+                                f"appending '{name_suffix}' to the end of project name: {name}")
+                            resp = self.projects_api.edit_project(
+                                host, token, pid, data)
+                            if resp.status_code != 201 and resp.status_code != 200:
+                                self.log.error(
+                                    f"failed appending '{name_suffix}' to the end of project name: {name}, with response:\n{resp} - {resp.text}")
+                            else:
+                                 self.log.info(
+                                         f"project name changed to: {new_name}, re-list to update congregate project data")
                         resp = self.projects_api.archive_project(
                             host, token, pid)
                         if resp.status_code != 201:
                             self.log.error(
                                 f"Failed to {action_type.lower()} {host_type} ({host}) project {path}, with response:\n{resp} - {resp.text}")
+
                     else:
                         # Unarchive only previously active projects during rollback
                         if rollback and not sp["archived"]:

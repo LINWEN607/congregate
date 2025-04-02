@@ -4,7 +4,7 @@ Copyright (c) 2022 - GitLab
 
 Usage:
     congregate align-user-mapping-emails [--commit]
-    congregate archive-staged-projects [--commit] [--dest] [--scm-source=hostname] [--rollback]
+    congregate archive-staged-projects [--commit] [--dest] [--scm-source=hostname] [--rollback] [--append-suffix]
     congregate clean [--commit]
     congregate clean-database [--commit] [--keys]
     congregate configure # Deprecated. Manually create config file and validate it by running 'congregate validate-config'
@@ -129,6 +129,7 @@ Arguments:
     name                                    Project branch name
     all                                     Include all listed objects.
     bb-projects                             Target BitBucket repo branches from a project level
+    append-suffix                           Add a suffix to the end of project names during archival.
 
 Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/projects.json.
@@ -282,6 +283,7 @@ def main():
         MEMBERSHIP = arguments["--membership"]
         SUBGROUPS_ONLY = arguments["--subgroups-only"]
         DEST = arguments["--dest"]
+        APPEND_SUFFIX = arguments["--append-suffix"]
 
         if SCM_SOURCE:
             SCM_SOURCE = strip_netloc(SCM_SOURCE)
@@ -508,7 +510,10 @@ def main():
                 projects.count_unarchived_projects(local=arguments["--local"])
             if arguments["archive-staged-projects"]:
                 # GitLab as source and/or destination instance
-                if (config.source_type == "gitlab") or DEST:
+                if (config.source_type == "gitlab") and APPEND_SUFFIX:
+                    projects.update_staged_projects_archive_state(
+                        append_suffix=APPEND_SUFFIX, dry_run=DRY_RUN, rollback=ROLLBACK)
+                elif (config.source_type == "gitlab") or DEST:
                     projects.update_staged_projects_archive_state(
                         dest=DEST, dry_run=DRY_RUN, rollback=ROLLBACK)
                 elif config.source_type == "github" or config.list_multiple_source_config("github_source"):
