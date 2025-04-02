@@ -3,26 +3,30 @@ GitLab User Mapping Script
 ==========================
 
 This script maps users between two GitLab instances by matching their email addresses.
-It takes a file containing email addresses, searches for users with these emails in both 
-the source and destination GitLab instances, and outputs a CSV mapping showing details 
-for each user across both systems.
+It takes two inputs:
+1. A file containing email addresses (one per line)
+2. A CSV file of downloaded placeholder mappings
 
-The script can also update a placeholder users CSV file by replacing placeholder user IDs
-with actual destination GitLab user IDs based on the mapping.
+The script outputs an updated CSV mapping file containing the following fields:
+- Source host
+- Import type
+- Source user identifier
+- Source user name
+- Source username
+- Gitlab username
+- Gitlab public email
+
+The script always validates mappings, records missing emails, and includes all users in the output.
 
 Usage:
 ------
-    python3 gitlab_user_mapping.py email_list.txt [OPTIONS]
+    python3 gitlab_user_mapping.py email_list.txt placeholder_mappings.csv [OPTIONS]
 
 Arguments:
     email_list.txt             Path to a file containing one email address per line
+    placeholder_mappings.csv   Path to a CSV file containing placeholder mappings
 
 Options:
-    --output FILE              Output CSV file path (default: gitlab_user_mapping_YYYYMMDD_HHMMSS.csv)
-    --update-placeholders FILE Path to a placeholder users CSV file to update
-    --validate-mappings        Validate mappings by cross-checking destination users
-    --only-successful          Include only successfully mapped users in the output placeholder file
-    --record-missing-emails    Record emails not found in GitLab instances to CSV files
     --log-level LEVEL          Set logging level: DEBUG, INFO, WARNING, ERROR, CRITICAL (default: INFO)
     --help                     Show this help message and exit
 
@@ -41,37 +45,31 @@ Input:
        user2@example.com
        user3@example.com
        
-    2. (Optional) A placeholder users CSV file with the following fields:
-       Source host,Import type,Source user identifier,Source user name,Source username,
-       GitLab username,GitLab public email,GitLab importSourceUserId,GitLab assigneeUserId,
-       GitLab clientMutationId
+    2. A placeholder mappings CSV file with the following fields:
+       Source host, Import type, Source user identifier, Source user name, Source username,
+       Gitlab username, Gitlab public email
 
 Output:
 -------
-    1. A CSV file with the following columns:
-       - email: The original email address from the input file
-       - source_username: Username in the source GitLab instance
-       - source_email: Email in the source GitLab instance
-       - source_gid: User ID in the source GitLab instance
-       - destination_username: Username in the destination GitLab instance
-       - destination_email: Email in the destination GitLab instance
-       - destination_gid: User ID in the destination GitLab instance
+    1. A CSV file (updated_map_YYYYMMDD_HHMMSS.csv) with the following fields:
+       - Source host
+       - Import type
+       - Source user identifier
+       - Source user name
+       - Source username
+       - Gitlab username
+       - Gitlab public email
        
-    2. (Optional) An updated placeholder users CSV file (placeholder_users-generated.csv)
-       with GitLab assigneeUserId updated to match destination_gid from the mapping.
-       
-    3. (Optional) CSV files recording emails not found in source and destination GitLab instances.
+    2. CSV files recording emails not found in source and destination GitLab instances.
     
-    4. A log file with detailed information about the script's execution.
+    3. A log file with detailed information about the script's execution.
 
 Features:
 ---------
     - Maps users between GitLab instances by email address
     - Updates placeholder user IDs for migration processes
     - Validates mappings by cross-checking emails and usernames
-    - Filters output to include only successfully mapped users
     - Records emails not found in GitLab instances
-    - Identifies mapping entries that can't be matched to placeholder users
     - Provides detailed logging and progress reporting
 
 Logging:
@@ -235,13 +233,13 @@ def validate_placeholder_mappings(placeholder_users: List[Dict], user_mapping: L
     validation_errors = []
     
     # Process placeholder users with assigned destination IDs
-    users_to_validate = [user for user in placeholder_users if user.get("GitLab assigneeUserId")]
+    users_to_validate = [user for user in placeholder_users if user.get("Gitlab username")]
     
     if not users_to_validate:
-        logging.warning("No placeholder users with GitLab assigneeUserId found for validation")
+        logging.warning("No placeholder users with Gitlab username found for validation")
         return
     
-    logging.info(f"Validating {len(users_to_validate)} placeholder users with assigned destination IDs")
+    logging.info(f"Validating {len(users_to_validate)} placeholder users with Gitlab username")
     
     for i, user in enumerate(users_to_validate, 1):
         # Log progress
@@ -249,59 +247,36 @@ def validate_placeholder_mappings(placeholder_users: List[Dict], user_mapping: L
             logging.info(f"Validating placeholder user {i}/{len(users_to_validate)}")
         
         source_username = user.get("Source username")
-        dest_gid = user.get("GitLab assigneeUserId")
+        gitlab_username = user.get("Gitlab username")
         
-        if not source_username or not dest_gid:
+        if not source_username or not gitlab_username:
             continue
         
-        # Find the mapping entry for this destination ID
-        mapping_entry = dest_gid_to_mapping.get(dest_gid)
-        if not mapping_entry:
-            logging.warning(f"Validation: No mapping entry found for destination ID {dest_gid}")
-            continue
-        
-        # Get the user details from the destination GitLab
-        try:
-            # Query the destination user by ID to get their emails
-            dest_user = query_gitlab_user_by_id(destination_client, dest_gid)
-            
-            if not dest_user:
-                logging.warning(f"Validation: Could not find destination user with ID {dest_gid}")
-                continue
-            
-            # Get the destination user's emails
-            dest_emails = dest_user.get("emails", [])
-            
-            # Find a matching email in our source mapping
-            matching_source_username = None
-            matching_email = None
-            
-            for email in dest_emails:
-                if email in source_email_to_username:
-                    matching_source_username = source_email_to_username[email]
-                    matching_email = email
-                    break
-            
-            # Validate the username match
-            if matching_source_username:
-                validation_count += 1
+        # Find the mapping entry for this destination username
+        matching_entry = None
+        for entry in user_mapping:
+            if entry["destination_username"] == gitlab_username:
+                matching_entry = entry
+                break
                 
-                if matching_source_username != source_username:
-                    mismatched_count += 1
-                    error = {
-                        "placeholder_username": source_username,
-                        "derived_username": matching_source_username,
-                        "destination_id": dest_gid,
-                        "matching_email": matching_email
-                    }
-                    validation_errors.append(error)
-                    logging.warning(f"Validation: Username mismatch for dest ID {dest_gid}! "
-                                f"Placeholder: '{source_username}', Derived: '{matching_source_username}'")
-            else:
-                logging.debug(f"Validation: No matching source email found for destination user with ID {dest_gid}")
+        if not matching_entry:
+            logging.warning(f"Validation: No mapping entry found for GitLab username {gitlab_username}")
+            continue
         
-        except Exception as e:
-            logging.error(f"Validation error for user {source_username} with dest ID {dest_gid}: {str(e)}")
+        # Validate the username match
+        validation_count += 1
+        
+        if matching_entry["source_username"] != source_username:
+            mismatched_count += 1
+            error = {
+                "placeholder_username": source_username,
+                "derived_username": matching_entry["source_username"],
+                "gitlab_username": gitlab_username,
+                "matching_email": matching_entry["email"]
+            }
+            validation_errors.append(error)
+            logging.warning(f"Validation: Username mismatch for GitLab username {gitlab_username}! "
+                        f"Placeholder: '{source_username}', Derived: '{matching_entry['source_username']}'")
     
     # Report validation summary
     logging.info(f"Validation summary:")
@@ -379,24 +354,18 @@ def read_emails_from_file(file_path: str) -> List[str]:
         logging.error(f"Error reading email file {file_path}: {str(e)}")
         sys.exit(1)
 
-def write_results_to_csv(results: List[Dict], output_file: str) -> None:
-    """Write the mapping results to a CSV file."""
-    fieldnames = [
-        "email", 
-        "source_username", "source_email", "source_gid",
-        "destination_username", "destination_email", "destination_gid"
-    ]
+def log_mapping_results(results: List[Dict]) -> None:
+    """Log summary of the mapping results."""
+    total_emails = len(results)
+    source_matches = sum(1 for r in results if r["source_username"])
+    dest_matches = sum(1 for r in results if r["destination_username"])
+    complete_matches = sum(1 for r in results if r["source_username"] and r["destination_username"])
     
-    try:
-        with open(output_file, 'w', newline='') as f:
-            writer = csv.DictWriter(f, fieldnames=fieldnames)
-            writer.writeheader()
-            writer.writerows(results)
-        
-        logging.info(f"Successfully wrote {len(results)} rows to {output_file}")
-    except IOError as e:
-        logging.error(f"Error writing to CSV file {output_file}: {str(e)}")
-        sys.exit(1)
+    logging.info(f"Mapping results summary:")
+    logging.info(f"  - Total emails processed: {total_emails}")
+    logging.info(f"  - Emails matched in source GitLab: {source_matches} ({source_matches/total_emails*100:.1f}%)")
+    logging.info(f"  - Emails matched in destination GitLab: {dest_matches} ({dest_matches/total_emails*100:.1f}%)")
+    logging.info(f"  - Complete matches (both sides): {complete_matches} ({complete_matches/total_emails*100:.1f}%)")
 
 def read_placeholder_users(file_path: str) -> List[Dict]:
     """Read placeholder users from a CSV file."""
@@ -413,136 +382,67 @@ def read_placeholder_users(file_path: str) -> List[Dict]:
         logging.error(f"Error reading placeholder users file {file_path}: {str(e)}")
         sys.exit(1)
 
-def write_updated_placeholder_users(placeholder_users: List[Dict], output_file: str, only_successful: bool = False) -> None:
+def write_updated_map_file(placeholder_users: List[Dict], user_mapping: List[Dict], output_file: str) -> None:
     """
-    Write updated placeholder users to a CSV file.
+    Write updated mapping to a CSV file with the required fields.
     
-    Args:
-        placeholder_users: List of placeholder user dictionaries
-        output_file: Path to the output CSV file
-        only_successful: If True, only output users with a GitLab assigneeUserId
+    Fields included:
+    - Source host
+    - Import type
+    - Source user identifier
+    - Source user name
+    - Source username
+    - Gitlab username
+    - Gitlab public email
     """
-    if not placeholder_users:
-        logging.warning("No placeholder users to write")
-        return
+    fieldnames = [
+        "Source host",
+        "Import type",
+        "Source user identifier",
+        "Source user name",
+        "Source username",
+        "Gitlab username",
+        "Gitlab public email"
+    ]
     
-    # Filter users if only_successful is True
-    if only_successful:
-        successful_users = [user for user in placeholder_users if user.get("GitLab assigneeUserId")]
-        if not successful_users:
-            logging.warning("No successfully mapped placeholder users to write")
-            return
+    # Create a lookup dictionary for faster matching by email
+    mapping_by_email = {
+        item["email"]: {
+            "source_username": item["source_username"],
+            "destination_username": item["destination_username"],
+            "destination_email": item["destination_email"]
+        }
+        for item in user_mapping 
+        if item["email"]
+    }
+    
+    # Update placeholder users with GitLab information
+    updated_users = []
+    for user in placeholder_users:
+        email = user.get("Gitlab public email")
         
-        users_to_write = successful_users
-        logging.info(f"Writing {len(successful_users)} successfully mapped users out of {len(placeholder_users)} total")
-    else:
-        users_to_write = placeholder_users
-        logging.info(f"Writing all {len(placeholder_users)} placeholder users")
+        if email and email in mapping_by_email:
+            mapping_data = mapping_by_email[email]
+            
+            # Update GitLab username if there's a destination match
+            if mapping_data["destination_username"]:
+                user["Gitlab username"] = mapping_data["destination_username"]
+                user["Gitlab public email"] = mapping_data["destination_email"] or email
+        
+        # Keep only the required fields
+        updated_user = {field: user.get(field, "") for field in fieldnames}
+        updated_users.append(updated_user)
     
     try:
         with open(output_file, 'w', newline='') as f:
-            writer = csv.DictWriter(f, fieldnames=users_to_write[0].keys())
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
-            writer.writerows(users_to_write)
+            writer.writerows(updated_users)
         
-        logging.info(f"Successfully wrote {len(users_to_write)} placeholder users to {output_file}")
+        logging.info(f"Successfully wrote {len(updated_users)} rows to {output_file}")
     except IOError as e:
-        logging.error(f"Error writing updated placeholder users to {output_file}: {str(e)}")
+        logging.error(f"Error writing to CSV file {output_file}: {str(e)}")
         sys.exit(1)
-
-def update_placeholder_users(placeholder_users: List[Dict], user_mapping: List[Dict]) -> List[Dict]:
-    """
-    Update placeholder users with destination GitLab IDs from the user mapping.
-    
-    This function matches placeholder users by their 'Source username' field to the
-    'source_username' field in the user mapping, and updates their 'GitLab assigneeUserId'
-    with the corresponding 'destination_gid'.
-    
-    It also identifies mapping entries that cannot be matched to any placeholder user,
-    which indicates missing data in the placeholder file.
-    """
-    # Create a lookup dictionary for faster matching of source usernames to destination GIDs
-    mapping_by_source_username = {
-        item["source_username"]: {
-            "destination_gid": item["destination_gid"],
-            "email": item["email"],
-            "matched": False  # Track whether this mapping entry was used
-        }
-        for item in user_mapping 
-        if item["source_username"] and item["destination_gid"]
-    }
-    
-    # Set of all source usernames in the placeholder file
-    placeholder_usernames = {
-        user.get("Source username") 
-        for user in placeholder_users 
-        if user.get("Source username")
-    }
-    
-    logging.info(f"Starting update of placeholder users - {len(placeholder_users)} to process")
-    logging.info(f"Found {len(mapping_by_source_username)} source usernames with destination IDs in mapping")
-    logging.info(f"Found {len(placeholder_usernames)} unique source usernames in placeholder file")
-    
-    updated_count = 0
-    not_found_count = 0
-    
-    # Update placeholder users
-    for i, user in enumerate(placeholder_users, 1):
-        source_username = user.get("Source username")
-        
-        # Log progress every 100 users or at the beginning and end
-        if i % 100 == 0 or i == 1 or i == len(placeholder_users):
-            logging.info(f"Processing placeholder user {i}/{len(placeholder_users)}")
-        
-        if not source_username:
-            logging.debug(f"Placeholder user at row {i} has no 'Source username'")
-            continue
-            
-        if source_username in mapping_by_source_username:
-            mapping_entry = mapping_by_source_username[source_username]
-            old_id = user.get("GitLab assigneeUserId", "None")
-            new_id = mapping_entry["destination_gid"]
-            user["GitLab assigneeUserId"] = new_id
-            updated_count += 1
-            
-            # Mark this mapping entry as matched
-            mapping_entry["matched"] = True
-            
-            logging.debug(f"Updated user '{source_username}' (email: {mapping_entry['email']}) - ID changed from {old_id} to {new_id}")
-        else:
-            not_found_count += 1
-            logging.debug(f"No mapping found for placeholder user '{source_username}'")
-    
-    # Check for mapping entries that weren't matched to any placeholder user
-    unmatched_mappings = [
-        {"username": username, "email": details["email"]}
-        for username, details in mapping_by_source_username.items()
-        if not details["matched"]
-    ]
-    
-    if unmatched_mappings:
-        logging.warning(f"{len(unmatched_mappings)} entries in mapping could not be matched to any placeholder user")
-        for i, entry in enumerate(unmatched_mappings[:20]):  # Log first 20 for brevity
-            logging.warning(f"  Unmatched mapping entry {i+1}: username={entry['username']}, email={entry['email']}")
-        
-        if len(unmatched_mappings) > 20:
-            logging.warning(f"  ... and {len(unmatched_mappings) - 20} more unmatched entries")
-    
-    # Summary logging
-    logging.info(f"User mapping summary:")
-    logging.info(f"  - Updated {updated_count} placeholder users with destination GitLab IDs")
-    logging.info(f"  - Could not find mappings for {not_found_count} placeholder users")
-    
-    # Coverage analysis for the mapping file
-    if mapping_by_source_username:
-        matched_count = sum(1 for details in mapping_by_source_username.values() if details["matched"])
-        mapping_coverage_pct = (matched_count / len(mapping_by_source_username)) * 100
-        logging.info(f"  - {matched_count} out of {len(mapping_by_source_username)} mapping entries were matched ({mapping_coverage_pct:.2f}%)")
-        
-        if matched_count < len(mapping_by_source_username):
-            logging.warning(f"  - {len(mapping_by_source_username) - matched_count} mapping entries could not be matched to placeholder users")
-    
-    return placeholder_users
 
 def get_environment_variable(var_name: str) -> str:
     """Get environment variable with error handling."""
@@ -556,15 +456,7 @@ def main():
     """Main function."""
     parser = argparse.ArgumentParser(description="Map GitLab users between instances by email.")
     parser.add_argument("email_file", help="File containing list of email addresses")
-    parser.add_argument("--output", default=None, 
-                       help="Output CSV file path (default: gitlab_user_mapping_<timestamp>.csv)")
-    parser.add_argument("--update-placeholders", help="Path to placeholder users CSV file to update")
-    parser.add_argument("--validate-mappings", action="store_true", 
-                       help="Validate the mappings by cross-checking destination users")
-    parser.add_argument("--only-successful", action="store_true",
-                       help="Include only successfully mapped users in the generated placeholder file")
-    parser.add_argument("--record-missing-emails", action="store_true",
-                       help="Record missing emails to files")
+    parser.add_argument("placeholder_file", help="Path to placeholder mappings CSV file")
     parser.add_argument("--log-level", default="INFO", choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
                        help="Set the logging level (default: INFO)")
     args = parser.parse_args()
@@ -574,8 +466,9 @@ def main():
     logger = setup_logging(args.log_level)
     
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    if args.output is None:
-        args.output = f"gitlab_user_mapping_{timestamp}.csv"
+    
+    # Define the output updated map file
+    updated_map_file = f"updated_map_{timestamp}.csv"
     
     logging.info("Starting GitLab user mapping process")
     
@@ -589,19 +482,15 @@ def main():
         return
 
     # Initialize missing emails files
-    source_missing_file = None
-    dest_missing_file = None        
-
-    if args.record_missing_emails:
-        source_missing_file = f"missing_emails_source_{timestamp}.csv"
-        dest_missing_file = f"missing_emails_destination_{timestamp}.csv"
-        
-        # Initialize the files with headers
-        for file_path, instance in [(source_missing_file, "source"), (dest_missing_file, "destination")]:
-            with open(file_path, 'w') as f:
-                f.write("instance,email\n")
-        
-        logging.info(f"Recording missing emails to {source_missing_file} and {dest_missing_file}")
+    source_missing_file = f"missing_emails_source_{timestamp}.csv"
+    dest_missing_file = f"missing_emails_destination_{timestamp}.csv"
+    
+    # Initialize the files with headers
+    for file_path, instance in [(source_missing_file, "source"), (dest_missing_file, "destination")]:
+        with open(file_path, 'w') as f:
+            f.write("instance,email\n")
+    
+    logging.info(f"Recording missing emails to {source_missing_file} and {dest_missing_file}")
 
     # Initialize GraphQL clients
     source_client = GitLabGraphQLClient(source_url, source_token, "source", source_missing_file)
@@ -609,6 +498,9 @@ def main():
     
     # Read emails from file
     emails = read_emails_from_file(args.email_file)
+    
+    # Read placeholder users
+    placeholder_users = read_placeholder_users(args.placeholder_file)
     
     # Process each email
     results = []
@@ -631,25 +523,14 @@ def main():
         
         results.append(row)
     
-    # Write results to CSV
-    write_results_to_csv(results, args.output)
+    # Log summary of mapping results
+    log_mapping_results(results)
     
-    # Process placeholder users if requested
-    if args.update_placeholders:
-        logging.info(f"Updating placeholder users from {args.update_placeholders}")
-        placeholder_users = read_placeholder_users(args.update_placeholders)
-        updated_placeholder_users = update_placeholder_users(placeholder_users, results)
-
-       # Add validation step
-        if args.validate_mappings:
-            validate_placeholder_mappings(updated_placeholder_users, results, destination_client)
-
-        output_placeholder_file = f"{timestamp}_placeholder_users-generated.csv"
-        write_updated_placeholder_users(
-            updated_placeholder_users, 
-            output_placeholder_file, 
-            only_successful=args.only_successful
-        )
+    # Validate mappings
+    validate_placeholder_mappings(placeholder_users, results, destination_client)
+    
+    # Update the placeholder mappings and write to the output file
+    write_updated_map_file(placeholder_users, results, updated_map_file)
     
     logging.info("GitLab user mapping process completed successfully")
 
