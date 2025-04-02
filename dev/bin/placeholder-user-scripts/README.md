@@ -102,7 +102,7 @@ See the [gitlab_user_mapping.py](./gitlab_user_mapping.py) script for more detai
 Upload the user mappings to reassign placeholder users to actual GitLab users:
 
 ```bash
-python update-placeholder-mapping.py --commit placeholder_users-generated.csv
+python update-placeholder-mapping.py [--commit] [input_csv_file]
 ```
 
 By default, the script runs in dry-run mode. Use the `--commit` flag to apply the changes.
@@ -110,9 +110,7 @@ By default, the script runs in dry-run mode. Use the `--commit` flag to apply th
 This script will:
 
 1. Read the updated placeholder users CSV
-2. Make GraphQL API calls to the destination GitLab instance
-3. Reassign placeholder users to actual GitLab users
-4. Log the results and record any failures
+2. Make [API](https://docs.gitlab.com/api/group_placeholder_reassignments/#reassign-placeholders) calls to the destination GitLab instance that will reassign placeholder users to actual GitLab users
 
 ## Step 5: Cancel Reassignments (Optional)
 
