@@ -5,7 +5,7 @@ GitLab User Mapping Script
 This script maps users between two GitLab instances by matching their email addresses.
 It takes two inputs:
 1. A file containing email addresses (one per line)
-2. A CSV file of downloaded placeholder mappings
+2. A CSV file placeholder_users downloaded from the destination toplevel group
 
 The script outputs an updated CSV mapping file containing the following fields:
 - Source host
@@ -20,15 +20,15 @@ The script always validates mappings, records missing emails, and includes all u
 
 Usage:
 ------
-    python3 gitlab_user_mapping.py email_list.txt placeholder_mappings.csv [OPTIONS]
+    python3 gitlab_user_mapping.py email_list.txt placeholder_users.csv [OPTIONS]
 
 Arguments:
-    email_list.txt             Path to a file containing one email address per line
-    placeholder_mappings.csv   Path to a CSV file containing placeholder mappings
+    email_list.txt          Path to a file containing one email address per line
+    placeholder_users.csv   Path to a CSV file containing placeholder mappings
 
 Options:
-    --log-level LEVEL          Set logging level: DEBUG, INFO, WARNING, ERROR, CRITICAL (default: INFO)
-    --help                     Show this help message and exit
+    --log-level LEVEL       Set logging level: DEBUG, INFO, WARNING, ERROR, CRITICAL (default: INFO)
+    --help                  Show this help message and exit
 
 Environment Variables (Required):
 ---------------------------------
@@ -45,7 +45,7 @@ Input:
        user2@example.com
        user3@example.com
        
-    2. A placeholder mappings CSV file with the following fields:
+    2. A placeholder users CSV file with the following fields:
        Source host, Import type, Source user identifier, Source user name, Source username,
        Gitlab username, Gitlab public email
 

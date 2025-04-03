@@ -102,6 +102,12 @@ This script will:
 
 See the [gitlab_user_mapping.py](./gitlab_user_mapping.py) script for more details on the process and output.
 
+The script outputs the updated file in the format:
+
+```bash
+    updated_map_YYYYMMDD_HHMMSS.csv
+```
+
 ## Step 4: Update Placeholder Mappings
 
 Upload the user mappings to reassign placeholder users to actual GitLab users:
