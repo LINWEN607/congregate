@@ -56,7 +56,7 @@ Before running, set the required environment variables:
 export DESTINATION_GITLAB_ROOT="https://gitlab.example.com"
 export DESTINATION_ADMIN_ACCESS_TOKEN="somepat-xxxxxxxxxxxxxxxxxxxx"
 export DESTINATION_CUSTOMER_NAME="demo"
-export DESTINATION_GROUP_FULL_PATH="import-target"
+export DESTINATION_TOP_LEVEL_GROUP="import-target"
 ```
 
 This scripts calls the [API](https://docs.gitlab.com/api/group_placeholder_reassignments/#download-the-csv-file) and will generate a CSV file containing details about placeholder users. Example:
@@ -66,13 +66,18 @@ Source host,Import type,Source user identifier,Source user name,Source username,
 http://gitlab.example,gitlab_migration,11,Bob,bob,"",""
 http://gitlab.example,gitlab_migration,9,Alice,alice,"",""
 ```
+The data is written to a CSV named with the pattern:
+
+```python
+output_file = f"{customer_name}_{group_full_path}_{timestamp}_placeholder_users.csv"  # Name of the output CSV file
+```
 
 ## Step 3: Create User Mappings
 
-Use the mapping script to match users between source and destination GitLab instances:
+Use the mapping script to match users between source and destination GitLab instances. It receives the file created in [Step 2](#step-2-download-placeholder-users) as input
 
 ```bash
-python gitlab_user_mapping.py email_list.txt placeholder_mappings.csv [OPTIONS]
+python gitlab_user_mapping.py email_list.txt placeholder_users_from_step_2.csv [OPTIONS]
 ```
 
 ### Command Line Options:
@@ -84,7 +89,7 @@ Options:
 ### Example:
 
 ```bash
-python gitlab_user_mapping.py email_list.txt placeholder_mappings.csv --log-level INFO
+python gitlab_user_mapping.py email_list.txt customer_topgroup_20250401081822_placeholder_users.csv --log-level INFO
 ```
 
 This script will:
@@ -109,7 +114,7 @@ By default, the script runs in dry-run mode. Use the `--commit` flag to apply th
 
 This script will:
 
-1. Read the updated placeholder users CSV
+1. Read the updated placeholder users CSV generated in [Step 3](#step-3-create-user-mappings)
 2. Make [API](https://docs.gitlab.com/api/group_placeholder_reassignments/#reassign-placeholders) calls to the destination GitLab instance that will reassign placeholder users to actual GitLab users
 
 ## Step 5: Cancel Reassignments (Optional)

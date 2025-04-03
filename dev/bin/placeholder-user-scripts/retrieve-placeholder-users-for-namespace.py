@@ -13,7 +13,7 @@ Prerequisites:
 - Set DESTINATION_GITLAB_ROOT environment variable (e.g., "https://gitlab.example.com")
 - Set DESTINATION_ADMIN_ACCESS_TOKEN environment variable with an admin access token
 - Set DESTINATION_CUSTOMER_NAME environment variable with the customer name
-- Set DESTINATION_GROUP_FULL_PATH environment variable with the target group path
+- Set DESTINATION_TOP_LEVEL_GROUP environment variable with the target top level group
 
 Usage:
 1. Set the required environment variables
@@ -24,7 +24,7 @@ Example usage:
 export DESTINATION_GITLAB_ROOT="https://gitlab.example.com"
 export DESTINATION_ADMIN_ACCESS_TOKEN="glpat-xxxxxxxxxxxxxxxxxxxx"
 export DESTINATION_CUSTOMER_NAME="demo"
-export DESTINATION_GROUP_FULL_PATH="import-target"
+export DESTINATION_TOP_LEVEL_GROUP="import-target"
 python retrieve-placeholder-users-for-namespace.py
 ```
 
@@ -45,6 +45,11 @@ Example CSV output:
 Source host,Import type,Source user identifier,Source user name,Source username,GitLab username,GitLab public email
 http://gitlab.example,gitlab_migration,11,Bob,bob,"",""
 http://gitlab.example,gitlab_migration,9,Alice,alice,"",""
+
+The data is written to a CSV named with the pattern:
+
+output_file = f"{customer_name}_{group_full_path}_{timestamp}_placeholder_users.csv"  # Name of the output CSV file
+
 """
 
 import requests
@@ -62,7 +67,7 @@ logger = logging.getLogger(__name__)
 DESTINATION_GITLAB_ROOT = os.environ.get("DESTINATION_GITLAB_ROOT")
 DESTINATION_ADMIN_ACCESS_TOKEN = os.environ.get("DESTINATION_ADMIN_ACCESS_TOKEN")
 DESTINATION_CUSTOMER_NAME = os.environ.get("DESTINATION_CUSTOMER_NAME")
-DESTINATION_GROUP_FULL_PATH = os.environ.get("DESTINATION_GROUP_FULL_PATH")
+DESTINATION_TOP_LEVEL_GROUP = os.environ.get("DESTINATION_TOP_LEVEL_GROUP")
 
 # Validate required environment variables
 if not DESTINATION_GITLAB_ROOT:
@@ -77,9 +82,9 @@ if not DESTINATION_CUSTOMER_NAME:
     logger.error("Required environment variable DESTINATION_CUSTOMER_NAME is not set")
     sys.exit("ERROR: DESTINATION_CUSTOMER_NAME environment variable must be set")
 
-if not DESTINATION_GROUP_FULL_PATH:
-    logger.error("Required environment variable DESTINATION_GROUP_FULL_PATH is not set")
-    sys.exit("ERROR: DESTINATION_GROUP_FULL_PATH environment variable must be set")
+if not DESTINATION_TOP_LEVEL_GROUP:
+    logger.error("Required environment variable DESTINATION_TOP_LEVEL_GROUP is not set")
+    sys.exit("ERROR: DESTINATION_TOP_LEVEL_GROUP environment variable must be set")
 
 # GitLab API configuration
 DESTINATION_GITLAB_API_URL = f"{DESTINATION_GITLAB_ROOT}/api/v4"
@@ -196,7 +201,7 @@ def write_to_csv(placeholder_users, output_file):
 if __name__ == "__main__":
     try:
         customer_name = DESTINATION_CUSTOMER_NAME
-        group_full_path = DESTINATION_GROUP_FULL_PATH
+        group_full_path = DESTINATION_TOP_LEVEL_GROUP
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         output_file = f"{customer_name}_{group_full_path}_{timestamp}_placeholder_users.csv"  # Name of the output CSV file
 
