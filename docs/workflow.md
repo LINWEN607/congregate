@@ -32,7 +32,6 @@ graph TD
 
 * GitLab destination instance considerations:
   * Enable Shared Runners (Default: `True`)?
-  * Append project suffix to duplicate project, with the same name (Default: `False`)?
   * Migrate to parent group i.e. new top-level group (parent group ID in **Group -> Settings -> General**)?
   * Append username suffix to avoid username collision (duplicate usernames for users NOT found by email)?
   * Keep inactive (`blocked`, `ldap_blocked`, `deactivated`, `banned`) users (Default: `False`)?
@@ -42,7 +41,6 @@ graph TD
 ``` mermaid
 graph TD
   A(Destination considerations) --> |True| B(Enable shared runners)
-  A --> |False| C(Append project suffix)
   A --> |?| D(Migrate to parent group)
   A --> |?| E(Append username suffix)
   A --> |False| F(Keep inactive users)

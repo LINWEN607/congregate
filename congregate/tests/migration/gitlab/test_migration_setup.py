@@ -32,7 +32,6 @@ class MigrationEndToEndTestSetup(unittest.TestCase):
             # destination_token
             # "0",  # Destination import user id
             "yes",  # shared runners enabled
-            "no",  # append project suffix (retry)
             "3",  # max_import_retries,
             "no",  # destination parent group
             "",  # username suffix
