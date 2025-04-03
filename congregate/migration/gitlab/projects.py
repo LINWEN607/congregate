@@ -193,7 +193,7 @@ class ProjectsClient(BaseClass):
             len(unarchived_group_projects), "\n".join(up for up in unarchived_group_projects)))
 
     def update_staged_projects_archive_state(
-            self, archive=True, dest=False, dry_run=True, rollback=False, append_suffix=False, name_suffix=" - Migrated"):
+            self, archive=True, dest=False, dry_run=True, rollback=False, append_suffix=False):
         start = time()
         rotate_logs()
         staged_projects = get_staged_projects()
