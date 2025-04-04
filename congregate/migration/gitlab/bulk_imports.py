@@ -2,7 +2,7 @@ from time import sleep
 from typing import Tuple
 from dacite import from_dict
 from celery import shared_task, chain
-from gitlab_ps_utils.misc_utils import safe_json_response
+from gitlab_ps_utils.misc_utils import safe_json_response, is_error_message_present
 from congregate.helpers.migrate_utils import get_stage_wave_paths, get_staged_projects, get_full_path_with_parent_namespace
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.base_gitlab_client import BaseGitLabClient
@@ -205,11 +205,15 @@ class BulkImportsClient(BaseGitLabClient):
         for namespace, projects in namespaces.items():
             if found_group := safe_json_response(
                 groups_api.get_group_by_full_path(namespace, host, token)):
-                total_project_count = groups_api.get_all_group_projects_count(
-                    found_group['id'], host, token)
-                staged_count = len(projects)
-                if total_project_count > staged_count:
-                    subsets[namespace] = projects
+                error, _ = is_error_message_present(found_group)
+                if not error:
+                    total_project_count = groups_api.get_all_group_projects_count(
+                        found_group['id'], host, token)
+                    staged_count = len(projects)
+                    if total_project_count > staged_count:
+                        subsets[namespace] = projects
+                else:
+                    self.log.error(f"Unable to find group {namespace}")
             else:
                 self.log.warning(
                     f"Could not find group for namespace '{namespace}'. Run new list and/or validate the data in mongo DB")

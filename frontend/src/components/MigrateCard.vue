@@ -160,10 +160,16 @@ export default {
         }
         if (params.hasOwnProperty('commit')) {
           this.dryRun = false
+        } else {
+          this.dryRun = true
+          this.systemStore.updateDirectTransferGeneratedRequest({})
+          this.systemStore.updateDirectTransferModifiedRequest({})
         }
         var payload = null
-        if (!Object.keys(this.systemStore.directTransferModifiedRequest).length == 0) {
+        if (!Object.keys(this.systemStore.directTransferModifiedRequest).length == 0 && this.dryRun == false) {
           payload = {"payload": toRaw(this.systemStore.directTransferModifiedRequest)}
+        } else {
+          payload = {}
         }
         axios.post(migrateEndpoint, payload).then(response => {
           if (!params.hasOwnProperty('commit')) {
