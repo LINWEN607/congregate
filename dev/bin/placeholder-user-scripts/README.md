@@ -74,7 +74,7 @@ output_file = f"{customer_name}_{group_full_path}_{timestamp}_placeholder_users.
 
 ## Step 3: Create User Mappings
 
-Use the mapping script to match users between source and destination GitLab instances. It receives the email file from [Step 1](#step-1-receive-user-email-list) and the file created in [Step 2](#step-2-download-placeholder-users) as input
+Use the mapping script to match users between source and destination GitLab instances. As input, it requires the list of user emails from [Step 1](#step-1-receive-user-email-list) and placeholder users from [Step 2](#step-2-download-placeholder-users).
 
 ```bash
 python gitlab_user_mapping.py email_list_from_step_1.txt placeholder_users_from_step_2.csv [OPTIONS]
