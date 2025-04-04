@@ -33,7 +33,6 @@ dstn_hostname = hostname
 dstn_access_token = *****
 import_user_id = 0
 # shared_runners_enabled = False
-# project_suffix = False
 # max_import_retries = 3
 # dstn_parent_group_id = 0
 # dstn_parent_group_path = destination_parent_group_full_path
@@ -48,17 +47,10 @@ import_user_id = 0
 ### Container registry (images) hostname (e.g. registry.gitlab.com)
 # dstn_registry_url = destination_registry_url
 
-### There are few other additional configurations for Destination host which are used sometimes based on requirements received
-### append_project_suffix_on_existing_found setting determines if, in the instance of an existing project being found at the destination with the
-### same name as the source project, if we should append a value and create the project, or just fail the import.
-### The value from the append_project_suffix configuration value, or `False` by default
-# append_project_suffix_on_existing_found = False
-
 ### Consider few changes in the configuration when the source is either Bitbucket or Github server,
 ### Rest all remains same as mentioned in General configuration
 # import_user_id = 0
 # shared_runners_enabled = False
-# project_suffix = False
 # max_import_retries = 3
 # username_suffix = migrated
 ### Following Destination changes based on reporting requirements and issue creation

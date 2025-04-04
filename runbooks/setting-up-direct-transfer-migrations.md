@@ -21,6 +21,8 @@ This documentation covers setting up a Congregate instance to use Direct Transfe
 
 ### 1. Install `docker` and `docker-compose` (if not already installed)
 
+*Note: This generally requires root access*
+
 Follow the official Docker installation guide for your operating system:
 
 - [Install Docker](https://docs.docker.com/get-docker/)
@@ -31,7 +33,7 @@ Follow the official Docker installation guide for your operating system:
 Ensure the `$CONGREGATE_DATA` environment variable is set and points to your data directory. For example:
 
 ```bash
-export CONGREGATE_DATA=/root/congregate_work/data
+export CONGREGATE_DATA=/root/congregate_work
 ```
 
 Make sure the following directories exist:
@@ -40,6 +42,18 @@ Make sure the following directories exist:
 mkdir -p $CONGREGATE_DATA/congregate-data/logs
 mkdir -p $CONGREGATE_DATA/mongo-data
 mkdir -p $CONGREGATE_DATA/redis-cache
+touch $CONGREGATE_DATA/congregate-data/logs/gunicorn.log
+touch $CONGREGATE_DATA/congregate-data/logs/gunicorn_err.log
+touch $CONGREGATE_DATA/congregate-data/logs/celery.log
+touch $CONGREGATE_DATA/congregate-data/logs/celery_err.log
+touch $CONGREGATE_DATA/congregate-data/logs/flower.log
+touch $CONGREGATE_DATA/congregate-data/logs/flower_err.log
+```
+
+Note: Depending on who you run as when creating these folders and files, you may need to additionally allow the application to update the conf and logs:
+
+```bash
+chmod a+wr --recursive $CONGREGATE_DATA
 ```
 
 Create a `cache` directory in the same location where the docker-compose file will be run. This will be used for the Redis cache.

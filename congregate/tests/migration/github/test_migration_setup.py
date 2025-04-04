@@ -49,7 +49,6 @@ from congregate.migration.github.api.orgs import OrgsApi
 #             # self.t.generate_token("destination_token", "2020-08-27", url=os.getenv("GITLAB_DEST"), username="root", pword=uuid4().hex), # Destination access token
 #             # "0",  # Destination import user id
 #             "yes",  # shared runners enabled
-#             "no",  # append project suffix (retry)
 #             "3",  # max_import_retries,
 #             "no",  # destination parent group
 #             "",  # username suffix

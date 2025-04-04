@@ -56,10 +56,6 @@ def generate_config():
         "Enable shared runners on destination instance (Default: 'No')? ")
     config.set("DESTINATION", "shared_runners_enabled",
                "True" if shared_runners_enabled.lower() in ["yes", "y"] else "False")
-    project_suffix = input(
-        "Append suffix to project found on destination instance (Default: 'No')? ")
-    config.set("DESTINATION", "project_suffix",
-               "True" if project_suffix.lower() in ["yes", "y"] else "False")
     max_import_retries = input(
         "Max no. of project import retries (Default: '3'): ")
     config.set("DESTINATION", "max_import_retries",

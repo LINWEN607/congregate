@@ -30,7 +30,6 @@ class ConfigTests(unittest.TestCase):
             # "token", # Destination access token
             # "0",  # Destination import user id
             "yes",   # shared runners enabled
-            "no",  # append project suffix (retry)
             "3",  # max_import_retries,
             "no",  # destination parent group
             "username_suffix",  # username suffix
@@ -88,7 +87,6 @@ class ConfigTests(unittest.TestCase):
             # "token", # Destination access token
             # "0",  # Destination import user id
             "yes",   # shared runners enabled
-            "no",  # append project suffix (retry)
             "3",  # max_import_retries,
             "no",  # destination parent group
             "username_suffix",  # username suffix
@@ -154,7 +152,6 @@ class ConfigTests(unittest.TestCase):
             # "token", # Destination access token
             # "0",  # Destination import user id
             "yes",   # shared runners enabled
-            "no",  # append project suffix (retry)
             "3",  # max_import_retries,
             "no",  # destination parent group
             "username_suffix",  # username suffix
@@ -240,7 +237,6 @@ class ConfigTests(unittest.TestCase):
             # "token", # Destination access token
             # "0",  # Destination import user id
             "yes",   # shared runners enabled
-            "no",  # append project suffix (retry)
             "3",  # max_import_retries,
             "yes",  # destination parent group
             "0",  # destination parent group id
@@ -334,7 +330,6 @@ class ConfigTests(unittest.TestCase):
             # "token", # Destination access token
             # "0",  # Destination import user id
             "yes",   # shared runners enabled
-            "no",  # append project suffix (retry)
             "3",  # max_import_retries,
             "yes",  # destination parent group
             "0",  # destination parent group id
@@ -431,7 +426,6 @@ class ConfigTests(unittest.TestCase):
             # "token", # Destination access token
             # "0",  # Destination import user id
             "no",   # shared runners enabled
-            "yes",  # append project suffix (retry)
             "1",  # max_import_retries,
             "yes",  # destination parent group
             "0",  # destination parent group id
@@ -521,7 +515,6 @@ class ConfigTests(unittest.TestCase):
             # "token", # Destination access token
             # "0",  # Destination import user id
             "yes",   # shared runners enabled
-            "no",  # append project suffix (retry)
             "3",  # max_import_retries,
             "no",  # destination parent group
             "username_suffix",  # username suffix
@@ -596,7 +589,6 @@ class ConfigTests(unittest.TestCase):
             "dstn_access_token":"dGVzdA==",\
             "import_user_id":"1",\
             "shared_runners_enabled":"False",\
-            "project_suffix":"False",\
             "max_import_retries":"3",\
             "username_suffix":"local",\
             "mirror_username":"",\
@@ -640,7 +632,6 @@ class ConfigTests(unittest.TestCase):
             "dstn_access_token":"dGVzdA==",\
             "import_user_id":"1",\
             "shared_runners_enabled":"True",\
-            "project_suffix":"False",\
             "max_import_retries":"3",\
             "username_suffix":"username_suffix",\
             "mirror_username":"",\
