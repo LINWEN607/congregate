@@ -418,7 +418,7 @@ def sanitize_name(name, full_path, is_group=False, is_subgroup=False):
         if is_group:
             b.log.error(
                 f"Sub-group '{name}' ({full_path}) requires a rename on source or direct import")
-            
+
     if not is_group:
         # This is a project
         if valid.lower() in PROJECT_RESERVED_NAMES:

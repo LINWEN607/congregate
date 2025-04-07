@@ -798,7 +798,7 @@ class ProjectsApi(GitLabApiWrapper):
         """
         Get the push rules of a project
 
-        GitLab API Doc: https://docs.gitlab.com/ee/api/projects.html#get-project-push-rules
+        GitLab API Doc: https://docs.gitlab.com/api/project_push_rules/#get-project-push-rules
 
             :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
@@ -811,7 +811,7 @@ class ProjectsApi(GitLabApiWrapper):
         """
         Adds a push rule to a specified project
 
-        GitLab API Doc: https://docs.gitlab.com/ee/api/projects.html#add-project-push-rule
+        GitLab API Doc: https://docs.gitlab.com/api/project_push_rules/#add-a-project-push-rule
 
             :param: pid: (int) GitLab project ID
             :param: host: (str) GitLab host URL
@@ -1317,7 +1317,7 @@ class ProjectsApi(GitLabApiWrapper):
         """
 
         api_endpoint = f"projects/{project_id}/uploads"
-        
+
         return self.api.generate_post_request(
             host=host,
             token=token,
@@ -1327,4 +1327,3 @@ class ProjectsApi(GitLabApiWrapper):
             files={'file': (filename, file_data, 'application/octet-stream')},
             description=description or f"Uploading file {filename} to project {project_id}"
         )
-    
