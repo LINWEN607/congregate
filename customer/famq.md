@@ -117,7 +117,14 @@ It's generally advised to restructure before migrating i.e. on the source SCM in
 
 >Applies to all supported migration source SCMs
 
-Restructure during migration by using the Congregate [*stage-wave*](/templates/stage-wave-template.csv) feature and template.
+Restructure projects during migration by using the Congregate [*stage-wave*](/templates/stage-wave-template.csv) feature and template.
+
+To extract project IDs for staging using the `stage-projects` command, run:
+
+```bash
+apt install jq
+jq -r '[.[].id] | join(" ")' data/staged_projects.json
+```
 
 #### Pros
 
