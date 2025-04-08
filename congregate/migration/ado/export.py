@@ -5,28 +5,29 @@ from gitlab_ps_utils.dict_utils import dig
 from gitlab_ps_utils.string_utils import deobfuscate
 from gitlab_ps_utils.misc_utils import safe_json_response
 from congregate.migration.meta.custom_importer.export_builder import ExportBuilder
+from congregate.migration.meta.custom_importer.group_export_builder import GroupExportBuilder
 from congregate.migration.meta.custom_importer.data_models.tree.merge_requests import MergeRequests
 from congregate.migration.meta.custom_importer.data_models.tree.project_members import ProjectMembers
 from congregate.migration.meta.custom_importer.data_models.tree.project_member_user import ProjectMemberUser
 from congregate.migration.meta.custom_importer.data_models.project_export import ProjectExport
 from congregate.migration.meta.custom_importer.data_models.project import Project
+from congregate.migration.meta.custom_importer.data_models.group_export import GroupExport
+from congregate.migration.meta.custom_importer.data_models.group import Group
 from congregate.migration.meta.custom_importer.data_models.tree.note import Note
 from congregate.migration.meta.custom_importer.data_models.tree.author import Author
 from congregate.migration.meta.custom_importer.data_models.tree.system_note_metadata import SystemNoteMetadata
 from congregate.migration.meta.custom_importer.data_models.tree.merge_request_diff_file import MergeRequestDiffFile
 from congregate.migration.meta.custom_importer.data_models.tree.merge_request_commit import MergeRequestCommit
 from congregate.migration.meta.custom_importer.data_models.tree.merge_request_diff import MergeRequestDiff
-
 from congregate.migration.ado.api.repositories import RepositoriesApi
 from congregate.migration.ado.api.pull_requests import PullRequestsApi
 from congregate.migration.ado.api.teams import TeamsApi
-from congregate.migration.ado.base import AzureDevOpsWrapper
 from congregate.migration.ado.api.users import UsersApi as ADOUsersApi
 from congregate.migration.gitlab.api.users import UsersApi as GitlabUsersApi 
 from congregate.migration.meta import constants
 
 import congregate.helpers.migrate_utils as mig_utils
-from gitlab_ps_utils.json_utils import json_pretty
+
 
 class AdoExportBuilder(ExportBuilder):
     def __init__(self, source_project):
@@ -378,3 +379,45 @@ class AdoExportBuilder(ExportBuilder):
         except Exception as e:
             self.log.error(f"Failed to extract email from ADO user: {e}")
             return None
+
+
+class AdoGroupExportBuilder(GroupExportBuilder):
+    def __init__(self, source_group):
+        self.source_group = source_group
+        print(source_group)
+        self.group_metadata = Group(
+            id=1,
+            name=source_group['name'],
+            path=source_group['path'],
+            description=source_group['description'],
+            membership_lock=True,
+            # https://docs.gitlab.com/development/permissions/predefined_roles/#general-permissions
+            visibility_level=self.convert_visibility_level(source_group.get('visibility')),
+            tree_path=[1]
+        )
+        super().__init__(source_group)
+
+    def create(self):
+        tree = self.build_ado_data()
+        self.build_export(tree, self.group_metadata)
+        filename = self.create_export_tar_gz()
+        return filename
+
+    def build_ado_data(self):
+        namespace_settings = self.namespace_settings()
+        print(namespace_settings)
+        return GroupExport(
+            namespace_settings=namespace_settings
+        )
+
+    def namespace_settings(self):
+        return {"prevent_sharing_groups_outside_hierarchy":True}
+    
+    def convert_visibility_level(self, visibility):
+        if visibility == "private":
+            return 0
+        elif visibility == "public":
+            return 20
+        return 0
+
+

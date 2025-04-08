@@ -144,22 +144,22 @@ class MigrateClient(BaseClass):
                                 ).migrate()
         elif self.config.source_type == "azure devops":
             AzureDevopsMigrateClient(dry_run=self.dry_run,
-                                         processes=self.processes,
-                                         only_post_migration_info=self.only_post_migration_info,
-                                         start=self.start,
-                                         skip_users=self.skip_users,
-                                         remove_members=self.remove_members,
-                                         hard_delete=self.hard_delete,
-                                         stream_groups=self.stream_groups,
-                                         skip_groups=self.skip_groups,
-                                         skip_projects=self.skip_projects,
-                                         skip_group_export=self.skip_group_export,
-                                         skip_group_import=self.skip_group_import,
-                                         skip_project_export=self.skip_project_export,
-                                         skip_project_import=self.skip_project_import,
-                                         subgroups_only=self.subgroups_only,
-                                         group_structure=self.group_structure
-                                         ).migrate()
+                                    processes=self.processes,
+                                    only_post_migration_info=self.only_post_migration_info,
+                                    start=self.start,
+                                    skip_users=self.skip_users,
+                                    remove_members=self.remove_members,
+                                    hard_delete=self.hard_delete,
+                                    stream_groups=self.stream_groups,
+                                    skip_groups=self.skip_groups,
+                                    skip_projects=self.skip_projects,
+                                    skip_group_export=self.skip_group_export,
+                                    skip_group_import=self.skip_group_import,
+                                    skip_project_export=self.skip_project_export,
+                                    skip_project_import=self.skip_project_import,
+                                    subgroups_only=self.subgroups_only,
+                                    group_structure=self.group_structure
+                                    ).migrate()
         
         else:
             self.log.warning(
