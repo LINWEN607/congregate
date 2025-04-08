@@ -13,7 +13,7 @@ Prerequisites:
 - Set DESTINATION_GITLAB_ROOT environment variable (e.g., "https://gitlab.example.com")
 - Set DESTINATION_ADMIN_ACCESS_TOKEN environment variable with an admin access token
 - Set DESTINATION_CUSTOMER_NAME environment variable with the customer name
-- Set DESTINATION_TOP_LEVEL_GROUP environment variable with the target top level group
+- Set DESTINATION_TOP_LEVEL_GROUP environment variable with the target group path
 
 Usage:
 1. Set the required environment variables
@@ -42,10 +42,8 @@ The generated CSV includes these columns:
 - GitLab clientMutationId: (Empty, to be filled by the user)
 
 Example CSV output:
-Source host,Import type,Source user identifier,Source user name,Source username,GitLab username,GitLab public email
-http://gitlab.example,gitlab_migration,11,Bob,bob,"",""
-http://gitlab.example,gitlab_migration,9,Alice,alice,"",""
-
+Source host,Import type,Source user identifier,Source user name,Source username,GitLab username,GitLab public email,GitLab importSourceUserId,GitLab assigneeUserId,GitLab clientMutationId
+gitlab.com,email,123456,John Doe,johndoe,,,gid://gitlab/ImportSourceUser/123456,,
 The data is written to a CSV named with the pattern:
 
 output_file = f"{customer_name}_{group_full_path}_{timestamp}_placeholder_users.csv"  # Name of the output CSV file
@@ -58,6 +56,7 @@ import logging
 import csv
 import sys
 from datetime import datetime
+import io
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -97,102 +96,73 @@ def get_placeholder_users(group_full_path):
         group_full_path (str): The full path of the GitLab group.
 
     Returns:
-        list: A list of dictionaries containing placeholder user information.
+        tuple: (csv_header, csv_data) where csv_header is the list of column names and
+               csv_data is a list of data rows.
 
     Raises:
         requests.RequestException: If there's an error with the API request.
-        KeyError: If the response doesn't contain the expected data structure.
     """
     headers = {
-        "Authorization": f"Bearer {DESTINATION_ADMIN_ACCESS_TOKEN}",
-        "Content-Type": "application/json",
+        "Private-Token": DESTINATION_ADMIN_ACCESS_TOKEN
     }
 
-    all_placeholder_users = []
-    page = 1
-    per_page = 100
-    total_retrieved = 0
-
     logger.info(f"Attempting to retrieve placeholder users for group: {group_full_path}")
+    
+    url = f"{DESTINATION_GITLAB_API_URL}/groups/{requests.utils.quote(group_full_path, safe='')}/placeholder_reassignments"
+    logger.info(f"Calling API URL: {url}")
+    
+    try:
+        response = requests.get(
+            url,
+            headers=headers,
+            timeout=30
+        )
+        response.raise_for_status()
 
-    while True:
-        try:
-            logger.debug(f"Sending REST API request to GitLab API (page: {page})")
-            url = f"{DESTINATION_GITLAB_API_URL}/groups/{requests.utils.quote(group_full_path, safe='')}/placeholder_reassignments"
-            response = requests.get(
-                url,
-                headers=headers,
-                params={"page": page, "per_page": per_page},
-                timeout=30
-            )
-            response.raise_for_status()
+        # The response is CSV data
+        csv_data = response.text
+        
+        # Parse the CSV to count rows and get header
+        csv_reader = csv.reader(io.StringIO(csv_data))
+        csv_rows = list(csv_reader)
+        
+        if len(csv_rows) > 0:
+            header = csv_rows[0]
+            data_rows = csv_rows[1:]
+            row_count = len(data_rows)
+            
+            logger.info(f"Successfully retrieved {row_count} placeholder users")
+            return header, data_rows
+        else:
+            logger.info("No placeholder users found (empty CSV)")
+            return [], []
+            
+    except requests.RequestException as e:
+        logger.error(f"Error making request to GitLab API: {str(e)}")
+        raise
 
-            placeholder_users = response.json()
-            
-            if not placeholder_users:
-                # No more data to retrieve
-                break
-                
-            all_placeholder_users.extend(placeholder_users)
-            total_retrieved += len(placeholder_users)
-            
-            logger.info(f"Retrieved {len(placeholder_users)} placeholder users in page {page}. Total so far: {total_retrieved}")
-            
-            # Get total pages information from headers
-            if 'X-Total-Pages' in response.headers:
-                total_pages = int(response.headers['X-Total-Pages'])
-                if page >= total_pages:
-                    break
-            
-            # Move to the next page
-            page += 1
-            
-        except requests.RequestException as e:
-            logger.error(f"Error making request to GitLab API: {str(e)}")
-            raise
-        except ValueError as e:
-            logger.error(f"Error parsing JSON response: {str(e)}")
-            raise
-
-    logger.info(f"Successfully retrieved all {total_retrieved} placeholder users")
-    return all_placeholder_users
-
-def write_to_csv(placeholder_users, output_file):
+def write_to_csv(csv_data, output_file):
     """
-    Write placeholder users data to a CSV file.
+    Write CSV data to a file.
 
     Args:
-        placeholder_users (list): List of dictionaries containing placeholder user data.
+        csv_data (tuple): A tuple containing (header, data_rows)
+            where header is a list of column names and data_rows is a list of data rows.
         output_file (str): Name of the output CSV file.
     """
-
-    fieldnames = [
-        "Source host",
-        "Import type",
-        "Source user identifier",
-        "Source user name",
-        "Source username",
-        "GitLab username",
-        "GitLab public email"
-    ]
-
+    header, data_rows = csv_data
+    
     try:
         with open(output_file, 'w', newline='', encoding='utf-8') as csvfile:
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-            writer.writeheader()
+            writer = csv.writer(csvfile)
+            
+            # Write the header
+            writer.writerow(header)
+            
+            # Write all data rows
+            writer.writerows(data_rows)
 
-            for user in placeholder_users:
-                writer.writerow({
-                    'Source host': user['source_hostname'],
-                    'Import type': user['import_type'],
-                    'Source user identifier': user['source_user_identifier'],
-                    'Source user name': user['source_name'],    
-                    'Source username': user['source_username'],
-                    'GitLab username': "",
-                    'GitLab public email': ""
-                })
-
-        logger.info(f"Successfully wrote {len(placeholder_users)} records to {output_file}")
+        logger.info(f"Successfully wrote {len(data_rows)} records to {output_file}")
     except IOError as e:
         logger.error(f"Error writing to CSV file: {str(e)}")
         raise
@@ -207,12 +177,12 @@ if __name__ == "__main__":
 
         logger.info(f"Starting retrieval of placeholder users for group: {group_full_path}")
         
-        placeholder_users = get_placeholder_users(group_full_path)
+        csv_data = get_placeholder_users(group_full_path)
         
         logger.info(f"Writing placeholder users data to CSV: {output_file}")
-        write_to_csv(placeholder_users, output_file)
+        write_to_csv(csv_data, output_file)
         
-        logger.info(f"Total placeholder users processed: {len(placeholder_users)}")
+        logger.info(f"Total placeholder users processed: {len(csv_data[1])}")
     
     except Exception as e:
         logger.error(f"An error occurred: {str(e)}")
