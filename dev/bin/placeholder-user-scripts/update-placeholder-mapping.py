@@ -22,6 +22,7 @@ Environment Variables:
   DESTINATION_ADMIN_ACCESS_TOKEN: Admin access token for GitLab API authentication
 """
 
+from pydoc import text
 import requests
 import logging
 import os
