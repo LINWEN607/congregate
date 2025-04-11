@@ -380,7 +380,6 @@ class AdoExportBuilder(ExportBuilder):
             self.log.error(f"Failed to extract email from ADO user: {e}")
             return None
 
-
 class AdoGroupExportBuilder(GroupExportBuilder):
     def __init__(self, source_group):
         self.source_group = source_group

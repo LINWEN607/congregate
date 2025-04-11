@@ -24,11 +24,13 @@ from congregate.migration.gitlab.api.project_repository import ProjectRepository
 from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
 from congregate.migration.ado.api.pull_requests import PullRequestsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi as GitlabProjectsApi
+from congregate.migration.ado.api.projects import ProjectsApi as AdoProjectsApi
 from congregate.migration.ado.projects import ProjectsClient
 from congregate.migration.ado.export import AdoExportBuilder
 from congregate.migration.ado.export import AdoGroupExportBuilder
 from congregate.helpers.migrate_utils import get_export_filename_from_namespace_and_name
 from congregate.migration.gitlab.importexport import ImportExportClient
+from congregate.migration.gitlab.variables import VariablesClient
 
 class AzureDevopsMigrateClient(MigrateClient):
     def __init__(self,
@@ -55,6 +57,8 @@ class AzureDevopsMigrateClient(MigrateClient):
         self.merge_requests_api = MergeRequestsApi()
         self.pull_requests_api = PullRequestsApi()
         self.gitlab_projects_api = GitlabProjectsApi()
+        self.gitlab_variables_api = VariablesClient()
+        self.ado_projects_api = AdoProjectsApi()
         self.azure_projects_client = ProjectsClient()
         self.branches = BranchesClient()
         super().__init__(dry_run,
@@ -407,3 +411,19 @@ class AzureDevopsMigrateClient(MigrateClient):
         except Exception as e:
             self.log.error(f"Error processing attachment from {ado_url}: {e}")
             return None
+        
+    def migrate_cicd_variables(self, ado_project_name, ado_project_id, group_id):
+        """
+        Finds all ADO variable groups and variables in the project
+        and creates them in the GitLab group.
+        """
+        self.log.info(f"Migrating ADO variable groups and variables from ADO project {ado_project_name} (ID: {ado_project_id}) to GitLab Group ID: {group_id}...")
+        variable_groups = self.ado_projects_api.get_all_variable_groups(ado_project_id).json()
+        for group in variable_groups.get("value", []):
+            group_name = group.get("name", "Unnamed Group")
+            self.log.info(f"Processing variable group: {group_name} (ID: {group.get('id')})")
+            variables = group.get("variables", {})
+            for key, value_data in variables.items():
+                value = value_data.get("value", "")
+                self.gitlab_variables_api.set_variables(
+                    group_id, self.config.destination_host, self.config.destination_token, var_type="group", data={"key": key, "value": value})
