@@ -243,6 +243,8 @@ class AzureDevopsMigrateClient(MigrateClient):
             if import_id and not self.dry_run:
                 # Disable Shared CI
                 # self.disable_shared_ci(full_path_with_parent_namespace, import_id)
+                # Migrate ADO Variable Groups and Variables
+                self.migrate_cicd_variables(group["name"], src_gid, import_id)
                 result[full_path_with_parent_namespace] = import_id
         except (RequestException, KeyError, OverflowError) as oe:
             self.log.error(
