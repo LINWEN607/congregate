@@ -356,6 +356,8 @@ class RegistryClient(BaseClass):
 
     def generate_destination_registry_url(self, project, suffix):
         """
+        TODO: Check to see if this change is necessary as it may have been due to a red 
+        herring when trying to migrate windows containers on a linux VM.
         Creates a Docker-compatible registry URL while preserving structure as much as possible
         """
         # Debug input values
