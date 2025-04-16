@@ -12,7 +12,7 @@
           <button @click="promptConfirmation">Migrate</button>
           <ParamForm formId="migrate-params" :params="params"/>
         </div>
-        <div class="in-progress" v-else>
+        <div class="in-progress" v-if="directTransfer && migrationInProgress">
           <span class="loader"></span>
           <span><b v-if="dryRun == true">DRY RUN </b>Migration in progress</span>
           <StatusTable :headers="statusColumns" :data="statusData"/>
@@ -74,17 +74,27 @@ export default {
     },
     directTransfer() {
       if (!this.isSettingsStoreEmpty) {
-        return Boolean(this.systemStore.settings.APP.direct_transfer)
+        return this.systemStore.settings.APP.direct_transfer
       }
     },
     migrationInProgress() {
       return this.systemStore.migrationInProgress
+    },
+    directTransferId() {
+      return this.systemStore.directTransferId
     },
     isSettingsStoreEmpty() {
       return JSON.stringify(this.systemStore.settings) === '{}'
     },
     directTransferGeneratedRequest() {
       return Object.keys(this.systemStore.directTransferGeneratedRequest).length > 0
+    },
+    directTransferStatusUrl() {
+      if (this.directTransferId) {
+        return `${this.destinationUrl}/import/bulk_imports/${this.directTransferId}/history`
+      } else {
+        return `${this.destinationUrl}/import/bulk_imports/history`
+      }
     }
   },
   data () {
@@ -106,8 +116,9 @@ export default {
     }
   },
   mounted: function () {
-    this.emitter.on('migration-in-progress', () => {
+    this.emitter.on('migration-in-progress', (migrationId) => {
       this.systemStore.updateMigrationInProgress(true)
+      this.directTransferId = migrationId
       this.pollMigrationStatus()
     })
     this.emitter.on('save-modified-payload', (data) => {

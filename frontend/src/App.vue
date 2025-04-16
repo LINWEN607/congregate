@@ -15,6 +15,7 @@
       <!-- <router-link to="/migrate">Migrate Data</router-link> -->
       <hr>
       <a :href="flowerUrl" target="_blank">Task Queue</a>
+      <span title="View bulk imports on destination associated with the token you are using"><a v-if="directTransfer" :href="bulkImportsHistoryUrl" target="_blank">Bulk Imports History</a></span>
       <router-link to="/settings">Settings</router-link>
     </div>
     <div id = "content">
@@ -37,17 +38,27 @@ export default {
   },
   data() {
     return {
-      flowerUrl: ''
+      flowerUrl: '',
+      bulkImportsHistoryUrl: ''
     }
   },
   computed: {
-    ...mapStores(useSystemStore)
+    ...mapStores(useSystemStore),
+    isSettingsStoreEmpty() {
+      return JSON.stringify(this.systemStore.settings) === '{}'
+    },
+    directTransfer() {
+      if (!this.isSettingsStoreEmpty) {
+        return this.systemStore.settings.APP.direct_transfer
+      }
+    }
   },
   mounted: function() {
     axios.get(`${import.meta.env.VITE_API_ROOT}/api/settings`).then(response => {
       this.systemStore.updateSettings(response.data)
       this.emitter.emit('settings-updated')
       this.flowerUrl = this.systemStore.settings['APP']['flower_url']
+      this.bulkImportsHistoryUrl = `${this.systemStore.settings['DESTINATION']['dstn_hostname']}/import/bulk_imports/history`
     })
     this.emitter.on('check-jobs', () => {
       this.getJobsByStatus()
@@ -70,6 +81,11 @@ export default {
             this.emitter.emit('migration-in-progress', response.data[0].id)
           })
         }
+        // axios.get(`${import.meta.env.VITE_API_ROOT}/api/jobs/name/trigger-bulk-import-task`).then(response => {
+        //   if (response.data.length > 0 && response.data[0].hasOwnProperty('dt_id')) {
+        //     this.systemStore.updateDirectTransferId(response.data[0].dt_id)
+        //   }
+        // })
       })
     }
   }

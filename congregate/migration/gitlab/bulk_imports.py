@@ -480,7 +480,8 @@ def kick_off_bulk_import(self, payload, dry_run=True):
         return {
             'status': 'triggered direct transfer jobs',
             'overall_status_id': watch_status.id,
-            'entity_ids': entity_ids
+            'entity_ids': entity_ids,
+            'dt_id': dt_id
         }
     if dt_entities and (not dt_id):
         return {

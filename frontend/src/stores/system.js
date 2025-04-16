@@ -9,7 +9,8 @@ export const useSystemStore = defineStore('system', {
         stagedGroups: new Set(),
         stagedUsers: new Set(),
         directTransferGeneratedRequest: new Object(),
-        directTransferModifiedRequest: new Object()
+        directTransferModifiedRequest: new Object(),
+        directTransferId: null
     }),
     actions: {
         updateSettings(settings) {
@@ -20,6 +21,9 @@ export const useSystemStore = defineStore('system', {
         },
         updateMigrationInProgress(state) {
             this.migrationInProgress = state
+        },
+        updateDirectTransferId(id) {
+            this.directTransferId = id
         },
         async updateDirectTransferGeneratedRequest(request) {
             this.directTransferGeneratedRequest = request

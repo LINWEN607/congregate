@@ -1,3 +1,4 @@
+from distutils.util import strtobool
 from flask import Blueprint, jsonify
 from congregate.helpers.configuration_validator import ConfigurationValidator
 
@@ -20,5 +21,8 @@ def strip_tokens(config):
             scrubbed_config[section] = {}
         for setting, value in settings.items():
             if 'token' not in setting:
-                scrubbed_config[section][setting] = value
+                if value.lower() in ['true', 'false']:
+                    scrubbed_config[section][setting] = strtobool(value)
+                else:
+                    scrubbed_config[section][setting] = value
     return scrubbed_config
