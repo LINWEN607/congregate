@@ -151,6 +151,8 @@ dstn_parent_group_path = <full-group-path>
 mongo_host = congregate_mongo
 redis_host = redis
 direct_transfer = true
+# If you want to adjust the default number of worker processes
+processes = <num-of-processes> # default is 4
 ```
 
 **NOTE:** If you are familiar with using file-based export/import for migrating data from one GitLab instance to another, you will notice the `[EXPORT]` section is completely omitted from this configuration. For more (Optional) configuration items, e.g. source and destination parent group 👆, see [`congregate.conf` template](/congregate.conf.template).
