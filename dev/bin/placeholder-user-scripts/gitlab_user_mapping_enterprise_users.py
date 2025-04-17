@@ -42,7 +42,7 @@ Environment Variables (Required):
     SOURCE_ADMIN_ACCESS_TOKEN   Admin access token for the source GitLab instance
     DESTINATION_GITLAB_ROOT     Base URL for the destination GitLab instance (e.g., https://gitlab.dest.com)
     DESTINATION_ADMIN_ACCESS_TOKEN  Admin access token for the destination GitLab instance
-    GROUP_ID                    When using --enterprise-users, the group ID to search in (required for enterprise users API)
+    DESTINATION_GROUP_ID        When using --enterprise-users, the group ID to search in (required for enterprise users API)
 
 Input:
 ------
@@ -243,7 +243,7 @@ class GitLabGraphQLClient:
         """
         if use_enterprise_api:
             if not self.group_id:
-                logging.error("GROUP_ID environment variable is required when using enterprise users API")
+                logging.error("DESTINATION_GROUP_ID environment variable is required when using enterprise users API")
                 sys.exit(1)
             return self._query_user_by_email_enterprise(email)
         else:
@@ -537,16 +537,16 @@ def main():
         destination_url = get_environment_variable("DESTINATION_GITLAB_ROOT")
         destination_token = get_environment_variable("DESTINATION_ADMIN_ACCESS_TOKEN")
         # Only needed if enterprise_users flag is set
-        group_id = get_environment_variable("GROUP_ID", required=args.enterprise_users)
+        destination_group_id = get_environment_variable("DESTINATION_GROUP_ID", required=args.enterprise_users)
     except SystemExit:
         return
     
     # Initialize GraphQL clients
     source_client = GitLabGraphQLClient(source_url, source_token, "source")
-    destination_client = GitLabGraphQLClient(destination_url, destination_token, "destination", group_id)
+    destination_client = GitLabGraphQLClient(destination_url, destination_token, "destination", destination_group_id)
     
     if args.enterprise_users:
-        logging.info(f"Using enterprise users API with group ID: {group_id}")
+        logging.info(f"Using enterprise users API with destination group ID: {destination_group_id}")
     
     # Read placeholder users
     placeholder_users = read_placeholder_users(args.placeholder_file)
