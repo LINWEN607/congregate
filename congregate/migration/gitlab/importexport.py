@@ -22,14 +22,14 @@ from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.namespaces import NamespacesApi
 from congregate.helpers.migrate_utils import get_project_dest_namespace, is_user_project, get_user_project_namespace, \
     get_export_filename_from_namespace_and_name, get_dst_path_with_namespace, get_full_path_with_parent_namespace, \
-    is_loc_supported, check_is_project_or_group_for_logging, migration_dry_run, check_download_directory
+    is_loc_supported, check_is_project_or_group_for_logging, migration_dry_run, check_download_directory, default_response
 
 
 class ImportExportClient(BaseGitLabClient):
     SAML_MSG = "Validation failed: User is not linked to a SAML account"
 
     # Import rate limit cool-off
-    COOL_OFF_MINUTES = 1.1
+    COOL_OFF_MINUTES = 1.2
 
     def __init__(self, src_host=None, src_token=None, dest_host=None, dest_token=None):
         super().__init__(src_host=src_host, src_token=src_token,
@@ -296,6 +296,7 @@ class ImportExportClient(BaseGitLabClient):
 
     def attempt_import(self, filename, name, path,
                        namespace, override_params, members):
+        resp = default_response()
         if self.config.location == "aws":
             presigned_get_url = self.aws.generate_presigned_url(
                 filename, "GET")
@@ -338,7 +339,6 @@ class ImportExportClient(BaseGitLabClient):
                 self.log.error(f"Error: The download directory '{download_dir}' does not exist. "
                                "Please create the directory and try again.")
                 os.killpg(os.getpgid(os.getpid()), signal.SIGKILL)
-            resp = None
             self.log.info(
                 "Importing project {0} from filesystem to {1}".format(name, namespace))
             try:
@@ -355,8 +355,9 @@ class ImportExportClient(BaseGitLabClient):
                         "Content-Type": m.content_type
                     }
                     message = f"Importing project {name} with the following payload {m} and following members {members}"
-                    resp = self.projects_api.import_project(
-                        self.dest_host, self.dest_token, data=m, headers=headers, message=message)
+                    if import_resp := self.projects_api.import_project(
+                        self.dest_host, self.dest_token, data=m, headers=headers, message=message):
+                        resp = import_resp
             except AttributeError as ae:
                 self.log.error(
                     "Large file upload failed for {0}. Using standard file upload, due to:\n{1}".format(
@@ -375,9 +376,10 @@ class ImportExportClient(BaseGitLabClient):
                     }
                     message = "Importing project %s with the following payload %s and following members %s" % (
                         name, data, members)
-                    resp = self.projects_api.import_project(
-                        self.config.destination_host, self.config.destination_token, data=data, files=files, headers=headers, message=message)
-        return resp
+                    if import_resp := self.projects_api.import_project(
+                        self.config.destination_host, self.config.destination_token, data=data, files=files, headers=headers, message=message):
+                        resp = import_resp
+        return resp if resp else default_response()
 
     def import_group(self, group, full_path, filename,
                      dry_run=True, subgroups_only=False):
