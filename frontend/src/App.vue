@@ -81,11 +81,6 @@ export default {
             this.emitter.emit('migration-in-progress', response.data[0].id)
           })
         }
-        // axios.get(`${import.meta.env.VITE_API_ROOT}/api/jobs/name/trigger-bulk-import-task`).then(response => {
-        //   if (response.data.length > 0 && response.data[0].hasOwnProperty('dt_id')) {
-        //     this.systemStore.updateDirectTransferId(response.data[0].dt_id)
-        //   }
-        // })
       })
     }
   }

@@ -80,9 +80,6 @@ export default {
     migrationInProgress() {
       return this.systemStore.migrationInProgress
     },
-    directTransferId() {
-      return this.systemStore.directTransferId
-    },
     isSettingsStoreEmpty() {
       return JSON.stringify(this.systemStore.settings) === '{}'
     },
@@ -90,9 +87,7 @@ export default {
       return Object.keys(this.systemStore.directTransferGeneratedRequest).length > 0
     },
     directTransferStatusUrl() {
-      if (this.directTransferId) {
-        return `${this.destinationUrl}/import/bulk_imports/${this.directTransferId}/history`
-      } else {
+      if (!this.isSettingsStoreEmpty) {
         return `${this.destinationUrl}/import/bulk_imports/history`
       }
     }
@@ -116,9 +111,8 @@ export default {
     }
   },
   mounted: function () {
-    this.emitter.on('migration-in-progress', (migrationId) => {
+    this.emitter.on('migration-in-progress', () => {
       this.systemStore.updateMigrationInProgress(true)
-      this.directTransferId = migrationId
       this.pollMigrationStatus()
     })
     this.emitter.on('save-modified-payload', (data) => {
