@@ -34,6 +34,7 @@ from congregate.migration.jenkins.base import JenkinsClient as JenkinsData
 from congregate.migration.teamcity.base import TeamcityClient as TeamcityData
 
 from congregate.helpers.congregate_mdbc import CongregateMongoConnector, mongo_connection
+from congregate.helpers.csv_utils import write_projects_csv, write_groups_csv, write_users_csv
 
 LIST_TASKS = [
     'list_data',
@@ -66,7 +67,8 @@ class ListClient(BaseClass):
         src_instances=False,
         subset=False,
         skip_archived_projects=False,
-        only_specific_projects=None
+        only_specific_projects=None,
+        format="json"
     ):
         super().__init__()
         self.processes = processes
@@ -81,6 +83,7 @@ class ListClient(BaseClass):
         self.subset = subset
         self.skip_archived_projects = skip_archived_projects
         self.only_specific_projects = only_specific_projects
+        self.format = format
 
     def list_gitlab_data(self):
         """
@@ -97,6 +100,9 @@ class ListClient(BaseClass):
             if not self.config.direct_transfer:
                 mongo.dump_collection_to_file(
                     u, f"{self.app_path}/data/users.json")
+                if self.format.lower() == "csv":
+                    write_users_csv(json_path=f"{self.app_path}/data/users.json",
+                                    csv_path=f"{self.app_path}/data/users.csv")
 
         # Lists all groups and group projects
         if not self.skip_groups:
@@ -107,6 +113,9 @@ class ListClient(BaseClass):
             if not self.config.direct_transfer:
                 mongo.dump_collection_to_file(
                     g, f"{self.app_path}/data/groups.json")
+                if self.format.lower() == "csv":
+                    write_groups_csv(json_path=f"{self.app_path}/data/groups.json",
+                                    csv_path=f"{self.app_path}/data/groups.csv")
 
         # Listing groups on gitlab.com will also list their projects
         # Listing on-prem includes personal projects
@@ -120,6 +129,9 @@ class ListClient(BaseClass):
         if not self.skip_projects and not self.config.direct_transfer:
             mongo.dump_collection_to_file(
                 p, f"{self.app_path}/data/projects.json")
+            if self.format.lower() == "csv":
+                write_projects_csv(json_path=f"{self.app_path}/data/projects.json",
+                                csv_path=f"{self.app_path}/data/projects.csv")
 
         mongo.close_connection()
 
@@ -132,6 +144,9 @@ class ListClient(BaseClass):
             users.retrieve_user_info(processes=self.processes)
             mongo.dump_collection_to_file(
                 u, f"{self.app_path}/data/users.json")
+            if self.format.lower() == "csv":
+                write_users_csv(json_path=f"{self.app_path}/data/users.json",
+                                csv_path=f"{self.app_path}/data/users.csv")
         if not self.skip_groups:
             projects = BitBucketProjects(subset=self.subset)
             if not self.skip_group_members:
@@ -139,6 +154,9 @@ class ListClient(BaseClass):
             projects.retrieve_project_info(processes=self.processes, skip_archived_projects=self.skip_archived_projects)
             mongo.dump_collection_to_file(
                 g, f"{self.app_path}/data/groups.json")
+            if self.format.lower() == "csv":
+                write_groups_csv(json_path=f"{self.app_path}/data/groups.json",
+                                csv_path=f"{self.app_path}/data/groups.csv")
             # Save listed BB Server parent projects
             if self.subset:
                 mongo.dump_collection_to_file(
@@ -150,10 +168,16 @@ class ListClient(BaseClass):
             repos.retrieve_repo_info(processes=self.processes, skip_archived_projects=self.skip_archived_projects)
             mongo.dump_collection_to_file(
                 p, f"{self.app_path}/data/projects.json")
+            if self.format.lower() == "csv":
+                write_projects_csv(json_path=f"{self.app_path}/data/projects.json",
+                                csv_path=f"{self.app_path}/data/projects.csv")
             # Save listed BB Server parent projects
             if self.subset:
                 mongo.dump_collection_to_file(
                     g, f"{self.app_path}/data/groups.json")
+                if self.format.lower() == "csv":
+                    write_groups_csv(json_path=f"{self.app_path}/data/groups.json",
+                                    csv_path=f"{self.app_path}/data/groups.csv")
         mongo.close_connection()
 
     def list_github_data(self):
@@ -168,14 +192,23 @@ class ListClient(BaseClass):
                     host, token, self.config.source_username, self.config.source_password)
                 users.retrieve_user_info(processes=self.processes)
                 mongo.dump_collection_to_file(u, f"{app}/data/users.json")
+                if self.format.lower() == "csv":
+                    write_users_csv(json_path=f"{self.app_path}/data/users.json",
+                                    csv_path=f"{self.app_path}/data/users.csv")
             if not self.skip_groups:
                 orgs = GitHubOrgs(host, token)
                 orgs.retrieve_org_info(processes=self.processes)
                 mongo.dump_collection_to_file(g, f"{app}/data/groups.json")
+                if self.format.lower() == "csv":
+                    write_groups_csv(json_path=f"{self.app_path}/data/groups.json",
+                                    csv_path=f"{self.app_path}/data/groups.csv")
             if not self.skip_projects:
                 repos = GitHubRepos(host, token)
                 repos.retrieve_repo_info(processes=self.processes)
                 mongo.dump_collection_to_file(p, f"{app}/data/projects.json")
+                if self.format.lower() == "csv":
+                    write_projects_csv(json_path=f"{self.app_path}/data/projects.json",
+                                    csv_path=f"{self.app_path}/data/projects.csv")
         else:
             for _, single_source in enumerate(
                     self.config.list_multiple_source_config("github_source")):
@@ -229,6 +262,9 @@ class ListClient(BaseClass):
                 projects.retrieve_project_info(processes=self.processes, projects_list=projects_list)
                 mongo.dump_collection_to_file(
                     p, f"{self.app_path}/data/projects.json")
+                if self.format.lower() == "csv":
+                    write_projects_csv(json_path=f"{self.app_path}/data/projects.json",
+                                csv_path=f"{self.app_path}/data/projects.csv")
 
             # Find ADO projects with >1 repos ( = group in GitLab)
             if not self.skip_groups:
@@ -236,6 +272,9 @@ class ListClient(BaseClass):
                 groups.retrieve_group_info(processes=self.processes, projects_list=projects_list)
                 mongo.dump_collection_to_file(
                     g, f"{self.app_path}/data/groups.json")
+                if self.format.lower() == "csv":
+                    write_projects_csv(json_path=f"{self.app_path}/data/groups.json",
+                                csv_path=f"{self.app_path}/data/groups.csv")
 
         else:
 
@@ -245,6 +284,9 @@ class ListClient(BaseClass):
                 projects.retrieve_project_info(processes=self.processes)
                 mongo.dump_collection_to_file(
                     p, f"{self.app_path}/data/projects.json")
+                if self.format.lower() == "csv":
+                    write_projects_csv(json_path=f"{self.app_path}/data/projects.json",
+                                csv_path=f"{self.app_path}/data/projects.csv")
 
             # Find ADO projects with >1 repos ( = group in GitLab)
             if not self.skip_groups:
@@ -252,12 +294,18 @@ class ListClient(BaseClass):
                 groups.retrieve_group_info(processes=self.processes)
                 mongo.dump_collection_to_file(
                     g, f"{self.app_path}/data/groups.json")
+                if self.format.lower() == "csv":
+                    write_projects_csv(json_path=f"{self.app_path}/data/groups.json",
+                                csv_path=f"{self.app_path}/data/groups.csv")
                 
         if not self.skip_users:
             users = AdoUsers()
             users.retrieve_user_info(processes=self.processes)
             mongo.dump_collection_to_file(
                 u, f"{self.app_path}/data/users.json")
+            if self.format.lower() == "csv":
+                write_projects_csv(json_path=f"{self.app_path}/data/users.json",
+                            csv_path=f"{self.app_path}/data/users.csv")
 
         mongo.close_connection()
 
@@ -390,3 +438,4 @@ def watch_list_status(mongo=None):
         b.log.info(f"Saving {asset} to {b.app_path}/data/{asset}.json")
         mongo.dump_collection_to_file(
             f"{asset}-{src_hostname}", f"{b.app_path}/data/{asset}.json")
+        

@@ -14,9 +14,14 @@ from gitlab_ps_utils.dict_utils import rewrite_list_into_dict, dig
 
 from congregate.cli.stage_base import BaseStageClass
 from congregate.migration.meta import constants
+from congregate.helpers.csv_utils import parse_projects_csv, parse_groups_csv, parse_users_csv
 
 
 class GroupStageCLI(BaseStageClass):
+    def __init__(self, format="json"):
+        super().__init__()
+        self.format = format
+
     def stage_data(self, groups_to_stage, dry_run=True,
                    skip_users=False, scm_source=None):
         """
@@ -40,9 +45,14 @@ class GroupStageCLI(BaseStageClass):
             self.log.warning(
                 f"Couldn't find the correct GH instance with hostname: {scm_source}")
 
-        groups = self.open_groups_file(scm_source)
-        projects = self.open_projects_file(scm_source)
-        users = self.open_users_file(scm_source)
+        if self.format.lower() == "csv":
+            projects = parse_projects_csv(self.app_path, scm_source)
+            groups = parse_groups_csv(self.app_path, scm_source)
+            users = parse_users_csv(self.app_path, scm_source)
+        else:
+            projects = self.open_projects_file(scm_source)
+            groups = self.open_groups_file(scm_source)
+            users = self.open_users_file(scm_source)
 
         self.rewritten_users = rewrite_list_into_dict(users, "id")
         self.rewritten_projects = rewrite_list_into_dict(projects, "id")

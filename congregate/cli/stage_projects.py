@@ -17,9 +17,13 @@ from congregate.helpers.migrate_utils import get_staged_user_projects
 from congregate.helpers.utils import is_dot_com
 from congregate.cli.stage_base import BaseStageClass
 from congregate.migration.meta import constants
-
+from congregate.helpers.csv_utils import parse_projects_csv, parse_groups_csv, parse_users_csv
 
 class ProjectStageCLI(BaseStageClass):
+
+    def __init__(self, format="json"):
+        super().__init__()
+        self.format = format
 
     def stage_data(self, projects_to_stage, dry_run=True,
                    skip_users=False, scm_source=None):
@@ -47,6 +51,8 @@ class ProjectStageCLI(BaseStageClass):
                            dry_run=True, scm_source=None):
         """
             Build data up from project level, including groups and users (members)
+            If format=csv, read from data/<data>.csv, build a list. 
+            Otherwise, proceed with the existing JSON-based approach.
 
             :param: projects_to_stage: (dict) the staged projects objects
             :param: dry_run (bool) dry_run (bool) If true, it will only build the staging data lists.
@@ -59,10 +65,15 @@ class ProjectStageCLI(BaseStageClass):
         if i == -1:
             self.log.warning(
                 f"Couldn't find the correct GH instance with hostname: {scm_source}")
-        # Loading projects information
-        projects = self.open_projects_file(scm_source)
-        groups = self.open_groups_file(scm_source)
-        users = self.open_users_file(scm_source)
+        # Loading projects information   
+        if self.format.lower() == "csv":
+            projects = parse_projects_csv(self.app_path, scm_source)
+            groups = parse_groups_csv(self.app_path, scm_source)
+            users = parse_users_csv(self.app_path, scm_source)
+        else:
+            projects = self.open_projects_file(scm_source)
+            groups = self.open_groups_file(scm_source)
+            users = self.open_users_file(scm_source)
 
         # Rewriting projects to retrieve objects by ID more efficiently
         self.rewritten_users = rewrite_list_into_dict(users, "id")
@@ -200,4 +211,3 @@ class ProjectStageCLI(BaseStageClass):
         else:
             self.log.warning(
                 f"Group ID {group_id} NOT found among listed groups")
-
