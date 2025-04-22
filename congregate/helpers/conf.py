@@ -175,7 +175,12 @@ class Config(BaseConfig):
     @property
     def src_parent_group_path(self):
         return self.prop("SOURCE", "src_parent_group_path")
-
+    
+    # Bitbucket Cloud
+    @property
+    def src_parent_workspace(self):
+        return self.prop("SOURCE", "src_parent_workspace")
+    
     # GitHub
     @property
     def src_parent_org(self):

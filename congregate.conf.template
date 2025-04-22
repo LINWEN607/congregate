@@ -91,6 +91,16 @@ src_access_token = *****
 # src_hostname = some_external_source
 # src_access_token = *****
 
+### Consider below changes when the source is a Bitbucket Cloud account, rest all other configuration remains same.
+# src_type = Bitbucket Cloud
+# src_username = username
+# src_hostname = https://api.bitbucket.org
+# src_access_token = *****
+# src_parent_workspace = top_level_group
+
+# NOTE: Bitbucket Cloud requires an App Password with read permissions
+# for Repository, Pull Requests, and Issue Tracking.
+# Create one at: https://bitbucket.org/account/settings/app-passwords/
 
 ### Consider below changes when the source is a Azure Devops server, rest all other configuration remains same.
 # src_hostname = some_external_source

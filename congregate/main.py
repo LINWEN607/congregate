@@ -338,6 +338,7 @@ def main():
             from congregate.migration.gitlab.diff.groupdiff import GroupDiffClient
             from congregate.migration.github.diff.repodiff import RepoDiffClient as GHRepoDiffClient
             from congregate.migration.bitbucket.diff.repodiff import RepoDiffClient as BBSRepoDiffClient
+            from congregate.migration.bitbucket_cloud.migrate import BitbucketCloudMigrateClient
             from congregate.helpers.user_util import map_users, map_and_stage_users_by_email_match
             from congregate.helpers.congregate_mdbc import CongregateMongoConnector
             from congregate.migration.github.repos import ReposClient as GHReposClient
