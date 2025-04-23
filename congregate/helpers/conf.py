@@ -44,6 +44,11 @@ class Config(BaseConfig):
     def shared_runners_enabled(self):
         return self.prop_bool(
             "DESTINATION", "shared_runners_enabled", default=False)
+    
+    @property
+    def system_hooks_enabled(self):
+        return self.prop_bool(
+            "DESTINATION", "system_hooks_enabled", default=False)
 
     @property
     def max_import_retries(self):
