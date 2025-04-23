@@ -292,13 +292,11 @@ class GitLabMigrateClient(MigrateClient):
             filename: False
         }
         try:
-            self.log.info("{0}Exporting group {1} (ID: {2}) as {3}"
-                          .format(dry_log, full_path, gid, filename))
+            self.log.info(f"{dry_log}Exporting group '{full_path}' (ID: {gid}) as {filename}")
             result[filename] = self.ie.export_group(
                 gid, full_path, filename, dry_run=self.dry_run)
         except (IOError, RequestException) as oe:
-            self.log.error("Failed to export group {0} (ID: {1}) as {2} with error:\n{3}".format(
-                full_path, gid, filename, oe))
+            self.log.error(f"Failed to export group '{full_path}' (ID: {gid}) as {filename} with error:\n{oe}")
         except Exception as e:
             self.log.error(e)
             self.log.error(print_exc())

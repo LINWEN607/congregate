@@ -22,7 +22,8 @@ from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.namespaces import NamespacesApi
 from congregate.helpers.migrate_utils import get_project_dest_namespace, is_user_project, get_user_project_namespace, \
     get_export_filename_from_namespace_and_name, get_dst_path_with_namespace, get_full_path_with_parent_namespace, \
-    is_loc_supported, check_is_project_or_group_for_logging, migration_dry_run, check_download_directory, default_response
+    is_loc_supported, check_is_project_or_group_for_logging, migration_dry_run, check_download_directory, default_response, \
+    get_stage_wave_paths
 
 
 class ImportExportClient(BaseGitLabClient):
@@ -600,15 +601,14 @@ class ImportExportClient(BaseGitLabClient):
         name = project["name"]
         namespace = project["namespace"]
         pid = project["id"]
-        dst_path_with_namespace = None
         if not self.config.airgap:
-            dst_path_with_namespace = get_dst_path_with_namespace(project)
+            dst_path_with_namespace, _ = get_stage_wave_paths(project)
             dst_pid = self.projects.find_project_by_path(
                 self.config.destination_host, self.config.destination_token, dst_path_with_namespace)
             if dst_pid:
-                self.log.info(
-                    f"SKIP: Project {dst_path_with_namespace} (ID: {dst_pid}) found on destination")
-                return True
+                self.log.warning(
+                    f"SKIP: Project '{dst_path_with_namespace}' (ID: {dst_pid}) found on destination")
+                return False
         if not dry_run:
             filename = get_export_filename_from_namespace_and_name(
                 namespace, name)
@@ -712,15 +712,13 @@ class ImportExportClient(BaseGitLabClient):
         exported = False
         full_path_with_parent_namespace = get_full_path_with_parent_namespace(
             full_path)
-        self.log.info("Searching on destination for group {}".format(
-            full_path_with_parent_namespace))
+        self.log.info(f"Searching on destination for group '{full_path_with_parent_namespace}'")
         dst_gid = self.groups.find_group_id_by_path(
             self.config.destination_host,
             self.config.destination_token,
             full_path_with_parent_namespace)
         if dst_gid:
-            self.log.info("SKIP: Group {0} with source ID {1} and destination ID {2} found on destination".format(
-                full_path_with_parent_namespace, src_gid, dst_gid))
+            self.log.warning(f"SKIP: Group '{full_path_with_parent_namespace}' with source ID {src_gid} and destination ID {dst_gid} found on destination")
         elif not dry_run:
             if loc == "filesystem":
                 # NOTE: Export status API endpoint not yet available
@@ -728,10 +726,8 @@ class ImportExportClient(BaseGitLabClient):
                 #     src_gid, full_path, is_project=False) or True
                 exported = self.wait_for_group_download(src_gid)
                 if exported:
-                    url = "{0}/api/v4/groups/{1}/export/download".format(
-                        self.src_host, src_gid)
-                    self.log.info("Downloading group {0} (ID: {1}) as {2}".format(
-                        full_path, src_gid, filename))
+                    url = f"{self.src_host}/api/v4/groups/{src_gid}/export/download"
+                    self.log.info(f"Downloading group '{full_path}' (ID: {src_gid}) as {filename}")
                     download_file(url, self.config.filesystem_path, filename=filename, headers={
                         "PRIVATE-TOKEN": self.src_token}, verify=self.config.ssl_verify, wait=65)
             # TODO: Refactor and sync with other scenarios (#119)
