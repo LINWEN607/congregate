@@ -40,7 +40,7 @@ class HooksClient(BaseClass):
                             f"Failed to fetch source system hooks ({shc})")
                         break
                     self.log.info(
-                        f"{get_dry_log(dry_run)}Migrating isystemnstance hook {shc['url']} (ID: {shc['id']})")
+                        f"{get_dry_log(dry_run)}Migrating system hook {shc['url']} (ID: {shc['id']})")
                     shc = pop_multiple_keys(shc, ["id", "created_at"])
                     # hook does not include secret token
                     if not dry_run and not shc in s_hooks_dstn:
