@@ -134,6 +134,9 @@ src_hostname = https://<gitlab-source>
 src_access_token = <base64-encoded-token>
 src_type = GitLab
 
+# core (default), premium or ultimate
+src_tier = <gitlab-license-tier>
+
 # Optional
 src_parent_group_id = <group-id>
 src_parent_group_path = <full-group-path>
