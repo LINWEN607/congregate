@@ -68,6 +68,7 @@ class OrgsClient(BaseClass):
             org_repos = []
             for org_repo in self.orgs_api.get_all_org_repos_v4(
                     org_name):
+                org_repo['owner']['id'] = org["data"]["organization"]["databaseId"]
                 formatted_repo = self.repos.format_repo(org_repo, mongo)
                 mongo.insert_data(
                     f"projects-{self.host}", formatted_repo)

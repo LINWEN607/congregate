@@ -20,7 +20,7 @@ services:
 
     mongo:
         image: mongo:4.4.16
-        container_name: congregate_mongo
+        container_name: mongo
         restart: always
         volumes:
             - $CONGREGATE_DATA/mongo-data:/data

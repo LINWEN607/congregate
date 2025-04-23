@@ -20,3 +20,11 @@ class ProjectsApi():
         Core REST API: https://learn.microsoft.com/en-us/rest/api/azure/devops/core/projects/list?view=azure-devops-rest-7.1&tabs=HTTP
         """
         return self.api.list_all("_apis/projects")
+
+    def get_all_variable_groups(self, project_id):
+        """
+        Retrieve all variable groups."
+        
+        Distributed Task REST API: https://learn.microsoft.com/en-us/rest/api/azure/devops/distributedtask/variablegroups/get-variable-groups?view=azure-devops-rest-7.1&tabs=HTTP
+        """
+        return self.api.generate_get_request(f"{project_id}/_apis/distributedtask/variablegroups")

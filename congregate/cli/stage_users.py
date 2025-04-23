@@ -7,9 +7,14 @@ Copyright (c) 2024 - GitLab
 from gitlab_ps_utils.json_utils import write_json_to_file
 from gitlab_ps_utils.list_utils import remove_dupes
 from congregate.cli.stage_base import BaseStageClass
+from congregate.helpers.csv_utils import parse_users_csv
 
 
 class UserStageCLI(BaseStageClass):
+    def __init__(self, format="json"):
+        super().__init__()
+        self.format = format
+
     def stage_data(self, users_to_stage, dry_run=True):
         """
             Stage data based on selected projects on source instance
@@ -30,7 +35,10 @@ class UserStageCLI(BaseStageClass):
                 "Written metadata to staged users file 'data/staged_users.json', '[]' to staged groups and projects")
 
     def build_staging_data(self, users_to_stage):
-        users = self.open_users_file()
+        if self.format.lower() == "csv":
+            users = parse_users_csv(self.app_path)
+        else:
+            users = self.open_users_file()
         if list(filter(None, users_to_stage)):
             if users_to_stage[0] in ["all", "."]:
                 for u in users:

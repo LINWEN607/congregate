@@ -37,6 +37,7 @@ from congregate.migration.gitlab.environments import EnvironmentsClient
 from congregate.migration.gitlab.branches import BranchesClient
 from congregate.migration.gitlab.packages import PackagesClient
 from congregate.migration.gitlab.project_feature_flags import ProjectFeatureFlagClient
+from congregate.migration.gitlab.pushrules import PushRulesClient
 from congregate.migration.gitlab.project_feature_flags_user_lists import ProjectFeatureFlagsUserListsClient
 from congregate.helpers.congregate_mdbc import CongregateMongoConnector, mongo_connection
 from congregate.migration.meta.api_models.single_project_features import SingleProjectFeatures
@@ -88,6 +89,7 @@ class GitLabMigrateClient(MigrateClient):
         self.hooks = HooksClient()
         self.environments = EnvironmentsClient()
         self.branches = BranchesClient()
+        self.pushrules = PushRulesClient()
         self.project_feature_flags_client = ProjectFeatureFlagClient(
             DRY_RUN=False)
         self.issue_links_client = IssueLinksClient(
@@ -687,8 +689,8 @@ class GitLabMigrateClient(MigrateClient):
 
         if self.config.source_tier not in ["core", "free"]:
             # Push Rules - handled by GitLab Importer as of 13.6
-            # results["push_rules"] = self.pushrules.migrate_push_rules(
-            #     src_id, dst_id, src_path)
+            results["push_rules"] = self.pushrules.migrate_push_rules(
+                src_id, dst_id, src_path)
 
             # Merge Request Approvals
             results["project_level_mr_approvals"] = MergeRequestApprovalsClient(dest_host=dest_host, dest_token=dest_token).migrate_project_level_mr_approvals(

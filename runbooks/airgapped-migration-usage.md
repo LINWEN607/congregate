@@ -4,6 +4,16 @@
 
 Applicable **only** to GitLab -> GitLab migrations.
 
+## GitLab features in scope
+
+- [Group export items](https://docs.gitlab.com/user/project/settings/import_export/#group-items-that-are-exported)
+- [Project export items](https://docs.gitlab.com/user/project/settings/import_export/#project-items-that-are-exported)
+  - Additional project features handled by Congregate
+    - Environments
+    - CI/CD Variables
+    - Pipeline Schedule Variables
+    - Merge Request Approvals
+
 ## Source data export
 
 Assuming a Congregate node on the source low-side network exists, you can trigger an export request by:

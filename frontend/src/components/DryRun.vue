@@ -1,7 +1,24 @@
 <template>
     <div id="dry-run-container" v-if="visible">
-        Migration Dry Run is complete. The following data is slated to migrate: <button id="hide-button" @click="hide()">X</button>
-        <div v-for="data in dryRunData">
+        <div>Migration Overview<button id="hide-button" @click="hide()">X</button></div>
+        <div v-if="!dryRun">
+          <div class="warn">{{ commitInstructions }}</div>
+          <button @click="confirmMigration">Confirm</button>
+        </div>
+        <div class="sub" v-if="dryRun">{{ dryRunInstructions }}</div>
+        <div v-if="jsonError">
+          <span>The modified payload is not valid JSON. Please update the payload.</span>
+          <span>{{ jsonError }}</span>
+        </div>
+        <hr>
+      
+        <DiffEditor
+          ref="diff-editor"
+          :left="left"
+          :right="right"
+        />
+        <!-- Will need to refactor this for non-DT related migrations-->
+        <!-- <div v-for="data in dryRunData">
             <div class="entity-card">
                 <div>Destination Namespace: {{ data.entity.destination_namespace }}</div>
                 <div>Destination Slug: {{ data.entity.destination_slug }}</div>
@@ -15,31 +32,74 @@
                     <li v-for="subgroup in data.subgroups">{{ subgroup }}</li>
                 </ul>
             </div>
-        </div>
+        </div> -->
     </div>
 </template>
 <script>
+import DiffEditor from '@/components/DiffEditor.vue';
 export default {
   name: 'DryRun',
+  components: {
+    DiffEditor
+  },
   data() {
     return {
         visible: false,
-        dryRunData: []
+        dryRunData: [],
+        selectedLanguage: 'json',
+        selectedTheme: 'vs-dark',
+        output: '',
+        left: null,
+        right: null,
+        dryRun: true,
+        dryRunInstructions: `The following data is slated to migrate. 
+              The left editor is what was generated from Congregate. 
+              On the right, you can modify the payload before starting the migration to tweak as you see fit.`,
+        commitInstructions: `You are about to commit this migration run. 
+              Please review the payload on the right and click confirm to proceed.`,
+        jsonError: ""
     }
   },
   mounted: function() {
-    this.$emitter.on('show-dry-run', (data) => {
-        console.log(data)
+    this.emitter.on('show-dry-run', (data) => {
         this.visible = true
-        this.dryRunData = data['dry_run_data']
+        this.left = JSON.stringify(data.left, null, 2)
+        if (data.right) {
+            this.right = JSON.stringify(data.right, null, 2)
+        }
+        this.dryRun = data.dryRun
     })
   },
-  beforeDestroy: function() {
-    this.$emitter.off('show-dry-run')
+  beforeUnmount: function() {
+    this.emitter.off('show-dry-run')
+    if (this.$refs['diff-editor']) {
+      this.saveModifiedPayload()
+    }
   },
   methods: {
     hide: function() {
+      try {
+        JSON.parse(this.$refs['diff-editor'].editor.b.state.doc.toString())
         this.visible = false
+        this.saveModifiedPayload()
+        this.jsonError = ""
+      } catch (e) {
+        this.emitter.emit('alert', {
+          'message': 'The modified payload is not valid JSON. Please update the payload.',
+          'messageType': 'error'
+        })
+        this.jsonError = e.message
+      }
+    },
+    saveModifiedPayload: function() {
+      this.emitter.emit('save-modified-payload', JSON.parse(this.$refs['diff-editor'].editor.b.state.doc.toString()))
+    },
+    confirmMigration: function() {
+      this.saveModifiedPayload()
+      this.$nextTick(() => {
+        this.emitter.emit('confirm-migration')
+        this.visible = false
+      })
     }
   }
 }
@@ -51,8 +111,8 @@ export default {
     background: #fff;
     position: absolute;
     top: 10%;
-    left: 25%;
-    width: 50%;
+    left: 15%;
+    width: 75%;
     height: 85%;
     box-shadow: 0px 0px 10px #666;
     overflow-y: scroll;
@@ -79,5 +139,19 @@ export default {
 
 #hide-button:hover {
     background: #ff851b;
+}
+
+.sub {
+  margin: 1em;
+  text-align: left;
+  font-size: smaller;
+  font-style: italic;
+}
+
+.warn {
+  margin: 1em;
+  text-align: center;
+  font-weight: bold;
+  font-size: smaller;
 }
 </style>

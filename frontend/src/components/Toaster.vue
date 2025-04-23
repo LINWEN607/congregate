@@ -18,9 +18,12 @@ export default {
     }
   },
   mounted: function() {
-      this.$emitter.on('alert', (data) => {
+      this.emitter.on('alert', (data) => {
           this.fireAlert(data)
       })
+  },
+  beforeDestroy: function() {
+      this.emitter.off('alert')
   },
   methods: {
       fireAlert: function(data) {

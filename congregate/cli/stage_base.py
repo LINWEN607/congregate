@@ -134,12 +134,17 @@ class BaseStageClass(BaseClass):
         """
             Get the object data providing project information
 
-            :param project: (str) project information
+            :param project: (str or dict) project information or ID
+            :param group: (bool) If True, project is an ID that needs to be looked up
             :return: obj object
         """
         try:
-            # If group=True a project IDs is passed
-            project = self.rewritten_projects[project] if group else project
+            # If group=True a project ID is passed and needs to be looked up
+            if group:
+                # Lookup by ID in rewritten_projects
+                project = self.rewritten_projects[project]
+            # Otherwise, project is already a dictionary with project data
+            
             path_with_namespace = project["path_with_namespace"]
             pid = project["id"]
 
@@ -155,9 +160,10 @@ class BaseStageClass(BaseClass):
                 "jobs_enabled": project.get("jobs_enabled"),
                 "packages_enabled": project.get("packages_enabled"),
                 "project_type": dig(project, 'namespace', 'kind'),
-                "members": project["members"],
-                "http_url_to_repo": project["http_url_to_repo"]
+                "members": project.get("members", []),
+                "http_url_to_repo": project.get("http_url_to_repo", "")
             }
+
             if project.get("ci_sources"):
                 obj["ci_sources"] = project["ci_sources"]
             if self.config.source_type == "gitlab":
@@ -177,9 +183,8 @@ class BaseStageClass(BaseClass):
             if self.config.source_type == "azure devops":
                 obj["project_id"] = project["namespace"]["id"]
             return obj
-        except KeyError:
-            self.log.error(
-                f"Project NOT found among listed projects:\n{json_pretty(project)}")
+        except KeyError as e:
+            self.log.error(f"KeyError in get_project_metadata: {e}\nProject: {project}")
             sys.exit(os.EX_DATAERR)
 
     def the_number_of_instance(self, scm_source):

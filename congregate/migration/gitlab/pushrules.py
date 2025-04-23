@@ -22,7 +22,7 @@ class PushRulesClient(BaseClass):
                 self.log.info(
                     f"No push rules ({pr}) to migrate for project {name}")
                 return None
-            elif error:
+            if error:
                 self.log.error(
                     f"Failed to fetch push rules ({pr}) for project {name}")
                 return False

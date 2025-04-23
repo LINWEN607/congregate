@@ -4,7 +4,7 @@ Copyright (c) 2022 - GitLab
 
 Usage:
     congregate align-user-mapping-emails [--commit]
-    congregate archive-staged-projects [--commit] [--dest] [--scm-source=hostname] [--rollback]
+    congregate archive-staged-projects [--commit] [--dest] [--scm-source=hostname] [--rollback] [--append-suffix]
     congregate clean [--commit]
     congregate clean-database [--commit] [--keys]
     congregate configure # Deprecated. Manually create config file and validate it by running 'congregate validate-config'
@@ -27,7 +27,7 @@ Usage:
     congregate generate-seed-data [--commit] # TODO: Refactor, broken
     congregate init
     congregate ldap-group-sync <file-path> [--commit]
-    congregate list [--processes=<n>] [--partial] [--skip-users] [--skip-groups] [--skip-group-members] [--skip-projects] [--skip-project-members] [--skip-ci] [--src-instances] [--subset] [--skip-archived-projects] [--only-specific-projects=<ids>]
+    congregate list [--processes=<n>] [--partial] [--skip-users] [--skip-groups] [--skip-group-members] [--skip-projects] [--skip-project-members] [--skip-ci] [--src-instances] [--subset] [--skip-archived-projects] [--only-specific-projects=<ids>] [--format=fmt]
     congregate list-staged-projects-contributors [--commit]
     congregate map-and-stage-users-by-email-match [--commit]
     congregate map-users [--commit]
@@ -45,10 +45,10 @@ Usage:
     congregate set-bb-read-only-member-permissions [--bb-projects] [--commit]
     congregate set-default-branch [--name=<name>] [--commit]
     congregate set-staged-users-public-email [--commit] [--hide]
-    congregate stage-groups <groups>... [--skip-users] [--commit] [--scm-source=hostname]
-    congregate stage-projects <projects>... [--skip-users] [--commit] [--scm-source=hostname]
+    congregate stage-groups <groups>... [--skip-users] [--commit] [--scm-source=hostname] [--format=fmt]
+    congregate stage-projects <projects>... [--skip-users] [--commit] [--scm-source=hostname] [--format=fmt]
     congregate stage-unimported-projects [--commit] # TODO: Refactor, broken
-    congregate stage-users <users>... [--commit]
+    congregate stage-users <users>... [--commit] [--format=fmt]
     congregate stage-wave <wave> [--commit] [--scm-source=hostname]
     congregate stitch-results [--result-type=<project|group|user>] [--no-of-files=<n>] [--head|--tail]
     congregate toggle-maintenance-mode [--commit] [--off] [--dest] [--msg=<multi+word+message>]
@@ -78,6 +78,7 @@ Arguments:
     src-instances                           Present if there are multiple GH source instances
     subset                                  Provide input file with list of URLs to list a subset of groups (--skip-projects) or projects (--skip-groups). BitBucket ONLY.
     scm-source                              Specific SCM source hostname
+    format                                  Format of data to stage: 'json' (default) or 'csv'.
     skip-users                              Stage: Skip staging users; Migrate: Skip migrating users; Rollback: Remove only groups and projects.
     remove-members                          Remove all members of created (GitHub) or imported (GitLab) groups. Skip adding any members of BitBucket Server repos and projects.
     sync-members                            Align group members list between source and destination by adding missing members on destination.
@@ -129,6 +130,7 @@ Arguments:
     name                                    Project branch name
     all                                     Include all listed objects.
     bb-projects                             Target BitBucket repo branches from a project level
+    append-suffix                           Add a suffix to the end of project names during archival.
 
 Commands:
     list                                    List all projects of a source instance and save it to {CONGREGATE_PATH}/data/projects.json.
@@ -208,6 +210,7 @@ Commands:
     list-staged-projects-contributors       List all non-member contributors for all staged projects and save to file. GitLab ONLY.
 """
 
+
 import os
 import subprocess
 from sys import platform
@@ -282,6 +285,7 @@ def main():
         MEMBERSHIP = arguments["--membership"]
         SUBGROUPS_ONLY = arguments["--subgroups-only"]
         DEST = arguments["--dest"]
+        APPEND_SUFFIX = arguments["--append-suffix"]
 
         if SCM_SOURCE:
             SCM_SOURCE = strip_netloc(SCM_SOURCE)
@@ -334,6 +338,7 @@ def main():
             from congregate.migration.gitlab.diff.groupdiff import GroupDiffClient
             from congregate.migration.github.diff.repodiff import RepoDiffClient as GHRepoDiffClient
             from congregate.migration.bitbucket.diff.repodiff import RepoDiffClient as BBSRepoDiffClient
+            from congregate.migration.bitbucket_cloud.migrate import BitbucketCloudMigrateClient
             from congregate.helpers.user_util import map_users, map_and_stage_users_by_email_match
             from congregate.helpers.congregate_mdbc import CongregateMongoConnector
             from congregate.migration.github.repos import ReposClient as GHReposClient
@@ -363,6 +368,8 @@ def main():
             if arguments["list"]:
                 start = time()
                 rotate_logs()
+                # Default to json if not specified
+                fmt = arguments["--format"] or "json"
                 list_client = ListClient(
                     processes=PROCESSES,
                     partial=PARTIAL,
@@ -375,7 +382,8 @@ def main():
                     src_instances=SRC_INSTANCES,
                     subset=arguments["--subset"],
                     skip_archived_projects=arguments["--skip-archived-projects"],
-                    only_specific_projects=arguments["--only-specific-projects"]
+                    only_specific_projects=arguments["--only-specific-projects"],
+                    format=fmt
                 )
                 list_client.list_data()
                 add_post_migration_stats(start, log=log)
@@ -384,17 +392,23 @@ def main():
                 pass
 
             if arguments["stage-projects"]:
-                pcli = ProjectStageCLI()
+                # Default to json if not specified
+                fmt = arguments["--format"] or "json"
+                pcli = ProjectStageCLI(format=fmt)
                 pcli.stage_data(arguments['<projects>'],
                                 dry_run=DRY_RUN, skip_users=SKIP_USERS, scm_source=SCM_SOURCE)
 
             if arguments["stage-groups"]:
-                gcli = GroupStageCLI()
+                # Default to json if not specified
+                fmt = arguments["--format"] or "json"
+                gcli = GroupStageCLI(format=fmt)
                 gcli.stage_data(arguments['<groups>'],
                                 dry_run=DRY_RUN, skip_users=SKIP_USERS, scm_source=SCM_SOURCE)
 
             if arguments["stage-users"]:
-                ucli = UserStageCLI()
+                # Default to json if not specified
+                fmt = arguments["--format"] or "json"
+                ucli = UserStageCLI(format=fmt)
                 ucli.stage_data(arguments['<users>'], dry_run=DRY_RUN)
 
             if arguments["stage-wave"]:
@@ -514,7 +528,10 @@ def main():
                 projects.count_unarchived_projects(local=arguments["--local"])
             if arguments["archive-staged-projects"]:
                 # GitLab as source and/or destination instance
-                if (config.source_type == "gitlab") or DEST:
+                if (config.source_type == "gitlab") and APPEND_SUFFIX:
+                    projects.update_staged_projects_archive_state(
+                        append_suffix=APPEND_SUFFIX, dry_run=DRY_RUN, rollback=ROLLBACK)
+                elif (config.source_type == "gitlab") or DEST:
                     projects.update_staged_projects_archive_state(
                         dest=DEST, dry_run=DRY_RUN, rollback=ROLLBACK)
                 elif config.source_type == "github" or config.list_multiple_source_config("github_source"):

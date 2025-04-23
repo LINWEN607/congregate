@@ -182,6 +182,54 @@ class ImportClient(BaseClass):
             data.pop("personal_access_token", None)
             migration_dry_run("project", data)
             return self.get_failed_result(dst_pwn, data)
+    
+    def trigger_import_from_bitbucket_cloud(self, project, workspace, repo_slug, path_with_namespace, namespace, bb_username, bb_token, dry_run=True):
+        """
+        Trigger import from Bitbucket Cloud using GitLab's built-in importer
+        """
+        # Create import payload with correct parameter names
+        import_data = {
+            "bitbucket_username": bb_username,         # Changed from bitbucket_cloud_username
+            "bitbucket_app_password": bb_token,        # Changed from bitbucket_cloud_app_password
+            "repo_path": f"{workspace}/{repo_slug}",   # Added repo_path parameter
+            "new_name": project.get('name', repo_slug),
+            "target_namespace": namespace,
+        }
+        
+        # Include optional parameters if available
+        if project.get('description'):
+            import_data["description"] = project.get('description')
+        
+        if project.get('visibility'):
+            import_data["visibility"] = project.get('visibility')
+        
+        # Log the import attempt
+        self.log.info(f"Triggering Bitbucket Cloud import for {workspace}/{repo_slug} to {namespace}")
+        
+        if dry_run:
+            # Return a dry run result
+            self.log.info(f"[DRY RUN] Would import Bitbucket Cloud repo {workspace}/{repo_slug} to {namespace}")
+            return {path_with_namespace: {"response": "dry_run", "success": True}}
+        
+        # Make the API request to import the repository
+        host = self.config.destination_host
+        token = self.config.destination_token
+        
+        response = self.ext_import.import_from_bitbucket_cloud(
+            host=host,
+            token=token,
+            data=import_data
+        )
+        
+        # Process response
+        if isinstance(response, dict) and response.get('id'):
+            result = {path_with_namespace: {"response": response, "success": True}}
+            self.log.info(f"Successfully initiated Bitbucket Cloud import for {workspace}/{repo_slug}")
+        else:
+            result = {path_with_namespace: {"response": response, "success": False}}
+            self.log.error(f"Failed to import Bitbucket Cloud repo {workspace}/{repo_slug}: {response}")
+        
+        return result
 
     def trigger_import_from_ghe(self, project, dst_pwn, tn, host, token, dry_run=True):
         """

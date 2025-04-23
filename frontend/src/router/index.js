@@ -1,12 +1,9 @@
-import Vue from 'vue'
-import VueRouter from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
 import Home from '../views/Home.vue'
 import Projects from '../views/Projects.vue'
 import Groups from '../views/Groups.vue'
 import Users from '../views/Users.vue'
 import Settings from '../views/Settings.vue'
-
-Vue.use(VueRouter)
 
 const routes = [
   {
@@ -36,8 +33,11 @@ const routes = [
   }
 ]
 
-const router = new VueRouter({
-  routes
-})
+const router = createRouter({
+  history: createWebHashHistory(),
+  base: import.meta.env.BASE_URL,
+  routes,
+});
+
 
 export default router

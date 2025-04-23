@@ -11,6 +11,7 @@ from pathlib import Path
 from shutil import copy
 from time import time
 from datetime import timedelta, datetime
+from requests import Response
 from gitlab_ps_utils.misc_utils import is_error_message_present, get_dry_log, safe_json_response, strip_netloc
 from gitlab_ps_utils.json_utils import read_json_file_into_object, write_json_to_file
 from gitlab_ps_utils.dict_utils import dig
@@ -418,7 +419,7 @@ def sanitize_name(name, full_path, is_group=False, is_subgroup=False):
         if is_group:
             b.log.error(
                 f"Sub-group '{name}' ({full_path}) requires a rename on source or direct import")
-            
+
     if not is_group:
         # This is a project
         if valid.lower() in PROJECT_RESERVED_NAMES:
@@ -554,3 +555,9 @@ def check_download_directory(directory_path):
     Check if the download directory exists.
     """
     return os.path.isdir(directory_path)
+
+def default_response():
+    resp = Response()
+    resp.status_code = 400
+    resp._content = b"Unable to execute import request"
+    return resp

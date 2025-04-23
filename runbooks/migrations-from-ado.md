@@ -2,7 +2,7 @@
 
 # Migration Wave
 
-This runbook covers the process of migrating a wave of **project's repositories** from a source Azure DevOps instance to self managed, dedicated GitLab or gitlab.com instance.
+This runbook covers the process of migrating a wave of **projects and project repositories** from an Azure DevOps instance to GitLab self managed, Dedicated or gitlab.com instance.
 
 ## Slack channel for communication
 
@@ -146,11 +146,12 @@ Instructions for user migration collapsed by default.
 
 ### Group and project migration
 
-For Azure DevOps to GitLab.com project's repositories can be migrated (project's repository becomes gitlab project). 
+* Azure DevOps project becomes GitLab [Sub-Group](https://docs.gitlab.com/user/group/subgroups/) (or top level group if self-managed or dedicated is used as a target)
+* Azure DevOps repository becomes [GitLab Project](https://docs.gitlab.com/user/project/) based on Azure DevOps repository Git data.
+    **NOTE:** We currently only support Git type of Azure DevOps (TFVC support is currently **not** available. See [open issue](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/issues/1248)).
 
-Known issues: 
+Known issues:
 
-* We don't create GitLab Project for Azure DevOps projects with 1+ repository (open [issue](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/issues/1147)). Listing supports [two options](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/issues/1056) though.
 * CSV staging is not fully supported (open [issue](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/issues/1120)).
 
 #### Staging projects
@@ -158,9 +159,23 @@ Known issues:
 * [ ] Open `data/projects.json` and find out IDs of projects to stage. **NOTE**, Azure DevOps uses [Universally Unique Identifier (UUID)](https://en.wikipedia.org/wiki/Universally_unique_identifier) and therefore IDs in all listed objects use this format.
 * [ ] Run the following command to stage projects: `congregate stage-projects project_id_1 project_id_2 project_id_n --commit` (replace `project_id_1`, `project_id_2`, `project_id_n` with the values noted in previous step). You can pass as many project IDs as you want, keep them space separated as shown in the command earlier.
 
+#### Staging groups
+
+* [ ] Open `data/groups.json` and find out IDs of groups to stage. **NOTE**, Azure DevOps uses [Universally Unique Identifier (UUID)](https://en.wikipedia.org/wiki/Universally_unique_identifier) and therefore IDs in all listed objects use this format.
+* [ ] Run the following command to stage projects: `congregate stage-groups group_id_1 group_id_2 group_id_n --commit` (replace `group_id_1`, `group_id_2`, `group_id_n` with the values noted in previous step). You can pass as many group IDs as you want, keep them space separated as shown in the command earlier.
+
 #### Dry run projects
 
 * [ ] Run the following command: `nohup congregate migrate --skip-users --skip-groups > data/waves/wave_<insert_wave_number>/wave_<insert_wave_number>_dry_run.log 2>&1 &`
+* [ ] Confirm everything looks correct and move on to the next step in the runbook
+  * Specifically, review the API requests and make sure the paths look correct. For example, make sure any parent IDs, target namespace or other namespaces are matching the parent ID and parent namespaces we have specified in the congregate config.
+  * If anything looks wrong in the dry run, make a note of it in the issue and reach out to `@gitlab-org/professional-services-automation/tools/migration` for review. Do not proceed with the migration if the dry run data looks incorrect. If this is incorrect, the data we send will be incorrect.
+* [ ] Copy `data/results/dry_run_*_migration.json` to `/opt/congregate/data/waves/wave_<insert_wave_number>/` and attach to this issue
+* [ ] Notify in the internal Slack channel dedicated to this migration you have completed dry run for the wave
+
+#### Dry run groups
+
+* [ ] Run the following command: `nohup congregate migrate --skip-users --skip-projects > data/waves/wave_<insert_wave_number>/wave_<insert_wave_number>_dry_run.log 2>&1 &`
 * [ ] Confirm everything looks correct and move on to the next step in the runbook
   * Specifically, review the API requests and make sure the paths look correct. For example, make sure any parent IDs, target namespace or other namespaces are matching the parent ID and parent namespaces we have specified in the congregate config.
   * If anything looks wrong in the dry run, make a note of it in the issue and reach out to `@gitlab-org/professional-services-automation/tools/migration` for review. Do not proceed with the migration if the dry run data looks incorrect. If this is incorrect, the data we send will be incorrect.
@@ -184,7 +199,97 @@ Known issues:
   * In case of missing MRs that are critical to the customer and business:
     * [ ] Stage and rollback projects with critical failed relations
       * **NOTE:** `--skip-users` and `--skip-groups`
-    * [ ] Repeat [migration](#migrate-group-and-projects)
+    * [ ] Repeat [migration](#groups-and-projects-migration)
+    * [ ] Once complete, and in case of consistently missing info, discuss and request verbal or written sign-off from customer
+      * [ ] Otherwise [rollback](#rollback) the entire wave and reschedule
+* [ ] Inspect [Kibana](https://log.gprd.gitlab.net/app/discover) logs for failed group and project membership
+  * Adjust the time frame to the migration period
+  * Query `pubsub-sidekiq-inf-gprd*` for `json.message: "[Project/Group Import] Member addition failed" AND json.root_namespace_id: "<parent-group-id>"`
+  * (optional) Add additional fields to the query .e.g:
+    * `json.message`
+    * `json.importable_type`
+    * `json.user_id`
+    * `json.access_level`
+* [ ] Inspect [Kibana](https://log.gprd.gitlab.net/app/discover) logs for failed group and project imports
+  * Adjust the time frame to the migration period
+  * Query `pubsub-sidekiq-inf-gprd*` for `json.class: "RepositoryImportWorker" AND json.meta.remote_ip: "<migration-vm-ip>"`
+    * (optional) Add fields `json.meta.project` and `json.job_status`
+  * Query `pubsub-sidekiq-inf-gprd*` for `json.class: "GroupImportWorker" AND json.meta.remote_ip: "<migration-vm-ip>"`
+    * (optional) Add field `json.job_status`
+  * For more options checkout the [Support workflow for import errors](https://about.gitlab.com/handbook/support/workflows/kibana.html#import-errors)
+* [ ] Inspect [Kibana](https://log.gprd.gitlab.net/app/discover) logs for other import errors
+  * Adjust the time frame to the migration period
+  * Add `json.severity: ERROR`
+  * Query `pubsub-sidekiq-inf-gprd*` for `json.extra.sidekiq.meta.remote_ip : "<migration-vm-ip>"`
+    * (optional) Add additional fields to the query .e.g:
+      * `json.extra.sidekiq.class`
+      * `json.exception.message`
+      * `json.exception.class`
+      * `json.extra.relation_name`
+
+#### Migrate groups
+
+* [ ] Notify in the internal Slack channel dedicated to this migration you are starting the migration wave
+* [ ] Notify the customer in the customer-facing Slack channel you are starting the migration wave
+* [ ] Run the following command `nohup congregate migrate --skip-users --skip-projects --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log 2>&1 &`
+* [ ] Monitor the wave periodically by running `tail -f data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log`
+* [ ] Copy the following files to `/opt/congregate/data/waves/wave_<insert_wave_number>/` and attach to this issue:
+  * `data/logs/congregate.log`
+  * `data/logs/audit.log`
+  * `data/results/group_migration_results.json`
+  * `data/results/project_migration_results.json`
+  * `data/logs/import_failed_relations.json`
+  * `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log`congregate/data/waves/wave\_/\`
+* [ ] Inspect `data/logs/import_failed_relations.json` for any project import failed relations (missing feature info)
+  * In case of missing MRs that are critical to the customer and business:
+    * [ ] Stage and rollback projects with critical failed relations
+      * **NOTE:** `--skip-users` and `--skip-projects`
+    * [ ] Repeat [migration](#groups-and-projects-migration)
+    * [ ] Once complete, and in case of consistently missing info, discuss and request verbal or written sign-off from customer
+      * [ ] Otherwise [rollback](#rollback) the entire wave and reschedule
+* [ ] Inspect [Kibana](https://log.gprd.gitlab.net/app/discover) logs for failed group and project membership
+  * Adjust the time frame to the migration period
+  * Query `pubsub-sidekiq-inf-gprd*` for `json.message: "[Project/Group Import] Member addition failed" AND json.root_namespace_id: "<parent-group-id>"`
+  * (optional) Add additional fields to the query .e.g:
+    * `json.message`
+    * `json.importable_type`
+    * `json.user_id`
+    * `json.access_level`
+* [ ] Inspect [Kibana](https://log.gprd.gitlab.net/app/discover) logs for failed group and project imports
+  * Adjust the time frame to the migration period
+  * Query `pubsub-sidekiq-inf-gprd*` for `json.class: "RepositoryImportWorker" AND json.meta.remote_ip: "<migration-vm-ip>"`
+    * (optional) Add fields `json.meta.project` and `json.job_status`
+  * Query `pubsub-sidekiq-inf-gprd*` for `json.class: "GroupImportWorker" AND json.meta.remote_ip: "<migration-vm-ip>"`
+    * (optional) Add field `json.job_status`
+  * For more options checkout the [Support workflow for import errors](https://about.gitlab.com/handbook/support/workflows/kibana.html#import-errors)
+* [ ] Inspect [Kibana](https://log.gprd.gitlab.net/app/discover) logs for other import errors
+  * Adjust the time frame to the migration period
+  * Add `json.severity: ERROR`
+  * Query `pubsub-sidekiq-inf-gprd*` for `json.extra.sidekiq.meta.remote_ip : "<migration-vm-ip>"`
+    * (optional) Add additional fields to the query .e.g:
+      * `json.extra.sidekiq.class`
+      * `json.exception.message`
+      * `json.exception.class`
+      * `json.extra.relation_name`
+
+#### Migrate groups and projects
+
+* [ ] Notify in the internal Slack channel dedicated to this migration you are starting the migration wave
+* [ ] Notify the customer in the customer-facing Slack channel you are starting the migration wave
+* [ ] Run the following command `nohup congregate migrate --skip-users --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log 2>&1 &`
+* [ ] Monitor the wave periodically by running `tail -f data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log`
+* [ ] Copy the following files to `/opt/congregate/data/waves/wave_<insert_wave_number>/` and attach to this issue:
+  * `data/logs/congregate.log`
+  * `data/logs/audit.log`
+  * `data/results/group_migration_results.json`
+  * `data/results/project_migration_results.json`
+  * `data/logs/import_failed_relations.json`
+  * `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log`congregate/data/waves/wave\_/\`
+* [ ] Inspect `data/logs/import_failed_relations.json` for any project import failed relations (missing feature info)
+  * In case of missing MRs that are critical to the customer and business:
+    * [ ] Stage and rollback projects with critical failed relations
+      * **NOTE:** `--skip-users`
+    * [ ] Repeat [migration](#groups-and-projects-migration)
     * [ ] Once complete, and in case of consistently missing info, discuss and request verbal or written sign-off from customer
       * [ ] Otherwise [rollback](#rollback) the entire wave and reschedule
 * [ ] Inspect [Kibana](https://log.gprd.gitlab.net/app/discover) logs for failed group and project membership
@@ -242,8 +347,6 @@ For each migration attempt check if any project or group imports failed or have 
   * `data/results/project_migration_results.json`
   * `data/logs/import_failed_relations.json`
   * `data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log`
-
-####
 
 ### Post Migration of Failed User, Group and Project Info
 

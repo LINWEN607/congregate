@@ -1,11 +1,20 @@
 // Helper script to check for the existence of specific Celery tasks in API responses
 
 export const listJobs = [
-    'congregate.cli.list_source.list_data',
-    'traverse-groups',
-    'retrieve-projects',
-    'retrieve-user',
-    'list-data'
+    'list_data',
+    'retrieve-bbs-users',
+    'retrieve-bbs-projects',
+    'retrieve-bbs-repos',
+    'retrieve-bbs-user-groups',
+    'retrieve-gh-users',
+    'retrieve-gh-orgs',
+    'retrieve-gh-repos',
+    'retrieve-gl-users',
+    'retrieve-gl-groups',
+    'retrieve-gl-projects',
+    'retrieve-ado-users',
+    'retrieve-ado-projects',
+    'retrieve-ado-groups'
 ]
 
 export const migrateJobs = [

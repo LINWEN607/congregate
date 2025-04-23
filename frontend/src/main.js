@@ -1,19 +1,16 @@
-import Vue from 'vue'
+import { createApp } from 'vue'
 import mitt from 'mitt'
 import App from './App.vue'
 import router from './router'
-import { createPinia, PiniaVuePlugin } from 'pinia'
+import { createPinia } from 'pinia'
 
-Vue.config.productionTip = false
 
+const app = createApp(App)
 const emitter = mitt()
-Vue.prototype.$emitter = emitter
-
-Vue.use(PiniaVuePlugin)
 const pinia = createPinia()
 
-new Vue({
-  router,
-  pinia,
-  render: h => h(App)
-}).$mount('#app')
+app.config.globalProperties.emitter = emitter
+app.use(router)
+app.use(pinia)
+app.mount("#app")
+

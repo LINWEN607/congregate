@@ -43,7 +43,7 @@ class GitHubBrowser(BaseClass):
                 soup = bs(resp.text, 'html.parser')
                 if site_admin_detail_list := soup.find("ul", {"class": 'site-admin-detail-list'}):
                     try:
-                        email = site_admin_detail_list.findAll(
+                        email = site_admin_detail_list.find_all(
                             'li')[1].getText().strip().split("\n")[0]
                         if "@" in email:
                             return email

@@ -18,15 +18,19 @@ import congregate.helpers.migrate_utils as mig_utils
 
 from congregate.migration.meta.base_migrate import MigrateClient
 from congregate.migration.gitlab.external_import import ImportClient
+from congregate.migration.gitlab.importexport import ImportExportClient
 from congregate.migration.gitlab.branches import BranchesClient
 from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
 from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
 from congregate.migration.ado.api.pull_requests import PullRequestsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi as GitlabProjectsApi
+from congregate.migration.ado.api.projects import ProjectsApi as AdoProjectsApi
 from congregate.migration.ado.projects import ProjectsClient
 from congregate.migration.ado.export import AdoExportBuilder
+from congregate.migration.ado.export import AdoGroupExportBuilder
 from congregate.helpers.migrate_utils import get_export_filename_from_namespace_and_name
 from congregate.migration.gitlab.importexport import ImportExportClient
+from congregate.migration.gitlab.variables import VariablesClient
 
 class AzureDevopsMigrateClient(MigrateClient):
     def __init__(self,
@@ -48,10 +52,13 @@ class AzureDevopsMigrateClient(MigrateClient):
                  scm_source=None,
                  group_structure=False):
         self.ext_import = ImportClient()
+        self.ie = ImportExportClient()
         self.project_repository_api = ProjectRepositoryApi()
         self.merge_requests_api = MergeRequestsApi()
         self.pull_requests_api = PullRequestsApi()
         self.gitlab_projects_api = GitlabProjectsApi()
+        self.gitlab_variables_api = VariablesClient()
+        self.ado_projects_api = AdoProjectsApi()
         self.azure_projects_client = ProjectsClient()
         self.branches = BranchesClient()
         super().__init__(dry_run,
@@ -60,6 +67,7 @@ class AzureDevopsMigrateClient(MigrateClient):
                          start,
                          skip_users,
                          remove_members,
+                         False,
                          hard_delete,
                          stream_groups,
                          skip_groups,
@@ -71,15 +79,61 @@ class AzureDevopsMigrateClient(MigrateClient):
                          subgroups_only,
                          scm_source,
                          group_structure)
-        
+
     def migrate(self):
         dry_log = misc_utils.get_dry_log(self.dry_run)
-
         # Migrate users
         self.migrate_user_info()
 
+        self.migrate_group_info()
+
         # Migrate Azure projects as GL groups
         self.migrate_project_info()
+
+    def migrate_group_info(self):
+        staged_groups = mig_utils.get_staged_groups()
+        dry_log = get_dry_log(self.dry_run)
+        if staged_groups:
+            if not self.skip_group_export:
+                self.log.info(f"{dry_log}Exporting groups")
+                export_results = list(er for er in self.multi.start_multi_process(
+                    self.handle_exporting_azure_group, staged_groups, processes=self.processes))
+                
+                self.are_results(export_results, "group", "export")
+                
+                # Create list of groups that failed export
+                if failed := mig_utils.get_failed_export_from_results(
+                        export_results):
+                    self.log.warning("SKIP: Groups that failed to export or already exist on destination:\n{}".format(
+                        json_pretty(failed)))
+
+                # Append total count of groups exported
+                export_results.append(mig_utils.get_results(export_results))
+                self.log.info("### {0}Group export results ###\n{1}"
+                              .format(dry_log, json_pretty(export_results)))
+
+                # Filter out the failed ones
+                staged_groups = mig_utils.get_staged_groups_without_failed_export(
+                    staged_groups, failed)
+            else:
+                self.log.info(
+                    "SKIP: Assuming staged groups are already exported")
+            if not self.skip_group_import:
+                self.log.info("{}Importing groups".format(dry_log))
+                import_results = list(ir for ir in self.multi.start_multi_process(
+                    self.handle_importing_azure_group, staged_groups, processes=self.processes))
+                
+                self.are_results(import_results, "group", "import")
+
+                # append Total : Successful count of group imports
+                import_results.append(mig_utils.get_results(import_results))
+                self.log.info("### {0}Group import results ###\n{1}"
+                              .format(dry_log, json_pretty(import_results)))
+            else:
+                self.log.info(
+                    "SKIP: Assuming staged groups will be later imported")
+        else:
+            self.log.warning("SKIP: No groups staged for migration")
 
     def migrate_project_info(self):
         staged_projects = mig_utils.get_staged_projects()
@@ -115,6 +169,9 @@ class AzureDevopsMigrateClient(MigrateClient):
             else:
                 self.log.info(
                     "SKIP: Assuming staged projects are already exported")
+            # print(self.skip_project_export)
+            # print(self.skip_project_import)
+
 
             if not self.skip_project_import:
                 self.log.info("{}Importing projects".format(dry_log))
@@ -134,13 +191,77 @@ class AzureDevopsMigrateClient(MigrateClient):
         else:
             self.log.warning("SKIP: No projects staged for migration")
 
+    def handle_exporting_azure_group(self, group):
+        if self.dry_run:
+            exported_file = get_export_filename_from_namespace_and_name(group['full_path'], group['name'])
+            self.log.info(f"DRY-RUN: Would export Azure group info to {exported_file}")
+        else:
+            exported_file = AdoGroupExportBuilder(group).create()
+            self.log.info(f"Exported Azure group info to {exported_file}")
+        return {
+            exported_file: True
+        }
+
+    def handle_importing_azure_group(self, group, filename=None):
+        try:
+            if isinstance(group, str):
+                group = json_loads(group)
+            full_path = group["full_path"]
+            src_gid = group["id"]
+            full_path_with_parent_namespace = mig_utils.get_full_path_with_parent_namespace(
+                full_path)
+            filename = mig_utils.get_export_filename_from_namespace_and_name(
+                full_path)
+            result = {
+                full_path_with_parent_namespace: False
+            }
+            import_id = None
+            dry_log = get_dry_log(self.dry_run)
+            dst_grp = self.groups.find_group_by_path(
+                self.config.destination_host, self.config.destination_token, full_path_with_parent_namespace)
+            dst_gid = dst_grp.get("id") if dst_grp else None
+            if dst_gid:
+                self.log.info(
+                    f"{dry_log}Group {full_path} (ID: {dst_gid}) already exists on destination")
+                result[full_path_with_parent_namespace] = dst_gid
+                if self.only_post_migration_info and not self.dry_run:
+                    import_id = dst_gid
+                else:
+                    result[full_path_with_parent_namespace] = dst_gid
+            else:
+                imported = self.ie.import_group(
+                    group,
+                    full_path_with_parent_namespace,
+                    filename,
+                    dry_run=self.dry_run,
+                    subgroups_only=self.subgroups_only
+                )
+                # In place of checking the import status
+                if not self.dry_run and imported:
+                    import_id = self.ie.wait_for_group_import(
+                        full_path_with_parent_namespace).get("id")
+            if import_id and not self.dry_run:
+                # Disable Shared CI
+                # self.disable_shared_ci(full_path_with_parent_namespace, import_id)
+                # Migrate ADO Variable Groups and Variables
+                self.migrate_cicd_variables(group["name"], src_gid, import_id)
+                result[full_path_with_parent_namespace] = import_id
+        except (RequestException, KeyError, OverflowError) as oe:
+            self.log.error(
+                f"Failed to import group {full_path} (ID: {src_gid}) as {filename} with error:\n{oe}")
+        except Exception as e:
+            self.log.error(e)
+            self.log.error(print_exc())
+        return result
+
+
     def handle_exporting_azure_project(self, project):
         if self.dry_run:
             exported_file = get_export_filename_from_namespace_and_name(project['namespace'], project['name'])
-            self.log.info(f"DRY-RUN: Would export Azure repo info to {exported_file}")
+            self.log.info(f"DRY-RUN: Would export Azure project info to {exported_file}")
         else:
             exported_file = AdoExportBuilder(project).create()
-            self.log.info(f"Exported Azure repo info to {exported_file}")
+            self.log.info(f"Exported Azure project info to {exported_file}")
         return {
             exported_file: True
         }
@@ -201,85 +322,6 @@ class AzureDevopsMigrateClient(MigrateClient):
             self.log.error(print_exc())
         return result
     
-    def migrate_single_project_features(self, project, import_id, dest_host, dest_token):
-        pass
-        
-    def migrate_azure_repo_info(self, dry_log):
-        staged_projects = mig_utils.get_staged_projects()
-        if staged_projects and not self.skip_project_import:
-            mig_utils.validate_groups_and_projects(
-                staged_projects, are_projects=True)
-            if user_projects := mig_utils.get_staged_user_projects(
-                    staged_projects):
-                self.log.warning(
-                    f"USER repos staged ({len(user_projects)}):\n{json_pretty(user_projects)}")
-            self.log.info("Importing Azure Devops repos")
-            import_results = list(ir for ir in self.multi.start_multi_process(
-                self.import_azure_repo, staged_projects, processes=self.processes, nestable=True))
-
-            self.are_results(import_results, "project", "import")
-
-            # append Total : Successful count of project imports
-            import_results.append(mig_utils.get_results(import_results))
-            self.log.info(
-                f"### {dry_log}Azure Devops repos import result ###\n{json_pretty(import_results)}")
-            mig_utils.write_results_to_file(import_results, log=self.log)
-        else:
-            self.log.warning(
-                "SKIP: No Azure Devops repos staged for migration")
-
-    def import_azure_repo(self, project):
-        if project.get("namespace"):
-            pn = self.config.dstn_parent_group_path+"/"+project.get("namespace")
-        else:
-            pn = self.config.dstn_parent_group_path
-        dstn_pwn, tn = mig_utils.get_stage_wave_paths(project)
-        host = self.config.destination_host
-        token = self.config.destination_token
-        project_id = None
-        if self.group_structure or self.groups.find_group_id_by_path(host, token, tn):
-            # Already imported
-            if dst_pid := self.projects.find_project_by_path(host, token, dstn_pwn):
-                result = self.ext_import.get_result_data(
-                    dstn_pwn, {"id": dst_pid})
-                if self.only_post_migration_info:
-                    result = self.handle_azure_post_migration(
-                        result, dstn_pwn, project, dst_pid)
-                else:
-                    self.log.warning(
-                        f"Skipping import. Repo {dstn_pwn} has already been imported")
-            # New import
-            else:
-                result = self.ext_import.trigger_import_from_repo(
-                    pn, dstn_pwn, tn, project, dry_run=self.dry_run)
-                result_response = result[dstn_pwn]["response"]
-                if (isinstance(result_response, dict)) and (project_id := result_response.get("id")):
-                    full_path = result_response.get("path_with_namespace").strip("/")
-                    success = self.ext_import.wait_for_project_to_import(
-                        full_path)
-                    if success:
-                        result = self.handle_azure_post_migration(
-                            result, dstn_pwn, project, project_id)
-                    else:
-                        result = self.ext_import.get_failed_result(
-                            dstn_pwn,
-                            data={"error": "Import failed or time limit exceeded. Unable to execute post migration phase"})
-                else:
-                    result = self.ext_import.get_failed_result(
-                        dstn_pwn,
-                        data={"error": f"Failed import, with response {result_response}. Unable to execute post migration phase"})
-            # Repo import status
-            if dst_pid or project_id:
-                result[dstn_pwn]["import_status"] = self.ext_import.get_external_repo_import_status(
-                    host, token, dst_pid or project_id)
-        else:
-            log = f"Target namespace {tn} does not exist"
-            self.log.warning("Skipping import. " + log +
-                             f" for {project['path']}")
-            result = self.ext_import.get_result_data(dstn_pwn, {
-                "error": log
-            })
-        return result
 
     def handle_azure_post_migration(self, result, path_with_namespace, project, pid):
 
@@ -371,3 +413,19 @@ class AzureDevopsMigrateClient(MigrateClient):
         except Exception as e:
             self.log.error(f"Error processing attachment from {ado_url}: {e}")
             return None
+        
+    def migrate_cicd_variables(self, ado_project_name, ado_project_id, group_id):
+        """
+        Finds all ADO variable groups and variables in the project
+        and creates them in the GitLab group.
+        """
+        self.log.info(f"Migrating ADO variable groups and variables from ADO project {ado_project_name} (ID: {ado_project_id}) to GitLab Group ID: {group_id}...")
+        variable_groups = self.ado_projects_api.get_all_variable_groups(ado_project_id).json()
+        for group in variable_groups.get("value", []):
+            group_name = group.get("name", "Unnamed Group")
+            self.log.info(f"Processing variable group: {group_name} (ID: {group.get('id')})")
+            variables = group.get("variables", {})
+            for key, value_data in variables.items():
+                value = value_data.get("value", "")
+                self.gitlab_variables_api.set_variables(
+                    group_id, self.config.destination_host, self.config.destination_token, var_type="group", data={"key": key, "value": value})

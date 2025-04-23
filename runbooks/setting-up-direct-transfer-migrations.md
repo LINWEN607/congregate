@@ -21,6 +21,8 @@ This documentation covers setting up a Congregate instance to use Direct Transfe
 
 ### 1. Install `docker` and `docker-compose` (if not already installed)
 
+*Note: This generally requires root access*
+
 Follow the official Docker installation guide for your operating system:
 
 - [Install Docker](https://docs.docker.com/get-docker/)
@@ -31,7 +33,7 @@ Follow the official Docker installation guide for your operating system:
 Ensure the `$CONGREGATE_DATA` environment variable is set and points to your data directory. For example:
 
 ```bash
-export CONGREGATE_DATA=/root/congregate_work/data
+export CONGREGATE_DATA=/root/congregate_work
 ```
 
 Make sure the following directories exist:
@@ -40,6 +42,18 @@ Make sure the following directories exist:
 mkdir -p $CONGREGATE_DATA/congregate-data/logs
 mkdir -p $CONGREGATE_DATA/mongo-data
 mkdir -p $CONGREGATE_DATA/redis-cache
+touch $CONGREGATE_DATA/congregate-data/logs/gunicorn.log
+touch $CONGREGATE_DATA/congregate-data/logs/gunicorn_err.log
+touch $CONGREGATE_DATA/congregate-data/logs/celery.log
+touch $CONGREGATE_DATA/congregate-data/logs/celery_err.log
+touch $CONGREGATE_DATA/congregate-data/logs/flower.log
+touch $CONGREGATE_DATA/congregate-data/logs/flower_err.log
+```
+
+Note: Depending on who you run as when creating these folders and files, you may need to additionally allow the application to update the conf and logs:
+
+```bash
+chmod a+wr --recursive $CONGREGATE_DATA
 ```
 
 Create a `cache` directory in the same location where the docker-compose file will be run. This will be used for the Redis cache.
@@ -134,7 +148,7 @@ dstn_parent_group_id = <group-id>
 dstn_parent_group_path = <full-group-path>
 
 [APP]
-mongo_host = congregate_mongo
+mongo_host = mongo
 redis_host = redis
 direct_transfer = true
 ```
@@ -179,18 +193,38 @@ If the UI is hanging i.e. still running expired processes best is to restart `do
 
 One may want to adjust the default (4) `celery` concurrency i.e. number of parallel processes/tasks handling the direct-transfer bulk import.
 
-1. In the `congregate` container edit the `supervisorctl` config `/etc/supervisor/conf.d/supervisord.conf`
-1. Update the `[program:congregate-celery]` section as follows:
+1. Update the `[APP]` section of your `congergate.conf` file to include the following setting:
 
-    ```ini
-    command=bash -c "cd /opt/congregate && poetry run celery -A congregate.ui.wsgi.celery_app worker --concurrency=<number-of-processes>"
-    ```
+```bash
+processes = <num-of-processes>
+```
 
-1. Reload the supervisor configuration and restart all supervisor services from within the `congregate` container by restarting `supervisorctl`, as follows:
+The new configuration file should look something like:
 
-    ```bash
-    supervisorctl stop all
-    supervisorctl reread
-    supervisorctl update
-    supervisorctl start all
-    ```
+```bash
+[SOURCE]
+src_hostname = https://<gitlab-source>
+src_access_token = <base64-encoded-token>
+src_type = GitLab
+
+# Optional
+src_parent_group_id = <group-id>
+src_parent_group_path = <full-group-path>
+
+[DESTINATION]
+dstn_hostname = https://<gitlab-destination>
+dstn_access_token = <base64-encoded-token>
+import_user_id = <id-corresponding-to-the-owner-of-the-token>
+
+# Optional
+dstn_parent_group_id = <group-id>
+dstn_parent_group_path = <full-group-path>
+
+[APP]
+mongo_host = mongo
+redis_host = redis
+direct_transfer = true
+processes = <num-of-processes> # new entry added here
+```
+
+2. Once the configuration file has been updated, restart all services by running `supervisorctl restart all`

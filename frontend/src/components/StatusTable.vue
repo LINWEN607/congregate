@@ -1,11 +1,13 @@
 <template>
     <table v-if="data.length > 0">
-        <tr>
-            <th v-for="header in headers">{{ header }}</th>
-        </tr>
-        <tr v-for="row in data">
-            <td v-for="key in headers">{{ row[key] }}</td>
-        </tr>
+        <tbody>
+            <tr>
+                <th v-for="header in headers">{{ header }}</th>
+            </tr>
+            <tr v-for="row in data">
+                <td v-for="key in headers">{{ row[key] }}</td>
+            </tr>
+        </tbody>
     </table>
 </template>
 <script>

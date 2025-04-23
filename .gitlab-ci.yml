@@ -13,6 +13,13 @@ include:
   - template: Jobs/Dependency-Scanning.gitlab-ci.yml
   - template: Code-Quality.gitlab-ci.yml
   - local: ci/vault.yml
+  - component: gitlab.com/gitlab-org/professional-services-automation/ci-cd-components/bump-version@0.3.0
+    inputs:
+      stage: bump version
+      access_token: $ACCESS_TOKEN
+      push_url: $PUSH_URL
+      bot_user: $BOT_USER
+      bot_email: $BOT_EMAIL
 
 variables:
   DOCKER_VERSION: "20.10.22"
@@ -491,24 +498,10 @@ test:Jenkins Integration Tests:
       fi
 
 bump version:
-  image: registry.gitlab.com/gitlab-org/release-cli:latest
-  stage: bump version
   extends:
     - .release-creds
   variables:
     GIT_DEPTH: 250
-  script:
-    - apk --update add python3 py-pip git
-    - pip install poetryupvers
-    - ppuv bump
-    - ppuv generate-release-notes --save --path=./notes.md
-    - ppuv push-bump --config-user=$BOT_USER --config-email=$BOT_EMAIL --remote=origin --url=$PUSH_URL --branch="HEAD:$CI_COMMIT_BRANCH"
-    - release-cli create --name "$(cat VERSION)" --ref $(git rev-parse HEAD) --tag-name "$(cat VERSION)" --description "$(cat notes.md)"
-  rules:
-    - if: $CI_COMMIT_MESSAGE =~ /Bump version/
-      when: never
-    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
-      when: manual
 
 debian rolling release:
   extends:

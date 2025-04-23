@@ -2,16 +2,16 @@
 
 ## Requirements
 
-  - Migration VM or machine to use as the proxy
-  - External DNS name for the proxy system with certificate (generated automatically if you use the certbot instructions below)
-  - Connectivity from the proxy machine to the customers system
-    - In this scenario that means that the customer system must allow 443 access to their source instance from the proxy box
-  - Two-way connectivity between the proxy machine to the destination system
-    - Destination must see proxy, proxy must see destination over 443
-  - A certificate for the source system
-    - This can be CA signed or self-signed, but the choice changes the configuration of the proxy
-  - If a VPN is required, there may be additional considerations. Consult the [VPN helper documentation](https://gitlab.com/gitlab-org/professional-services-automation/tools/vpn_settings)
- 
+- Migration VM or machine to use as the proxy
+- External DNS name for the proxy system with certificate (generated automatically if you use the certbot instructions below)
+- Connectivity from the proxy machine to the customers system
+  - In this scenario that means that the customer system must allow 443 access to their source instance from the proxy box
+- Two-way connectivity between the proxy machine to the destination system
+  - Destination must see proxy, proxy must see destination over 443
+- A certificate for the source system
+  - This can be CA signed or self-signed, but the choice changes the configuration of the proxy
+- If a VPN is required, there may be additional considerations. Consult the [VPN helper documentation](https://gitlab.com/gitlab-org/professional-services-automation/tools/vpn_settings)
+
 ## Install certbot
 
  ```bash
@@ -22,12 +22,11 @@
 
 You will be prompted for an email "used for urgent renewal and security notices". Feel free to enter a dummy email if this is a temporary solution and you do not plan to maintain the certificate.
 
- **NOTE:** 
-  - You will need to allow port 80 and 443 open to the world for `certbot` to generate a cert from host VM
-  - If using a GitLab-managed VM, file an MR for the IaC pipelines. Do not modify via the console
-    - Allow 80 and 443 for `0.0.0.0/0`
-  - Remove the `0.0.0.0/0` when you are done generating the certificates
-    - You will still need to allow access from the appropriate destination systems (GitLab API fleet), the engineers, and admins
+- You will need to allow port 80 and 443 open to the world for `certbot` to generate a cert from host VM
+- If using a GitLab-managed VM, file an MR for the IaC pipelines. Do not modify via the console
+  - Allow 80 and 443 for `0.0.0.0/0`
+- Remove the `0.0.0.0/0` when you are done generating the certificates
+  - You will still need to allow access from the appropriate destination systems (GitLab API fleet), the engineers, and admins
 
 ## Certificates
 
@@ -35,14 +34,14 @@ You will be prompted for an email "used for urgent renewal and security notices"
 
 If you followed the instructions above, `certbot` has already configured NGINX for your `/etc/nginx/sites-available/default` file to have the proper domain and certificate settings. Example:
 
-```
-    server_name congregate.example.net; # managed by Certbot. This is external DNS for the proxy system
-    listen [::]:443 ssl ipv6only=on; # managed by Certbot
-    listen 443 ssl; # managed by Certbot
-    ssl_certificate /etc/letsencrypt/live/congregate.example.net/fullchain.pem; # managed by Certbot
-    ssl_certificate_key /etc/letsencrypt/live/nginx-test.gmgitlabglpersonal.net/privkey.pem; # managed by Certbot
-    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
-    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+```conf
+  server_name congregate.example.net; # managed by Certbot. This is external DNS for the proxy system
+  listen [::]:443 ssl ipv6only=on; # managed by Certbot
+  listen 443 ssl; # managed by Certbot
+  ssl_certificate /etc/letsencrypt/live/congregate.example.net/fullchain.pem; # managed by Certbot
+  ssl_certificate_key /etc/letsencrypt/live/nginx-test.gmgitlabglpersonal.net/privkey.pem; # managed by Certbot
+  include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+  ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
 ```
 
 **It is generally easiest to modify the default in place rather than attempt to setup a separate sites file**
@@ -56,18 +55,19 @@ If you would rather split those out into separate files, you can cut/paste the i
 If the customer system is using a self-signed certificate, you will need let NGINX know what that certificate is so that it can trust it when forwarding to the upstream system.
 
 In the simplest form, if the customers generated their certificate from openssl like:
-```
+
+```bash
 sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout selfsigned.key -out selfsigned.crt
 ```
 
 Then we just need the CRT file. With that, we can configure NGINX like so:
 
-```
-  proxy_pass                     https://secured-client.net;
-  proxy_ssl_trusted_certificate  /etc/nginx/selfsigned.crt;      # cert for the client (customer) self-signed
-  proxy_ssl_verify               on;
-  proxy_ssl_verify_depth         2;
-  proxy_ssl_session_reuse        on;
+```conf
+proxy_pass                     https://secured-client.net;
+proxy_ssl_trusted_certificate  /etc/nginx/selfsigned.crt;      # cert for the client (customer) self-signed
+proxy_ssl_verify               on;
+proxy_ssl_verify_depth         2;
+proxy_ssl_session_reuse        on;
 ```
 
 This should be sufficient for NGINX to trust the upstream customer system. In some instances, you may need to create a "full" self-signed cert
@@ -76,12 +76,11 @@ This should be sufficient for NGINX to trust the upstream customer system. In so
 
 If the customer is just using a standard CA certificate (such as the one generated by certbot for the proxy) there should not be anything that you need to configure for NGINX in regards to customer certificates.
 
-#### Building a Full-Certificate 
+#### Building a Full-Certificate
 
-These are the old instructions, but I cannot figure out exactly why they were ever needed. My current theory is that they may be necessary if a customer runs an internal CA and issues a certificate that is "full-chain" but not available via the default ca-bundles
+These are the old instructions, but I cannot figure out exactly why they were ever needed. My current theory is that they may be necessary if a customer runs an internal CA and issues a certificate that is "full-chain" but not available via the default ca-bundles.
 
-<details>
-<summary>Click to expand</summary>
+<details><summary>Click to expand</summary>
 
 - Retrieve self-signed certificate.
   - One may need to manually download the certificate from the SCM (BitBucket Server, GitHub) server.
@@ -100,19 +99,20 @@ These are the old instructions, but I cannot figure out exactly why they were ev
   leaf key
   -----END CERTIFICATE-----
   ```
+
 </details>
 
 ## NGINX Configuration
 
-As stated above, it may be easier to simply use the default configuration that certbot generates for you in NGINX. You may need to pull the header informatoin from the example conf file and add those as well, but I would test for their necessity before adding
+As stated above, it may be easier to simply use the default configuration that certbot generates for you in NGINX. You may need to pull the header information from the example conf file and add those as well, but I would test for their necessity before adding
 
-```
-    proxy_pass_request_headers on;
-    proxy_set_header    X-Real-IP           $remote_addr;
-    proxy_set_header    X-Forwarded-For     $proxy_add_x_forwarded_for;
-    proxy_set_header    X-Forwarded-Proto   $scheme;
-    proxy_set_header    Host                example.github.url.com;
-    client_max_body_size       40960M;
+```conf
+proxy_pass_request_headers on;
+proxy_set_header    X-Real-IP           $remote_addr;
+proxy_set_header    X-Forwarded-For     $proxy_add_x_forwarded_for;
+proxy_set_header    X-Forwarded-Proto   $scheme;
+proxy_set_header    Host                example.github.url.com;
+client_max_body_size       40960M;
 ```
 
 If you wish to generate your own configuration file, remember to remove the proxy-specific settings from the default. Otherwise, they may conflict

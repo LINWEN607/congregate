@@ -9,16 +9,25 @@
         <div v-if="directTransfer && !migrationInProgress">
           Migrate staged data to destination GitLab instance
           <br>
-          <button @click="triggerMigration">Migrate</button>
+          <button @click="promptConfirmation">Migrate</button>
           <ParamForm formId="migrate-params" :params="params"/>
         </div>
-        <div class="in-progress" v-else>
+        <div class="in-progress" v-if="directTransfer && migrationInProgress">
           <span class="loader"></span>
           <span><b v-if="dryRun == true">DRY RUN </b>Migration in progress</span>
           <StatusTable :headers="statusColumns" :data="statusData"/>
         </div>
         <br>
         <br>
+        <div v-if="directTransferGeneratedRequest">
+          <sub>
+            A dry run was recently cached. Please review before you commit the migration.
+            <br>
+            <button @click="showDryRun">View/Edit Migration Payload</button>
+          </sub>
+          <br>
+        </div>
+        
         <i>
           <sub>
             Congregate is currently configured to migrate from 
@@ -30,6 +39,7 @@
 </template>
 
 <script>
+import { toRaw } from 'vue'
 import axios from 'axios'
 import { mapStores } from 'pinia'
 import { poll } from '@/scripts/poll.js'
@@ -64,7 +74,7 @@ export default {
     },
     directTransfer() {
       if (!this.isSettingsStoreEmpty) {
-        return Boolean(this.systemStore.settings.APP.direct_transfer)
+        return this.systemStore.settings.APP.direct_transfer
       }
     },
     migrationInProgress() {
@@ -72,6 +82,14 @@ export default {
     },
     isSettingsStoreEmpty() {
       return JSON.stringify(this.systemStore.settings) === '{}'
+    },
+    directTransferGeneratedRequest() {
+      return Object.keys(this.systemStore.directTransferGeneratedRequest).length > 0
+    },
+    directTransferStatusUrl() {
+      if (!this.isSettingsStoreEmpty) {
+        return `${this.destinationUrl}/import/bulk_imports/history`
+      }
     }
   },
   data () {
@@ -93,15 +111,39 @@ export default {
     }
   },
   mounted: function () {
-    this.$emitter.on('migration-in-progress', () => {
+    this.emitter.on('migration-in-progress', () => {
       this.systemStore.updateMigrationInProgress(true)
       this.pollMigrationStatus()
     })
+    this.emitter.on('save-modified-payload', (data) => {
+      this.systemStore.updateDirectTransferModifiedRequest(data)
+    })
+    this.emitter.on('confirm-migration', () => {
+      this.triggerMigration()
+    })
   },
   beforeDestroy: function() {
-    this.$emitter.off('migration-in-progress')
+    this.emitter.off('migration-in-progress')
   },
   methods: {
+    promptConfirmation: function() {
+      let params = {}
+      let form = new FormData(document.getElementById('migrate-params'))
+      for (const [key, value] of form) {
+          params[key] = Boolean(value)
+      }
+      if (params.hasOwnProperty('commit')) {
+        this.dryRun = false
+        this.emitter.emit('show-dry-run', {
+          left: this.systemStore.directTransferGeneratedRequest, 
+          right: this.systemStore.directTransferModifiedRequest,
+          dryRun: false
+        })
+      } else {
+        this.triggerMigration()
+      }
+      
+    },
     triggerMigration: function() {
       this.systemStore.updateMigrationInProgress(true)
       let params = {}
@@ -123,8 +165,18 @@ export default {
         }
         if (params.hasOwnProperty('commit')) {
           this.dryRun = false
+        } else {
+          this.dryRun = true
+          this.systemStore.updateDirectTransferGeneratedRequest({})
+          this.systemStore.updateDirectTransferModifiedRequest({})
         }
-        axios.post(migrateEndpoint).then(response => {
+        var payload = null
+        if (!Object.keys(this.systemStore.directTransferModifiedRequest).length == 0 && this.dryRun == false) {
+          payload = {"payload": toRaw(this.systemStore.directTransferModifiedRequest)}
+        } else {
+          payload = {}
+        }
+        axios.post(migrateEndpoint, payload).then(response => {
           if (!params.hasOwnProperty('commit')) {
             this.pollDryRunStatus(response.data.task_id)
           } else {
@@ -150,8 +202,16 @@ export default {
       let validate = result => result.data.status == 'STARTED'
       let response = await poll(pollStatus, validate, 2500)
       if (response.data.result != null) {
-        this.$emitter.emit('show-dry-run', response.data.result)
+        
         this.systemStore.updateMigrationInProgress(false)
+        this.systemStore.updateDirectTransferGeneratedRequest(response.data.result.dry_run_data).then(() => {
+          this.emitter.emit('show-dry-run', {
+            left: this.systemStore.directTransferGeneratedRequest, 
+            right: null,
+            dryRun: true
+          })
+        })
+        
         this.dryRun = true
       } else {
         this.updateStatusTable('migration-status')
@@ -166,7 +226,7 @@ export default {
         this.pollMigrationStatus()
       } else if (response.data.result.hasOwnProperty('errors')) {
         this.systemStore.updateMigrationInProgress(false)
-        this.$emitter.emit('alert', {
+        this.emitter.emit('alert', {
           'message': `Failed to trigger migration. Refer to task ${id} in the Task Queue`,
           'messageType': 'error'
         })
@@ -177,7 +237,7 @@ export default {
       let validate = result => result.data.length != 0
       let response = await poll(pollStatus, validate, 5000)
       if (response.data.length == 0) {
-        this.$emitter.emit('alert', {
+        this.emitter.emit('alert', {
           'message': 'Migration is complete',
           'messageType': 'done'
         })
@@ -187,6 +247,13 @@ export default {
       }
       this.systemStore.updateMigrationInProgress(false)
     },
+    showDryRun: function() {
+      this.emitter.emit('show-dry-run', {
+        left: this.systemStore.directTransferGeneratedRequest, 
+        right: this.systemStore.directTransferModifiedRequest,
+        dryRun: true
+      })
+    }
   }
 }
 </script>

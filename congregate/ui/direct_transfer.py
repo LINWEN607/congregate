@@ -21,14 +21,16 @@ def trigger_direct_transfer(dry_run=True):
 @direct_transfer_routes.route('/migrate/<entity_type>', methods=['POST'])
 @enforce_dry_run
 def trigger_staged_migration(entity_type, dry_run=True):
-    dt_client = BulkImportsClient()
-    payload = None
-    if entity_type == 'groups':
-        data = get_staged_groups()
-        payload = dt_client.build_payload(data, 'group', skip_projects=bool(strtobool(request.args.get('skip_projects', 'false'))))
-    elif entity_type == 'projects':
-        data = get_staged_projects()
-        payload = dt_client.build_payload(data, 'project')
+    if request_body := request.get_json(silent=True):
+        payload = from_dict(data_class=BulkImportPayload, data=request_body.get('payload'))
+    else:
+        dt_client = BulkImportsClient()
+        if entity_type == 'groups':
+            data = get_staged_groups()
+            payload = dt_client.build_payload(data, 'group', skip_projects=bool(strtobool(request.args.get('skip_projects', 'false'))))
+        elif entity_type == 'projects':
+            data = get_staged_projects()
+            payload = dt_client.build_payload(data, 'project')
     return trigger_migration(payload, dry_run=dry_run)
 
 @direct_transfer_routes.route('/import-status/<id>', methods=['GET'])

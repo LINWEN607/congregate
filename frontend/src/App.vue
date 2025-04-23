@@ -1,5 +1,5 @@
 <template>
-  <div id="app">
+  <div id="app-container">
     <div id="nav">
       <h1>Congregate</h1>
       <router-link to="/">Home</router-link>
@@ -15,6 +15,7 @@
       <!-- <router-link to="/migrate">Migrate Data</router-link> -->
       <hr>
       <a :href="flowerUrl" target="_blank">Task Queue</a>
+      <span title="View bulk imports on destination associated with the token you are using"><a v-if="directTransfer" :href="bulkImportsHistoryUrl" target="_blank">Bulk Imports History</a></span>
       <router-link to="/settings">Settings</router-link>
     </div>
     <div id = "content">
@@ -37,21 +38,34 @@ export default {
   },
   data() {
     return {
-      flowerUrl: import.meta.env.VITE_FLOWER_URL
+      flowerUrl: '',
+      bulkImportsHistoryUrl: ''
     }
   },
   computed: {
-    ...mapStores(useSystemStore)
+    ...mapStores(useSystemStore),
+    isSettingsStoreEmpty() {
+      return JSON.stringify(this.systemStore.settings) === '{}'
+    },
+    directTransfer() {
+      if (!this.isSettingsStoreEmpty) {
+        return this.systemStore.settings.APP.direct_transfer
+      }
+    }
   },
   mounted: function() {
     axios.get(`${import.meta.env.VITE_API_ROOT}/api/settings`).then(response => {
       this.systemStore.updateSettings(response.data)
-      this.$emitter.emit('settings-updated')
+      this.emitter.emit('settings-updated')
+      this.flowerUrl = this.systemStore.settings['APP']['flower_url']
+      this.bulkImportsHistoryUrl = `${this.systemStore.settings['DESTINATION']['dstn_hostname']}/import/bulk_imports/history`
     })
-    this.$emitter.on('check-jobs', () => {
+    this.emitter.on('check-jobs', () => {
       this.getJobsByStatus()
     })
-    this.getJobsByStatus()
+  },
+  beforeDestroy: function() {
+    this.emitter.off('check-jobs')
   },
   methods: {
     getJobsByStatus: function() {
@@ -59,12 +73,12 @@ export default {
         let match = null
         if ((match = matchFunction(listJobs, response.data))) {
           axios.get(`${import.meta.env.VITE_API_ROOT}/api/jobs/name/${match}`).then(response => {
-            this.$emitter.emit('listing-in-progress', response.data[0].id)
+            this.emitter.emit('listing-in-progress', response.data[0].id)
           })
         }
         if ((match = matchFunction(migrateJobs, response.data))) {
           axios.get(`${import.meta.env.VITE_API_ROOT}/api/jobs/name/${match}`).then(response => {
-            this.$emitter.emit('migration-in-progress', response.data[0].id)
+            this.emitter.emit('migration-in-progress', response.data[0].id)
           })
         }
       })
@@ -74,15 +88,30 @@ export default {
 </script>
 
 <style lang="less">
+html {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
 #app {
+  height: 100%;
+  width: 100%;;
+}
+
+#app-container {
   font-family: Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
   height: 100%;
+  width: 100%;
   display: flex;
   flex-wrap: nowrap;
+  align-items: stretch;
+  flex-direction: row;
 }
 
 body {
@@ -96,6 +125,7 @@ body {
   background-repeat: no-repeat;
   background-attachment: fixed;
   background-position: center;
+  overflow: hidden;
 }
 
 h2 {
@@ -132,7 +162,7 @@ h2 {
   background-color: #FF851B;
   color :#663000;
   text-align: left;
-  flex: 0 0 11em;
+  flex: 0 0 12em;
   h1 {
     font-size: 1.5em;
     text-indent: 0.5em;
@@ -182,9 +212,10 @@ h2 {
 }
 
 #content {
-  flex-grow: 12;
+  flex: 1;
   padding: 1em 1em 0 1em;
   color: #111;
+  overflow: auto;
 }
 
 #content h1 {

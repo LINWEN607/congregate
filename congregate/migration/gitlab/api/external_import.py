@@ -45,6 +45,32 @@ class ImportApi(GitLabApiWrapper):
             description=message
         ).json()
     
+    def import_from_bitbucket_cloud(self, host, token, data, message=None):
+        """
+        Import from Bitbucket Cloud
+
+        GitLab API Doc: https://docs.gitlab.com/ee/api/import.html#import-repository-from-bitbucket-cloud
+
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :param: data: (dict) Object containing the import parameters
+            :param: message: (str, optional) Audit message for the request
+            :return: Response object containing the response to POST /import/bitbucket
+        """
+        if not message:
+            audit_data = data.copy()
+            # Remove sensitive data for logging
+            audit_data.pop("bitbucket_app_password", None)
+            message = f"Triggering import from Bitbucket Cloud with payload {audit_data}"
+                
+        return self.api.generate_post_request(
+            host, 
+            token, 
+            "import/bitbucket", 
+            dumps(data),  # Just pass the data as is
+            description=message
+        ).json()
+    
     def import_from_azure(self, host, token, data, message=None):
         """
         Import your projects from Azure Devops to GitLab via the API

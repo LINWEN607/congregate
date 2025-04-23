@@ -1,13 +1,16 @@
 <template>
     <div class = "summary-table">
       <table>
+        <tbody>
           <tr class = "header">
             <th v-for="(header, index) in headers" :key="`header-${index}`">{{ header }}</th>
           </tr>
           <tr v-for="d in data" :key="d.id">
             <td v-for="(header, index) in headers" :key="`header-data-${index}`">{{ d[header] }}</td>
           </tr>
-        </table>
+        </tbody>
+      </table>
+
     </div>
 </template>
 

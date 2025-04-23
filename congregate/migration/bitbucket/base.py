@@ -134,27 +134,26 @@ class BitBucketServer(BaseClass):
         if skip_archived_projects and repo.get("archived", False):
             self.log.info(f"Repo {repo['name']} skipped because it is archived")
             return {}
-        else:
-            return {
-                "id": repo["id"],
-                "path": repo["slug"],
-                "name": repo["name"],
-                "archived": repo.get("archived", False),
-                "namespace": {
-                    "id": dig(repo, 'project', 'id'),
-                    "path": repo_path,
-                    "name": dig(repo, 'project', 'name'),
-                    "kind": "group",
-                    "full_path": dig(repo, 'project', 'key')
-                },
-                "path_with_namespace": f"{repo_path}/{repo.get('slug')}",
-                "visibility": "public" if repo.get("public") else "private",
-                "description": repo.get("description", ""),
-                "members": [] if project else self.add_repo_users([], repo_path, repo.get("slug")),
-                "groups": self.repo_groups,
-                "default_branch": self.get_default_branch(repo_path, repo["slug"]),
-                "http_url_to_repo": self.get_http_url_to_repo(repo)
-            }
+        return {
+            "id": repo["id"],
+            "path": repo["slug"],
+            "name": repo["name"],
+            "archived": repo.get("archived", False),
+            "namespace": {
+                "id": dig(repo, 'project', 'id'),
+                "path": repo_path,
+                "name": dig(repo, 'project', 'name'),
+                "kind": "group",
+                "full_path": dig(repo, 'project', 'key')
+            },
+            "path_with_namespace": f"{repo_path}/{repo.get('slug')}",
+            "visibility": "public" if repo.get("public") else "private",
+            "description": repo.get("description", ""),
+            "members": [] if project else self.add_repo_users([], repo_path, repo.get("slug")),
+            "groups": self.repo_groups,
+            "default_branch": self.get_default_branch(repo_path, repo["slug"]),
+            "http_url_to_repo": self.get_http_url_to_repo(repo)
+        }
 
     def add_repo_users(self, users, project_key, repo_slug):
         for user in self.repos_api.get_all_repo_users(

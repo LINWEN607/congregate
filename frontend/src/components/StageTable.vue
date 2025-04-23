@@ -24,14 +24,14 @@
     </div>
   </template>
   
-  <script>
-  import axios from 'axios'
-  import { mapStores } from 'pinia'
-  import {TabulatorFull as Tabulator} from 'tabulator-tables';
-  import _ from 'lodash'
-  import { useSystemStore } from '@/stores/system'
-  
-  export default {
+<script>
+import axios from 'axios'
+import { mapStores } from 'pinia'
+import {TabulatorFull as Tabulator} from 'tabulator-tables';
+import _ from 'lodash'
+import { useSystemStore } from '@/stores/system'
+
+export default {
     name: 'StageTable',
     props: {
         asset: String,
@@ -62,9 +62,11 @@
     },
     mounted: function () {
         this.initializeTable()
+        // Once the table is fully built, select the currently staged data
         this.tabulator.on("tableBuilt", () => {
-            this.tabulator.setData(`${import.meta.env.VITE_API_ROOT}/api/data/${this.asset}`)
+            this.getStagedData()
         })
+        // When a row is selected, store that specific row ID in the pinia store
         this.tabulator.on("rowSelected", (row) => {
             console.log("Updating store")
             this.systemStore[this.addEvent](row._row.data.id).then(() => {
@@ -72,6 +74,7 @@
                 this.diffIds = _.difference(Array.from(this.systemStore[this.assetStore]), this.stagedDataFromMongo)
             })
         })
+        // When a row is deselected, remove that specific row ID from the pinia store
         this.tabulator.on("rowDeselected", (row) => {
             console.log("Removing from store")
             this.systemStore[this.removeEvent](row._row.data.id).then(() => {
@@ -79,8 +82,9 @@
                 this.diffIds = _.difference(Array.from(this.systemStore[this.assetStore]), this.stagedDataFromMongo)
             })
         })
+        // If there is data in the pinia store, iterate over the IDs and programmatically select rows accordingly
+        // This is necessary for programmatically setting the staged data when the page loads
         this.tabulator.on("dataProcessed", (data) => {
-            console.log(data)
             if (this.systemStore[this.assetStore].size > 0) {
                 let rows = []
                 for (let row of data) {
@@ -92,7 +96,6 @@
             }
         });
         this.capitalizedAssetName = this.asset[0].toUpperCase() + this.asset.slice(1)
-        this.getStagedData()
     },
     watch: {
         filterQuery: function(val, oldVal) {
@@ -125,8 +128,6 @@
                 ajaxConfig:{
                     method: "GET"
                 },
-                data: this.tableData, //link data to table
-                reactiveData:true, //enable data reactivity
                 columns: this.columns, //define table columns
                 selectableRows: true,
                 rowHeader:{
@@ -162,21 +163,9 @@
                 },
             })
         },
-        getData: function () {
-            axios.get(`${import.meta.env.VITE_API_ROOT}/api/data/${this.asset}`).then(response => {
-                this.tableData = response.data
-                this.initializeTable()
-                this.tabulator.on("rowSelectionChanged", (data) => {
-                    this.updateSelectedRowCount(data)
-                })
-            }).catch(function (error) {
-                console.log(error)
-            })
-        },
         getStagedData: function () {
             axios.get(`${import.meta.env.VITE_API_ROOT}/api/data/staged/${this.asset}`).then(response => {
                 let ids = []
-                console.log(response.data)
                 this.stagedDataFromMongo = response.data.map((d) => d.id)
                 if (this.systemStore[this.assetStore].size == 0) {
                     response.data.forEach(element => {
@@ -196,13 +185,13 @@
             if (this.systemStore[this.assetStore]) {
                 axios.post(`${import.meta.env.VITE_API_ROOT}/api/stage/${this.asset}`, String(Array.from(this.systemStore[this.assetStore]))).then(response => {
                     console.log(response)
-                    this.$emitter.emit('alert', {
+                    this.emitter.emit('alert', {
                         'message': response.data,
                         'messageType': 'done'
                     })
                 }).catch(response => {
                     console.log(response)
-                    this.$emitter.emit('alert', {
+                    this.emitter.emit('alert', {
                         'message': 'Unable to stage '+this.asset,
                         'messageType': 'error'
                     })
@@ -215,14 +204,17 @@
 <style>
 @import "../../node_modules/tabulator-tables/dist/css/tabulator.css";
 #staging-table {
-margin-bottom: 10%;
+    margin-bottom: 10%;
 }
 #table-control, #table-stats {
-width: 100%;
-text-align: left;
-margin-bottom: 1%;
+    width: 100%;
+    text-align: left;
+    margin-bottom: 1%;
 }
 #table-control button {
     margin-right: 1%;
+}
+button {
+    cursor: pointer;
 }
 </style>
