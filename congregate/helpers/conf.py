@@ -46,9 +46,9 @@ class Config(BaseConfig):
             "DESTINATION", "shared_runners_enabled", default=False)
     
     @property
-    def system_hooks_enabled(self):
+    def migrate_system_hooks(self):
         return self.prop_bool(
-            "DESTINATION", "system_hooks_enabled", default=False)
+            "DESTINATION", "migrate_system_hooks", default=False)
 
     @property
     def max_import_retries(self):

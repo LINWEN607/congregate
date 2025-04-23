@@ -128,7 +128,7 @@ class GitLabMigrateClient(MigrateClient):
         self.migrate_project_info()
 
         # System hooks
-        if self.config.system_hooks_enabled:
+        if self.config.migrate_system_hooks:
             self.log.info("Migrating system hooks")
             self.hooks.migrate_system_hooks(dry_run=self.dry_run)
 
