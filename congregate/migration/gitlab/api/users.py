@@ -100,7 +100,10 @@ class UsersApi(GitLabApiWrapper):
             :param: email: (str) Email of the specific user being searched
             :yield: Generator containing JSON results from GET /users?search=:email
         """
-        return self.api.list_all(host, token, f"users?search={quote_plus(email)}", per_page=10)
+        if email is not None and isinstance(email, str):
+            return self.api.list_all(host, token, f"users?search={quote_plus(email)}", per_page=10)
+        else:
+            return {}
 
     def search_for_user_by_username(self, host, token, username):
         """
