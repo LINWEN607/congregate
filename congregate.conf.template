@@ -33,6 +33,7 @@ dstn_hostname = hostname
 dstn_access_token = *****
 import_user_id = 0
 # shared_runners_enabled = False
+# migrate_system_hooks = False
 # max_import_retries = 3
 # dstn_parent_group_id = 0
 # dstn_parent_group_path = destination_parent_group_full_path
