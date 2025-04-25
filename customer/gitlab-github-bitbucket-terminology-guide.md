@@ -6,16 +6,17 @@
 
 ## 1. Core Terminology Mapping
 
-| Concept              | GitLab            | GitHub            | Bitbucket         | Notes                                                  |
-|----------------------|-------------------|-------------------|-------------------|--------------------------------------------------------|
-| **Top-level Container**  | Group             | Organization      | Workspace         | Workspace (Bitbucket) ≈ Organization ≈ Group           |
-| **Organizational Unit**  | Group / Subgroup  | Organization      | Project           | Bitbucket *Project* ≈ GitLab *Group*                   |
-| **Repository**           | Project           | Repository        | Repository        | GitLab *Project* = Repo + CI/CD + Issues, etc.         |
-| **Merge Process**        | Merge Request     | Pull Request      | Pull Request      | Same function, different name in GitLab                |
-| **CI/CD**                | GitLab CI/CD      | GitHub Actions    | Bitbucket Pipelines| YAML-based, but syntax varies                          |
-| **Issue Tracking**       | Issues            | Issues            | Issues            | Consistent across platforms                            |
-| **Access Tokens**        | Personal/Group/Project | Personal Access Tokens | App Passwords / PAT | GitLab has more token scopes                           |
-| **Webhooks**             | Project / Group   | Repo / Org        | Repo              | GitLab & GitHub offer higher-level webhooks            |
+| **Concept**           | **GitLab**                                                           | **GitHub**        | **Bitbucket**     | **Notes**                                        |
+|-----------------------|----------------------------------------------------------------------|-------------------|-------------------|--------------------------------------------------|
+| **Top-level Container**| [Group](https://docs.gitlab.com/user/group/)                         | Organization      | Workspace         | Workspace ≈ Organization ≈ Group                 |
+| **Organizational Unit**| [Subgroup](https://docs.gitlab.com/user/group/subgroups/)             | Organization      | Project           | Bitbucket *Project* ≈ GitLab *Group*             |
+| **Repository**        | [Project](https://docs.gitlab.com/user/project/)                      | Repository        | Repository        | GitLab *Project* = Repo + CI/CD + Issues, etc.   |
+| **Merge Process**     | [Merge Request](https://docs.gitlab.com/user/project/merge_requests/)  | Pull Request      | Pull Request      | Same function, different name in GitLab          |
+| **CI/CD**             | [Pipelines](https://docs.gitlab.com/ci/pipelines/)                    | GitHub Actions    | Bitbucket Pipelines| YAML-based, but syntax varies                    |
+| **Issue Tracking**    | [Issues](https://docs.gitlab.com/user/project/issues/)                 | Issues            | Issues            | Consistent across platforms                      |
+| **Access Tokens**     | [Personal/Group/Project Tokens](https://docs.gitlab.com/security/tokens/)| Personal Tokens | App Passwords     | GitLab offers more granular token scopes         |
+| **Webhooks**          | [Webhooks](https://docs.gitlab.com/user/project/integrations/webhooks/)| Repo / Org Webhooks| Repo Webhooks    | GitLab & GitHub offer broader webhook levels     |
+
 
 ---
 
