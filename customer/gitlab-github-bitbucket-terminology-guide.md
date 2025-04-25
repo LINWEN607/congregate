@@ -21,12 +21,10 @@
 
 ## 2. Organizational Structure Overview
 
-|                       | GitLab                  | GitHub                 | Bitbucket                   |
-|-----------------------|-------------------------|------------------------|-----------------------------|
-| **Hierarchy**         | Group → Subgroup → Project | Organization → Repo  | Workspace → Project → Repo  |
-| **Subgrouping**       | ✅ Yes                  | ⚠️ Teams (permissions) | ❌ Not Available             |
-| **Access Control**    | Granular at Group/Project| Org/Team level         | Workspace/Project level     |
-| **Key Strength**      | Built-in CI/CD & hierarchy| Marketplace ecosystem  | Atlassian integration       |
+| **Concept**         | **GitLab**              | **GitHub**             | **Bitbucket**               |
+|---------------------|-------------------------|------------------------|-----------------------------|
+| **Hierarchy**        | Group → Subgroup → Project | Organization → Repo  | Workspace → Project → Repo  |
+| **Subgrouping**      | ✅ Yes                  | ⚠️ Teams (permissions) | ❌ Not Available             |
 
 ---
 
