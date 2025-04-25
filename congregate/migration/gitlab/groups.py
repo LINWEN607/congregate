@@ -269,7 +269,6 @@ class GroupsClient(BaseClass):
             else:
                 self.log.warning(
                     f"Failed to add member '{member}' to group {group_id}, failed to search for user in source")
-                )
         return result
 
     def find_and_stage_group_bulk_entities(self, groups):
