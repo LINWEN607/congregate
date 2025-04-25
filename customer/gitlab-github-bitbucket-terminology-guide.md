@@ -17,7 +17,6 @@
 | **Access Tokens**     | [Personal/Group/Project Tokens](https://docs.gitlab.com/security/tokens/)| Personal Tokens | App Passwords     | GitLab offers more granular token scopes         |
 | **Webhooks**          | [Webhooks](https://docs.gitlab.com/user/project/integrations/webhooks/)| Repo / Org Webhooks| Repo Webhooks    | GitLab & GitHub offer broader webhook levels     |
 
-
 ---
 
 ## 2. Organizational Structure Overview
