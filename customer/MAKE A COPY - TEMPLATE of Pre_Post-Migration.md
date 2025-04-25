@@ -10,27 +10,19 @@ Prepared by GitLab Professional Services
 
 ## ToC
 
+- [Migration Planning and Expectations](#migration-planning-and-expectations)
+  - [ToC](#toc)
 - [Migration Process Overview](#migration-process-overview)
-- [Phase 1 - Planning](#phase-1---planning)
-  - [Audience](#audience)
-  - [Common Tasks](#common-tasks)
-  - [DRI](#dri)
--[Phase 2 - Setup](#phase-2---setup)
-  - [Audience](#audience-1)
-  - [Common Tasks](#common-tasks-1)
-  - [DRI](#dri-1)
-- [Phase 3 - Pilot Migrations](#phase-3---pilot-migrations)
-  - [Audience](#audience-2)
-  - [Common Tasks](#common-tasks-2)
-  - [DRI](#dri-2)
-- [Phase 4 - Main Migrations](#phase-4---main-migrations)
-  - [Audience](#audience-3)
-  - [Common Tasks](#common-tasks-3)
-  - [DRI](#dri-3)
-- [Phase 5 - Wrap Up](#phase-5---wrap-up)
-  - [Audience](#audience-4)
-  - [Common Tasks](#common-tasks-4)
-  - [DRI](#dri-4)
+  - [Phase 1 - Planning](#phase-1---planning)
+    - [Audience](#audience)
+  - [Phase 2 - Setup](#phase-2---setup)
+    - [Audience](#audience-1)
+  - [Phase 3 - Pilot Migrations](#phase-3---pilot-migrations)
+    - [Audience](#audience-2)
+  - [Phase 4 - Main Migrations](#phase-4---main-migrations)
+    - [Audience](#audience-3)
+  - [Phase 5 - Wrap Up](#phase-5---wrap-up)
+    - [Audience](#audience-4)
 - [Pre and Post Migration Considerations](#pre-and-post-migration-considerations)
   - [General](#general)
   - [Pre-Migration - Developers](#pre-migration---developers)
@@ -41,7 +33,7 @@ Prepared by GitLab Professional Services
     - [Resolve Pending Tasks](#resolve-pending-tasks)
     - [Update Local Workflows](#update-local-workflows)
     - [Backup Personal Keys](#backup-personal-keys)
-    - [Prepare CI/CD Configurations](#prepare-ci/cd-configurations)
+    - [Prepare CI/CD Configurations](#prepare-cicd-configurations)
     - [Test Workflows in GitLab](#test-workflows-in-gitlab)
     - [Provide Feedback](#provide-feedback)
   - [Pre Migration - System](#pre-migration---system)
@@ -50,20 +42,27 @@ Prepared by GitLab Professional Services
     - [Hard-coded Dependencies](#hard-coded-dependencies)
     - [Networking](#networking)
     - [Access and Permissions](#access-and-permissions)
+    - [Domains (and BYOD)](#domains-and-byod)
+      - [Action](#action)
+    - [Email Systems](#email-systems)
     - [Integrations and Dependencies](#integrations-and-dependencies)
+      - [Action](#action-1)
     - [Repositories](#repositories)
-  - [Pre Migration - Schedule and Planning](#pre-migration)
+  - [Pre Migration](#pre-migration)
+    - [Schedule and Planning](#schedule-and-planning)
+    - [Communications](#communications)
+    - [Determine Post-Migration Steps](#determine-post-migration-steps)
     - [Customer Coordinator](#customer-coordinator)
     - [Scheduling and constraints](#scheduling-and-constraints)
-    - [App Teams](#app-teams)
+    - [App Teams {#app-teams}](#app-teams-app-teams)
   - [Post Migration](#post-migration)
     - [Projects - Developers](#projects---developers)
     - [Project Owners and Maintainers](#project-owners-and-maintainers)
     - [Unmigrated Project Features (GitLab to GitLab)](#unmigrated-project-features-gitlab-to-gitlab)
-      - [Sensitive information](#sensitive-information:)
+      - [Sensitive information](#sensitive-information)
       - [Generally not supported](#generally-not-supported)
     - [Unmigrated Project Features (GitHub to GitLab)](#unmigrated-project-features-github-to-gitlab)
-    - [CI/CD Pipelines](#ci/cd-pipelines)
+    - [CI/CD Pipelines](#cicd-pipelines)
     - [Issue Tracking and Boards](#issue-tracking-and-boards)
     - [Merge Requests](#merge-requests)
     - [Wikis and Documentation](#wikis-and-documentation)
@@ -106,22 +105,22 @@ If any existing projects have pipelines, GitLab-Runner requirements should be id
 
 ### Audience
 
-* Customer Migration Team  
-* Customer Product Owners  
-* Customer Security Team  
-* Customer Infrastructure Team  
-* GitLab Professional Services Engineer (PSE)  
+* Customer Migration Team
+* Customer Product Owners
+* Customer Security Team
+* Customer Infrastructure Team
+* GitLab Professional Services Engineer (PSE)
 * GitLab Project Manager (PM)
 
-| Common Tasks | DRI |
-| :---- | :---- |
-| Identify Stakeholders | Customer Product Owners and GitLab PM |
-| Develop Communication Plans | Customer Product Owners and GitLab PM |
-| Develop Schedule (Migration Waves) | Customer Product Owners and GitLab PM |
-| Generate Admin Tokens | Customer Infrastructure and Security Team |
-| Set Up Migration VM | Customer Infrastructure and Migration Team |
-| Identify Pilot Migration Projects | Customer Migration Team and GitLab PSE |
-| Identify GitLab-Runner Requirements | Customer Migration Team and GitLab PSE |
+| Common Tasks                                                    | DRI                                                            |
+| :-------------------------------------------------------------- | :------------------------------------------------------------- |
+| Identify Stakeholders                                           | Customer Product Owners and GitLab PM                          |
+| Develop Communication Plans                                     | Customer Product Owners and GitLab PM                          |
+| Develop Schedule (Migration Waves)                              | Customer Product Owners and GitLab PM                          |
+| Generate Admin Tokens                                           | Customer Infrastructure and Security Team                      |
+| Set Up Migration VM                                             | Customer Infrastructure and Migration Team                     |
+| Identify Pilot Migration Projects                               | Customer Migration Team and GitLab PSE                         |
+| Identify GitLab-Runner Requirements                             | Customer Migration Team and GitLab PSE                         |
 | Identity networking/firewall requirements for migration systems | Customer Migration Team, Customer Network Team, and GitLab PSE |
 
 ## Phase 2 - Setup
@@ -134,17 +133,17 @@ If any GitLab-Runner requirements were identified during Phase 1 - Planning, the
 
 ### Audience
 
-* Customer Migration Team  
-* Customer Infrastructure Team  
-* Customer Security Team  
+* Customer Migration Team
+* Customer Infrastructure Team
+* Customer Security Team
 * GitLab Professional Services Engineer (PSE)
 
-| Common Tasks | DRI |
-| :---- | :---- |
-| Create Destination Test Group | GitLab PSE |
-| Identify Sample Source Project | Customer Migration and Security Team |
+| Common Tasks                         | DRI                                                     |
+| :----------------------------------- | :------------------------------------------------------ |
+| Create Destination Test Group        | GitLab PSE                                              |
+| Identify Sample Source Project       | Customer Migration and Security Team                    |
 | Migrate Sample Project to Test Group | Customer Migration, Infrastructure Team, and GitLab PSE |
-| Migrate Users and Groups | Customer Migration Team and GitLab PSE |
+| Migrate Users and Groups             | Customer Migration Team and GitLab PSE                  |
 
 ## Phase 3 - Pilot Migrations
 
@@ -154,21 +153,21 @@ To help identify Pilot Projects, the Pilot Projects should be selected to identi
 
 ### Audience
 
-* Customer Migration Team  
-* Customer Product Owners  
-* Customer Product SMEs  
-* GitLab Program Manager (PM)  
+* Customer Migration Team
+* Customer Product Owners
+* Customer Product SMEs
+* GitLab Program Manager (PM)
 * GitLab Professional Services Engineer (PSE)
 
-| Common Tasks | DRI |
-| :---- | :---- |
-| Communicate Start of Pilot Migration | Customer Product Owners and GitLab PM |
-| Update Congregate Data | Customer Migration Team and GitLab PSE |
-| Migrate Projects | Customer Migration Team and GitLab PSE |
-| Generate Reports | Customer Migration Team and GitLab PSE |
-| Archive Source Projects | Customer Migration Team |
-| Communicate End of Pilot Migration | Customer Product Owners and GitLab PM |
-| User Acceptance Testing | Customer Migration Team and Product SMEs |
+| Common Tasks                         | DRI                                      |
+| :----------------------------------- | :--------------------------------------- |
+| Communicate Start of Pilot Migration | Customer Product Owners and GitLab PM    |
+| Update Congregate Data               | Customer Migration Team and GitLab PSE   |
+| Migrate Projects                     | Customer Migration Team and GitLab PSE   |
+| Generate Reports                     | Customer Migration Team and GitLab PSE   |
+| Archive Source Projects              | Customer Migration Team                  |
+| Communicate End of Pilot Migration   | Customer Product Owners and GitLab PM    |
+| User Acceptance Testing              | Customer Migration Team and Product SMEs |
 
 ## Phase 4 - Main Migrations
 
@@ -176,21 +175,21 @@ At this point, most problems should have been identified and fixed. Due to this 
 
 ### Audience
 
-* Customer Migration Team  
-* Customer Product Owners  
-* Customer Product SMEs  
-* Customer Product Developers  
-* GitLab Project Manager (PM)  
+* Customer Migration Team
+* Customer Product Owners
+* Customer Product SMEs
+* Customer Product Developers
+* GitLab Project Manager (PM)
 * GitLab Professional Services Engineer (PSE)
 
-| Common Tasks | DRI |
-| :---- | :---- |
-| Communicate Start of Migration Wave | Customer Product Owners and GitLab PM |
-| Update Data | Customer Migration Team and GitLab PSE |
-| Migrate Projects | Customer Migration Team and GitLab PSE |
-| Generate Reports | Customer Migration Team and GitLab PSE |
-| Archive Successful Source Projects | Customer Migration Team |
-| Communicate End of Migration Wave | Customer Product Owners and GitLab PM |
+| Common Tasks                           | DRI                                                                    |
+| :------------------------------------- | :--------------------------------------------------------------------- |
+| Communicate Start of Migration Wave    | Customer Product Owners and GitLab PM                                  |
+| Update Data                            | Customer Migration Team and GitLab PSE                                 |
+| Migrate Projects                       | Customer Migration Team and GitLab PSE                                 |
+| Generate Reports                       | Customer Migration Team and GitLab PSE                                 |
+| Archive Successful Source Projects     | Customer Migration Team                                                |
+| Communicate End of Migration Wave      | Customer Product Owners and GitLab PM                                  |
 | Migration Wave User Acceptance Testing | Customer Migration Team, Product SMEs, and Customer Product Developers |
 
 ## Phase 5 - Wrap Up
@@ -201,24 +200,24 @@ Decide what should be done with the source instance(s). Will they be retired, le
 
 ### Audience
 
-* Customer Migration Team  
-* Customer Product Owners  
-* Customer Product SMEs  
-* Customer Product Developers  
-* Customer Infrastructure Team  
-* Customer Security Team  
-* GitLab Project Manager (PM)  
+* Customer Migration Team
+* Customer Product Owners
+* Customer Product SMEs
+* Customer Product Developers
+* Customer Infrastructure Team
+* Customer Security Team
+* GitLab Project Manager (PM)
 * GitLab Professional Services Engineer (PSE)
 
-| Common Tasks | DRI |
-| :---- | :---- |
-| Assess how to Reduce Project size and Complexity | Customer Product Developers, Product SMEs, and GitLab PSE |
-| Develop Plan to Migrate Project | Customer Migration Team, Infrastructure, Security, Product Developers, and GitLab PSE |
-| Work with Affected Team to Schedule Migration | Customer Product Developers, Product Owners, Migration Team, GitLab PSE, and GitLab PM |
-| Migrate Project | Customer Migration Team and GitLab PSE |
-| Run Post-Migration Tasks Possible | Customer Migration Team and GitLab PSE |
-| Communicate End of Migration Wave | Customer Product Owners and GitLab PM |
-| Migration Wave User Acceptance Testing | Customer Migration Team, Product Developers,  and Product SMEs |
+| Common Tasks                                     | DRI                                                                                    |
+| :----------------------------------------------- | :------------------------------------------------------------------------------------- |
+| Assess how to Reduce Project size and Complexity | Customer Product Developers, Product SMEs, and GitLab PSE                              |
+| Develop Plan to Migrate Project                  | Customer Migration Team, Infrastructure, Security, Product Developers, and GitLab PSE  |
+| Work with Affected Team to Schedule Migration    | Customer Product Developers, Product Owners, Migration Team, GitLab PSE, and GitLab PM |
+| Migrate Project                                  | Customer Migration Team and GitLab PSE                                                 |
+| Run Post-Migration Tasks Possible                | Customer Migration Team and GitLab PSE                                                 |
+| Communicate End of Migration Wave                | Customer Product Owners and GitLab PM                                                  |
+| Migration Wave User Acceptance Testing           | Customer Migration Team, Product Developers,  and Product SMEs                         |
 
 # Pre and Post Migration Considerations
 
@@ -258,11 +257,11 @@ If engineers use local development workflows that are integrated with the source
 
 ### Backup Personal Keys
 
-Depending on the source system, SSH keys or GPG keys may not be included in the migration of users. While most users will already have back-ups of these items, we like to call them out for safety's sake 
+Depending on the source system, SSH keys or GPG keys may not be included in the migration of users. While most users will already have back-ups of these items, we like to call them out for safety's sake
 
 ### Prepare CI/CD Configurations
 
-If engineers are responsible for configuring CI/CD pipelines for their projects, they should familiarize themselves with GitLab's CI/CD configuration syntax and adjust their pipelines accordingly. Depending on the scope of your engagement, this may include pairing with GitLab engineers to develop conversion processes for other systems such as Jenkins or GitHub Actions. 
+If engineers are responsible for configuring CI/CD pipelines for their projects, they should familiarize themselves with GitLab's CI/CD configuration syntax and adjust their pipelines accordingly. Depending on the scope of your engagement, this may include pairing with GitLab engineers to develop conversion processes for other systems such as Jenkins or GitHub Actions.
 
 ### Test Workflows in GitLab
 
@@ -276,63 +275,75 @@ By proactively taking these steps, individual engineers can better prepare thems
 
 ## Pre Migration - System
 
-The first piece that should always be considered is the list of items migrated and not migrated. 
+The first piece that should always be considered is the list of items migrated and not migrated.
 
-* For GitLab via Direct Transfer those lists are here : [https://docs.gitlab.com/ee/user/group/import/](https://docs.gitlab.com/ee/user/group/import/)  
+* For GitLab via Direct Transfer those lists are here : [https://docs.gitlab.com/ee/user/group/import/](https://docs.gitlab.com/ee/user/group/import/)
 * For GitLab via GitHub importer those lists are here : [https://docs.gitlab.com/ee/user/project/import/github.html](https://docs.gitlab.com/ee/user/project/import/github.html)
 
 Note: Items not explicitly listed as imported or not imported should be assumed to **not** be imported
 
 ### Identification of resources
 
-In the initial state of the GitLab migration it is important to identify all the pertaining resources outside the items being migrated. These could include external CI/CD resources and dependencies, container image registries, or even external libraries such as DSL code needing to be part of the common build environment. As part of the migration, integration tooling will also need to be revised and tested. These tools could be Jenkins, Jira or external build software such as CircleCI or Travis CI. It is advisable to also check any dependencies from external cloud providers. 
+In the initial state of the GitLab migration it is important to identify all the pertaining resources outside the items being migrated. These could include external CI/CD resources and dependencies, container image registries, or even external libraries such as DSL code needing to be part of the common build environment. As part of the migration, integration tooling will also need to be revised and tested. These tools could be Jenkins, Jira or external build software such as CircleCI or Travis CI. It is advisable to also check any dependencies from external cloud providers.
 
 Resources should be identified by Team Lead engineers. The following are the advisable tests and checks needing to be revised post migration.
 
 ### Users
 
-* For most migrations to GitLab it is recommended to pre-provision users as this enables a more complete migration of the data.   
-  * For our multi-tenant SaaS offering, this may mean setting up SAML and SCIM for your namespace and allowing those tools to do the provisioning, either through first login (JIT) for SAML or via the usual SCIM push mechanics.   
-  * For our single-tenant SaaS offering and for self-managed, this may also mean enabling SCIM, or some other push mechanism for creating accounts from your user management SSoT.  
-* It is also necessary to set the public email for users on the **source** system  
-  * Note: For some systems, this is cannot be automated via an admin token and must be configured by individual users  
+* For most migrations to GitLab it is recommended to pre-provision users as this enables a more complete migration of the data.
+  * For our multi-tenant SaaS offering, this may mean setting up SAML and SCIM for your namespace and allowing those tools to do the provisioning, either through first login (JIT) for SAML or via the usual SCIM push mechanics.
+  * For our single-tenant SaaS offering and for self-managed, this may also mean enabling SCIM, or some other push mechanism for creating accounts from your user management SSoT.
+* It is also necessary to set the public email for users on the **source** system
+  * Note: For some systems, this is cannot be automated via an admin token and must be configured by individual users
 * For GEO based migrations, the users are copied over as part of the synchronization process
 
 ### Hard-coded Dependencies
 
-* URLs for source systems have likely changed.   
+* URLs for source systems have likely changed.
   * Create a list of any hard-coded dependencies in build systems that require updating
 
 ### Networking
 
-* Depending on the type of migration, there may be requirements to open up internal source systems to communications to/from GitLab instances (.com, Dedicated, self-managed). The primary culprits are:  
-  * GitLab to GitLab using Direct Transfer, GitHub to GitLab, or BitBucket to GitLab  
-    * The destination instance must be able to see the source instance  
-    * The migration VM (if applicable) must be able to see the source and destination instances  
-* Ensure your migration destination has access to systems that it will need to reach; integrations, build systems. Some examples include:  
-  * GitLab Runner  
-  * Jenkins,   
-  * WebHooks in general  
-* Ensure your internal systems have external access to reach the destination system where needed  
-* Create a list of these integrations and verify that they coordinated  
-* **Create a full network diagram of all communication points**. This can help with planning on requirements as well as help in costing network usage  
+* Depending on the type of migration, there may be requirements to open up internal source systems to communications to/from GitLab instances (.com, Dedicated, self-managed). The primary culprits are:
+  * GitLab to GitLab using Direct Transfer, GitHub to GitLab, or BitBucket to GitLab
+    * The destination instance must be able to see the source instance
+    * The migration VM (if applicable) must be able to see the source and destination instances
+* Ensure your migration destination has access to systems that it will need to reach; integrations, build systems. Some examples include:
+  * GitLab Runner
+  * Jenkins
+  * WebHooks in general
+* Ensure your internal systems have external access to reach the destination system where needed
+* Create a list of these integrations and verify that they coordinated
+* **Create a full network diagram of all communication points**. This can help with planning on requirements as well as help in costing network usage
   * Consider integrations that are not specific to GitLab (eg: anything with .well-known or similar) such as OIDC connections
 
 ### Access and Permissions
 
-* Review and update user access levels and permissions for groups and projects to align with organizational roles and responsibilities.  
-* Ensure that access controls are appropriately configured to maintain data security and compliance standards  
-* The majority of the security configuration is handled by the SSO configuration as only SAML authenticated users can access the customers top-level group on gitlab.com  
-* Other security options are available including:  
-  * Ip allowlisting: Settings \> General \> Restrict access by IP address  
-  * Restricted access based on email domain: Settings \> General \> Restrict membership by email domain
+* Review and update user access levels and permissions for groups and projects to align with organizational roles and responsibilities.
+* Ensure that access controls are appropriately configured to maintain data security and compliance standards
+* The majority of the security configuration is handled by the SAML/SSO/SCIM configuration
+* If there is SAML authentication only, w/o SSO-only authentication enforcement, users with no SAML accounts will still be able to access the Group's resources
+  * In that case, SAML is just another way to sign in to GitLab
+* SSO-only authentication enforcement ensures that only users with a SAML account will be able to access a Group's resource
+  * Users cannot be added as new members manually
+  * Only existing users on the instance, who have a linked identity with the correct identity Provider, will be shown
+  * GitLab will not look up the user directory on the idP to determine who to show
+  * GitLab cannot and does not request information from the SAML provider
+  * All the information is sent to GitLab from the SAML provider only when a user signs in successfully
+  * **NOTE:** The setting may not be enabled during the migration to ensure the PS engineer has proper access to perform the migration tasks
+* SCIM functionality is intended for automatic user provisioning and deprovisioning
+  * It is a protocol that the IdP uses to tell GitLab what to do
+* Other security options (*Settings > General > Permissions and group features*) are available, including:
+  * *Restrict membership by email domain*
+  * *Restrict access by IP address*
+  * *Two factor authentication* - 2FA can be enforced in the group, but may be redundant if SSO-only authentication is already enforced as that usually requires a multi-factor authentication (MFA) element
 
 ### Domains (and BYOD)
 
 Mostly for migrations to single-tenant SaaS (Dedicated):
 
-* Will the customer need Bring Your Own Domain (BYOD) functionality?  
-* Will the customer utilize allowlists to limit access (create a private system)?  
+* Will the customer need Bring Your Own Domain (BYOD) functionality?
+* Will the customer utilize allowlists to limit access (create a private system)?
   * Related: Are their integrations that would require ***public access*** to this private system?
 
 #### Action
@@ -347,7 +358,7 @@ For migrations to single-tenant SaaS (Dedicated)
 
 ### Integrations and Dependencies
 
-* This is the number one missed piece during migrations. Group/Project/Pipeline level integrations or dependencies missed during pre-migration inventory, including items like webhooks called out, above  
+* This is the number one missed piece during migrations. Group/Project/Pipeline level integrations or dependencies missed during pre-migration inventory, including items like webhooks called out, above
 * Running pilot migrations can help identify missed dependencies. Prioritize the most complex projects for these pilot runs to flesh out as many of these touch points as possible
 
 #### Action
@@ -356,7 +367,7 @@ Create a list of all webhooks, integrations, dependencies
 
 ### Repositories
 
-* For GitLab to GitLab scenarios, are you using repositories?  
+* For GitLab to GitLab scenarios, are you using repositories?
 * Congregate can current migrate container registry and Maven, with NPM, PyPi, and Generic coming soon
 
 ## Pre Migration
@@ -365,10 +376,10 @@ Create a list of all webhooks, integrations, dependencies
 
 As pointed out in [Phase 1](https://docs.google.com/document/d/1RkcL54BiSg6t26_2CYihTgG0Wauc9RzYSxYHoL9bTWI/edit#heading=h.ixzbami4hloi), the customer should work with GitLab to plan migration waves. GitLab can generate a wave planning file to assist with planning. Things to consider for this planning:
 
-* Inter-project dependencies  
-* Project priority; are there project that must move sooner or later  
-* Organizational dependencies   
-* External dependencies; pipeline translations, new integrations or systems (container registry, CICD system retirement, etc)  
+* Inter-project dependencies
+* Project priority; are there project that must move sooner or later
+* Organizational dependencies
+* External dependencies; pipeline translations, new integrations or systems (container registry, CICD system retirement, etc)
 * "Size"
 
 ### Communications
@@ -379,33 +390,33 @@ The customer teams will need to be notified of migration dates. This can be set 
 
 Customers should also work with their internal teams and the GitLab delivery team to determine a post-migration "runbook" for the engineering teams. Some potential points in that document:
 
-* Expectations post-migration; where to go, which URLs  
-* Validation steps to perform  
-* Git changes (some of which is included in this document)  
-* Project change; registry and repo paths, runner tagging  
-* How to test pipelines  
-* How to convert CI  
+* Expectations post-migration; where to go, which URLs
+* Validation steps to perform
+* Git changes (some of which is included in this document)
+* Project change; registry and repo paths, runner tagging
+* How to test pipelines
+* How to convert CI
 * Support and contacts for issues (office hours, etc)
 
 ### Customer Coordinator
 
-* Customer is to send out communications to their users.  
-* Users should be aware that all of their Gitlab projects are in the process of being migrated to Gitlab.com  
+* Customer is to send out communications to their users.
+* Users should be aware that all of their Gitlab projects are in the process of being migrated to Gitlab.com
 * Specific teams of users should know the tentative dates of when their specific projects are to be migrated
 
 ### Scheduling and constraints
 
-* Migration waves are comprised of about 200 projects and the total time for a migration takes about 8 hours to complete based on the size of the projects involved in the particular wave  
+* Migration waves are comprised of about 200 projects and the total time for a migration takes about 8 hours to complete based on the size of the projects involved in the particular wave
 * A migration wave is scheduled with a customer at least 5 days in advance in order to give the PSE time to ensure that no other customer migrations to GitLab.com will take place during the migration window
 
 ### App Teams {#app-teams}
 
-* Check communications sent out by management to determine if any of their projects will be included in the next migration wave  
-* For projects included in the migration wave, make any last code changes, issues, merge requests, etc.. prior to the beginning of the migration wave  
-* Do not push any code changes or create any issues, merge requests, etc… until after management sends out a communication that the migration is complete  
-* Projects are only migrated once. If changes are made to the source self-managed instance during or after the migration, they will not be carried over to Gitlab.com  
-* Delete unused branches and tags on GitHub to allow the migration process to complete faster.  
-* Team members have requested access to GitLab and have a user account  
+* Check communications sent out by management to determine if any of their projects will be included in the next migration wave
+* For projects included in the migration wave, make any last code changes, issues, merge requests, etc.. prior to the beginning of the migration wave
+* Do not push any code changes or create any issues, merge requests, etc… until after management sends out a communication that the migration is complete
+* Projects are only migrated once. If changes are made to the source self-managed instance during or after the migration, they will not be carried over to Gitlab.com
+* Delete unused branches and tags on GitHub to allow the migration process to complete faster.
+* Team members have requested access to GitLab and have a user account
 * Team members can log into GitLab
 
 ## Post Migration
@@ -416,53 +427,53 @@ After migration there are things that engineers can do to validate the system. A
 
 ### Projects - Developers
 
-As waves of migration are being completed, individual users should be testing their allocated projects as per the notice from their lead. 
+As waves of migration are being completed, individual users should be testing their allocated projects as per the notice from their lead.
 
 To test connectivity, Read & Write modes should be in scope. Test these with the following commands below:
 
-* READ:  
-  * git remote-ls \<REPO\_URL\>  
-* WRITE:  
-  * cd \<MIGRATED\_CLONED\_REPO\_FOLDER\>   
-  * git remote -v  
-  * *Take a screenshot of your current remote url setting.*  
-  * git set-url origin git://\<REPO\_URL\>  
-  * git checkout -b migr-write-test  
-  * echo “foo\_bar” \> testfile.dat  
-  * git push --set-upstream origin migr-write-test  
-* GitLab will provide a quick link to create a Merge Request:  
-  * ...  
+* READ:
+  * git remote-ls \<REPO\_URL\>
+* WRITE:
+  * cd \<MIGRATED\_CLONED\_REPO\_FOLDER\>
+  * git remote -v
+  * *Take a screenshot of your current remote url setting.*
+  * git set-url origin git://\<REPO\_URL\>
+  * git checkout -b migr-write-test
+  * echo “foo\_bar” \> testfile.dat
+  * git push --set-upstream origin migr-write-test
+* GitLab will provide a quick link to create a Merge Request:
+  * ...
     remote: To create a merge request for my-new-branch, visit:
 
     remote:   [https://gitlab.com/my-group/my-project/merge\_requests/new?merge\_request%5Bsource\_branch%5D=migr-write-test](https://gitlab.com/my-group/my-project/merge_requests/new?merge_request%5Bsource_branch%5D=migr-write-test)
 
-* Feel free to copy and paste this link to create a merge request. This will also test your user attributes further.  
-* Members of user teams should test that they can re-pull their projects from Gitab.com  
-  * If they receive errors at this stage the most likely issues are:  
-    * They need to generate a new ssh token  
-    * They need to reauthenticate  
-* If a member of the user team is unable to push code the most common issues are:  
-  * They are still pushing to the old instance where the project is archived  
-  * They need to generate a new ssh token  
-  * They need to reauthenticate  
-* User teams should check on, among other things, the following elements of their projects on Gitlab.com:  
-  * The number of branches on a given project  
-  * The total number of merge requests  
-  * Their role on the given project  
+* Feel free to copy and paste this link to create a merge request. This will also test your user attributes further.
+* Members of user teams should test that they can re-pull their projects from Gitab.com
+  * If they receive errors at this stage the most likely issues are:
+    * They need to generate a new ssh token
+    * They need to reauthenticate
+* If a member of the user team is unable to push code the most common issues are:
+  * They are still pushing to the old instance where the project is archived
+  * They need to generate a new ssh token
+  * They need to reauthenticate
+* User teams should check on, among other things, the following elements of their projects on Gitlab.com:
+  * The number of branches on a given project
+  * The total number of merge requests
+  * Their role on the given project
 * If you use them, verify valid keys (ssh, gpt, etc) are in the new instance. If not, create new ones.
 
 ### Project Owners and Maintainers
 
-* Review and adjust project level permissions, including Enable project-level shared runners (default: true) and AutoDevOps (default: true)  
-* Register any local runners that will be used for CI jobs  
-* Adjust group and project permissions, if applicable. Note: All groups and projects are set to private upon import (unless the group imports into a parent group and inherits its visibility), regardless of their setting in the source instance.  
-* If migrating to GitLab.com, update any project, group, and system hooks that point to localhost or a private instance - GitLab.com will see them as invalid and fail to create them  
-* Update any CI jobs, CI/CD variables, and hooks that point to the source system url; for GL-\>GL migrations, relative paths used in CI jobs to point to other projects should be fine, but any absolute paths/full urls will need to be updated to point to the projects at the destination instance url  
-* Verify dependency chains (build order) of projects  
-* Secrets (tokens) that may be present in certain features, e.g. hooks, are not exposed in the API response and therefore not migrated. Those individual features have to be newly created  
-* For GitLab to GitLab migrations, you will want to validate that projects shared with groups in the source instance are still shared in the destination. If the entire group structure is not migrated first, the shared groups will not be preserved in the destination instance  
-* Recreate group and project badges  
-* Recreate any instance and group level custom project templates  
+* Review and adjust project level permissions, including Enable project-level shared runners (default: true) and AutoDevOps (default: true)
+* Register any local runners that will be used for CI jobs
+* Adjust group and project permissions, if applicable. Note: All groups and projects are set to private upon import (unless the group imports into a parent group and inherits its visibility), regardless of their setting in the source instance.
+* If migrating to GitLab.com, update any project, group, and system hooks that point to localhost or a private instance - GitLab.com will see them as invalid and fail to create them
+* Update any CI jobs, CI/CD variables, and hooks that point to the source system url; for GL-\>GL migrations, relative paths used in CI jobs to point to other projects should be fine, but any absolute paths/full urls will need to be updated to point to the projects at the destination instance url
+* Verify dependency chains (build order) of projects
+* Secrets (tokens) that may be present in certain features, e.g. hooks, are not exposed in the API response and therefore not migrated. Those individual features have to be newly created
+* For GitLab to GitLab migrations, you will want to validate that projects shared with groups in the source instance are still shared in the destination. If the entire group structure is not migrated first, the shared groups will not be preserved in the destination instance
+* Recreate group and project badges
+* Recreate any instance and group level custom project templates
 * Update and/or create any features that are not migrated (based on the migration features matrix ([Bitbucket](https://gitlab-org.gitlab.io/professional-services-automation/tools/migration/congregate/bitbucket-migration-features-matrix/), [GitHub](https://gitlab-org.gitlab.io/professional-services-automation/tools/migration/congregate/github-migration-features-matrix/), [GitLab](https://gitlab-org.gitlab.io/professional-services-automation/tools/migration/congregate/gitlab-migration-features-matrix/)))
 
 ### Unmigrated Project Features (GitLab to GitLab)
@@ -475,40 +486,40 @@ As stated, several features are not handled in a migration. While the specifics 
 
 Some items contain sensitive information and are not migrated by default. There are a few methods to deal with these.
 
-* Some are handled by the [Congregate](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate) migration tool (if it is being used). Consult the [supported features list](https://gitlab-org.gitlab.io/professional-services-automation/tools/migration/congregate/gitlab-migration-features-matrix/), here.   
-* Unsupported items from this category **will need to be recreated manually or via API**  
+* Some are handled by the [Congregate](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate) migration tool (if it is being used). Consult the [supported features list](https://gitlab-org.gitlab.io/professional-services-automation/tools/migration/congregate/gitlab-migration-features-matrix/), here.
+* Unsupported items from this category **will need to be recreated manually or via API**
 * Unfortunately, these cannot be moved until after the project is created on the destination, so any pre-work will consist of preparing and testing any scripting
 
-| Area | API if available |
-| :---- | :---- |
-| CI/CD variables | [https://docs.gitlab.com/ee/api/project\_level\_variables.html](https://docs.gitlab.com/ee/api/project_level_variables.html) |
-| Deploy keys | [https://docs.gitlab.com/ee/api/deploy\_keys.html](https://docs.gitlab.com/ee/api/deploy_keys.html) |
-| Deploy tokens | [https://docs.gitlab.com/ee/api/deploy\_tokens.html](https://docs.gitlab.com/ee/api/deploy_tokens.html) |
-| Pipeline schedule variables | [https://docs.gitlab.com/ee/api/pipeline\_schedules.html](https://docs.gitlab.com/ee/api/pipeline_schedules.html) |
-| Pipeline triggers |  |
-| Project Webhooks | [https://docs.gitlab.com/ee/api/projects.html\#list-project-hooks](https://docs.gitlab.com/ee/api/projects.html#list-project-hooks) |
+| Area                        | API if available                                                                                                                    |
+| :-------------------------- | :---------------------------------------------------------------------------------------------------------------------------------- |
+| CI/CD variables             | [https://docs.gitlab.com/ee/api/project\_level\_variables.html](https://docs.gitlab.com/ee/api/project_level_variables.html)        |
+| Deploy keys                 | [https://docs.gitlab.com/ee/api/deploy\_keys.html](https://docs.gitlab.com/ee/api/deploy_keys.html)                                 |
+| Deploy tokens               | [https://docs.gitlab.com/ee/api/deploy\_tokens.html](https://docs.gitlab.com/ee/api/deploy_tokens.html)                             |
+| Pipeline schedule variables | [https://docs.gitlab.com/ee/api/pipeline\_schedules.html](https://docs.gitlab.com/ee/api/pipeline_schedules.html)                   |
+| Pipeline triggers           |                                                                                                                                     |
+| Project Webhooks            | [https://docs.gitlab.com/ee/api/projects.html\#list-project-hooks](https://docs.gitlab.com/ee/api/projects.html#list-project-hooks) |
 
 #### Generally not supported
 
 (List correct Feb 28, 2024)
 
-* Some are handled by the [Congregate](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate) migration tool (if it is being used). Consult the [supported features list](https://gitlab-org.gitlab.io/professional-services-automation/tools/migration/congregate/gitlab-migration-features-matrix/), here.   
-  * Of note (not exhaustive)  
-    * Container Registry  
-    * Maven, Generic, NPM, and PyPi packages  
-* Unsupported items from this category **will need to be recreated manually or via API**  
+* Some are handled by the [Congregate](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate) migration tool (if it is being used). Consult the [supported features list](https://gitlab-org.gitlab.io/professional-services-automation/tools/migration/congregate/gitlab-migration-features-matrix/), here.
+  * Of note (not exhaustive)
+    * Container Registry
+    * Maven, Generic, NPM, and PyPi packages
+* Unsupported items from this category **will need to be recreated manually or via API**
 * Unfortunately, these cannot be moved until after the project is created on the destination, so any pre-work will consist of preparing and testing any scripting
 
-| Area | API if available |
-| :---- | :---- |
-| Agents | [https://docs.gitlab.com/ee/api/cluster\_agents.html](https://docs.gitlab.com/ee/api/cluster_agents.html) |
-| Container Registry | [https://docs.gitlab.com/ee/api/container\_registry.html](https://docs.gitlab.com/ee/api/container_registry.html)  Note: This allows you to interact with the Container Registry, but not pull and push containers |
-| Environments | [https://docs.gitlab.com/ee/api/environments.html](https://docs.gitlab.com/ee/api/environments.html) |
-| Feature flags | [https://docs.gitlab.com/ee/api/feature\_flags.html](https://docs.gitlab.com/ee/api/feature_flags.html) and [https://docs.gitlab.com/ee/api/feature\_flag\_user\_lists.html](https://docs.gitlab.com/ee/api/feature_flag_user_lists.html) |
-| Infrastructure Registry |  |
-| Package registry | [https://docs.gitlab.com/ee/api/packages.html](https://docs.gitlab.com/ee/api/packages.html) |
-| Pages domains | \*Delete only API exists |
-| Remote mirrors | [https://docs.gitlab.com/ee/api/remote\_mirrors.html](https://docs.gitlab.com/ee/api/remote_mirrors.html) |
+| Area                    | API if available                                                                                                                                                                                                                          |
+| :---------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Agents                  | [https://docs.gitlab.com/ee/api/cluster\_agents.html](https://docs.gitlab.com/ee/api/cluster_agents.html)                                                                                                                                 |
+| Container Registry      | [https://docs.gitlab.com/ee/api/container\_registry.html](https://docs.gitlab.com/ee/api/container_registry.html)  Note: This allows you to interact with the Container Registry, but not pull and push containers                        |
+| Environments            | [https://docs.gitlab.com/ee/api/environments.html](https://docs.gitlab.com/ee/api/environments.html)                                                                                                                                      |
+| Feature flags           | [https://docs.gitlab.com/ee/api/feature\_flags.html](https://docs.gitlab.com/ee/api/feature_flags.html) and [https://docs.gitlab.com/ee/api/feature\_flag\_user\_lists.html](https://docs.gitlab.com/ee/api/feature_flag_user_lists.html) |
+| Infrastructure Registry |                                                                                                                                                                                                                                           |
+| Package registry        | [https://docs.gitlab.com/ee/api/packages.html](https://docs.gitlab.com/ee/api/packages.html)                                                                                                                                              |
+| Pages domains           | \*Delete only API exists                                                                                                                                                                                                                  |
+| Remote mirrors          | [https://docs.gitlab.com/ee/api/remote\_mirrors.html](https://docs.gitlab.com/ee/api/remote_mirrors.html)                                                                                                                                 |
 
 ### Unmigrated Project Features (GitHub to GitLab)
 
@@ -516,20 +527,20 @@ It is more difficult to gauge the effort needed for GitHub to GitLab, as we publ
 
 ### CI/CD Pipelines
 
-* Verify the migration of CI/CD pipelines and jobs to GitLab and confirm their functionality. This includes runner/build engine connectivity (GitLab runner, Jenkins integration)  
-* Optimize pipelines for performance and reliability, considering factors such as parallelism, caching, and resource utilization.  
-* Generic things that we suggest to test in order to put an approval stamp on the migrated project.  
-  * Automated builds.   
-  * Unit Testing  
-  * Integration Testing  
-  * Automated Deployment  
-  * Monitoring and Reporting  
-  * Deploying to Production  
-* Post pipeline verification it is advisable to check on all deployed artifacts. 
+* Verify the migration of CI/CD pipelines and jobs to GitLab and confirm their functionality. This includes runner/build engine connectivity (GitLab runner, Jenkins integration)
+* Optimize pipelines for performance and reliability, considering factors such as parallelism, caching, and resource utilization.
+* Generic things that we suggest to test in order to put an approval stamp on the migrated project.
+  * Automated builds.
+  * Unit Testing
+  * Integration Testing
+  * Automated Deployment
+  * Monitoring and Reporting
+  * Deploying to Production
+* Post pipeline verification it is advisable to check on all deployed artifacts.
 
 ### Issue Tracking and Boards
 
-* Spot check the migration of issues, epics, and boards from the previous system to GitLab. The importers and Congregate will produce a list of "failed relationships" that should cover this, but a spot check that they look good, have the proper attribution, etc should also be performed  
+* Spot check the migration of issues, epics, and boards from the previous system to GitLab. The importers and Congregate will produce a list of "failed relationships" that should cover this, but a spot check that they look good, have the proper attribution, etc should also be performed
 * Spot check issue boards and labels as needed to streamline project management and tracking.
 
 ### Merge Requests
@@ -538,7 +549,7 @@ It is more difficult to gauge the effort needed for GitHub to GitLab, as we publ
 
 ### Wikis and Documentation
 
-* Ensure that wikis and documentation have been migrated successfully and are accessible to relevant team members.  
+* Ensure that wikis and documentation have been migrated successfully and are accessible to relevant team members.
 * Encourage the ongoing contribution and maintenance of documentation to facilitate knowledge sharing and collaboration.
 
 ### Integrations and Tooling
@@ -547,66 +558,66 @@ It is more difficult to gauge the effort needed for GitHub to GitLab, as we publ
 
 ### Security and Compliance
 
-* Review group security settings and configurations in GitLab to ensure adherence to organizational policies and industry regulations. This can include items like SCIM/SAML configuration and IP Allowlist  
+* Review group security settings and configurations in GitLab to ensure adherence to organizational policies and industry regulations. This can include items like SCIM/SAML configuration and IP Allowlist
 * Implement necessary security measures, such as vulnerability scanning, access controls, and compliance checks.
 
 ### Badges
 
-* Review imported badges to ensure they are correctly applied to repositories, reflecting project status, quality, or other relevant metrics.  
+* Review imported badges to ensure they are correctly applied to repositories, reflecting project status, quality, or other relevant metrics.
 * Consider creating new badges or updating existing ones to align with your organization's objectives and key performance indicators.
 
 ### Boards and Board Lists
 
-* Validate the migration of boards and board lists to GitLab, ensuring that they accurately represent project workflows and statuses.  
+* Validate the migration of boards and board lists to GitLab, ensuring that they accurately represent project workflows and statuses.
 * Customize board lists as needed to accommodate your team's specific requirements and processes.
 
 ### Epics
 
-* Verify the migration of epics to GitLab and confirm their associations with respective projects and groups.  
+* Verify the migration of epics to GitLab and confirm their associations with respective projects and groups.
 * Organize epics effectively, grouping related tasks and initiatives to provide clarity and visibility into project priorities.
 
 ### Group Labels
 
-* Review imported group labels and ensure they are appropriately categorized and applied to projects within the group.  
+* Review imported group labels and ensure they are appropriately categorized and applied to projects within the group.
 * Standardize label usage across groups and projects to facilitate consistent tracking and reporting.
 
 ### Iterations and Iteration Cadences
 
-* Confirm the migration of iterations and iteration cadences to GitLab, allowing teams to plan and track work within defined timeframes.  
+* Confirm the migration of iterations and iteration cadences to GitLab, allowing teams to plan and track work within defined timeframes.
 * Establish iteration cadences that align with your organization's sprint or release schedules, promoting predictability and accountability in project delivery.
 
 ### Members
 
-* Validate the migration of members to GitLab, ensuring that all relevant team members have appropriate access and permissions within groups and projects. If you are using SCIM provisioning, this should happen when a user first logs into the system  
+* Validate the migration of members to GitLab, ensuring that all relevant team members have appropriate access and permissions within groups and projects. If you are using SCIM provisioning, this should happen when a user first logs into the system
 * Communicate any changes in membership or roles to affected individuals and provide necessary training or support as needed.
 
 ### Group Milestones and Release Milestones
 
-* Verify the migration of group milestones and release milestones to GitLab, enabling teams to track progress and align activities with overarching project goals.  
+* Verify the migration of group milestones and release milestones to GitLab, enabling teams to track progress and align activities with overarching project goals.
 * Utilize milestones effectively to set targets, prioritize tasks, and coordinate cross functional efforts within groups and projects.
 
 ### Namespace Settings
 
-* Review namespace settings in GitLab to ensure they align with your organization's governance policies and preferences.  
+* Review namespace settings in GitLab to ensure they align with your organization's governance policies and preferences.
 * Customize settings such as visibility, permissions, and repository configurations to meet specific project requirements and security standards.
 
 ### Uploads
 
-* Validate the migration of uploads, including files, images, and other attachments, to GitLab to maintain data integrity and accessibility.  
+* Validate the migration of uploads, including files, images, and other attachments, to GitLab to maintain data integrity and accessibility.
 * Ensure that uploaded files are correctly linked and accessible within relevant project repositories, wikis, or issues.
 
 ## Common Post Migration Issues
 
 Most of the issues are already covered above in the checks. In general, the typical problems are:
 
-| Concern | Description | Supported By |
-| :---- | :---- | :---- |
-| System-level access for individuals | Usually pointing to SAML/SCIM issues Could also be a problem with IP allowlists or domain restrictions for the instance/namespace | GitLab for configuration Customer teams for configuration in their source identity system |
-| Basic permissions at the namespace, group, or project level | Also usually a SAML/SCIM issue, or an issue with a user email name bound to their user account,  but can point to a migration issues if permissions were not added to the specific project | GitLab for configuration Customer teams for configuration in their source identity system |
-| Issues with git origin, called out in the above | Called out above |  |
-| Runner/jobs not getting picked up | This can be from private runners not yet being registered, or tagging of the pipeline. Customer should check with their operations teams Users can also check the runner inheritance settings for groups and projects | GitLab for configuration GitLab for pipeline advisory Customer teams for configuration or specifics  |
-| Integrations | Jira, Jenkins, or other systems. Check the tokens on the integrations themselves. Otherwise, it may be a network connection issue outside the scope of this documentation | GitLab for configuration of the integrations from the GitLab side Customer teams for configuration on the destination side of the integration or specifics   |
-| Missing data | A catch-all for missing data; repos, pipelines, commits, metadata related to a project *not* covered in the missing features above | GitLab |
+| Concern                                                     | Description                                                                                                                                                                                                           | Supported By                                                                                                                                               |
+| :---------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| System-level access for individuals                         | Usually pointing to SAML/SCIM issues Could also be a problem with IP allowlists or domain restrictions for the instance/namespace                                                                                     | GitLab for configuration Customer teams for configuration in their source identity system                                                                  |
+| Basic permissions at the namespace, group, or project level | Also usually a SAML/SCIM issue, or an issue with a user email name bound to their user account,  but can point to a migration issues if permissions were not added to the specific project                            | GitLab for configuration Customer teams for configuration in their source identity system                                                                  |
+| Issues with git origin, called out in the above             | Called out above                                                                                                                                                                                                      |                                                                                                                                                            |
+| Runner/jobs not getting picked up                           | This can be from private runners not yet being registered, or tagging of the pipeline. Customer should check with their operations teams Users can also check the runner inheritance settings for groups and projects | GitLab for configuration GitLab for pipeline advisory Customer teams for configuration or specifics                                                        |
+| Integrations                                                | Jira, Jenkins, or other systems. Check the tokens on the integrations themselves. Otherwise, it may be a network connection issue outside the scope of this documentation                                             | GitLab for configuration of the integrations from the GitLab side Customer teams for configuration on the destination side of the integration or specifics |
+| Missing data                                                | A catch-all for missing data; repos, pipelines, commits, metadata related to a project *not* covered in the missing features above                                                                                    | GitLab                                                                                                                                                     |
 
 ## Customer-Specific Section
 
@@ -624,6 +635,6 @@ Check out our [migration FAQ document](https://gitlab.com/gitlab-org/professiona
 
 # Links
 
-* [Migration Delivery Kit](https://gitlab.com/gitlab-org/professional-services-automation/delivery-kits/migration-template)  
-* [Congregate](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate)  
+* [Migration Delivery Kit](https://gitlab.com/gitlab-org/professional-services-automation/delivery-kits/migration-template)
+* [Congregate](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate)
 * [GitLab Imports](https://docs.gitlab.com/ee/user/project/import/)
