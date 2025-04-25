@@ -272,31 +272,44 @@ sudo gitlab-rails console
 
 ```ruby
 # Assign project and user
-[ gprd ] production> p=Project.find_by_full_path(‘<full_path>’)
+p=Project.find_by_full_path('<full_path>')
 => #<Project id:<PID> <full_path>
-[ gprd ] production> u=User.find_by(username: “<admin_or_owner_username>”)
+u=User.find_by(username: '<admin_or_owner_username>')
 => #<User id:UID @<admin_or_owner_username>>
 
-# Find out delete error
-[ gprd ] production> p.delete_error
+# (Optional) Find out delete error
+p.delete_error
 => "PG::QueryCanceled: ERROR:  canceling statement due to statement timeout\n"
 
-# Trim CI pipelines
-[ gprd ] production> p.ci_pipelines.find_each(start: <oldest_pipeline_id>, finish: <latest_pipeline_id>, batch_size: <no_of_pipelines_to_remove_per_batch>, &:destroy)
-=> nil
-[ gprd ] production> p.ci_pipelines.count
+# (Optional) Count current pipelines
+p.ci_pipelines.count
 => <no_of_pipelines_left>
 
-# Remove all pipelines
-[ gprd ] production> p.ci_pipelines.find_each(batch_size: <no_of_pipelines_to_remove_per_batch>, &:destroy)
+# Option 1: Trim CI pipelines
+p.ci_pipelines.find_each(start: <oldest_pipeline_id>, finish: <latest_pipeline_id>, batch_size: <no_of_pipelines_to_remove_per_batch>, &:destroy)
 => nil
-[ gprd ] production> p.ci_pipelines.count
+
+# Option 2: Leave only pipelines triggered by tags
+p.ci_pipelines.where(tag: false).find_each(batch_size: <no_of_pipelines_to_remove_per_batch>, &:destroy)
+
+# Option 3: Remove all pipelines
+p.ci_pipelines.find_each(batch_size: <no_of_pipelines_to_remove_per_batch>, &:destroy)
+=> nil
+p.ci_pipelines.count
 => 0
 
+# (Optional) Count remaining pipelines
+p.ci_pipelines.count
+=> <no_of_pipelines_left>
+
 # (WARNING) Completely remove the project
-[ gprd ] production> ProjectDestroyWorker.new.perform(p.id, u.id, {})
+ProjectDestroyWorker.new.perform(p.id, u.id, {})
 => true
 ```
+
+##### Exclude pipelines from manual project export
+
+https://gitlab.com/-/snippets/4837628
 
 #### Fallback if no container registry migrate
 

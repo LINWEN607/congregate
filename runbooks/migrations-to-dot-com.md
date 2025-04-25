@@ -429,6 +429,10 @@ ProjectDestroyWorker.new.perform(p.id, u.id, {})
 => true
 ```
 
+##### Exclude pipelines from manual project export
+
+https://gitlab.com/-/snippets/4837628
+
 #### Fallback if container registries fail to migrate
 
 In the event container registries fail to migrate, e.g. due to size and/or network restrictions, there is a bash script built into the container you can use as a backup.
