@@ -432,7 +432,7 @@ As waves of migration are being completed, individual users should be testing th
 To test connectivity, Read & Write modes should be in scope. Test these with the following commands below:
 
 * READ:
-  * git remote-ls \<REPO\_URL\>
+  * git ls-remote	 \<REPO\_URL\>
 * WRITE:
   * cd \<MIGRATED\_CLONED\_REPO\_FOLDER\>
   * git remote -v
