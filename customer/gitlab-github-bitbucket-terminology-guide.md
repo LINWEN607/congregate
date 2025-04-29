@@ -35,6 +35,7 @@
 | **Epics**            | ✅ Yes        | ❌ No native  | ❌ No native  |
 | **Static Pages**     | GitLab Pages  | GitHub Pages  | ❌ None       |
 | **Web IDE**          | Yes           | Codespaces    | Code Editor   |
+| **Web Wikis**        | Yes           | Yes           | Code Editor   |
 | **Container Registry**| Yes          | Yes           | Yes           |
 | **CI/CD Config File**| `.gitlab-ci.yml` | `.github/workflows` | `bitbucket-pipelines.yml` |
 | **Self-Hosted Option**| CE/EE        | Enterprise Server | Data Center  |
