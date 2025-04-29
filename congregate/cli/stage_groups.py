@@ -28,7 +28,8 @@ class GroupStageCLI(BaseStageClass):
             Stage data based on selected groups on source instance
         """
         self.build_staging_data(groups_to_stage, dry_run, scm_source)
-        if self.config.source_type == "gitlab":
+        # Direct-transfer uses Placeholder users
+        if self.config.source_type == "gitlab" and not self.config.direct_transfer:
             self.list_staged_users_without_public_email()
         if not dry_run:
             self.write_staging_files(skip_users=skip_users)
@@ -95,7 +96,7 @@ class GroupStageCLI(BaseStageClass):
                     self.log.error(
                         f"Please use a space delimited list of UUIDs (group IDs), NOT {groups_to_stage[0]}")
                     sys.exit(os.EX_IOERR)
-            
+
             elif self.config.source_type == "codecommit":
                 if groups_to_stage[0] in ["all", "."]:
                     for p in projects:

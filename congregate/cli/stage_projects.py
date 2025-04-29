@@ -42,7 +42,8 @@ class ProjectStageCLI(BaseStageClass):
             if is_dot_com(self.config.destination_host):
                 self.log.warning(
                     "Please manually migrate USER projects to gitlab.com")
-        if self.config.source_type == "gitlab":
+        # Direct-transfer uses Placeholder users
+        if self.config.source_type == "gitlab" and not self.config.direct_transfer:
             self.list_staged_users_without_public_email()
         if not dry_run:
             self.write_staging_files(skip_users=skip_users)
@@ -51,7 +52,7 @@ class ProjectStageCLI(BaseStageClass):
                            dry_run=True, scm_source=None):
         """
             Build data up from project level, including groups and users (members)
-            If format=csv, read from data/<data>.csv, build a list. 
+            If format=csv, read from data/<data>.csv, build a list.
             Otherwise, proceed with the existing JSON-based approach.
 
             :param: projects_to_stage: (dict) the staged projects objects
@@ -65,7 +66,7 @@ class ProjectStageCLI(BaseStageClass):
         if i == -1:
             self.log.warning(
                 f"Couldn't find the correct GH instance with hostname: {scm_source}")
-        # Loading projects information   
+        # Loading projects information
         if self.format.lower() == "csv":
             projects = parse_projects_csv(self.app_path, scm_source)
             groups = parse_groups_csv(self.app_path, scm_source)

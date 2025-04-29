@@ -24,7 +24,8 @@ class UserStageCLI(BaseStageClass):
             :param: skip_users (bool) If true will skip writing staged users to file
         """
         self.build_staging_data(users_to_stage)
-        if self.config.source_type == "gitlab":
+        # Direct-transfer uses Placeholder users
+        if self.config.source_type == "gitlab" and not self.config.direct_transfer:
             self.list_staged_users_without_public_email()
         if not dry_run:
             write_json_to_file(f"{self.app_path}/data/staged_groups.json", [])
