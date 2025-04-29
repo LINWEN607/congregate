@@ -189,6 +189,7 @@ PSE conducting the migration:
   * This is to avoid group and project import failures
 * [ ] (as of **14.0**) Set `public_email` field for all staged users on source by running `./congregate.sh set-staged-users-public-email`
   * Skip running command if source version is **\< 14.0** and destination version is **\>= 14.0**
+  * Run `congregate list --skip-groups --skip-projects` to capture the latest user metadata
 * [ ] Notify in the internal Slack channel dedicated to this migration you have completed preparation for the wave
 
 **NOTE:** Projects and groups (except top-level group) are by (instance) default deleted after 7 days. In the meantime their name and path changes and the projects are archived. To immediately delete them one (Owner) has to delete them again. Adding `permanently_remove` immediately removes them via API.
@@ -261,8 +262,7 @@ Project exports include, among others:
 * Snippets
 * Uploads
 
-<details>
-<summary>Instructions for migrating project exports >5Gb</summary>
+<details><summary>Instructions for migrating project exports >5Gb</summary>
 
 #### Import project from AWS S3
 
@@ -291,7 +291,8 @@ Project exports include, among others:
         "secret_access_key": “<aws-secret-key>"
       }'
     ```
-    1. If you encounter errors, consult our PS troubleshooting guide [here](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/blob/master/docs/troubleshooting_s3_import.md)
+
+If you encounter errors, consult our [PS troubleshooting guide](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/blob/master/docs/troubleshooting_s3_import.md).
 
 #### Workarounds
 

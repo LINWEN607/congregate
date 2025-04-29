@@ -175,6 +175,7 @@ Copy the following data and add subsequent rows for single project migration
   * For more details see [Group Export/Import docs](https://docs.gitlab.com/ee/user/group/import/index.html#migrate-groups-by-uploading-an-export-file-deprecated)
 * [ ] (as of **14.0**) Set `public_email` field for all staged users on source by running `./congregate.sh set-staged-users-public-email`
   * Skip running command if source version is **< 14.0** and destination version is **>= 14.0**
+  * Run `congregate list --skip-groups --skip-projects` to capture the latest user metadata
 * [ ] Notify in the internal Slack channel dedicated to this migration you have completed preparation for the wave
 
 #### Dry run groups and projects
