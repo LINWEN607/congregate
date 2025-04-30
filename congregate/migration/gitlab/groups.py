@@ -250,9 +250,9 @@ class GroupsClient(BaseClass):
         for member in members:
             user = search_for_user_by_user_mapping_field(
                 field, member, host, token)
+            result[member[field]] = False
             if user.get("id"):
                 member["user_id"] = user.get("id")
-                result[member[field]] = False
                 if member["user_id"]:
                     # Due to 400 error: user_id, username are mutually exclusive
                     member.pop("username", None)
