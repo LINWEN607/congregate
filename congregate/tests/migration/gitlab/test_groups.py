@@ -185,7 +185,7 @@ class GroupsTests(unittest.TestCase):
         add_member_mock.return_value = member1_mock
         expected = {
             "johndoe@email.com": True,
-            # "janedoe@email.com": False
+            "janedoe@email.com": False
         }
         actual = self.groups.add_members_to_destination_group(
             "", "", 000, members)
