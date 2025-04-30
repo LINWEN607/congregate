@@ -216,4 +216,6 @@ class BaseStageClass(BaseClass):
             } for u in remove_dupes(self.staged_users) if u.get("email") != u.get("public_email")]
             if no_public_email:
                 self.log.warning(
-                    f"Staged users with incorrect (not primary email) or no `public_email` field set ({len(no_public_email)}):\n{json_pretty(no_public_email)}")
+                    f"Staged users with incorrect (not primary email) or no 'public_email' field set ({len(no_public_email)}):\n{json_pretty(no_public_email)}")
+                self.log.error("Set the 'public_email' field and/or run a new 'list' of only users")
+                sys.exit(os.EX_DATAERR)
