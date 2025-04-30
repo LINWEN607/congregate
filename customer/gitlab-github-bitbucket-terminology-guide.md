@@ -58,3 +58,22 @@
 | **MR/PR Templates**| `.gitlab/merge_request_templates/*.md` | `.github/PULL_REQUEST_TEMPLATE.md` | No standard path  |
 
 ---
+
+## 5. Analytics & Reporting
+
+| **Feature**              | **GitLab**                                    | **GitHub**                         | **Bitbucket**                     |
+|--------------------------|-----------------------------------------------|------------------------------------|-----------------------------------|
+| **Repository Analytics** | ✅ Repository insights                        | ✅ Insights                         | ✅ Repository insights             |
+| **CI/CD Analytics**      | ✅ CI/CD pipeline analytics                   | ✅ Actions usage insights           | ✅ Pipeline duration & status      |
+| **DevOps Reports**       | ✅ Value Stream Analytics, DORA metrics       | ❌ Limited native offering          | ❌ Limited native offering         |
+
+## 6. Security & Compliance Features
+
+| **Feature**              | **GitLab**                                                        | **GitHub**                                      | **Bitbucket**                                |
+|--------------------------|-------------------------------------------------------------------|------------------------------------------------|----------------------------------------------|
+| **Native Security Tools**| ✅ Built-in SAST, DAST, Dependency, Container Scanning            | ✅ GitHub Advanced Security (CodeQL, etc.), Dependabot | ❌ No native tools (uses integrations)         |
+| **Dependency Scanning**  | ✅ Built into GitLab CI/CD                                        | ✅ Dependabot                                   | ⚠️ Snyk (official integration, not native)    |
+| **Secret Detection**     | ✅ GitLab CI/CD secret detection                                  | ✅ Secret Scanning (part of GitHub Advanced Security) | ⚠️ Snyk (via integration)               |
+| **Security Dashboard**   | ✅ GitLab Security Dashboard                                      | ✅ GitHub Security Overview                     | ⚠️ Snyk Dashboard (via integration)           |
+
+
