@@ -26,7 +26,7 @@ class UserStageCLI(BaseStageClass):
         self.build_staging_data(users_to_stage)
         # Direct-transfer uses Placeholder users
         if self.config.source_type == "gitlab" and not self.config.direct_transfer:
-            self.list_staged_users_without_public_email()
+            self.are_staged_users_without_public_email()
         if not dry_run:
             write_json_to_file(f"{self.app_path}/data/staged_groups.json", [])
             write_json_to_file(

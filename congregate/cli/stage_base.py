@@ -206,7 +206,7 @@ class BaseStageClass(BaseClass):
         return group
 
     # Applies only to GL->GL file-based migrations
-    def list_staged_users_without_public_email(self):
+    def are_staged_users_without_public_email(self):
         if is_gl_version_older_than(14, self.config.source_host, self.config.source_token, "SKIP: Not mandatory to set 'public_email' field for staged users"):
             return
         if self.staged_users:
@@ -218,4 +218,3 @@ class BaseStageClass(BaseClass):
                 self.log.warning(
                     f"Staged users with incorrect (not primary email) or no 'public_email' field set ({len(no_public_email)}):\n{json_pretty(no_public_email)}")
                 self.log.error("Set the 'public_email' field and/or run a new 'list' of only users")
-                sys.exit(os.EX_DATAERR)
