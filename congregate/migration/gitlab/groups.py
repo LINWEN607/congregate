@@ -248,27 +248,28 @@ class GroupsClient(BaseClass):
             f"Adding {len(members)} member{'s' if len(members) > 1 else ''} to group ID {group_id}:\n{json_pretty(members)}")
         field = self.config.user_mapping_field
         for member in members:
-            user = search_for_user_by_user_mapping_field(
-                field, member, host, token)
-            result[member[field]] = False
-            if user.get("id"):
-                member["user_id"] = user.get("id")
-                if member["user_id"]:
-                    # Due to 400 error: user_id, username are mutually exclusive
-                    member.pop("username", None)
-                    resp = self.groups_api.add_member_to_group(
-                        group_id, host, token, member)
-                    if resp.status_code != 200:
-                        self.log.warning(
-                            f"Failed to add member '{member}' to group {group_id}:\n{resp} - {resp.text}")
+            if member.get("email") != None:
+                user = search_for_user_by_user_mapping_field(
+                    field, member, host, token)
+                result[member[field]] = False
+                if user.get("id"):
+                    member["user_id"] = user.get("id")
+                    if member["user_id"]:
+                        # Due to 400 error: user_id, username are mutually exclusive
+                        member.pop("username", None)
+                        resp = self.groups_api.add_member_to_group(
+                            group_id, host, token, member)
+                        if resp.status_code != 200:
+                            self.log.warning(
+                                f"Failed to add member '{member}' to group {group_id}:\n{resp} - {resp.text}")
+                        else:
+                            result[member[field]] = True
                     else:
-                        result[member[field]] = True
+                        self.log.warning(
+                            f"Failed to add member '{member}' to group {group_id}, user not found")
                 else:
                     self.log.warning(
-                        f"Failed to add member '{member}' to group {group_id}, user not found")
-            else:
-                self.log.warning(
-                    f"Failed to add member '{member}' to group {group_id}, failed to search for user in source")
+                        f"Failed to add member '{member}' to group {group_id}, failed to search for user in source")
         return result
 
     def find_and_stage_group_bulk_entities(self, groups):
