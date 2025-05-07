@@ -150,22 +150,22 @@ def check_package_exists_with_matching_files(src_id, dest_id, package_name, pack
     """
     try:
         # Get source packages
-        src_packages = list(PackagesApi.get_project_packages(src_host, src_token, src_id))
+        src_packages = list(packages_api.get_project_packages(src_host, src_token, src_id))
         src_pkg = next((p for p in src_packages if p.get('name') == package_name and p.get('version') == package_version), None)
         
         if not src_pkg:
             return (False, "source_not_found", "Package not found in source")
             
         # Get destination packages
-        dest_packages = list(PackagesApi.get_project_packages(dest_host, dest_token, dest_id))
+        dest_packages = list(packages_api.get_project_packages(dest_host, dest_token, dest_id))
         dest_pkg = next((p for p in dest_packages if p.get('name') == package_name and p.get('version') == package_version), None)
         
         if not dest_pkg:
             return (False, "dest_not_found", "Package not found in destination")
             
         # Get file lists
-        src_files = list(PackagesApi.get_package_files(src_host, src_token, src_id, src_pkg['id']))
-        dest_files = list(PackagesApi.get_package_files(dest_host, dest_token, dest_id, dest_pkg['id']))
+        src_files = list(packages_api.get_package_files(src_host, src_token, src_id, src_pkg['id']))
+        dest_files = list(packages_api.get_package_files(dest_host, dest_token, dest_id, dest_pkg['id']))
         
         # Compare file counts
         if len(src_files) != len(dest_files):
@@ -231,9 +231,11 @@ def compare_packages(
     prefix = f"[Project SRC:{src_id} → DST:{dest_id}]"
     log_info = lambda msg: logger.info(f"{prefix} {msg}") if logger else None
     log_warning = lambda msg: logger.warning(f"{prefix} {msg}") if logger else None
+
+    packages_api = PackagesApi()
     
     # Get source packages
-    src_packages = list(PackagesApi.get_project_packages(src_host, src_token, src_id))
+    src_packages = list(packages_api.get_project_packages(src_host, src_token, src_id))
     src_pkg = next((p for p in src_packages if p.get('name') == package_name and p.get('version') == package_version), None)
     
     if not src_pkg:
@@ -245,7 +247,7 @@ def compare_packages(
         }
         
     # Get destination packages
-    dest_packages = list(PackagesApi.get_project_packages(dest_host, dest_token, dest_id))
+    dest_packages = list(packages_api.get_project_packages(dest_host, dest_token, dest_id))
     dest_pkg = next((p for p in dest_packages if p.get('name') == package_name and p.get('version') == package_version), None)
     
     if not dest_pkg:
@@ -257,8 +259,8 @@ def compare_packages(
         }
         
     # Get file lists
-    src_files = list(PackagesApi.get_package_files(src_host, src_token, src_id, src_pkg['id']))
-    dest_files = list(PackagesApi.get_package_files(dest_host, dest_token, dest_id, dest_pkg['id']))
+    src_files = list(packages_api.get_package_files(src_host, src_token, src_id, src_pkg['id']))
+    dest_files = list(packages_api.get_package_files(dest_host, dest_token, dest_id, dest_pkg['id']))
     
     # Compare file counts - Warning condition when destination has more files than source
     if len(dest_files) > len(src_files):
