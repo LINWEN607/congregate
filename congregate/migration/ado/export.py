@@ -242,7 +242,7 @@ class AdoExportBuilder(ExportBuilder):
     def build_clone_url(self, source_project):
         clone_url = source_project['http_url_to_repo']
         decoded_token = deobfuscate(self.config.source_token)
-        return clone_url.replace("@", f"{decoded_token}@")
+        return clone_url.replace("@", f"{self.config.source_username}{decoded_token}@")
 
     def build_mr_notes(self, pr_id):
         notes = []

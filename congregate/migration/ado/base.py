@@ -84,7 +84,7 @@ class AzureDevOpsWrapper(BaseClass):
         try:
             for repo in self.repositories_api.get_all_repositories(project["id"]):
                 # Save all project repos ID references as part of group metadata
-                if repo.get("isDisabled") is False and repo.get("size") > 0:
+                if repo.get("isDisabled", False) is False:
                     repos.append(repo.get("id"))
                     if mongo is not None:
                         mongo.insert_data(
@@ -108,18 +108,19 @@ class AzureDevOpsWrapper(BaseClass):
 
     def add_team_members(self, users, project):
         users = []
-        for team in self.teams_api.get_teams(project["id"]):
-            for member in self.teams_api.get_team_members(project["id"], team["id"]):
-                if member["identity"].get("isContainer"):
-                    for group_member in self.users_api.get_group_members(member["identity"].get('id')):
-                        user_descriptor = group_member["user"]["descriptor"]
+        if "dev.azure.com" in self.config.source_host:
+            for team in self.teams_api.get_teams(project["id"]):
+                for member in self.teams_api.get_team_members(project["id"], team["id"]):
+                    if member["identity"].get("isContainer"):
+                        for group_member in self.users_api.get_group_members(member["identity"].get('id')):
+                            user_descriptor = group_member["user"]["descriptor"]
+                            user_data = self.users_api.get_user(user_descriptor)
+                            if user_data:
+                                users.append(self.format_user(user_data.json()))
+                    else:
+                        user_descriptor = member["identity"]["descriptor"]
                         user_data = self.users_api.get_user(user_descriptor)
                         if user_data:
                             users.append(self.format_user(user_data.json()))
-                else:
-                    user_descriptor = member["identity"]["descriptor"]
-                    user_data = self.users_api.get_user(user_descriptor)
-                    if user_data:
-                        users.append(self.format_user(user_data.json()))
-        users = [dict(t) for t in {tuple(d.items()) for d in users}]
+            users = [dict(t) for t in {tuple(d.items()) for d in users}]
         return users
