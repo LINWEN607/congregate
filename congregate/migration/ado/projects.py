@@ -1,5 +1,5 @@
 from gitlab_ps_utils.misc_utils import strip_netloc
-
+from celery import shared_task
 from congregate.migration.ado.api.base import AzureDevOpsApiWrapper
 from congregate.migration.ado.base import AzureDevOpsWrapper
 from congregate.migration.ado.api.projects import ProjectsApi
@@ -8,7 +8,7 @@ from congregate.migration.ado.api.pull_requests import PullRequestsApi
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.congregate_mdbc import CongregateMongoConnector
+from congregate.helpers.congregate_mdbc import CongregateMongoConnector, mongo_connection
 
 
 class ProjectsClient(BaseClass):
@@ -24,12 +24,15 @@ class ProjectsClient(BaseClass):
         super().__init__()
 
     def retrieve_project_info(self, processes=None, projects_list=None):
-        if projects_list:
-            self.multi.start_multi_process_stream(
-                self.handle_retrieving_project, projects_list, processes=processes)
+        projects = projects_list if projects_list else self.projects_api.get_all_projects()
+        if self.config.direct_transfer:
+            self.log.info("Direct transfer enabled - queuing ADO projects via Celery")
+            for project in projects:
+                handle_retrieving_ado_projects_task.delay(project)
         else:
+            self.log.info("Direct transfer disabled - using multiprocessing for ADO projects")
             self.multi.start_multi_process_stream(
-                self.handle_retrieving_project, self.projects_api.get_all_projects(), processes=processes)
+                self.handle_retrieving_project, projects, processes=processes)
 
     def handle_retrieving_project(self, project, mongo=None):
         if not mongo:
@@ -89,3 +92,14 @@ class ProjectsClient(BaseClass):
             for user in self.users_api.search_for_user_by_email(self.config.destination_host, self.config.destination_token, user_email):
                 assignee_ids.append(user.get("id"))
         return assignee_ids
+
+
+@shared_task(name='retrieve-ado-projects')
+@mongo_connection
+def handle_retrieving_ado_projects_task(project, mongo=None):
+    project_client = ProjectsClient()
+    project_client.log.info("Handling ADO project via Celery task")
+    if project:
+        project_client.handle_retrieving_project(project, mongo)
+    else:
+        project_client.log.error(f"Failed to process ADO project data. Was provided [{project}]")
