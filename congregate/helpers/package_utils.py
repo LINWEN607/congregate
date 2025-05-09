@@ -139,8 +139,10 @@ def compare_packages(
     dest_host, 
     src_token, 
     dest_token, 
-    PackagesApi,
-    logger=None
+    packages_api,
+    logger=None,
+    all_source_packages=None,
+    all_dest_packages=None
 ):
     """
     Compares a package between source and destination GitLab instances
@@ -157,6 +159,8 @@ def compare_packages(
         dest_token: Destination GitLab token
         packages_api: Instance of PackagesApi
         logger: Optional logger
+        all_source_packages: Optional pre-fetched list of source packages
+        all_dest_packages: Optional pre-fetched list of destination packages
         
     Returns:
         dict: Comparison result with keys:
@@ -167,11 +171,13 @@ def compare_packages(
     prefix = f"[Project SRC:{src_id} → DST:{dest_id}]"
     log_info = lambda msg: logger.info(f"{prefix} {msg}") if logger else None
     log_warning = lambda msg: logger.warning(f"{prefix} {msg}") if logger else None
-
-    packages_api = PackagesApi()
     
-    # Get source packages
-    src_packages = list(packages_api.get_project_packages(src_host, src_token, src_id))
+    # Use pre-fetched packages if available, otherwise fetch them
+    if all_source_packages is None:
+        src_packages = list(packages_api.get_project_packages(src_host, src_token, src_id))
+    else:
+        src_packages = all_source_packages
+    
     src_pkg = next((p for p in src_packages if p.get('name') == package_name and p.get('version') == package_version), None)
     
     if not src_pkg:
@@ -181,9 +187,13 @@ def compare_packages(
             "reason": "source_not_found",
             "details": "Package not found in source project"
         }
-        
-    # Get destination packages
-    dest_packages = list(packages_api.get_project_packages(dest_host, dest_token, dest_id))
+    
+    # Use pre-fetched destination packages if available
+    if all_dest_packages is None:
+        dest_packages = list(packages_api.get_project_packages(dest_host, dest_token, dest_id))
+    else:
+        dest_packages = all_dest_packages
+    
     dest_pkg = next((p for p in dest_packages if p.get('name') == package_name and p.get('version') == package_version), None)
     
     if not dest_pkg:

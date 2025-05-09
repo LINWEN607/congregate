@@ -34,24 +34,42 @@ class PackagesClient(BaseClass):
         results = []
 
         try:
-            for package in self.packages.get_project_packages(self.config.source_host, self.config.source_token, src_id):
+            # Fetch all packages once at the beginning
+            all_source_packages = list(self.packages.get_project_packages(
+                self.config.source_host, self.config.source_token, src_id
+            ))
+            self.log.info(f"Found {len(all_source_packages)} packages in source project {src_id}")
+            
+            all_dest_packages = list(self.packages.get_project_packages(
+                self.config.destination_host, self.config.destination_token, dest_id
+            ))
+            self.log.info(f"Found {len(all_dest_packages)} packages in destination project {dest_id}")
+            
+            for package in all_source_packages:
                 package_type = package.get('package_type')
                 try:
                     if package_type == 'generic':
                         self.migrate_generic_packages(
-                            src_id, dest_id, package, results)
+                            src_id, dest_id, package, results,
+                            all_source_packages=all_source_packages,
+                            all_dest_packages=all_dest_packages
+                        )
                     elif package_type == 'maven':
                         self.migrate_maven_packages(
-                            src_id, dest_id, package, project_name, results)
+                            src_id, dest_id, package, project_name, results
+                        )
                     elif package_type == 'pypi':
                         self.migrate_pypi_packages(
-                            src_id, dest_id, package, results)
+                            src_id, dest_id, package, results
+                        )
                     elif package_type == 'npm':
                         self.migrate_npm_packages(
-                            src_id, dest_id, package, results)
+                            src_id, dest_id, package, results
+                        )
                     elif package_type == 'helm':
                         self.migrate_helm_packages(
-                            src_id, dest_id, package, results)
+                            src_id, dest_id, package, results
+                        )
                     else:
                         self.log.warning(
                             f"Skipping {package.get('name')}, type {package.get('package_type')} not supported")
@@ -111,7 +129,7 @@ class PackagesClient(BaseClass):
             self.log.error(re)
         return files, found_executable, found_pom
 
-    def migrate_generic_packages(self, src_id, dest_id, package, results):
+    def migrate_generic_packages(self, src_id, dest_id, package, results, all_source_packages=None, all_dest_packages=None):
         """
         Migrates generic packages with robust handling of file transfers.
         """
@@ -134,10 +152,11 @@ class PackagesClient(BaseClass):
             dest_host=self.config.destination_host,
             src_token=self.config.source_token,
             dest_token=self.config.destination_token,
-            PackagesApi=self.packages,
-            logger=self.log
+            packages_api=self.packages,  # Changed parameter name here to match function definition
+            logger=self.log,
+            all_source_packages=all_source_packages,
+            all_dest_packages=all_dest_packages
         )
-        
         if comparison["match"]:
             self.log.info(f"[Project SRC:{src_id} → DST:{dest_id}] Package {package['name']} v{package['version']} already exists with matching files. Skipping.")
             results.append({'Migrated': True, 'Package': artifact})
