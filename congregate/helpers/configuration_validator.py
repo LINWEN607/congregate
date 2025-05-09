@@ -343,9 +343,7 @@ class ConfigurationValidator(Config):
             )
 
             # Quick call to validate credentials.
-            response = client.list_repositories()
-            if response.get("ResponseMetadata", {}).get("HTTPStatusCode") != 200:
-                raise RuntimeError(f"Bad response: {response}")
+            client.list_repositories()
         except ClientError as e:
             raise ConfigurationException(
                 "codecommit_credentials",
