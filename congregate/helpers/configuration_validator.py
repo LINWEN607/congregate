@@ -332,19 +332,13 @@ class ConfigurationValidator(Config):
                 "aws_secret_access_key",
                 msg="AWS Secret Access Key not found in config for CodeCommit"
             )
-        
-        if not src_aws_session_token:
-            raise ConfigurationException(
-                "aws_session_token",
-                msg="AWS Session Token not found in config for CodeCommit"
-            )
 
         try:
             client = boto3.client(
                 'codecommit',
                 aws_access_key_id=self.src_aws_access_key_id,
                 aws_secret_access_key=src_aws_secret_access_key,
-                aws_session_token=src_aws_session_token,
+                aws_session_token=src_aws_session_token if src_aws_session_token else None,
                 region_name=self.src_aws_region
             )
 

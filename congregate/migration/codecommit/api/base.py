@@ -27,7 +27,7 @@ class CodeCommitApiWrapper(BaseClass):
             self.boto_client = boto3.client('codecommit', config=self.boto3_configuration,
                                 aws_access_key_id = self.config.src_aws_access_key_id,
                                 aws_secret_access_key = self.config.src_aws_secret_access_key,
-                                aws_session_token =self.config.src_aws_session_token)
+                                aws_session_token = self.config.src_aws_session_token if self.config.src_aws_session_token else None )
         else:
             # Not CodeCommit or no region => skip building a Boto client
             self.boto_client = None
