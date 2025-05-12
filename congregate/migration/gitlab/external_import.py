@@ -89,7 +89,7 @@ class ImportClient(BaseClass):
         :return: (dict) Successful or failed result data.
         """
         src_aws_codecommit_username = self.config.src_aws_codecommit_username
-        src_aws_codecommit_password = deobfuscate(self.config.src_aws_codecommit_password)
+        src_aws_codecommit_password = self.config.src_aws_codecommit_password
         src_aws_region = self.config.src_aws_region
         # Get the namespace info for the target namespace
         namespace_response = self.projects.get_namespace_id_by_full_path(
@@ -378,7 +378,7 @@ class ImportClient(BaseClass):
         value = {
             "import_error": import_error,
             "gh_rate_limit_status": safe_json_response(GitHubUsersApi(self.config.source_host, self.config.source_token).get_rate_limit_status())
-            if import_error else None,
+            if import_error and self.config.source_type.lower() == "github" else None,
             "stats": stats,
             "failed_relations": failed_relations
         }
