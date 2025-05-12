@@ -1,15 +1,17 @@
-FROM rockylinux/rockylinux:8.8
+FROM rockylinux/rockylinux:8.10
 
 # Add ps-user and give them sudo privileges
 RUN adduser ps-user && \
-    gpasswd -a ps-user wheel
+    gpasswd -a ps-user wheel && \
+    yum update -y && yum install -y sudo && \
+    sed -i 's/wheel.*ALL\=(ALL).*ALL/wheel ALL=(ALL) NOPASSWD:ALL/' /etc/sudoers
     
 # Define the ENV variable
 ENV CONGREGATE_PATH=/opt/congregate \
     APP_PATH=/opt/congregate \
     APP_NAME=congregate \
-    PIP_DEFAULT_TIMEOUT=100 \
-    PATH=/home/ps-user/bin:/home/ps-user/.local/bin:/home/ps-user/.pyenv/bin:/home/ps-user/.pyenv/shims:/usr/local/sbin:/usr/local/bin:$PATH
+    PIP_DEFAULT_TIMEOUT=300 \
+    PATH=/home/ps-user/bin:/home/ps-user/.local/bin:/home/ps-user/.nvm:/home/ps-user/.pyenv/bin:/home/ps-user/.pyenv/shims:/usr/local/sbin:/usr/local/bin:$PATH
 
 WORKDIR /opt/congregate
 
@@ -24,20 +26,28 @@ RUN chown -R ps-user:wheel /opt && \
 
 # Installing yum-installable libraries
 RUN yum update -y && \
-    yum install -y less vim jq curl git readline ncurses \
+    yum install -y less vim jq curl git findutils readline ncurses ncurses-libs \
     gcc openssl-devel bzip2-devel libffi-devel zlib-devel make \
     epel-release xz-devel util-linux-user sqlite-devel procps && \
-    yum install -y screen
+    yum install -y screen && \
+    crb enable
 
-# Install Node
-RUN curl -sL https://rpm.nodesource.com/setup_22.x | bash - && \
-    yum install -y nodejs
 
 # Install zsh
 RUN yum install -y zsh && chsh -s /usr/bin/zsh && chsh -s /usr/bin/zsh ps-user
 
 USER ps-user
 
+# Install NVM, NPM, and Node
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash && \
+    export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")" && \
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && \
+    cd /opt/congregate/frontend && \
+    nvm install && \
+    npm install && \
+    npm run build
+
+# Install Python through pyenv
 RUN curl https://pyenv.run | bash && \
     [[ -d $PYENV_ROOT/bin ]] && \
     eval "$(pyenv init -)" && \
@@ -51,6 +61,8 @@ RUN echo "alias ll='ls -al'" >> ~/.bashrc && \
     echo "alias ll='ls -al'" >> ~/.zshrc
 RUN echo "alias license='cat /opt/congregate/LICENSE'" >> ~/.bashrc && \
     echo "alias license='cat /opt/congregate/LICENSE'" >> ~/.zshrc
+RUN echo "export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"" >> ~/.zshrc && \
+    echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> ~/.zshrc
 
 RUN echo "CHECKING PYTHON VERSION" && \
     python3 -V
@@ -67,11 +79,6 @@ RUN cd /opt/congregate && \
 RUN python -m pip install --user poetry==1.8.5 && \
     poetry --version && \
     poetry install
-
-# Install node dependencies
-RUN cd frontend && \
-    npm install && \
-    npm run build
 
 USER root
 

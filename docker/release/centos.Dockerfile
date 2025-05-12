@@ -1,4 +1,4 @@
-FROM rockylinux/rockylinux:8.8
+FROM rockylinux/rockylinux:8.10
 
 # Add ps-user and give them sudo privileges
 RUN adduser ps-user && \

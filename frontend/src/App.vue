@@ -87,7 +87,7 @@ export default {
 }
 </script>
 
-<style lang="less">
+<style>
 html {
   height: 100%;
   margin: 0;

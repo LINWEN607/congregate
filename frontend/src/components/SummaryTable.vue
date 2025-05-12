@@ -24,7 +24,7 @@ export default {
 }
 </script>
 
-<style scoped lang="less">
+<style scoped>
 table {
   border-spacing: 0;
   border: 1px solid #000;
