@@ -38,3 +38,5 @@ src_aws_secret_access_key  = <obfuscated>         # run `congregate obfuscate`
 src_aws_session_token      = <obfuscated>         # (leave empty or comment this out for static creds)
 src_aws_codecommit_username = <codecommit-user-at>-<account-id>
 src_aws_codecommit_password = <obfuscated>        # must **not** include "/"
+```
+
