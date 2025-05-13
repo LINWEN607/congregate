@@ -310,6 +310,8 @@ class AzureDevopsMigrateClient(MigrateClient):
                         f"Migrating additional source project '{path}' (ID: {src_id}) GitLab features")
                     # Process attachments in MRs after project import
                     self.process_attachments_after_import(import_id)
+                    self.remove_direct_users_after_import(import_id)
+                    
                     result[dst_pwn] = import_id
             elif not self.dry_run:
                 self.log.warning(
@@ -429,3 +431,16 @@ class AzureDevopsMigrateClient(MigrateClient):
                 value = value_data.get("value", "")
                 self.gitlab_variables_api.set_variables(
                     group_id, self.config.destination_host, self.config.destination_token, var_type="group", data={"key": key, "value": value})
+
+    def remove_direct_users_after_import(self, project_id):
+        """
+        Removes direct users from the project after import.
+        """
+        self.log.info(f"Removing direct users from project {project_id}...")
+        
+        response = self.gitlab_projects_api.get_members(project_id, self.config.destination_host, self.config.destination_token)
+        members = safe_json_response(response)
+        for member in members:
+            self.log.info(f"Removing direct user {member['username']} (ID: {member['id']}) from project {project_id}...")
+            self.gitlab_projects_api.remove_member(project_id, member.get("id"), self.config.destination_host, self.config.destination_token)
+        return True

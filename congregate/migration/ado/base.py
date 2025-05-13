@@ -5,7 +5,6 @@ from requests.exceptions import RequestException
 
 from gitlab_ps_utils.misc_utils import strip_netloc
 from gitlab_ps_utils.dict_utils import dig
-from urllib.parse import quote
 
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.ado.api.repositories import RepositoriesApi
@@ -58,8 +57,8 @@ class AzureDevOpsWrapper(BaseClass):
             "visibility": project["visibility"],
             "description": project.get("description", ""),
             "members": [] if self.subset else self.add_team_members([], project),
-            "http_url_to_repo": quote(repository.get('remoteUrl', ''), safe=':/@'),
-            "ssh_url_to_repo": quote(repository.get('sshUrl'), safe=':/@'),
+            "http_url_to_repo": repository.get('webUrl', ''),
+            "ssh_url_to_repo": repository.get('sshUrl', ''),
             "namespace": {
                 "id": dig(repository, 'project', 'id'),
                 "path": self.slugify(project["name"]),
@@ -85,7 +84,7 @@ class AzureDevOpsWrapper(BaseClass):
         try:
             for repo in self.repositories_api.get_all_repositories(project["id"]):
                 # Save all project repos ID references as part of group metadata
-                if repo.get("isDisabled", False) is False:
+                if repo.get("isDisabled", False) is False and repo.get("defaultBranch", False):
                     repos.append(repo.get("id"))
                     if mongo is not None:
                         mongo.insert_data(
