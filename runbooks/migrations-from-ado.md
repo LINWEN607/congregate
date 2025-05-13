@@ -186,6 +186,8 @@ Known issues:
 
 > **Note:** Congregate uses Git to pull repositories from the source. In some Azure DevOps or TFS environments, using a user or PAT token for Git authentication may fail due to incorrect handling or decoding by Git. To resolve authentication issues, configure your migration VM to use a Git credential helper. For example, run `git config --global credential.helper store` or, for better security on macOS, use `git config --global credential.helper osxkeychain`. Then clone any repository from the source using valid credentials. These credentials will be stored by the credential helper and automatically reused by Congregate during the migration phase avoiding authentication failures (in the future this will be addressed via [this issue](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/issues/1279)).
 
+> **Note:** Congregate removes users who were directly added to the project during migration as [Azure DevOps permissions and security groups](https://learn.microsoft.com/en-us/azure/devops/organizations/security/about-permissions?view=azure-devops&tabs=preview-page) are not aligned with [GitLab Roles and Permissions](https://docs.gitlab.com/user/permissions/). Consider [SAML Group Sync](https://docs.gitlab.com/user/group/saml_sso/group_sync/).
+
 * [ ] Notify in the internal Slack channel dedicated to this migration you are starting the migration wave
 * [ ] Notify the customer in the customer-facing Slack channel you are starting the migration wave
 * [ ] Run the following command `nohup congregate migrate --skip-users --skip-groups --commit > data/waves/wave_<insert_wave_number>/wave<insert-wave-here>.log 2>&1 &`
