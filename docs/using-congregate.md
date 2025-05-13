@@ -93,6 +93,23 @@ If you need to re-list and don't want to overwrite any data that you have listed
 
 If you are migrating data from CI sources with an SCM source, listing will also perform a mapping function to map CI jobs to SCM repositories. This functionality will position migrations of build config XMLs into repositories for future transformation into `gitlab-ci.yml`.
 
+### Listing directly to CSV
+
+If you prefer a spreadsheet‑friendly output you can add the format flag:
+
+    ```bash
+    ./congregate.sh list --format=csv
+    ```
+
+- All data that would normally be written to `data/*.json` is also written (or, when `--format=csv` is present, only written) to
+  - data/users.csv
+  - data/groups.csv
+  - data/projects.csv
+
+- Each CSV keeps the same records as its JSON counterpart, but flattened so it can be reviewed or edited in Excel or Google Sheets
+- You can still combine this with the usual `--skip-users`, `--skip-groups`, `--skip-projects`, or `--skip-ci` flags—only the data you actually list will be written to CSV.
+- Internally Congregate continues to store JSON in Mongo and on disk, so downstream commands work exactly as before; the CSV is just an additional, human‑readable export.
+
 ### Stage
 
 Staging data for migration follows the same usage pattern as staging data does with a git-based workflow. Now that we've run a `./congregate.sh list` to get ALL of the data to the local filesystem (combination of local MongoDB and `.json` files), we need to select which users, projects, and groups to migrate. The output of any flavor of `stage` command will be the `staged_groups.json`, `staged_projects.json`, and `staged_users.json` files in the `data` directory.
@@ -112,6 +129,20 @@ This process is very similar to stage-projects, but you need to search for group
 For larger migrations, customers often want to define waves of migration in a spreadsheet that congregate can read in to stage many different groups and projects at once without having to do the initial investigation for project and group ids. To set this up we need to add a few lines to the `data/congregate.conf` that look like the ones from [the template](/congregate.conf.template#L170). This configuration  template refers to the [*stage-wave-template.csv*](/templates/stage-wave-template.csv) file. A more verbose description on how this configuration works is in the [configuration section](#wave-definition-spreadsheet-ingestion) below.
 
 Once we have this in place, you can run `./congregate.sh stage-wave <WaveName> --commit` to stage all projects and groups defined by the spreadsheet.
+
+### Staging from CSV
+
+Any of the stage commands (`stage-projects`, `stage-groups`, `stage-users`) accept the same `--format` flag:
+
+    ```bash
+    ./congregate.sh stage-projects 13 78 951 --format=csv --commit
+    ```
+
+- When `--format=csv` is supplied, Congregate reads the data from the corresponding `data/*.csv` files instead of `*.json`.
+- The CSV rows are converted back into the full JSON structures in‑memory, so the rest of the staging logic—and all later migration steps—remain unchanged.
+- This lets project owners correct IDs or paths directly in a spreadsheet before you run the stage command.
+
+If you omit `--format`, Congregate defaults to the original JSON workflow.
 
 ### Stage using the UI
 
