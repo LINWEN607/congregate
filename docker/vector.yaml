@@ -1,0 +1,116 @@
+#                                    __   __  __
+#                                    \ \ / / / /
+#                                     \ V / / /
+#                                      \_/  \/
+#
+#                                    V E C T O R
+#                                   Configuration
+#
+# ------------------------------------------------------------------------------
+# Website: https://vector.dev
+# Docs: https://vector.dev/docs
+# Chat: https://chat.vector.dev
+# ------------------------------------------------------------------------------
+
+# Change this to use a non-default directory for Vector data storage:
+# data_dir: "/var/lib/vector"
+
+sources:
+  congregate_audit_source:
+    type: file
+    include: 
+      - /opt/congregate/data/logs/audit*.log
+  congregate_app_log:
+    type: file
+    include: 
+      - /opt/congregate/data/logs/congregate*.log
+  celery_logs:
+    type: file
+    include: 
+      - /opt/congregate/data/logs/celery*.log
+  flower_logs:
+    type: file
+    include: 
+      - /opt/congregate/data/logs/flower*.log
+  gunicorn_logs:
+    type: file
+    include: 
+      - /opt/congregate/data/logs/gunicorn*.log
+  congregate_json:
+    type: file
+    include:
+      - /opt/congregate/data/logs/congregate_log.json
+
+# Parse Syslog logs
+# See the Vector Remap Language reference for more info: https://vrl.dev
+#transforms:
+#  parse_logs:
+#    type: "remap"
+#    inputs: ["dummy_logs"]
+#    source: |
+#      . = parse_syslog!(string!(.message))
+
+transforms:
+  add_labels:
+    type: remap
+    inputs:
+      - congregate_json
+    source: |
+      # Try to parse JSON, if it fails just keep the message as is
+      parsed = parse_json(.message) ?? null
+      if parsed != null {
+        . = parsed
+      } else {
+        # If not JSON, ensure we have a message field
+        if !exists(.message) {
+          .message = string!(.)  # Changed to string!() which is infallible
+        }
+      }
+      
+      # Add labels that Loki will use for indexing
+      .labels = {}
+      .labels.application = "congregate"
+      .labels.environment = "production"
+      # Make sure file exists before trying to access it
+      if exists(.file) {
+        .labels.file = replace!(string!(.file), "/opt/data/", "")
+      } else {
+        .labels.file = "unknown"
+      }
+
+sinks:
+  stdout_debugging:
+    type: console
+    inputs:
+      - congregate_json  # or basic_parsing if using the transform
+    encoding:
+      codec: json
+  # congregate_audit_sink_file:
+  #   type: "file"
+  #   inputs: ["congregate_audit_transform"]
+  #   path: "/tmp/vector-%Y-%m-%d.log"
+  #   encoding:
+  #     codec: "json"
+  loki:
+    type: loki
+    inputs:
+      - add_labels
+    endpoint: http://loki:3100
+    encoding:
+      codec: json
+    labels:
+      application: "{{ labels.application }}"
+      environment: "{{ labels.environment }}"
+      filename: "{{ labels.file }}"
+    compression: gzip
+    batch:
+      max_bytes: 1048576
+      timeout_secs: 1
+
+
+# Vector's GraphQL API (disabled by default)
+# Uncomment to try it out with the `vector top` command or
+# in your browser at http://localhost:8686
+# api:
+#   enabled: true
+#   address: "127.0.0.1:8686"

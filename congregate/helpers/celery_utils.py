@@ -36,7 +36,8 @@ def generate_celery_config():
         override_backends={
             "mongodb": "congregate.helpers.extended_mongo_backend:ExtendedMongoBackend"
         },
-        worker_concurrency=c.processes
+        worker_concurrency=c.processes,
+        worker_hijack_root_logger=False
     ).to_dict()
 
 @worker_shutdown.connect
@@ -116,6 +117,7 @@ class CeleryConfig():
     result_extended: bool
     override_backends: dict
     worker_concurrency: int
+    worker_hijack_root_logger: bool
 
     def to_dict(self):
         return asdict(self)

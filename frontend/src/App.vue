@@ -15,6 +15,7 @@
       <!-- <router-link to="/migrate">Migrate Data</router-link> -->
       <hr>
       <a :href="flowerUrl" target="_blank">Task Queue</a>
+      <a :href="grafanaUrl" target="_blank">Logs</a>
       <span title="View bulk imports on destination associated with the token you are using"><a v-if="directTransfer" :href="bulkImportsHistoryUrl" target="_blank">Bulk Imports History</a></span>
       <router-link to="/settings">Settings</router-link>
     </div>
@@ -39,6 +40,7 @@ export default {
   data() {
     return {
       flowerUrl: '',
+      grafanaUrl: '',
       bulkImportsHistoryUrl: ''
     }
   },
@@ -58,6 +60,7 @@ export default {
       this.systemStore.updateSettings(response.data)
       this.emitter.emit('settings-updated')
       this.flowerUrl = this.systemStore.settings['APP']['flower_url']
+      this.grafanaUrl = this.systemStore.settings['APP']['grafana_url']
       this.bulkImportsHistoryUrl = `${this.systemStore.settings['DESTINATION']['dstn_hostname']}/import/bulk_imports/history`
     })
     this.emitter.on('check-jobs', () => {
