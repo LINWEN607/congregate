@@ -97,9 +97,9 @@ If you are migrating data from CI sources with an SCM source, listing will also 
 
 If you prefer a spreadsheet‑friendly output you can add the format flag:
 
-    ```bash
-    ./congregate.sh list --format=csv
-    ```
+```bash
+./congregate.sh list --format=csv
+```
 
 - All data that would normally be written to `data/*.json` is also written (or, when `--format=csv` is present, only written) to
   - data/users.csv
@@ -133,9 +133,9 @@ Once we have this in place, you can run `./congregate.sh stage-wave <WaveName> -
 
 Any of the stage commands (`stage-projects`, `stage-groups`, `stage-users`) accept the same `--format` flag:
 
-    ```bash
-    ./congregate.sh stage-projects 13 78 951 --format=csv --commit
-    ```
+```bash
+./congregate.sh stage-projects 13 78 951 --format=csv --commit
+```
 
 - When `--format=csv` is supplied, Congregate reads the data from the corresponding `data/*.csv` files instead of `*.json`.
 - The CSV rows are converted back into the full JSON structures in‑memory, so the rest of the staging logic and all later migration steps remain unchanged.
