@@ -26,6 +26,9 @@ from congregate.migration.ado.api.pull_requests import PullRequestsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi as GitlabProjectsApi
 from congregate.migration.ado.api.projects import ProjectsApi as AdoProjectsApi
 from congregate.migration.ado.projects import ProjectsClient
+from congregate.migration.ado.work_items import WorkItemsClient
+
+
 from congregate.migration.ado.export import AdoExportBuilder
 from congregate.migration.ado.export import AdoGroupExportBuilder
 from congregate.helpers.migrate_utils import get_export_filename_from_namespace_and_name
@@ -60,6 +63,7 @@ class AzureDevopsMigrateClient(MigrateClient):
         self.gitlab_variables_api = VariablesClient()
         self.ado_projects_api = AdoProjectsApi()
         self.azure_projects_client = ProjectsClient()
+        self.azure_workitems_client = WorkItemsClient()
         self.branches = BranchesClient()
         super().__init__(dry_run,
                          processes,
@@ -322,21 +326,6 @@ class AzureDevopsMigrateClient(MigrateClient):
         except Exception as e:
             self.log.error(e)
             self.log.error(print_exc())
-        return result
-    
-
-    def handle_azure_post_migration(self, result, path_with_namespace, project, pid):
-
-        # Set default branch
-        self.branches.set_branch(
-            path_with_namespace, pid, project.get("default_branch"))
-
-        # Pull Requests migration
-        self.azure_projects_client.migrate_pull_requests(project, pid)
-
-        # Remove import user; SKIP if removing all other members
-        # if not self.remove_members:
-        #     self.remove_import_user(pid)
         return result
 
     def process_attachments_after_import(self, project_id):

@@ -45,7 +45,7 @@ class AzureDevOpsWrapper(BaseClass):
             path_with_namespace = os.path.join(self.slugify(project["name"]), self.slugify(repository["name"]))
 
         if len(path_with_namespace.split("/")) > 1:
-            full_path = path_with_namespace.split("/")[0]   
+            full_path = path_with_namespace.split("/")[0]
         else: 
             full_path = path_with_namespace
             

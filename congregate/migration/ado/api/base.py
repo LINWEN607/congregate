@@ -74,7 +74,7 @@ class AzureDevOpsApiWrapper(BaseClass):
         else:
             params = {'api-version': self.config.ado_api_version}
 
-        return requests.post(url, data=data, headers=headers, verify=self.config.ssl_verify)
+        return requests.post(url, params=(params or {}), data=data, headers=headers, verify=self.config.ssl_verify)
 
     @stable_retry
     def generate_patch_request(self, api, data, description=None):
