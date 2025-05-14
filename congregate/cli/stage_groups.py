@@ -64,7 +64,7 @@ class GroupStageCLI(BaseStageClass):
 
         if list(filter(None, groups_to_stage)):
             # Stage ALL
-            if self.config.source_type == "azure devops":
+            if self.config.source_type == "azure devops" or self.config.source_type == "bitbucket cloud" :
                 if groups_to_stage[0] in ["all", "."]:
                     # Stage all projects
                     for p in projects:

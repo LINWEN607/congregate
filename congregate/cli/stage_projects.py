@@ -84,7 +84,7 @@ class ProjectStageCLI(BaseStageClass):
         # If there is CLI or UI input
         if list(filter(None, projects_to_stage)):
             # Stage ALL
-            if self.config.source_type == "azure devops":
+            if self.config.source_type == "azure devops" or self.config.source_type == "bitbucket cloud" :
                 if projects_to_stage[0] in ["all", "."]:
                     for p in projects:
                         self.log.info(
