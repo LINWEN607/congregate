@@ -72,7 +72,7 @@ echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
 
 ### 4. Start the Docker Services in Detached Mode
 
-Navigate to the directory where the docker-compose.yml file exists:
+Navigate to the directory where the [docker-compose.yml](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/blob/master/docker/release/docker-compose.yml) file exists. In the local container with the suggested volume mounts, this will be in `/opt/congregate/docker/release/docker-compose.yml`:
 
 Start the services in detached mode:
 
