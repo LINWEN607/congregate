@@ -18,15 +18,15 @@ class UsersClient(BaseClass):
         """
         List and transform all Azure DevOps user to GitLab user metadata
         """
-        users = self.users_api.get_all_users()
+        users_iter = self.users_api.get_all_users()
         if self.config.direct_transfer:
             self.log.info("Direct transfer enabled - queuing ADO users via Celery")
-            for user in users:
+            for user in users_iter:
                 handle_retrieving_ado_users_task.delay(user)
         else:
             self.log.info("Direct transfer disabled - using multiprocessing for ADO users")
             self.multi.start_multi_process_stream_with_args(
-                self.handle_retrieving_user, users, processes=processes)
+                self.handle_retrieving_user, users_iter, processes=processes)
 
     def handle_retrieving_user(self, user, mongo=None):
         if not mongo:
@@ -52,4 +52,4 @@ def handle_retrieving_ado_users_task(user, mongo=None):
         )
     else:
         user_client.log.error(f"Failed to process ADO user data. Was provided [{user}]")
-    mongo.close_connection()
+ 

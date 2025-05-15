@@ -50,4 +50,3 @@ def handle_retrieving_ado_groups_task(project, mongo=None):
         grp_client.handle_retrieving_group(project, mongo)
     else:
         grp_client.log.error(f"Failed to process ADO group data. Was provided [{project}]")
-    mongo.close_connection()
