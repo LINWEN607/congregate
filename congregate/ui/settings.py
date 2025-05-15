@@ -13,7 +13,8 @@ def get_config():
 def strip_tokens(config):
     scrubbed_config = {
         'APP': {
-            'flower_url': config.flower_url
+            'flower_url': config.flower_url,
+            'grafana_url': config.grafana_url
         }
     }
     for section, settings in config.as_dict().items():

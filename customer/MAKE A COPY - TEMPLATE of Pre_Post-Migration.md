@@ -282,6 +282,15 @@ The first piece that should always be considered is the list of items migrated a
 
 Note: Items not explicitly listed as imported or not imported should be assumed to **not** be imported
 
+### GitLab Version Compatibility
+
+For GitLab <=> GitLab migrations, ensuring that your source and destination GitLab instances meet version compatibility requirements is critical for a smooth migration. 
+
+Refer to [compatibility section of the documentation](./famq.md#compatibility) to learn which version are compartible. 
+
+* Failure to meet these compatibility requirements can lead to import failures or incomplete data transfer. Planning for any necessary upgrades on the source or destination instance should be a key part of the pre-migration system checks.
+
+
 ### Identification of resources
 
 In the initial state of the GitLab migration it is important to identify all the pertaining resources outside the items being migrated. These could include external CI/CD resources and dependencies, container image registries, or even external libraries such as DSL code needing to be part of the common build environment. As part of the migration, integration tooling will also need to be revised and tested. These tools could be Jenkins, Jira or external build software such as CircleCI or Travis CI. It is advisable to also check any dependencies from external cloud providers.
@@ -369,6 +378,8 @@ Create a list of all webhooks, integrations, dependencies
 
 * For GitLab to GitLab scenarios, are you using repositories?
 * Congregate can current migrate container registry and Maven, with NPM, PyPi, and Generic coming soon
+
+
 
 ## Pre Migration
 

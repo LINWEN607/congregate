@@ -83,7 +83,7 @@ workflow:
           "-c",
           "(python3 -m http.server 443 --directory /var/log/gitlab/gitlab-rails/ &) && /assets/init-container",
         ]
-    - name: mongo:4.4.16
+    - name: mongo:5.0.31
       alias: mongo
 
 .e2e-ghe-cleanup:
@@ -619,18 +619,16 @@ container-scan-build:no-mongo:
         - frontend/package.json
         - docker/release/no-mongo.Dockerfile
 
-# Scanning the centos image
-container_scanning_custom:
-  extends: container_scanning
-  # services:
-  #   - docker:${DOCKER_VERSION}-dind
+# Scanning the centos image but overwriting the existing container scanning job so the name stays the same
+container_scanning:
+  services:
+    - docker:${DOCKER_VERSION}-dind
   variables:
     CS_IMAGE: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-centos
     DOCKERFILE_PATH: "docker/release/centos.Dockerfile"
     GIT_STRATEGY: "fetch"
     DOCKER_DRIVER: overlay2
     DOCKER_TLS_CERTDIR: "/certs"
-    DOCKER_HOST: tcp://docker:2376
   rules:
     - if: "$CI_PIPELINE_SOURCE != 'schedule'"
       changes:
@@ -640,23 +638,34 @@ container_scanning_custom:
         - docker/release/debian.Dockerfile
 
 debian_container_scanning:
-  extends: container_scanning_custom
-  services:
-    - docker:${DOCKER_VERSION}-dind
+  extends: container_scanning
   variables:
     CS_IMAGE: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-debian
     DOCKERFILE_PATH: "docker/release/debian.Dockerfile"
     GIT_STRATEGY: "fetch"
     DOCKER_DRIVER: overlay2
     DOCKER_TLS_CERTDIR: "/certs"
-  # tags:
-  #   - gitlab-org-docker
   rules:
     - if: "$CI_PIPELINE_SOURCE != 'schedule'"
       changes:
         - pyproject.toml
         - frontend/package.json
         - docker/release/debian.Dockerfile
+
+centos_no_mongo_container_scanning:
+  extends: container_scanning
+  variables:
+    CS_IMAGE: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-no-mongo
+    DOCKERFILE_PATH: "docker/release/centos.Dockerfile"
+    GIT_STRATEGY: "fetch"
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: "/certs"
+  rules:
+    - if: "$CI_PIPELINE_SOURCE != 'schedule'"
+      changes:
+        - pyproject.toml
+        - frontend/package.json
+        - docker/release/no-mongo.Dockerfile
 
 # docs update:
 #   stage: deploy

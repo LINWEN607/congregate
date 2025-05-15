@@ -560,6 +560,14 @@ class Config(BaseConfig):
         Sets the URL for the Celery task viewer app Flower
         """
         return self.prop("APP", "flower_url", default="http://localhost:5555")
+    
+    @property
+    def grafana_url(self):
+        """
+        Sets the URL for the Grafana instance bundled into the container
+        """
+        return self.prop("APP", "grafana_url", default="http://localhost:8300/d/logs/logs")
+
 
 # HIDDEN PROPERTIES
 
@@ -655,4 +663,4 @@ class Config(BaseConfig):
 
     @property
     def ado_api_version(self):
-        return self.prop("SOURCE", "api_version", default="7.0-preview")
+        return self.prop("SOURCE", "api_version", default="7.2-preview")

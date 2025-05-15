@@ -4,11 +4,11 @@ jq
 curl
 git
 tar
-mongodb-org-4.4.4
-mongodb-org-server-4.4.4
-mongodb-org-shell-4.4.4
-mongodb-org-mongos-4.4.4
-mongodb-org-tools-4.4.4
+mongodb-org-5.0.31
+mongodb-org-server-5.0.31
+mongodb-org-shell-5.0.31
+mongodb-org-mongos-5.0.31
+mongodb-org-tools-5.0.31
 gcc
 openssl-devel
 bzip2-devel

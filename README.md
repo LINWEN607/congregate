@@ -6,9 +6,7 @@
 [![latest release](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/badges/release.svg)](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/releases)
 
 >>>
-Requires [GitLab Premium](https://about.gitlab.com/pricing/) or above.
-
-Released under the [GitLab EE license](LICENSE).
+Released under the [MIT License](LICENSE).
 
 Customers are very welcome to trial and evaluate Congregate today. However it's recommended that you do independently review the features and functionality to ensure it meets your requirements while also being aware of any current key limitations noted below. For help troubleshooting or using Congregate, Customers need to enter into a paid engagement with GitLab Professional Services.
 

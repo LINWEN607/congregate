@@ -1,4 +1,4 @@
-FROM rockylinux/rockylinux:8.8
+FROM rockylinux/rockylinux:8.10
 
 # Add ps-user and give them sudo privileges
 RUN adduser ps-user && \
@@ -19,7 +19,7 @@ ADD congregate congregate
 ADD frontend frontend
 ADD dev/bin dev/bin
 COPY congregate.sh pyproject.toml poetry.lock README.md .gitignore LICENSE ./
-COPY docker/release/centos/mongo_repo /etc/yum.repos.d/mongodb-org-4.4.repo
+COPY docker/release/centos/mongo_repo /etc/yum.repos.d/mongodb-org-5.0.repo
 
 RUN mkdir -p /data/db
 
@@ -31,7 +31,7 @@ RUN chown -R ps-user:wheel /data && \
 
 # Installing yum-installable libraries
 RUN yum update -y && \
-    yum install -y less vim jq curl git mongodb-org-4.4.4 mongodb-org-server-4.4.4 mongodb-org-shell-4.4.4 mongodb-org-mongos-4.4.4 mongodb-org-tools-4.4.4 \
+    yum install -y less vim jq curl git mongodb-org-5.0.31 mongodb-org-server-5.0.31 mongodb-org-shell-5.0.31 mongodb-org-mongos-5.0.31 mongodb-org-tools-5.0.31 \
     gcc openssl-devel bzip2-devel libffi-devel zlib-devel make epel-release xz-devel util-linux-user sqlite-devel && \
     yum install -y screen
 

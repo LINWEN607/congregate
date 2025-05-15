@@ -75,7 +75,7 @@ Instructions for user migration collapsed by default.
     * Make sure the user is a member of one of the project's teams (either direct member of a team or via Azure Entra Group) as congregate pulls users only from `TeamName Team` (see more information about [default security groups](https://learn.microsoft.com/en-us/azure/devops/organizations/security/about-permissions?view=azure-devops&tabs=preview-page#default-security-groups)). See image below (NB! It does not necessarily have to be a member of the default Team's group, any group or even direct member, but it has to be the list of team members within the project that is being migrated).
     * Congregate relies on [mailAddress](https://learn.microsoft.com/en-us/rest/api/azure/devops/graph/users/list?view=azure-devops-rest-7.1&tabs=HTTP#graphuser) from Graph API.
     * It is possible to manually adjust members and attributes in `staged_projects.json` (add or remove) in order to match contributions better.
-    
+`
     ![](./uploads/ado-users-prerequisites.png)
 
 * [ ] When provisioning users via SAML (Just-in-Time) or SCIM [domain verification](https://docs.gitlab.com/ee/user/enterprise_user/#1-add-a-custom-domain-for-the-matching-email-domain) is recommended to avoid [user account auto-deletion on gitlab.com after 3 days](https://gitlab.com/gitlab-org/gitlab/-/issues/352514)
@@ -183,6 +183,10 @@ Known issues:
 * [ ] Notify in the internal Slack channel dedicated to this migration you have completed dry run for the wave
 
 #### Migrate projects
+
+> **Note:** Congregate uses Git to pull repositories from the source. In some Azure DevOps or TFS environments, using a user or PAT token for Git authentication may fail due to incorrect handling or decoding by Git. To resolve authentication issues, configure your migration VM to use a Git credential helper. For example, run `git config --global credential.helper store` or, for better security on macOS, use `git config --global credential.helper osxkeychain`. Then clone any repository from the source using valid credentials. These credentials will be stored by the credential helper and automatically reused by Congregate during the migration phase avoiding authentication failures (in the future this will be addressed via [this issue](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/issues/1279)).
+
+> **Note:** Congregate removes users who were directly added to the project during migration as [Azure DevOps permissions and security groups](https://learn.microsoft.com/en-us/azure/devops/organizations/security/about-permissions?view=azure-devops&tabs=preview-page) are not aligned with [GitLab Roles and Permissions](https://docs.gitlab.com/user/permissions/). Consider [SAML Group Sync](https://docs.gitlab.com/user/group/saml_sso/group_sync/).
 
 * [ ] Notify in the internal Slack channel dedicated to this migration you are starting the migration wave
 * [ ] Notify the customer in the customer-facing Slack channel you are starting the migration wave

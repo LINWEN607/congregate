@@ -18,8 +18,8 @@ services:
               - congregate
 
     mongo:
-        image: mongo:4.4.16
-        container_name: mongo
+        image: mongo:5.0.31
+        container_name: congregate_mongo
         restart: always
         volumes:
             - $CONGREGATE_DATA/mongo-data:/data
@@ -45,3 +45,51 @@ services:
           default:
             aliases:
               - redis
+    vector:
+        image: timberio/vector:0.45.0-debian
+        container_name: congregate_vector
+        hostname: 'vector'
+        restart: always
+        # extra_hosts:
+        #     - "host.docker.internal:host-gateway"
+        volumes:
+            - $CONGREGATE_DATA:/opt/congregate/data
+            - $CONGREGATE_DATA/vector.yaml:/etc/vector/vector.yaml:ro
+        ports: 
+            - "8686:8686"
+        networks:
+            default:
+                aliases:
+                    - vector
+    
+    loki:
+        image: grafana/loki:latest
+        container_name: congregate_loki
+        ports:
+        - "8310:3100"
+        volumes:
+            - $CONGREGATE_DATA/loki-config.yaml:/etc/loki/local-config.yaml
+            - $CONGREGATE_DATA/loki-data:/loki
+        command: -config.file=/etc/loki/local-config.yaml
+        networks:
+            default:
+                aliases:
+                    - loki
+
+    grafana:
+        image: grafana/grafana:latest
+        container_name: congregate_grafana
+        environment:
+            - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+            - GF_AUTH_ANONYMOUS_ENABLED=true
+            - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+            - GF_FEATURE_TOGGLES_ENABLE=alertingSimplifiedRouting,alertingQueryAndExpressionsStepMode
+        ports:
+            - "8300:3000"
+        volumes:
+            - $CONGREGATE_DATA/grafana_provisioning/:/etc/grafana/provisioning/
+            - $CONGREGATE_DATA/grafana_dashboards/:/var/lib/grafana/dashboards/
+        networks:
+            default:
+                aliases:
+                    - grafana

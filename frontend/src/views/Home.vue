@@ -117,7 +117,7 @@ export default {
   }
 }
 </script>
-<style scoped lang="less">
+<style scoped>
 .summary-title {
   cursor: pointer;
 }

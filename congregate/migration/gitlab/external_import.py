@@ -254,7 +254,7 @@ class ImportClient(BaseClass):
             "optional_stages": {
                 "single_endpoint_notes_import": False,
                 "attachments_import": False,
-                "collaborators_import": False
+                "collaborators_import": True
             },
             "timeout_strategy": "pessimistic"
         }
