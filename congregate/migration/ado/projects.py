@@ -6,7 +6,7 @@ from congregate.migration.ado.api.projects import ProjectsApi
 from congregate.migration.ado.api.repositories import RepositoriesApi
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.helpers.base_class import BaseClass
-from congregate.helpers.congregate_mdbc import CongregateMongoConnector
+from congregate.helpers.congregate_mdbc import CongregateMongoConnector, mongo_connection
 
 
 class ProjectsClient(BaseClass):
