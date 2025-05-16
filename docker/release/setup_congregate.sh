@@ -6,21 +6,43 @@
 # This script sets up the directories and downloads the necessary
 # files for running Congregate Docker Compose.
 #
+# This script assumes you are running as sudo su
+#
 # Usage: ./setup_congregate.sh
 #
 
 main() {
     folders=(
         "congregate-data"
+        "congregate-data/congregate-data"
+        "congregate-data/congregate-data/logs"
         "congregate-data/mongo-data"
         "congregate-data/redis-cache"
         "congregate-data/loki-data"
     )
 
+    log_files=(
+        "gunicorn.log"
+        "gunicorn_err.log"
+        "celery.log"
+        "celery_err.log"
+        "flower.log"
+        "flower_err.log"
+        "congregate.log"
+        "congregate_log.json"
+        "application.log"
+    )
+
     echo "Creating Congregate data directories"
     for folder in "${folders[@]}"; do
         create_folder $folder
-    done 
+   
+    )
+
+    echo "Seeding Congregate log files"
+    for log_file in "${log_files[@]}"; do
+        touch "congregate-data/congregate-data/logs/$log_file"
+    done
 
     echo "Downloading Congregate Docker Compose file"
     check_for_wget
@@ -42,10 +64,19 @@ main() {
 
     echo "Setting environment variable for Congregate data directory"
     echo "export CONGREGATE_DATA=$(pwd)/congregate-data" >> ~/.bashrc
+    
+    echo "*********************************************"
+    echo "PLEASE EXPLICITLY SOURCE YOUR ~/.bashrc FILE:"
     echo "source ~/.bashrc"
+    echo "-"
+    echo "OR RUN THE FOLLOWING EXPORT COMMAND:"
+    echo "export CONGREGATE_DATA=$(pwd)/congregate-data"
+    echo "-"
+    echo "You will also need to run"
+    echo "chmod -R a+rwx congregate-data/"
+    echo "*********************************************"
 
     echo "Congregate setup script completed successfully"
-
 }
 
 ## Helper functions
