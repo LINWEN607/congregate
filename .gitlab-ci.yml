@@ -364,7 +364,7 @@ test:end-to-end full:
     - cp instance_id full_instance_id
     - poetry run pytest -s -m e2e_gl_setup congregate/tests/
     - poetry run pytest -s -m e2e --cov-config=.coveragerc --cov=congregate congregate/tests/
-    - sleep 10
+    - sleep 600
   retry: 2
   timeout: 90 minutes
   cache:
