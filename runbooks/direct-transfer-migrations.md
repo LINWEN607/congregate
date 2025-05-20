@@ -22,8 +22,8 @@ In general, migrations using Direct Transfer via Congregate involve interaction 
 - The Congregate UI - to [trigger migration activities](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/blob/master/docs/direct-transfer-usage.md)
 - The GitLab Direct Transfer UI - `<destination-hostname>/import/bulk_imports/history` - to track progress of Direct Transfer imports
   - **NOTE:** Only accessible to the import user
-- The [Direct Transfer](https://docs.gitlab.com/ee/api/bulk_imports.html) APIs to track progress of imports programmatically. 
-- Mapping Placeholder users to accounts on destination, either indivudally (UI) or in bulk (through a CSV upload). 
+- The [Direct Transfer](https://docs.gitlab.com/ee/api/bulk_imports.html) APIs to track progress of imports programmatically.
+- Mapping Placeholder users to accounts on destination, either individually (UI) or in bulk (through a CSV upload).
 
 ## Setting up the Congregate environment to use Direct Transfer
 
@@ -197,13 +197,18 @@ There may be situations where group owners may have a large number of Placeholde
 
 Extracting, transforming and mapping a large number of accounts in a CSV may still require significant effort, hence, [there are scripts](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/tree/86b6a39bb7db219aa7cd79eecb6440861dce074a/dev/bin/placeholder-user-scripts) written by the Professional Services team which can help to populate the CSV files.
 
-**Notes**: 
+**Notes**:
+
 1. Introduced in GitLab 17.10 with a flag named `importer_user_mapping_reassignment_csv`. Enabled by default on gitlab.com and self-managed (including Dedicated).
 2. [Accounts on destination need to be active](https://docs.gitlab.com/user/project/import/#reassign-contributions-and-memberships) in order to be reassigned to a Placeholder user. Otherwise, this will produce an error when attempting to reassign. To resolve, the account has to be restored to an `active` state and reassignment can be attempted again.
 
 ### Placeholder user behavior when importing
 
 Take note of [this behavior](https://docs.gitlab.com/ee/user/project/import/#placeholder-user-limits) when importing the same project twice into a destination instance.
+
+### Reassigning contributions from multiple placeholder users
+
+Take note of [this behavior](https://docs.gitlab.com/user/project/import/#reassigning-contributions-from-multiple-placeholder-users) when reassigning contributions from multiple placeholder users.
 
 ### Logs troubleshooting
 
@@ -212,7 +217,7 @@ It can happen that placeholder user reassignments take time to process due to "t
 To monitor the logs one can use (via GitLab Okta):
 
 - [Kibana](https://log.gprd.gitlab.net/), for gitlab.com
-- Opensearch, for GitLab Dedicated
+- OpenSearch, for GitLab Dedicated
   - **NOTE:** One needs to open an access request (AR) ([example](https://gitlab.com/gitlab-com/team-member-epics/access-requests/-/issues/34829)) per tenant
 
 And query `json.message : Rescheduling reassignment` on `pubsub-sidekiq-inf-gprd*` data view. To further filter the results one can add:
@@ -224,25 +229,25 @@ And query `json.message : Rescheduling reassignment` on `pubsub-sidekiq-inf-gprd
 
 You may monitor the progress of a Direct Transfer import via the Gitlab UI using this endpoint: `<hostname>/import/bulk_imports/history`. This is also accessible by clicking on the 'View import history' button on the group import screen. The perspective of the data from this endpoint is based on the user whose token was used for the Direct Transfer import.
 
-An alternative and more programmatic way would be to use the [bulk import APIs](https://docs.gitlab.com/ee/api/bulk_imports.html) to monitor the progress of the import. Due to the pagination on the API response, you may use this [snippet](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/snippets/4818709) to consolidate all related entitiy information associated with each bulk_import `id`.
+An alternative and more programmatic way would be to use the [bulk import APIs](https://docs.gitlab.com/ee/api/bulk_imports.html) to monitor the progress of the import. Due to the pagination on the API response, you may use this [snippet](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/snippets/4818709) to consolidate all related entity information associated with each bulk_import `id`.
 
 ## Understanding the behavior of Direct Transfer imports and Sidekiq jobs
 
 Being aware of how Direct Transfer consumes, load balances and resumes Sidekiq jobs may help with the migration planning and response.
 
-- Each Direct Transfer [POST API call](https://docs.gitlab.com/api/bulk_imports/#start-a-new-group-or-project-migration) has a hardcoded limit of migrating `5` entities at a time (even if the `entities` array has more than 5 entities defined). 
-- For each entity, DT will process records in batches of `1000` records per Sidekiq job. E.g. a project with 10,000 records will be migrated over 10 Sidekiq jobs. 
+- Each Direct Transfer [POST API call](https://docs.gitlab.com/api/bulk_imports/#start-a-new-group-or-project-migration) has a hardcoded limit of migrating `5` entities at a time (even if the `entities` array has more than 5 entities defined).
+- For each entity, DT will process records in batches of `1000` records per Sidekiq job. E.g. a project with 10,000 records will be migrated over 10 Sidekiq jobs.
 - However, each entity will have a ([configurable](https://gitlab.com/gitlab-org/gitlab/-/blob/master/doc/api/plan_limits.md)) limit of `25` concurrent jobs (`bulk_import_concurrent_pipeline_batch_limit`) regardless of the number of records it has. E.g. a project with 30,000 records will trigger a maximum of 25 Sidekiq jobs.
 - Based on this, the overall performance and experience (from the user initiating the import) of a Direct Transfer import depends on a combination of (1) number of records per entity, (2) record sizes in entity and (3) number of available Sidekiq threads (jobs) available.
 
 ### Potential ways to improve performance or user experience
 
 1. Initiating multiple Direct Transfer POST API calls
-  - E.g spinning up multiple Congregate VMs to initiate multiple DT API calls at a time.
-  - This allows the destination instance to import additional entities at a time.
-  - **Note**: this increases the workload on Sidekiq and further downstream systems (e.g. Redis and the database)
+     - E.g spinning up multiple Congregate VMs to initiate multiple DT API calls at a time.
+     - This allows the destination instance to import additional entities at a time.
+     - **Note**: this increases the workload on Sidekiq and further downstream systems (e.g. Redis and the database)
 2. Smaller projects may be grouped together in API calls earlier in the migration window to enable completion of these projects sooner, enabling user validation to begin sooner and the perception of progress
-  - As opposed to initiating a large project at the start, potentially saturating a large % of available Sidekiq threads and giving the perception of slow progress
+     - As opposed to initiating a large project at the start, potentially saturating a large % of available Sidekiq threads and giving the perception of slow progress
 
 ### Further optimizations for migrations into Dedicated or Self-managed
 
@@ -273,6 +278,6 @@ Background migrations in general, are written in a way to minimize disruption. M
 ## Things to note
 
 - When migrating into a self-managed instance (destination), ensure that the version running on the destination is 17.7 and above, as earlier versions contain a [bug](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/173073) which prevented project permissions from updating after the reassignment of Placeholder users.
-- After acceptance of a Placeholder user reassignment, the time taken to complete reassignment may take longer than expected due to a [known issue](https://gitlab.com/gitlab-org/gitlab/-/issues/525566). The feature flag causing this behavior is now disabled on Gitlab.com; to prevent this issue when migrating into self-managed instances you may disable the `:responsive_throttling` feature flag. 
+- After acceptance of a Placeholder user reassignment, the time taken to complete reassignment may take longer than expected due to a [known issue](https://gitlab.com/gitlab-org/gitlab/-/issues/525566). The feature flag causing this behavior is now disabled on Gitlab.com; to prevent this issue when migrating into self-managed instances you may disable the `:responsive_throttling` feature flag.
 - [Known issues](https://docs.gitlab.com/ee/user/group/import/#known-issues) with Direct Transfer
 - Troubleshooting [Direct Transfer](https://docs.gitlab.com/ee/user/group/import/troubleshooting.html) migrations.

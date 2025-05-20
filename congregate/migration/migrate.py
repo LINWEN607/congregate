@@ -20,6 +20,8 @@ from congregate.migration.github.migrate import GitHubMigrateClient
 from congregate.migration.bitbucket.migrate import BitBucketServerMigrateClient
 from congregate.migration.bitbucket_cloud.migrate import BitbucketCloudMigrateClient
 from congregate.migration.ado.migrate import AzureDevopsMigrateClient
+from congregate.migration.codecommit.migrate import CodeCommitMigrateClient
+
 
 
 class MigrateClient(BaseClass):
@@ -163,26 +165,49 @@ class MigrateClient(BaseClass):
                                 ).migrate()
         elif self.config.source_type == "azure devops":
             AzureDevopsMigrateClient(dry_run=self.dry_run,
-                                    processes=self.processes,
-                                    only_post_migration_info=self.only_post_migration_info,
-                                    start=self.start,
-                                    skip_users=self.skip_users,
-                                    remove_members=self.remove_members,
-                                    hard_delete=self.hard_delete,
-                                    stream_groups=self.stream_groups,
-                                    skip_groups=self.skip_groups,
-                                    skip_projects=self.skip_projects,
-                                    skip_group_export=self.skip_group_export,
-                                    skip_group_import=self.skip_group_import,
-                                    skip_project_export=self.skip_project_export,
-                                    skip_project_import=self.skip_project_import,
-                                    subgroups_only=self.subgroups_only,
-                                    group_structure=self.group_structure
-                                    ).migrate()
-        
+                                         processes=self.processes,
+                                         only_post_migration_info=self.only_post_migration_info,
+                                         start=self.start,
+                                         skip_users=self.skip_users,
+                                         remove_members=self.remove_members,
+                                         hard_delete=self.hard_delete,
+                                         stream_groups=self.stream_groups,
+                                         skip_groups=self.skip_groups,
+                                         skip_projects=self.skip_projects,
+                                         skip_group_export=self.skip_group_export,
+                                         skip_group_import=self.skip_group_import,
+                                         skip_project_export=self.skip_project_export,
+                                         skip_project_import=self.skip_project_import,
+                                         subgroups_only=self.subgroups_only,
+                                         group_structure=self.group_structure
+                                         ).migrate()
+            
+        elif self.config.source_type == "codecommit":
+            CodeCommitMigrateClient(
+                dry_run=self.dry_run,
+                processes=self.processes,
+                only_post_migration_info=self.only_post_migration_info,
+                start=self.start,
+                skip_users=self.skip_users,
+                remove_members=self.remove_members,
+                hard_delete=self.hard_delete,
+                stream_groups=self.stream_groups,
+                skip_groups=self.skip_groups,
+                skip_projects=self.skip_projects,
+                skip_group_export=self.skip_group_export,
+                skip_group_import=self.skip_group_import,
+                skip_project_export=self.skip_project_export,
+                skip_project_import=self.skip_project_import,
+                subgroups_only=self.subgroups_only,
+                group_structure=self.group_structure
+            ).migrate()
+            
         else:
             self.log.warning(
                 f"Configuration (data/congregate.conf) src_type {self.config.source_type} not supported")
         mig_utils.add_post_migration_stats(self.start, log=self.log)
+        migration_src = self.config.source_host
+        if self.config.source_type == "codecommit":
+            migration_src = "AWS CodeCommit"
         self.log.warning(
-            f"{misc_utils.get_dry_log(self.dry_run)}Completed migrating from {self.config.source_host} to {self.config.destination_host}")
+            f"{misc_utils.get_dry_log(self.dry_run)}Completed migrating from {migration_src} to {self.config.destination_host}")

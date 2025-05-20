@@ -41,8 +41,9 @@ class WaveStageCLI(BaseStageClass):
             if is_dot_com(self.config.destination_host):
                 self.log.warning(
                     "Please manually migrate USER projects to gitlab.com")
-        if self.config.source_type == "gitlab":
-            self.list_staged_users_without_public_email()
+        # Direct-transfer uses Placeholder users
+        if self.config.source_type == "gitlab" and not self.config.direct_transfer:
+            self.are_staged_users_without_public_email()
         if not dry_run:
             self.write_staging_files(skip_users=skip_users)
 

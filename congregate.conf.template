@@ -33,6 +33,7 @@ dstn_hostname = hostname
 dstn_access_token = *****
 import_user_id = 0
 # shared_runners_enabled = False
+# migrate_system_hooks = False
 # max_import_retries = 3
 # dstn_parent_group_id = 0
 # dstn_parent_group_path = destination_parent_group_full_path
@@ -90,6 +91,17 @@ src_access_token = *****
 # src_username = username
 # src_hostname = some_external_source
 # src_access_token = *****
+
+### Consider below changes when the source is AWS CodeCommit, rest all other configuration remains same.
+### The src_aws_secret_access_key, src_aws_codecommit_password should be the obfuscated credentials.
+### https://docs.aws.amazon.com/codecommit/latest/userguide/setting-up-gc.html
+# src_type = CodeCommit
+# src_aws_access_key_id = key
+# src_aws_secret_access_key = *****
+# src_aws_region = region
+# src_aws_session_token = *****
+# src_aws_codecommit_username = aws_codecommit_username
+# src_aws_codecommit_password = *****
 
 ### Consider below changes when the source is a Bitbucket Cloud account, rest all other configuration remains same.
 # src_type = Bitbucket Cloud

@@ -1,6 +1,7 @@
 from base64 import b64encode
 import sys
 import requests
+import boto3
 
 from gitlab_ps_utils.exceptions import ConfigurationException
 from gitlab_ps_utils.misc_utils import is_error_message_present, safe_json_response
@@ -10,6 +11,8 @@ from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.instance import InstanceApi
 from congregate.helpers.utils import is_github_dot_com, is_dot_com
+from gitlab_ps_utils.string_utils import deobfuscate
+from botocore.exceptions import ClientError
 
 
 class ConfigurationValidator(Config):
@@ -85,6 +88,28 @@ class ConfigurationValidator(Config):
             return src_token
         self.src_token_validated_in_session = self.validate_src_token(
             src_token) if not self.airgap else True
+        return src_token
+    
+    @property
+    def src_aws_secret_access_key(self):
+        obfuscated = True
+        src_token = self.prop("SOURCE", "src_aws_secret_access_key",
+                         default=None, obfuscated=obfuscated)
+        if self.src_token_validated_in_session:
+            return src_token
+        self.src_token_validated_in_session = self.validate_src_token(
+            src_token, "aws_secret_access_key") if not self.airgap else True
+        return src_token
+    
+    @property
+    def src_aws_session_token(self):
+        obfuscated = True
+        src_token = self.prop("SOURCE", "src_aws_session_token",
+                         default=None, obfuscated=obfuscated)
+        if self.src_token_validated_in_session:
+            return src_token
+        self.src_token_validated_in_session = self.validate_src_token(
+            src_token, "aws_session_token") if not self.airgap else True
         return src_token
 
     @property
@@ -173,7 +198,7 @@ class ConfigurationValidator(Config):
             return True
         return True
 
-    def validate_src_token(self, src_token):
+    def validate_src_token(self, src_token, token_type="source_token"):
         if src_token:
             user = None
             err_msg = "Invalid user and/or token:\n"
@@ -185,6 +210,8 @@ class ConfigurationValidator(Config):
                 self.validate_src_token_bitbucket(user, err_msg, src_token)
             elif self.source_type == "azure devops":
                 self.validate_src_token_ado(err_msg, src_token)
+            elif self.source_type == "codecommit":
+                self.validate_src_token_codecommit(src_token, token_type)
             return True
         return True
 
@@ -291,6 +318,42 @@ class ConfigurationValidator(Config):
             else:
                 raise ConfigurationException(
                     "source_token", msg=f"{msg}Invalid user authentication:\n{json_pretty(connection_data)}")
+            
+    def validate_src_token_codecommit(self, token, token_type):
+        """
+        Validate AWS CodeCommit credentials. 
+        Confirm that src_aws_secret_access_key, src_aws_session_token) are set. 
+        It also does a test call to confirm credentials are valid.
+        """
+
+        if token_type == "aws_secret_access_key" and not token:
+            raise ConfigurationException(
+                "aws_secret_access_key",
+                msg="AWS Secret Access Key not found in config for CodeCommit"
+            )
+        if token_type == "aws_session_token" and not token:
+            raise ConfigurationException(
+                "aws_session_token",
+                msg="AWS Session Token not found in config for CodeCommit"
+            )
+
+        try:
+            client = boto3.client(
+                'codecommit',
+                aws_access_key_id=self.src_aws_access_key_id,
+                aws_secret_access_key=deobfuscate(self.src_aws_secret_access_key),
+                aws_session_token=deobfuscate(self.src_aws_session_token) if self.src_aws_session_token else None,
+                region_name=self.src_aws_region
+            )
+            # Quick call to validate credentials.
+            client.list_repositories(maxResults=1)
+        except ClientError as e:
+            raise ConfigurationException(
+                "codecommit_credentials",
+                msg=f"Failed to validate AWS CodeCommit credentials: {str(e)}"
+            )
+
+        return True
 
     def validate_airgap_configuration(self):
         airgap_export = self.prop_bool("APP", "airgap_export", default=False)

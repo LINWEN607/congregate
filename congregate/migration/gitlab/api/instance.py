@@ -4,9 +4,9 @@ from congregate.migration.gitlab.api.base_api import GitLabApiWrapper
 
 
 class InstanceApi(GitLabApiWrapper):
-    def get_all_instance_hooks(self, host, token):
+    def get_all_system_hooks(self, host, token):
         """
-        Get a list of all instance hooks
+        Get a list of all system hooks
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/system_hooks.html#list-system-hooks
 
@@ -16,9 +16,9 @@ class InstanceApi(GitLabApiWrapper):
         """
         return self.api.list_all(host, token, "hooks")
 
-    def add_instance_hook(self, host, token, data, message=None):
+    def add_system_hook(self, host, token, data, message=None):
         """
-        Add a new instance hook
+        Add a new system hook
 
         GitLab API Doc: https://docs.gitlab.com/ee/api/system_hooks.html#add-new-system-hook
 
@@ -27,7 +27,7 @@ class InstanceApi(GitLabApiWrapper):
             :return: Response object containing the response to POST /hooks
         """
         if not message:
-            message = "Creating instance hook"
+            message = "Creating system hook"
         return self.api.generate_post_request(host, token, "hooks", json.dumps(data), description=message)
 
     def get_current_license(self, host, token):

@@ -28,8 +28,9 @@ class GroupStageCLI(BaseStageClass):
             Stage data based on selected groups on source instance
         """
         self.build_staging_data(groups_to_stage, dry_run, scm_source)
-        if self.config.source_type == "gitlab":
-            self.list_staged_users_without_public_email()
+        # Direct-transfer uses Placeholder users
+        if self.config.source_type == "gitlab" and not self.config.direct_transfer:
+            self.are_staged_users_without_public_email()
         if not dry_run:
             self.write_staging_files(skip_users=skip_users)
 
@@ -95,6 +96,36 @@ class GroupStageCLI(BaseStageClass):
                     self.log.error(
                         f"Please use a space delimited list of UUIDs (group IDs), NOT {groups_to_stage[0]}")
                     sys.exit(os.EX_IOERR)
+
+            elif self.config.source_type == "codecommit":
+                if groups_to_stage[0] in ["all", "."]:
+                    for p in projects:
+                        self.log.info(
+                            f"{get_dry_log(dry_run)}Staging project '{p['path_with_namespace']}' (ID: {p['id']})")
+                        self.staged_projects.append(
+                            self.get_project_metadata(p))
+                    for g in groups:
+                        self.log.info(
+                            f"{get_dry_log(dry_run)}Staging group '{g['full_path']}' (ID: {g['id']})")
+                        self.staged_groups.append(self.format_group(g))
+
+                    for u in users:
+                        self.log.info(
+                            f"{get_dry_log(dry_run)}Staging user '{u['email']}' (ID: {u['id']})")
+                        self.staged_users.append(u)
+                elif re.match(constants.UUID_PATTERN, groups_to_stage[0]):
+                    groups = [group for group in groups if group["id"]
+                              in groups_to_stage]
+                    for g in groups:
+                        self.log.info(
+                            f"{get_dry_log(dry_run)}Staging group '{g['full_path']}' (ID: {g['id']})")
+                        self.append_data(
+                            g, i, groups_to_stage, dry_run=dry_run)
+                else:
+                    self.log.error(
+                        f"Please use a space delimited list of UUIDs (group IDs), NOT {groups_to_stage[0]}")
+                    sys.exit(os.EX_IOERR)
+
             else:
                 if groups_to_stage[0] in ["all", "."]:
                     # Stage all projects

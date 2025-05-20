@@ -26,6 +26,9 @@ from congregate.migration.ado.api.pull_requests import PullRequestsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi as GitlabProjectsApi
 from congregate.migration.ado.api.projects import ProjectsApi as AdoProjectsApi
 from congregate.migration.ado.projects import ProjectsClient
+from congregate.migration.ado.work_items import WorkItemsClient
+
+
 from congregate.migration.ado.export import AdoExportBuilder
 from congregate.migration.ado.export import AdoGroupExportBuilder
 from congregate.helpers.migrate_utils import get_export_filename_from_namespace_and_name
@@ -60,6 +63,7 @@ class AzureDevopsMigrateClient(MigrateClient):
         self.gitlab_variables_api = VariablesClient()
         self.ado_projects_api = AdoProjectsApi()
         self.azure_projects_client = ProjectsClient()
+        self.azure_workitems_client = WorkItemsClient()
         self.branches = BranchesClient()
         super().__init__(dry_run,
                          processes,
@@ -310,6 +314,8 @@ class AzureDevopsMigrateClient(MigrateClient):
                         f"Migrating additional source project '{path}' (ID: {src_id}) GitLab features")
                     # Process attachments in MRs after project import
                     self.process_attachments_after_import(import_id)
+                    self.remove_direct_users_after_import(import_id)
+                    
                     result[dst_pwn] = import_id
             elif not self.dry_run:
                 self.log.warning(
@@ -320,21 +326,6 @@ class AzureDevopsMigrateClient(MigrateClient):
         except Exception as e:
             self.log.error(e)
             self.log.error(print_exc())
-        return result
-    
-
-    def handle_azure_post_migration(self, result, path_with_namespace, project, pid):
-
-        # Set default branch
-        self.branches.set_branch(
-            path_with_namespace, pid, project.get("default_branch"))
-
-        # Pull Requests migration
-        self.azure_projects_client.migrate_pull_requests(project, pid)
-
-        # Remove import user; SKIP if removing all other members
-        # if not self.remove_members:
-        #     self.remove_import_user(pid)
         return result
 
     def process_attachments_after_import(self, project_id):
@@ -429,3 +420,16 @@ class AzureDevopsMigrateClient(MigrateClient):
                 value = value_data.get("value", "")
                 self.gitlab_variables_api.set_variables(
                     group_id, self.config.destination_host, self.config.destination_token, var_type="group", data={"key": key, "value": value})
+
+    def remove_direct_users_after_import(self, project_id):
+        """
+        Removes direct users from the project after import.
+        """
+        self.log.info(f"Removing direct users from project {project_id}...")
+        
+        response = self.gitlab_projects_api.get_members(project_id, self.config.destination_host, self.config.destination_token)
+        members = safe_json_response(response)
+        for member in members:
+            self.log.info(f"Removing direct user {member['username']} (ID: {member['id']}) from project {project_id}...")
+            self.gitlab_projects_api.remove_member(project_id, member.get("id"), self.config.destination_host, self.config.destination_token)
+        return True

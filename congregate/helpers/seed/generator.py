@@ -172,7 +172,7 @@ class SeedDataGenerator(BaseClass):
             self.generate_shared_with_group_data(pid, groups, dry_run)
             self.generate_bot_user(pid, "project", dry_run)
         projects += self.generate_user_projects(users, dry_run)
-        self.generate_instance_hooks(dry_run)
+        self.generate_system_hooks(dry_run)
         self.enable_importers()
 
         print("---Generated Users---")
@@ -183,12 +183,12 @@ class SeedDataGenerator(BaseClass):
         print(json.dumps(projects, indent=4))
         return users, groups, projects
 
-    def generate_instance_hooks(self, dry_run=True):
+    def generate_system_hooks(self, dry_run=True):
         for d in self.HOOKS_DATA:
             self.log.info(
-                f"{get_dry_log(dry_run)}Creating instance hook ({d})")
+                f"{get_dry_log(dry_run)}Creating system hook ({d})")
             if not dry_run:
-                self.instance_api.add_instance_hook(
+                self.instance_api.add_system_hook(
                     self.config.source_host, self.config.source_token, d)
 
     def generate_users(self, dry_run=True):

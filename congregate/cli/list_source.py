@@ -37,6 +37,11 @@ from congregate.migration.jenkins.base import JenkinsClient as JenkinsData
 from congregate.migration.teamcity.base import TeamcityClient as TeamcityData
 
 from congregate.helpers.congregate_mdbc import CongregateMongoConnector, mongo_connection
+
+from congregate.migration.codecommit.api.base import CodeCommitApiWrapper
+from congregate.migration.codecommit.projects import ProjectsClient as CodeCommitProjects
+from congregate.migration.codecommit.groups import GroupsClient as CodeCommitGroups
+
 from congregate.helpers.csv_utils import write_projects_csv, write_groups_csv, write_users_csv
 
 LIST_TASKS = [
@@ -330,7 +335,7 @@ class ListClient(BaseClass):
                     write_projects_csv(json_path=f"{self.app_path}/data/groups.json",
                                 csv_path=f"{self.app_path}/data/groups.csv")
                 
-        if not self.skip_users:
+        if not self.skip_users and "dev.azure.com" in self.config.source_host:
             users = AdoUsers()
             users.retrieve_user_info(processes=self.processes)
             mongo.dump_collection_to_file(
@@ -338,6 +343,8 @@ class ListClient(BaseClass):
             if self.format.lower() == "csv":
                 write_projects_csv(json_path=f"{self.app_path}/data/users.json",
                             csv_path=f"{self.app_path}/data/users.csv")
+        else:
+            self.log.info("TFS and Azure DevOps Server do not support user retrieval via API. Skipping user retrieval data ...")
 
         mongo.close_connection()
 
@@ -362,6 +369,38 @@ class ListClient(BaseClass):
             data.retrieve_jobs_with_scm_info(i)
             mongo.dump_collection_to_file(
                 collection_name, f"{self.app_path}/data/teamcity-{i}.json")
+            
+    
+
+    def list_codecommit_data(self):
+        """
+        List data from AWS CodeCommit using the provided API wrapper.
+        Fetch repository metadata and save it in the same structure as other sources.
+        """
+        self.log.info("Starting to list repositories from AWS CodeCommit...")
+        try:
+            # Initialize CodeCommit API wrapper
+            mongo, p, g, u = self.mongo_init()
+            projects = CodeCommitProjects()
+            projects.retrieve_project_info()
+            mongo.dump_collection_to_file(
+                p, f"{self.app_path}/data/projects.json")
+            
+            if not self.skip_groups:
+                groups = CodeCommitGroups()
+                groups.retrieve_group_info(processes=self.processes)
+                mongo.dump_collection_to_file(
+                    g, f"{self.app_path}/data/groups.json")
+
+
+            mongo.close_connection()
+            
+            
+            self.log.info(f"CodeCommit repositories listed successfully in")
+        except Exception as e:
+            self.log.error(f"Error listing CodeCommit repositories: {e}")
+            raise
+
 
     def write_empty_file(self, filename):
         """
@@ -389,8 +428,13 @@ class ListClient(BaseClass):
             self.list_teamcity_data()
             staged_files.append("teamcity_jobs")
 
-        self.log.info(
-            f"Listing data from {src_type} source type - {self.config.source_host}")
+        if self.config.source_type == "azure devops":
+            self.log.info(
+                f"Listing data from {src_type} source type - {self.config.source_host} using api-version {self.config.ado_api_version}")
+        else:
+            self.log.info(
+                f"Listing data from {src_type} source type - {self.config.source_host}")
+
         # In case one skips users/groups/projects on first list
         self.initialize_list_files()
         if src_type == "bitbucket server":
@@ -403,6 +447,8 @@ class ListClient(BaseClass):
             self.list_github_data()
         elif src_type == "azure devops":
             self.list_azure_devops_data()
+        elif src_type == "codecommit":
+            self.list_codecommit_data()
         else:
             self.log.warning(
                 f"Cannot list from {src_type} source type - {self.config.source_host}")

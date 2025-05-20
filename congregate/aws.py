@@ -220,3 +220,7 @@ class AwsClient(BaseClass):
     def set_secret_access_key(self, key):
         command = f"aws configure set aws_secret_access_key {key}"
         call(command.split(" "))
+
+    def set_session_token(self, key):
+        command = f"aws configure set aws_session_token {key}"
+        call(command.split(" "))

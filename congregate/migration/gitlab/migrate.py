@@ -127,8 +127,10 @@ class GitLabMigrateClient(MigrateClient):
         # Projects
         self.migrate_project_info()
 
-        # Instance hooks
-        self.hooks.migrate_instance_hooks(dry_run=self.dry_run)
+        # System hooks
+        if self.config.migrate_system_hooks:
+            self.log.info("Migrating system hooks")
+            self.hooks.migrate_system_hooks(dry_run=self.dry_run)
 
         # Remove import user from parent group to avoid inheritance
         # (self-managed only)

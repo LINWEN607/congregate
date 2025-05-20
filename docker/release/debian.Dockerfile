@@ -48,9 +48,9 @@ RUN mkdir /opt/mongo-install && \
     chown -R ps-user: /data && \
     chmod -R 750 /data && \
     cd /opt/mongo-install && \
-    wget https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-debian10-4.4.19.tgz && \
-    tar -zxvf mongodb-linux-*-4.4.19.tgz && \
-    cp mongodb-linux-x86_64-debian10-4.4.19/bin/* /usr/local/bin/
+    wget https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-debian10-5.0.31.tgz && \
+    tar -zxvf mongodb-linux-*-5.0.31.tgz && \
+    cp mongodb-linux-x86_64-debian10-5.0.31/bin/* /usr/local/bin/
 
 RUN cd /opt/congregate && \
     chmod +x congregate && \

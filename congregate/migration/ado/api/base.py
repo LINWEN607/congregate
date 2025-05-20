@@ -1,5 +1,6 @@
 from urllib.parse import urljoin
 import requests
+import sys
 
 from congregate.helpers.base_class import BaseClass
 from gitlab_ps_utils.decorators import stable_retry
@@ -20,10 +21,11 @@ class AzureDevOpsApiWrapper(BaseClass):
 
     def generate_request_url(self, api, sub_api=None):
         base_url = self.config.source_host
-        if not base_url.startswith("https://"):
-            base_url = f"https://{base_url}"
-        if sub_api:
-            base_url_parts = base_url.split("://")
+        if not (base_url.startswith("https://") or base_url.startswith("http://")):
+            print("Invalid URL. Please provide a valid URL.")
+            sys.exit(1)
+        if sub_api and "dev.azure.com" in base_url:
+            base_url_parts = base_url.split("://", 1)
             base_url = f"{base_url_parts[0]}://{sub_api}.{base_url_parts[1]}"
         return urljoin(base_url + '/', api)
 
@@ -72,7 +74,7 @@ class AzureDevOpsApiWrapper(BaseClass):
         else:
             params = {'api-version': self.config.ado_api_version}
 
-        return requests.post(url, data=data, headers=headers, verify=self.config.ssl_verify)
+        return requests.post(url, params=(params or {}), data=data, headers=headers, verify=self.config.ssl_verify)
 
     @stable_retry
     def generate_patch_request(self, api, data, description=None):

@@ -30,15 +30,11 @@ curl --request POST \
 
 ## Step 1: Diagnosing the Import with Kibana
 
-If a file-based import is taking longer than expected, diagnose the issue using available logs. Start by checking the API endpoint for the project to locate the correlation ID:
-
-```
-/api/v4/projects/:ID/import
-```
+If a file-based import is taking longer than expected, diagnose the issue using available logs. Start by checking the API endpoint `/api/v4/projects/:ID/import` for the project to locate the correlation ID.
 
 This endpoint provides the correlation ID, which can then be used in Kibana to search for logs. To search in Kibana, target `pubsub-sidekiq-inf-gprd*` using the following query:
 
-```
+```txt
 json.class: "RepositoryImportWorker" AND json.correlation_id.keyword: "<Correlation ID from API>"
 ```
 
@@ -46,7 +42,7 @@ json.class: "RepositoryImportWorker" AND json.correlation_id.keyword: "<Correlat
 
 After running the query, you will retrieve a `json.jid`. Use this `jid` to search for error messages with the following query:
 
-```
+```txt
 json.message: "<json.jid we found>"
 ```
 
@@ -62,33 +58,48 @@ Once Direct Transfer is enabled, verify that it is active on both the source and
 
 If you encounter an error indicating that Direct Transfer is not enabled on both instances, wait a few moments and retry the API call until you receive a different error message.
 
-## Step 5: Initiating the Direct Transfer
+## Step 5: Initiating Direct Transfer
 
-Once Direct Transfer is enabled, initiate the bulk import using the following API call:
+Once Direct Transfer is enabled, trigger the [bulk import API endpoint](https://docs.gitlab.com/api/bulk_imports/#start-a-new-group-or-project-migration), e.g.
 
 ```bash
-curl --request POST   --header "PRIVATE-TOKEN: dest_pat_token"   --header "Content-Type: application/json"   --data '{ 
-    "configuration": { 
-      "url": "https://source.gitlab.com", 
-      "access_token": "source_pat_token" 
-    }, 
-    "entities": [ 
-      { 
-        "source_full_path": "group/subgroup/repo", 
-        "source_type": "project_entity", 
-        "destination_slug": "repo_slug", 
-        "destination_namespace": "namespace/group" 
-      } 
-    ] 
-  }' \ 
-  "https://gitlab.com/api/v4/bulk_imports"
+curl --request POST \
+  --url "https://destination-gitlab-instance.example.com/api/v4/bulk_imports" \
+  --header "PRIVATE-TOKEN: <your_access_token_for_destination_gitlab_instance>" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "configuration": {
+      "url": "https://source-gitlab-instance.example.com",
+      "access_token": "<your_access_token_for_source_gitlab_instance>"
+    },
+    "entities": [
+      {
+        "source_full_path": "source/full/path",
+        "source_type": "project_entity",
+        "destination_slug": "destination_slug",
+        "destination_namespace": "destination/namespace/path"
+      }
+    ]
+  }'
 ```
 
-This request will return an ID. Use this ID to monitor the status of the Direct Transfer at:
+This request will return an ID, e.g.
 
+```bash
+{
+  "id": 1,
+  "status": "created",
+  "source_type": "gitlab",
+  "source_url": "https://gitlab.example.com",
+  "created_at": "2021-06-18T09:45:55.358Z",
+  "updated_at": "2021-06-18T09:46:27.003Z",
+  "has_failures": false
+}
 ```
-https://gitlab.com/import/bulk_imports/ID/history
-```
+
+Use this ID (1) to [monitor the status of the bulk import](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/snippets/4818709).
+
+To access the entire bulk import history of the import user on destination, go to https://destination-gitlab-instance.example.com/import/bulk_imports/history.
 
 ## Step 6: Reaching Out for Assistance
 

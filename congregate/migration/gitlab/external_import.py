@@ -65,6 +65,80 @@ class ImportClient(BaseClass):
             data.pop("personal_access_token", None)
             migration_dry_run("project", data)
             return self.get_failed_result(dst_pwn, data)
+
+    
+    def get_namespace_id(self, host, token, path):
+        """
+        Get namespace ID by path.
+        
+        :param host: GitLab host URL
+        :param token: GitLab access token
+        :param path: Namespace path
+        :return: Namespace ID if found, None otherwise
+        """
+        return self.projects.get_namespace_id_by_full_path(host, token, path)
+    
+    def trigger_import_from_codecommit(self, repo_name, dst_pwn, tn, dry_run=True):
+        """
+        Use the built-in GitLab importer to start an AWS CodeCommit import.
+
+        :param repo_name: (str) The name of the AWS CodeCommit repository.
+        :param dst_pwn: (str) Destination path with namespace.
+        :param tn: (str) Full destination target namespace.
+        :param dry_run: (bool) If True, simulate the import without executing it.
+        :return: (dict) Successful or failed result data.
+        """
+        src_aws_codecommit_username = self.config.src_aws_codecommit_username
+        src_aws_codecommit_password = deobfuscate(self.config.src_aws_codecommit_password)
+        src_aws_region = self.config.src_aws_region
+        # Get the namespace info for the target namespace
+        namespace_response = self.projects.get_namespace_id_by_full_path(
+            self.config.destination_host,
+            self.config.destination_token,
+            tn
+        )
+        
+        if not namespace_response:
+            self.log.error(f"Could not find namespace for target namespace: {tn}")
+            return self.get_failed_result(dst_pwn, "Invalid target namespace")
+
+        namespace_id = namespace_response.get('id')
+        if not namespace_id:
+            self.log.error(f"Could not find namespace ID in response for target namespace: {tn}")
+            return self.get_failed_result(dst_pwn, "Invalid target namespace")
+      
+    #   https://docs.gitlab.com/ee/administration/settings/import_and_export_settings.html#configure-allowed-import-sources
+    
+        data = {
+            "name": repo_name,
+            "path": repo_name.lower() if self.config.lower_case_project_path else repo_name,
+            "namespace_id": namespace_id,
+            "import_url": f'https://{src_aws_codecommit_username}:{src_aws_codecommit_password}@git-codecommit.{src_aws_region}.amazonaws.com/v1/repos/{repo_name}',
+            "visibility": "private"
+        }
+
+        if not dry_run:
+            try:
+                resp = self.ext_import.import_from_codecommit(
+                    self.config.destination_host, self.config.destination_token, data
+                )
+                error, resp = is_error_message_present(resp)
+                if error or not resp:
+                    error_message = resp.get("message", "Unknown error")
+                    self.log.error(
+                        f"Repo {repo_name} import to {tn} failed with response {resp} and error {error_message}"
+                    )
+                    return self.get_failed_result(dst_pwn, error_message)
+                return self.get_result_data(dst_pwn, resp)
+            except ValueError as ve:
+                self.log.error(
+                    f"Failed to import repo {repo_name} to {tn} due to {ve}"
+                )
+                return self.get_failed_result(dst_pwn)
+        else:
+            data.pop("import_url", None)  # Avoid logging sensitive data
+            migration_dry_run("project", data)
+            return self.get_failed_result(dst_pwn, data)
         
     def trigger_import_from_bb_server(self, pwn, dst_pwn, tn, dry_run=True):
         """
@@ -180,7 +254,7 @@ class ImportClient(BaseClass):
             "optional_stages": {
                 "single_endpoint_notes_import": False,
                 "attachments_import": False,
-                "collaborators_import": False
+                "collaborators_import": True
             },
             "timeout_strategy": "pessimistic"
         }

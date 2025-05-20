@@ -20,10 +20,22 @@
 
 #### Security Configuration
 
-- The majority of the security configuration is handled by the SSO configuration as only SAML authenticated users can access the customers top-level group on gitlab.com
-- Other security options are available including:
-  - Ip allowlisting: Settings > General > Restrict access by IP address
-  - Restricted access based on email domain: Settings > General > Restrict membership by email domain
+- The majority of the security configuration is handled by the SAML/SSO/SCIM configuration
+- If there is SAML authentication only, w/o SSO-only authentication enforcement, users with no SAML accounts will still be able to access the Group's resources
+  - In that case, SAML is just another way to sign in to GitLab
+- SSO-only authentication enforcement ensures that only users with a SAML account will be able to access a Group's resource
+  - Users cannot be added as new members manually
+  - Only existing users on the instance, who have a linked identity with the correct identity Provider, will be shown
+  - GitLab will not look up the user directory on the idP to determine who to show
+  - GitLab cannot and does not request information from the SAML provider
+  - All the information is sent to GitLab from the SAML provider only when a user signs in successfully
+  - **NOTE:** The setting may not be enabled during the migration to ensure the PS engineer has proper access to perform the migration tasks
+- SCIM functionality (for [self-managed](https://docs.gitlab.com/administration/settings/scim_setup/) and [gitlab.com groups](https://docs.gitlab.com/user/group/saml_sso/scim_setup/)) is intended for automatic user provisioning and deprovisioning
+  - It is a protocol that the IdP uses to tell GitLab what to do
+- Other [group security options](https://docs.gitlab.com/user/group/access_and_permissions/) (*Settings > General > Permissions and group features*) are available, including:
+  - [*Restrict membership by email domain*](https://docs.gitlab.com/user/group/access_and_permissions/#restrict-group-access-by-domain)
+  - [*Restrict access by IP address*](https://docs.gitlab.com/user/group/access_and_permissions/#restrict-group-access-by-ip-address)
+  - [*Two factor authentication*](https://docs.gitlab.com/security/two_factor_authentication/) - 2FA can be enforced in the group, but may be redundant if SSO-only authentication is already enforced as that usually requires a multi-factor authentication (MFA) element
 
 #### Migration Wave File
 

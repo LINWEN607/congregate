@@ -17,10 +17,10 @@ class HooksClient(BaseClass):
         self.groups_api = GroupsApi()
         super(HooksClient, self).__init__()
 
-    def migrate_instance_hooks(self, dry_run=True):
+    def migrate_system_hooks(self, dry_run=True):
         if not is_dot_com(self.config.source_host) and not self.config.airgap:
             try:
-                resp = self.instance_api.get_all_instance_hooks(
+                resp = self.instance_api.get_all_system_hooks(
                     self.config.source_host, self.config.source_token)
                 s_hooks_src = iter(resp)
                 # Used to check if hook already exists
@@ -29,7 +29,7 @@ class HooksClient(BaseClass):
                     s_hooks_dstn = list(self.groups_api.get_all_group_hooks(
                         self.config.dstn_parent_id, self.config.destination_host, self.config.destination_token))
                 else:
-                    s_hooks_dstn = list(self.instance_api.get_all_instance_hooks(
+                    s_hooks_dstn = list(self.instance_api.get_all_system_hooks(
                         self.config.destination_host, self.config.destination_token))
                 for shd in s_hooks_dstn:
                     shd = pop_multiple_keys(shd, ["id", "created_at"])
@@ -37,10 +37,10 @@ class HooksClient(BaseClass):
                     error, shc = is_error_message_present(shc)
                     if error or not shc:
                         self.log.error(
-                            f"Failed to fetch source instance hooks ({shc})")
+                            f"Failed to fetch source system hooks ({shc})")
                         break
                     self.log.info(
-                        f"{get_dry_log(dry_run)}Migrating instance hook {shc['url']} (ID: {shc['id']})")
+                        f"{get_dry_log(dry_run)}Migrating system hook {shc['url']} (ID: {shc['id']})")
                     shc = pop_multiple_keys(shc, ["id", "created_at"])
                     # hook does not include secret token
                     if not dry_run and not shc in s_hooks_dstn:
@@ -52,21 +52,21 @@ class HooksClient(BaseClass):
                                 add_resp = self.groups_api.add_group_hook(
                                     self.config.destination_host, self.config.destination_token, self.config.dstn_parent_id, shc)
                         else:
-                            add_resp = self.instance_api.add_instance_hook(
+                            add_resp = self.instance_api.add_system_hook(
                                 self.config.destination_host, self.config.destination_token, shc)
                         if not isinstance(add_resp, Response) or add_resp.status_code != 201:
                             if add_resp:
                                 self.log.error(
-                                    f"Failed to create instance hook {shc}, with error:\n{add_resp} - {add_resp.text}")
+                                    f"Failed to create system hook {shc}, with error:\n{add_resp} - {add_resp.text}")
                             else:
                                 self.log.error(
-                                    f"Failed to create instance hook {shc}. No response was returned.")
+                                    f"Failed to create system hook {shc}. No response was returned.")
 
             except TypeError as te:
-                self.log.error(f"Instance hooks {resp} {te}")
+                self.log.error(f"System hooks {resp} {te}")
             except RequestException as re:
                 self.log.error(
-                    f"Failed to migrate instance hooks, with error:\n{re}")
+                    f"Failed to migrate system hooks, with error:\n{re}")
 
     def migrate_project_hooks(self, old_id, new_id, path):
         try:

@@ -526,7 +526,7 @@ class ConfigurationValidationTests(unittest.TestCase):
         src_type.return_value = "azure devops"
         host.return_value = "https://dev.azure.com/gitlab-ps"
         self.config.src_token_validated_in_session = False
-        url_value = "https://dev.azure.com/gitlab-ps/_apis/ConnectionData?api-version=7.0-preview"
+        url_value = "https://dev.azure.com/gitlab-ps/_apis/ConnectionData?api-version=7.2-preview"
         # url.return_value = url_value
         self.config.as_obj().set("SOURCE", "source_token", obfuscate("Enter secret: "))
         # pylint: disable=no-member

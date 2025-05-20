@@ -42,8 +42,9 @@ class ProjectStageCLI(BaseStageClass):
             if is_dot_com(self.config.destination_host):
                 self.log.warning(
                     "Please manually migrate USER projects to gitlab.com")
-        if self.config.source_type == "gitlab":
-            self.list_staged_users_without_public_email()
+        # Direct-transfer uses Placeholder users
+        if self.config.source_type == "gitlab" and not self.config.direct_transfer:
+            self.are_staged_users_without_public_email()
         if not dry_run:
             self.write_staging_files(skip_users=skip_users)
 
@@ -51,7 +52,7 @@ class ProjectStageCLI(BaseStageClass):
                            dry_run=True, scm_source=None):
         """
             Build data up from project level, including groups and users (members)
-            If format=csv, read from data/<data>.csv, build a list. 
+            If format=csv, read from data/<data>.csv, build a list.
             Otherwise, proceed with the existing JSON-based approach.
 
             :param: projects_to_stage: (dict) the staged projects objects
@@ -65,7 +66,7 @@ class ProjectStageCLI(BaseStageClass):
         if i == -1:
             self.log.warning(
                 f"Couldn't find the correct GH instance with hostname: {scm_source}")
-        # Loading projects information   
+        # Loading projects information
         if self.format.lower() == "csv":
             projects = parse_projects_csv(self.app_path, scm_source)
             groups = parse_groups_csv(self.app_path, scm_source)
@@ -84,6 +85,36 @@ class ProjectStageCLI(BaseStageClass):
         if list(filter(None, projects_to_stage)):
             # Stage ALL
             if self.config.source_type == "azure devops":
+                if projects_to_stage[0] in ["all", "."]:
+                    for p in projects:
+                        self.log.info(
+                            f"{get_dry_log(dry_run)}Staging project '{p['path_with_namespace']}' (ID: {p['id']})")
+                        self.staged_projects.append(
+                            self.get_project_metadata(p))
+
+                    for g in groups:
+                        self.log.info(
+                            f"{get_dry_log(dry_run)}Staging group '{g['full_path']}' (ID: {g['id']})")
+                        self.staged_groups.append(self.format_group(g))
+
+                    for u in users:
+                        self.log.info(
+                            f"{get_dry_log(dry_run)}Staging user '{u['email']}' (ID: {u['id']})")
+                        self.staged_users.append(u)
+                elif re.match(constants.UUID_PATTERN, projects_to_stage[0]):
+                    projects = [
+                        project for project in projects if project["id"] in projects_to_stage]
+                    for p in projects:
+                        self.log.info(
+                            f"{get_dry_log(dry_run)}Staging project '{p['path_with_namespace']}' (ID: {p['id']})")
+                        self.append_data(
+                            p, i, projects_to_stage, dry_run=dry_run)
+                else:
+                    self.log.error(
+                        f"Please use a space delimited list of UUIDs (project IDs), NOT {projects_to_stage[0]}")
+                    sys.exit(os.EX_IOERR)
+
+            elif self.config.source_type == "codecommit":
                 if projects_to_stage[0] in ["all", "."]:
                     for p in projects:
                         self.log.info(

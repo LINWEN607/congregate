@@ -1,5 +1,5 @@
 import json
-from urllib.parse import quote_plus
+from urllib.parse import quote_plus, quote
 from congregate.migration.gitlab.api.base_api import GitLabApiWrapper
 from congregate.migration.gitlab.api.users import UsersApi
 
@@ -1304,6 +1304,43 @@ class ProjectsApi(GitLabApiWrapper):
 
     def get_project_repository_commit_comments(self, pid, sha, host, token):
         return self.api.list_all(host, token, f"projects/{pid}/repository/commits/{sha}/comments")
+
+    def get_namespace_by_path(self, host, token, path):
+        """
+        Get namespace information by path.
+        
+        GitLab API: GET /api/v4/namespaces/:path
+        
+        :param host: GitLab host URL
+        :param token: GitLab access token
+        :param path: Namespace path (URL encoded)
+        :return: Response object containing namespace information
+        """
+        return self.api.generate_get_request(
+            host,
+            token,
+            f"namespaces/{path}"
+        )
+
+    def get_namespace_id_by_full_path(self, host, token, full_path):
+        """
+        Get namespace ID by full path.
+        
+        :param host: GitLab host URL
+        :param token: GitLab access token
+        :param full_path: Full namespace path
+        :return: Dict containing namespace info including ID, or None if not found
+        """
+        try:
+            encoded_path = quote(full_path, safe='')
+            response = self.get_namespace_by_path(host, token, encoded_path)
+            if response.status_code == 200:
+                return response.json()  # Return the full response JSON
+            self.log.warning(f"Failed to get namespace for path {full_path}: {response.text}")
+            return None
+        except Exception as e:
+            self.log.error(f"Error getting namespace ID for path {full_path}: {str(e)}")
+            return None
 
     def upload_attachment(self, host, token, project_id, file_data, filename, description=None):
         """

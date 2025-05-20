@@ -4,6 +4,7 @@ from dacite import from_dict
 from gitlab_ps_utils.dict_utils import dig
 from congregate import log
 from congregate.helpers.utils import guess_file_type
+from congregate.migration.gitlab.api.packages import PackagesApi
 from congregate.migration.meta.api_models.pypi_package_data import PyPiPackageData
 from congregate.migration.meta.api_models.npm_package_data import NpmPackageData
 from congregate.migration.meta.api_models.multipart_content import MultiPartContent
@@ -128,3 +129,142 @@ def generate_npm_json_data(package_metadata_bytes, package_data, tarball_name, t
 
 def generate_custom_npm_tarball_url(host, pid, package_name, file_name):
     return f"{host}/api/v4/projects/{pid}/packages/npm/{package_name}/-/{file_name}"
+    
+def compare_packages(
+    src_id, 
+    dest_id, 
+    package_name, 
+    package_version, 
+    src_host, 
+    dest_host, 
+    src_token, 
+    dest_token, 
+    packages_api,
+    logger=None,
+    all_source_packages=None,
+    all_dest_packages=None
+):
+    """
+    Compares a package between source and destination GitLab instances
+    to determine if they match exactly.
+    
+    Args:
+        src_id: Source project ID
+        dest_id: Destination project ID
+        package_name: Package name
+        package_version: Package version
+        src_host: Source GitLab instance URL
+        dest_host: Destination GitLab instance URL
+        src_token: Source GitLab token
+        dest_token: Destination GitLab token
+        packages_api: Instance of PackagesApi
+        logger: Optional logger
+        all_source_packages: Optional pre-fetched list of source packages
+        all_dest_packages: Optional pre-fetched list of destination packages
+        
+    Returns:
+        dict: Comparison result with keys:
+            - match (bool): True if packages match, False otherwise
+            - reason (str): Reason for match/mismatch
+            - details (str): Additional details (for mismatches)
+    """
+    prefix = f"[Project SRC:{src_id} → DST:{dest_id}]"
+    log_info = lambda msg: logger.info(f"{prefix} {msg}") if logger else None
+    log_warning = lambda msg: logger.warning(f"{prefix} {msg}") if logger else None
+    
+    # Use pre-fetched packages if available, otherwise fetch them
+    if all_source_packages is None:
+        src_packages = list(packages_api.get_project_packages(src_host, src_token, src_id))
+    else:
+        src_packages = all_source_packages
+    
+    src_pkg = next((p for p in src_packages if p.get('name') == package_name and p.get('version') == package_version), None)
+    
+    if not src_pkg:
+        log_info(f"Package {package_name} v{package_version} not found in source")
+        return {
+            "match": False,
+            "reason": "source_not_found",
+            "details": "Package not found in source project"
+        }
+    
+    # Use pre-fetched destination packages if available
+    if all_dest_packages is None:
+        dest_packages = list(packages_api.get_project_packages(dest_host, dest_token, dest_id))
+    else:
+        dest_packages = all_dest_packages
+    
+    dest_pkg = next((p for p in dest_packages if p.get('name') == package_name and p.get('version') == package_version), None)
+    
+    if not dest_pkg:
+        log_info(f"Package {package_name} v{package_version} not found in destination")
+        return {
+            "match": False,
+            "reason": "dest_not_found",
+            "details": "Package not found in destination project"
+        }
+        
+    # Get file lists
+    src_files = list(packages_api.get_package_files(src_host, src_token, src_id, src_pkg['id']))
+    dest_files = list(packages_api.get_package_files(dest_host, dest_token, dest_id, dest_pkg['id']))
+    
+    # Compare file counts - Warning condition when destination has more files than source
+    if len(dest_files) > len(src_files):
+        log_warning(f"Destination has more files ({len(dest_files)}) than source ({len(src_files)}) for package {package_name} v{package_version}")
+        log_warning(f"This may indicate duplicate uploads or incomplete prior migrations")
+        log_warning(f"Consider manually deleting the package in the destination and retrying the migration")
+        
+        return {
+            "match": False,
+            "reason": "dest_has_more_files",
+            "details": f"Destination has more files ({len(dest_files)}) than source ({len(src_files)}). Consider manual deletion."
+        }
+    
+    # Compare file counts - standard mismatch
+    if len(src_files) != len(dest_files):
+        log_info(f"File count mismatch: source={len(src_files)}, dest={len(dest_files)}")
+        return {
+            "match": False,
+            "reason": "file_count_mismatch",
+            "details": f"File count mismatch - source: {len(src_files)}, destination: {len(dest_files)}"
+        }
+        
+    # Compare individual files
+    for src_file in src_files:
+        dest_file = next((f for f in dest_files if f['file_name'] == src_file['file_name']), None)
+        
+        if not dest_file:
+            log_info(f"File '{src_file['file_name']}' missing in destination")
+            return {
+                "match": False,
+                "reason": "missing_file",
+                "details": f"File '{src_file['file_name']}' exists in source but not in destination"
+            }
+            
+        # Compare file size
+        if src_file.get('size', 0) != dest_file.get('size', 0):
+            log_info(f"Size mismatch for file '{src_file['file_name']}'")
+            return {
+                "match": False,
+                "reason": "size_mismatch",
+                "details": f"Size mismatch for '{src_file['file_name']}' - source: {src_file.get('size', 0)}, dest: {dest_file.get('size', 0)}"
+            }
+            
+        # Compare checksums if available (trying multiple digest types)
+        for digest_type in ['file_sha256', 'file_md5', 'file_sha1']:
+            if digest_type in src_file and digest_type in dest_file:
+                if src_file[digest_type] != dest_file[digest_type]:
+                    log_info(f"{digest_type} mismatch for file '{src_file['file_name']}'")
+                    return {
+                        "match": False,
+                        "reason": "checksum_mismatch",
+                        "details": f"{digest_type} mismatch for '{src_file['file_name']}'"
+                    }
+    
+    # If we get here, everything matches
+    log_info(f"Package {package_name} v{package_version} matches exactly between source and destination")
+    return {
+        "match": True,
+        "reason": "exact_match",
+        "details": "All files match exactly"
+    }

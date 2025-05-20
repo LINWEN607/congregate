@@ -654,7 +654,7 @@ class ImportExportClient(BaseGitLabClient):
                 filename,
                 headers={"PRIVATE-TOKEN": self.src_token},
                 verify=self.config.ssl_verify,
-                wait=65)
+                wait=67)
             # If None i.e. exception, retry
             if not new_file:
                 self.log.info(
@@ -687,7 +687,7 @@ class ImportExportClient(BaseGitLabClient):
                 self.log.info("Downloading export")
                 try:
                     filename = download_file(url, self.config.filesystem_path, path_with_namespace, headers={
-                        "PRIVATE-TOKEN": self.src_token}, verify=self.config.ssl_verify, wait=65)
+                        "PRIVATE-TOKEN": self.src_token}, verify=self.config.ssl_verify, wait=67)
                     self.log.info("Copying %s to s3", filename)
                     success = self.aws.copy_file_to_s3(filename)
                     if success:
@@ -729,7 +729,7 @@ class ImportExportClient(BaseGitLabClient):
                     url = f"{self.src_host}/api/v4/groups/{src_gid}/export/download"
                     self.log.info(f"Downloading group '{full_path}' (ID: {src_gid}) as {filename}")
                     download_file(url, self.config.filesystem_path, filename=filename, headers={
-                        "PRIVATE-TOKEN": self.src_token}, verify=self.config.ssl_verify, wait=65)
+                        "PRIVATE-TOKEN": self.src_token}, verify=self.config.ssl_verify, wait=67)
             # TODO: Refactor and sync with other scenarios (#119)
             elif loc == "filesystem-aws":
                 self.log.error(

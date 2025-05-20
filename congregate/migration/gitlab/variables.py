@@ -53,12 +53,15 @@ class VariablesClient(DbOrHttpMixin, BaseGitLabClient):
             if enabled:
                 var_list = self.get_ci_variables(
                     old_id, self.src_host, self.src_token, var_type=var_type)
-                if var_list:
-                    return self.migrate_variables(
-                        new_id, name, var_list, var_type, old_id)
-                return True
+                error, var_list = is_error_message_present(var_list)
+                if error or not var_list:
+                    self.log.error(
+                        f"Failed to fetch {var_type} '{name}' CI/CD variables: {var_list}")
+                    return False
+                return self.migrate_variables(
+                    new_id, name, var_list, var_type, old_id)
             self.log.info(
-                f"Jobs i.e. CI/CD variables are disabled for {var_type} '{name}'")
+                f"Jobs i.e. {var_type} '{name}' CI/CD variables are disabled")
             return None
         except Exception as e:
             self.log.error(
@@ -132,32 +135,30 @@ class VariablesClient(DbOrHttpMixin, BaseGitLabClient):
 
     def create_project_pipeline_schedule_variable(self, pid, spsid, dpsid, host, token, variable, data):
         if variable.get('schedule_id', -1) == spsid or not variable.get('schedule_id'):
-            self.projects_api.create_new_project_pipeline_schedule_variable(
+            resp = self.projects_api.create_new_project_pipeline_schedule_variable(
                 pid, dpsid, host, token, data)
+            if resp.status_code != 201:
+                self.log.error(f"Failed to create project {pid} scheduled pipeline {spsid} variable:\n{resp} - {resp.text}")
 
     def migrate_variables(self, new_id, name, var_list, var_type, src_id):
         try:
-            for var in iter(var_list):
-                error, var = is_error_message_present(var)
-                if error or not var:
-                    self.log.error(
-                        f"Failed to fetch CI/CD variables ({var}) for {var_type} {name}")
-                    return False
-                self.log.info(
-                    f"Migrating {var_type} {name} (ID: {new_id}) CI/CD variables")
-                self.send_data(self.set_variables,
+            self.log.info(
+                f"Migrating {var_type} '{name}' (ID: {new_id}) CI/CD variables")
+            for var in var_list:
+                resp = self.send_data(self.set_variables,
                                (new_id, self.dest_host, self.dest_token, var_type),
                                'ci_variables',
                                src_id,
                                var,
                                airgap=self.config.airgap,
                                airgap_export=self.config.airgap_export)
+                if resp.status_code != 201:
+                    self.log.error(f"Failed to create {var_type} '{name}' (ID: {new_id}) CI/CD variable:\n{resp} - {resp.text}")
             return True
         except TypeError as te:
-            self.log.error("{0} {1} variables {2}".format(
-                var_type, name, te))
+            self.log.error(f"{var_type} '{name}' variables:\n{te}")
             return False
         except RequestException as re:
             self.log.error(
-                f"Failed to migrate {var_type} {name} CI/CD variables, with error:\n{re}")
+                f"Failed to migrate {var_type} '{name}' CI/CD variables:\n{re}")
             return False

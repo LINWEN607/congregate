@@ -10,18 +10,16 @@ In an effort to provide a more [modular setup for using congregate](https://gitl
 there will be some docker-compose files in this folder
 that you can use to break up different components into distinct services.
 
-### Congregate and mongo as separate services
+Run
 
-- Copy the *docker-compose.yml* file you would like to use in your environment
-- Set the `CONGREGATE_DATA` environment variable to a path on your host
-  where you will store all congregate data outside of the container
-- Spin up the docker containers by running `docker-compose up -d`
-- Configure in your *congregate.conf* file
+```bash
+curl https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/raw/master/docker/release/setup_congregate.sh | bash
+```
 
-    ```ini
-    [APP]
-    mongo_host = mongo
-    ```
+which does the following:
+- Pulls down the Congregate docker-compose file
+- Creates a congregate-data folder and all necesary subfolders _for the other services in the docker-compose file_
+- Pulls down standard configurations for Vector, Loki, and Grafana
+- Sets CONGREGATE_DATA to the created congregate-data folder
 
-- Interact with congregate either through running `docker exec congregate congregate <command>`
-  or by entering a shell in the congregate container and running your congregate commands there
+then you should be all set to run Congregate and its related services

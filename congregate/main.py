@@ -344,6 +344,12 @@ def main():
             from congregate.migration.github.repos import ReposClient as GHReposClient
             from congregate.migration.bitbucket.repos import ReposClient as BBReposClient
             from congregate.cli.ldap_group_sync import LdapGroupSync
+            from congregate.migration.codecommit.projects import ProjectsClient
+            from congregate.migration.codecommit.api.base import CodeCommitApiWrapper
+            from congregate.migration.codecommit.base import CodeCommitWrapper
+            from congregate.migration.codecommit.migrate import CodeCommitMigrateClient
+
+
 
             config = conf.Config()
             users = UsersClient()

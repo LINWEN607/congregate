@@ -44,6 +44,15 @@ class Config(BaseConfig):
     def shared_runners_enabled(self):
         return self.prop_bool(
             "DESTINATION", "shared_runners_enabled", default=False)
+    
+    @property
+    def migrate_system_hooks(self):
+        """
+        Flag to denote if system hooks should be migrated
+        :return: True or False.
+        """
+        return self.prop_bool(
+            "DESTINATION", "migrate_system_hooks", default=False)
 
     @property
     def max_import_retries(self):
@@ -193,6 +202,35 @@ class Config(BaseConfig):
     @property
     def archive_project_suffix(self):
         return self.prop("SOURCE", "archive_project_suffix", default=" - migrated")
+
+# AWS CodeCommit
+    @property
+    def src_aws_access_key_id(self):
+        return self.prop("SOURCE", "src_aws_access_key_id",
+                         default=None, obfuscated=True)
+
+    @property
+    def src_aws_secret_access_key(self, obfuscate=True):
+        return self.prop("SOURCE", "src_aws_secret_access_key",
+                         default=None, obfuscated=obfuscate)
+    
+    @property
+    def src_aws_codecommit_username(self):
+        return self.prop("SOURCE", "src_aws_codecommit_username")
+    
+    @property
+    def src_aws_codecommit_password(self, obfuscate=True):
+        return self.prop("SOURCE", "src_aws_codecommit_password",
+                         default=None, obfuscated=obfuscate)
+    
+    @property
+    def src_aws_session_token(self, obfuscate=True):
+        return self.prop("SOURCE", "src_aws_session_token",
+                         default=None, obfuscated=obfuscate)
+    
+    @property
+    def src_aws_region(self):
+        return self.prop("SOURCE", "src_aws_region")    
 
 # CI_SOURCE
     def list_ci_source_config(self, ci_source_options):
@@ -522,6 +560,14 @@ class Config(BaseConfig):
         Sets the URL for the Celery task viewer app Flower
         """
         return self.prop("APP", "flower_url", default="http://localhost:5555")
+    
+    @property
+    def grafana_url(self):
+        """
+        Sets the URL for the Grafana instance bundled into the container
+        """
+        return self.prop("APP", "grafana_url", default="http://localhost:8300/d/logs/logs")
+
 
 # HIDDEN PROPERTIES
 
@@ -617,4 +663,4 @@ class Config(BaseConfig):
 
     @property
     def ado_api_version(self):
-        return self.prop("SOURCE", "api_version", default="7.0-preview")
+        return self.prop("SOURCE", "api_version", default="7.2-preview")

@@ -113,19 +113,39 @@ def generate_config():
         "Migrating from an external (non-GitLab) instance (Default: 'No')? ")
     if ext_src.lower() in ["yes", "y"]:
         src = input(
-            "Source (1. Bitbucket Server, 2. GitHub (Cloud or Enterprise)? ")
+            "Source (1. Bitbucket Server, 2. GitHub (Cloud or Enterprise) 3. AWS CodeCommit ?")
         if src.lower() in ["1", "1.", "bitbucket server"]:
             config.set("SOURCE", "src_type", "Bitbucket Server")
             config.set("SOURCE", "src_username", input("Username: "))
         elif src.lower() in ["2", "2.", "github"]:
             config.set("SOURCE", "src_type", "GitHub")
+        elif src.lower() in ["3", "3.", "codecommit"]:
+            config.set("SOURCE", "src_type", "CodeCommit")
+            config.set("SOURCE", "src_aws_access_key", input(
+                f"Source instance ({config.get('SOURCE', 'src_type')}) AWS Access Key ID: "))
+            config.set("SOURCE", "src_aws_secret_access_key", obfuscate(
+                f"Source instance ({config.get('SOURCE', 'src_type')}) AWS Secret Access Key: "))
+            config.set("SOURCE", "src_aws_region", input(
+                f"Source instance ({config.get('SOURCE', 'src_type')}) AWS Region: "))
+            config.set("SOURCE", "src_aws_codecommit_username", input(
+                f"Source instance ({config.get('SOURCE', 'src_type')}) AWS Codecommit Username: "))
+            config.set("SOURCE", "src_aws_codecommit_password", input(
+                f"Source instance ({config.get('SOURCE', 'src_type')}) AWS Codecommit Password: "))
+            try:
+                config.set("SOURCE", "src_aws_session_token", obfuscate(
+                f"Source instance ({config.get('SOURCE', 'src_type')}) AWS Session Token: "))
+            except Exception as e:
+                config.set("SOURCE", "src_aws_session_token",None)
+                print(f"Error while obfuscating session token: {e}")
+                      
         else:
             print(f"Source type {src} is currently not supported")
             sys.exit(os.EX_CONFIG)
-        config.set("SOURCE", "src_hostname", input(
-            f"Source instance ({config.get('SOURCE', 'src_type')}) URL: "))
-        config.set("SOURCE", "src_access_token", obfuscate(
-            f"Source instance ({config.get('SOURCE', 'src_type')}) Personal Access Token: "))
+        if config.get('SOURCE', 'src_type') != "CodeCommit":
+            config.set("SOURCE", "src_hostname", input(
+                f"Source instance ({config.get('SOURCE', 'src_type')}) URL: "))
+            config.set("SOURCE", "src_access_token", obfuscate(
+                f"Source instance ({config.get('SOURCE', 'src_type')}) Personal Access Token: "))
     else:
         # Non-external source instance configuration
         config.set("SOURCE", "src_type", "GitLab")

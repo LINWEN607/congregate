@@ -5,48 +5,122 @@
 
 # Setup a local development environment
 
+You can either work from [source code](#basic-environment-from-source), or work out of [Congregate Development Toolkit](#congregate-development-toolkit) docker containers. Start by git cloning [the Congregate repo](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate) to a directory of your choice.
+
+```bash
+git clone git@gitlab.com:gitlab-org/professional-services-automation/tools/migration/congregate.git
+```
+
+Once you get the basic environment setup, you will need to add the testing and validation tools.
+
 ## Dependencies
 
+These instructions assume you have a working python 3 environment and docker environment
 * Python 3.8
 * [AWS CLI](https://aws.amazon.com/cli/)
 * [Poetry](https://python-poetry.org/)
 * [Node v12.18.4](https://www.npmjs.com/)
+* [MongoDB](https://www.mongodb.com/docs/manual/tutorial/install-mongodb-community-with-docker/)
 
-## Setup unit testing framework
+:warning: This document assumes you have a working python 3.8.12 installed, you know how to clone a repo in terminal, and switch to its directory.  If you do not have a working python, you will need to take appropriate OS specific steps to install it, or consider using the docker container.
 
-:warning: This document assumes you have a working python 3.8.12 installed, you know how to clone a repo in terminal, and switch to its directory.  If you do not have a working python, you will need to take appropriate OS specific steps to install it.
+### Basic Environment from SOURCE
 
-After cloning [this repo](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate) and changing to the directory in terminal, run the following appropriate commands to run your first UT!
+Basic Environment from source would be used when you need to work on file based migrations, or other tooling, but don't need to test DT or Air-Gapped itself.  No special volume mounts are required to edit the code base.  The following should install a basic environment that is capable of doing a migration
 
-1. For Mac users, using `brew`:
-   1. `brew update`
-   2. Upgrade to `python@3.8`: `brew upgrade python@3.8`
-   3. Restart terminal or open separate tab (shell)
-   4. `pip3 install poetry`
-   5. `pip3 -V` (e.g. `pip 20.1.1 from /usr/local/lib/python3.8/site-packages/pip (python 3.8)`)
-   6. `poetry -V` (e.g. `Poetry version 1.0.9`)
-   7. `python -V` Currently congregate only works in Python 3. Your python needs to be `Python 3.8.12` or greater.
-   8. In case of multiple poetry virtualenvs (`<HOME>/Library/Caches/pypoetry/virtualenvs/`), perform the following steps to set Python 3 as the active one:
-      1. Set your Python to point (via `~/.bashrc` alias or symlink) to Python 3
-      2. Run `poetry env use python3.8` (`python2.7` when reverting back to Python 2)
-      3. Run `poetry install -v` (resolves the `pyproject.toml` dependencies, and installs the versions specified in the `poetry.lock` file)
+1. Install Python Poetry
+   * <details><summary>For Mac users, using brew:</summary>
 
-      **NOTE:** By removing the `poetry.lock` file or running `poetry update` you are deviating from the default set versions of the dependencies. When in doubt add `--no-dev` (Do not install dev dependencies) and `--dry-run` (`poetry update` only) to avoid dev dependencies i.e. inspect new versions before updating to them.
-1. Install the python poetry from source:
+      1. `brew update`
+      2. Upgrade to `python@3.8`: `brew upgrade python@3.8`
+      3. Restart terminal or open separate tab (shell)
+      4. `pip3 install poetry`
+      5. `pip3 -V` (e.g. `pip 20.1.1 from /usr/local/lib/python3.8/site-packages/pip (python 3.8)`)
+      6. `poetry -V` (e.g. `Poetry version 1.0.9`)
+      7. `python -V` Currently congregate only works in Python 3. Your python needs to be `Python 3.8.12` or greater.
+      8. In case of multiple poetry virtualenvs (`<HOME>/Library/Caches/pypoetry/virtualenvs/`), perform the following steps to set Python 3 as the active one:
+         1. Set your Python to point (via `~/.bashrc` alias or symlink) to Python 3
+         2. Run `poetry env use python3.8`
+         3. Run `poetry install -v` (resolves the `pyproject.toml` dependencies, and installs the versions specified in the `poetry.lock` file)
 
-   ```bash
-    curl -sSL https://install.python-poetry.org | python3.8 - && \
-    export PATH="/home/$USER/.local/bin:$PATH" && \
-    poetry --version && \
-    poetry install
-    ```
+         **NOTE:** By removing the `poetry.lock` file or running `poetry update` you are deviating from the default set versions of the dependencies. When in doubt add `--no-dev` (Do not install dev dependencies) and `--dry-run` (`poetry update` only) to avoid dev dependencies i.e. inspect new versions before updating to them.
 
-   Alternatively, use a virtual environment manager (`pip`): `pip install poetry`
+   </details>
+
+   * <details><summary>For Linux or Other users (untested on Windows):</summary>
+
+      ```bash
+      curl -sSL https://install.python-poetry.org | python3.8 - && \
+      export PATH="/home/$USER/.local/bin:$PATH" && \
+      poetry --version && \
+      poetry install
+      ```
+
+      Alternatively, use a virtual environment manager (`pip`): `pip install poetry`
+
+   </details>
+   
 1. Source the poetry environment: `source $HOME/.poetry/env`
 1. Verify poetry works: `poetry --version`. If this doesn't work, add the following line to your appropriate rc file, usually `.zshrc`: \
 `export PATH=$HOME/.poetry/bin:$PATH` and retry `poetry --version`
 1. Install python dependencies `poetry install`
-   1. To update dependencies run `poetry update`
+   * To update dependencies run `poetry update`
+1. Setup Mongo (File based Migrations)
+   1. `docker pull mongodb/mongodb-community-server:latest`
+   1. `docker run --name mongodb -p 27017:27017 -d mongodb/mongodb-community-server:latest`
+   1. Make sure the `congregate.conf` is configured correctly for a stand alone Mongo;
+
+   ```ini
+   ### Mongo DB configuration
+   mongo_host = localhost
+   mongo_port = 27017
+      ```
+
+### Congregate Development Toolkit
+
+Use the CDT when you need to work on DT or Air-Gapped migrations.  You can either map a docker volume to work on the code base, or work on it inside the container
+
+#### Prerequisites
+
+Before you begin, ensure you have the following installed on your local machine:
+
+- Docker: [Install Docker](https://docs.docker.com/get-docker/)
+- Docker Compose: [Install Docker Compose](https://docs.docker.com/compose/install/)
+
+#### Install
+   * Mongo & Redis using the Congregate Development Toolkit (DT and Air-Gapped Migrations)
+      1. Open a Terminal and Navigate to the `<CONGREGATE-DIR>/docker/dev/cdk` directory and create a `.env` file. Insert the following content in the `.env` file, changing path as appropriate:
+
+         ```ini
+            CONGREGATE_DATA=/path/to/congregate/data
+            CONGREGATE_PATH=/path/to/congregate/root/folder
+         ```
+      1. Make sure the congregate.conf file uses the following configuration. You need to make sure you use service names (mongo and redis, respectively) as hostnames. This is allowing containers to communicate with each other by their service names.
+
+         ```ini
+         ### Mongo DB configuration
+         mongo_host = mongo
+         ### Redis configuration
+         redis_host = redis
+         ```
+      1. Start the docker compose file
+
+         ```bash
+            docker compose up -d # The -d starts in the background
+         ```
+
+      1. Get inside the container, optionally, copy congregate script to a bin directory and start using congregate
+
+         ```bash
+         docker exec -it congregate_dev bash
+         cd /opt/congregate
+         cp congregate.sh /usr/local/bin/congregate
+         congregate help
+         congregate init
+         ```
+
+### Adding requirements for Testing
+
 1. Install NVM for Node Version Management \
  `curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash`
 1. If you are using zsh (mac default) copy this into `.zshrc`.  If not, copy into `.bashrc`.  Both of these files are generally found at `~/` \
@@ -125,49 +199,3 @@ If you are using VS Code as your IDE please enable `autopep8` with the following
 * *Python > Formatting: Autopep8 Args* - Add item `--max-line-length=79` (this length and setting applies to any other IDE you may be using)
 * *Python > Formatting: Autopep8 Path* - `autopep8`
 * *Python > Formatting: Provider* - `autopep8`
-
-
-
-# Using Congregate Development Toolkit
-
-## Prerequisites
-
-Before you begin, ensure you have the following installed on your local machine:
-
-- Docker: [Install Docker](https://docs.docker.com/get-docker/)
-- Docker Compose: [Install Docker Compose](https://docs.docker.com/compose/install/)
-
-## installation
-
-1. Open a Terminal and Navigate to the `docker/dev/cdk` directory of congregate and create a `.env` file. Inside the file insert the following content (change the values of the environment variables depending on your folder structure):
-
-```bash
-   CONGREGATE_DATA=/path/to/congregate/data
-   CONGREGATE_PATH=/path/to/congregate/root/folder
-```
-
-2. Make sure the congregate.conf file uses the following configuration. You need to make sure you use service names (mongo and redis, respectively) as hostnames. This is allowing containers to communicate with each other by their service names.
-
-```bash
-### Mongo DB configuration
-mongo_host = mongo
-
-### Redis configuration
-redis_host = redis
-```
-
-3. Start the docker compose file
-
-```bash
-   docker-compose up
-```
-
-4. Get inside the container, optionally, copy congregate script to a bin directory and start using congregate
-
-```bash
-   docker exec -it congregate_dev bash
-   cd /opt/congregate
-   cp congregate.sh /usr/local/bin/congregate
-   congregate help
-   congregate init
-```

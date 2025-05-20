@@ -144,7 +144,7 @@ class BaseStageClass(BaseClass):
                 # Lookup by ID in rewritten_projects
                 project = self.rewritten_projects[project]
             # Otherwise, project is already a dictionary with project data
-            
+
             path_with_namespace = project["path_with_namespace"]
             pid = project["id"]
 
@@ -205,7 +205,8 @@ class BaseStageClass(BaseClass):
             group["name"], group["full_path"], is_group=True, is_subgroup=is_subgroup)
         return group
 
-    def list_staged_users_without_public_email(self):
+    # Applies only to GL->GL file-based migrations
+    def are_staged_users_without_public_email(self):
         if is_gl_version_older_than(14, self.config.source_host, self.config.source_token, "SKIP: Not mandatory to set 'public_email' field for staged users"):
             return
         if self.staged_users:
@@ -215,4 +216,5 @@ class BaseStageClass(BaseClass):
             } for u in remove_dupes(self.staged_users) if u.get("email") != u.get("public_email")]
             if no_public_email:
                 self.log.warning(
-                    f"Staged users with incorrect (not primary email) or no `public_email` field set ({len(no_public_email)}):\n{json_pretty(no_public_email)}")
+                    f"Staged users with incorrect (not primary email) or no 'public_email' field set ({len(no_public_email)}):\n{json_pretty(no_public_email)}")
+                self.log.error("Set the 'public_email' field and/or run a new 'list' of only users")

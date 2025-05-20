@@ -1,4 +1,5 @@
 import re
+import pprint
 from copy import deepcopy as copy
 from pathlib import Path
 from gitlab_ps_utils.dict_utils import dig
@@ -7,6 +8,7 @@ from gitlab_ps_utils.misc_utils import safe_json_response
 from congregate.migration.meta.custom_importer.export_builder import ExportBuilder
 from congregate.migration.meta.custom_importer.group_export_builder import GroupExportBuilder
 from congregate.migration.meta.custom_importer.data_models.tree.merge_requests import MergeRequests
+from congregate.migration.meta.custom_importer.data_models.tree.issues import Issues
 from congregate.migration.meta.custom_importer.data_models.tree.project_members import ProjectMembers
 from congregate.migration.meta.custom_importer.data_models.tree.project_member_user import ProjectMemberUser
 from congregate.migration.meta.custom_importer.data_models.project_export import ProjectExport
@@ -19,15 +21,17 @@ from congregate.migration.meta.custom_importer.data_models.tree.system_note_meta
 from congregate.migration.meta.custom_importer.data_models.tree.merge_request_diff_file import MergeRequestDiffFile
 from congregate.migration.meta.custom_importer.data_models.tree.merge_request_commit import MergeRequestCommit
 from congregate.migration.meta.custom_importer.data_models.tree.merge_request_diff import MergeRequestDiff
+from congregate.migration.ado.api.base import AzureDevOpsApiWrapper
 from congregate.migration.ado.api.repositories import RepositoriesApi
 from congregate.migration.ado.api.pull_requests import PullRequestsApi
 from congregate.migration.ado.api.teams import TeamsApi
 from congregate.migration.ado.api.users import UsersApi as ADOUsersApi
+from congregate.migration.ado.api.work_items import WorkItemsApi
+from congregate.migration.ado.work_items import WorkItemsClient
 from congregate.migration.gitlab.api.users import UsersApi as GitlabUsersApi 
 from congregate.migration.meta import constants
 
 import congregate.helpers.migrate_utils as mig_utils
-
 
 class AdoExportBuilder(ExportBuilder):
     def __init__(self, source_project):
@@ -35,7 +39,10 @@ class AdoExportBuilder(ExportBuilder):
         self.repositories_api = RepositoriesApi()
         self.pull_requests_api = PullRequestsApi()
         self.teams_api = TeamsApi()
+        self.ado_api = AzureDevOpsApiWrapper()
         self.ado_users_api = ADOUsersApi()
+        self.work_items_api = WorkItemsApi()
+        self.work_items_client = WorkItemsClient()
         self.gitlab_users_api = GitlabUsersApi()
         self.project_id = source_project['project_id']
         self.repository_id = source_project['id']
@@ -58,9 +65,11 @@ class AdoExportBuilder(ExportBuilder):
     
     def build_ado_data(self):
         merge_requests = self.build_merge_requests()
+        issues = self.build_issues()
         return ProjectExport(
             project_members=self.build_project_members(),
-            merge_requests=merge_requests
+            merge_requests=merge_requests,
+            issues=issues
         )
 
     def build_merge_requests(self):
@@ -234,6 +243,8 @@ class AdoExportBuilder(ExportBuilder):
         return self.get_new_member_id(safe_json_response(request).get('closedBy'))
 
     def get_new_member_id(self, member):
+        if not member:
+            return None
         if mid := dig(self.members_map, member.get('descriptor'), 'id', default=dig(self.members_map, member['id'], 'id')):
             return mid
         else:
@@ -243,7 +254,7 @@ class AdoExportBuilder(ExportBuilder):
     def build_clone_url(self, source_project):
         clone_url = source_project['http_url_to_repo']
         decoded_token = deobfuscate(self.config.source_token)
-        return clone_url.replace("@", f"{decoded_token}@")
+        return clone_url.replace("@", f"{self.config.source_username}{decoded_token}@")
 
     def build_mr_notes(self, pr_id):
         notes = []
@@ -379,6 +390,58 @@ class AdoExportBuilder(ExportBuilder):
         except Exception as e:
             self.log.error(f"Failed to extract email from ADO user: {e}")
             return None
+
+    def build_issues(self):
+        issues = []
+        for wi in self.work_items_client.get_all_work_items(self.project):
+            workitem = self.work_items_api.get_work_item(self.project_id, wi.get('id')).json()
+            pprint.pprint(workitem)
+            author = workitem['fields'].get('System.CreatedBy', {})
+            assignee = workitem['fields'].get('System.AssignedTo', {})
+            issues.append(Issues(
+                author_id=self.get_new_member_id(author),
+                project_id=1,
+                title=workitem['fields'].get('System.Title', 'No Title'),
+                description=workitem['fields'].get('System.Description', 'No Description'),
+                created_at=workitem['fields'].get('System.CreatedDate', 'No Created Date'),
+                # updated_at=workitem['fields'].get('System.ChangedDate'),
+                # updated_by_id=gl_author,
+                # state=workitem['fields'].get('System.State', 'No State'),
+                state=self.issue_state(workitem['fields'].get('System.State', 'No State')),
+                iid=workitem['id'],
+                issue_assignees=[{"user_id": self.get_new_member_id(assignee)}],
+                # notes=self.build_issue_notes(wi['id']),
+                label_links=self.label_links(workitem),
+            ))
+        return issues
+
+    def issue_state(self, state):
+        if state == 'New':
+            return 'opened'
+        elif state == 'Active':
+            return 'opened'
+        elif state == 'Resolved':
+            return 'closed'
+        elif state == 'Closed': 
+            return 'closed'
+        else:
+            return 'opened'
+
+
+    def label_links(self, workitem):
+        label_links = []
+        for label in workitem.get('fields', {}).get('System.Tags', '').split('; '):
+            if label:
+                label_links.append({
+                    "target_type": "Issue",
+                    "created_at": workitem['fields'].get('System.CreatedDate'),
+                    "updated_at": workitem['fields'].get('System.ChangedDate'),
+                    "label": {
+                        "title": label.strip(),
+                        "color": "#cccccc",
+                    }
+                })
+        return label_links
 
 class AdoGroupExportBuilder(GroupExportBuilder):
     def __init__(self, source_group):
