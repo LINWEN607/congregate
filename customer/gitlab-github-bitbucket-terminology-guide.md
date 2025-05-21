@@ -1,4 +1,4 @@
-# GitLab, GitHub, and Bitbucket – Terminology & Migration Guide
+# GitLab, GitHub, and Bitbucket – Terminology Guide
 
 *This guide clarifies key terminology differences across GitLab, GitHub, and Bitbucket to support teams during migrations or cross-platform collaboration.*
 
