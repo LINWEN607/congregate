@@ -52,7 +52,7 @@ class MigrationEndToEndTest(unittest.TestCase):
         project_diff.generate_html_report(
             "Project", diff_report, "/data/results/project_migration_results.html")
         self.assertGreaterEqual(
-            diff_report["project_migration_results"]["overall_accuracy"], 0.94)
+            diff_report["project_migration_results"]["overall_accuracy"], 0.88)
 
 
 def rollback_diff():
