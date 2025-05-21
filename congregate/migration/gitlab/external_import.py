@@ -22,7 +22,7 @@ class ImportClient(BaseClass):
         self.projects = ProjectsApi()
         self.instance = InstanceApi()
         self.groups = GroupsClient()
-        
+
 
     def trigger_import_from_repo(self, pn, dst_pwn, tn, project, dry_run=True):
         """
@@ -37,7 +37,7 @@ class ImportClient(BaseClass):
         azure_repo = project.get("path")
         url = project.get("http_url_to_repo").rsplit("@")[1]
         token = deobfuscate(self.config.source_token)
-        
+
         data = {
             "name": project.get("name"),
             "namespace_id": namespace_id,
@@ -66,18 +66,18 @@ class ImportClient(BaseClass):
             migration_dry_run("project", data)
             return self.get_failed_result(dst_pwn, data)
 
-    
+
     def get_namespace_id(self, host, token, path):
         """
         Get namespace ID by path.
-        
+
         :param host: GitLab host URL
         :param token: GitLab access token
         :param path: Namespace path
         :return: Namespace ID if found, None otherwise
         """
         return self.projects.get_namespace_id_by_full_path(host, token, path)
-    
+
     def trigger_import_from_codecommit(self, repo_name, dst_pwn, tn, dry_run=True):
         """
         Use the built-in GitLab importer to start an AWS CodeCommit import.
@@ -97,7 +97,7 @@ class ImportClient(BaseClass):
             self.config.destination_token,
             tn
         )
-        
+
         if not namespace_response:
             self.log.error(f"Could not find namespace for target namespace: {tn}")
             return self.get_failed_result(dst_pwn, "Invalid target namespace")
@@ -106,9 +106,9 @@ class ImportClient(BaseClass):
         if not namespace_id:
             self.log.error(f"Could not find namespace ID in response for target namespace: {tn}")
             return self.get_failed_result(dst_pwn, "Invalid target namespace")
-      
+
     #   https://docs.gitlab.com/ee/administration/settings/import_and_export_settings.html#configure-allowed-import-sources
-    
+
         data = {
             "name": repo_name,
             "path": repo_name.lower() if self.config.lower_case_project_path else repo_name,
@@ -139,7 +139,7 @@ class ImportClient(BaseClass):
             data.pop("import_url", None)  # Avoid logging sensitive data
             migration_dry_run("project", data)
             return self.get_failed_result(dst_pwn, data)
-        
+
     def trigger_import_from_bb_server(self, pwn, dst_pwn, tn, dry_run=True):
         """
         Use the built-in GitLab importer to start a BitBucket Server import.
@@ -157,7 +157,8 @@ class ImportClient(BaseClass):
             "bitbucket_server_project": bbs_project_key,
             "bitbucket_server_repo": bbs_repo,
             "target_namespace": tn,
-            "new_name": sanitize_project_path(bbs_repo, pwn)
+            "new_name": sanitize_project_path(bbs_repo, pwn),
+            "timeout_strategy": self.config.timeout_strategy
         }
 
         if self.config.lower_case_project_path:
@@ -182,7 +183,7 @@ class ImportClient(BaseClass):
             data.pop("personal_access_token", None)
             migration_dry_run("project", data)
             return self.get_failed_result(dst_pwn, data)
-    
+
     def trigger_import_from_bitbucket_cloud(self, project, workspace, repo_slug, path_with_namespace, namespace, bb_username, bb_token, dry_run=True):
         """
         Trigger import from Bitbucket Cloud using GitLab's built-in importer
@@ -195,32 +196,32 @@ class ImportClient(BaseClass):
             "new_name": project.get('name', repo_slug),
             "target_namespace": namespace,
         }
-        
+
         # Include optional parameters if available
         if project.get('description'):
             import_data["description"] = project.get('description')
-        
+
         if project.get('visibility'):
             import_data["visibility"] = project.get('visibility')
-        
+
         # Log the import attempt
         self.log.info(f"Triggering Bitbucket Cloud import for {workspace}/{repo_slug} to {namespace}")
-        
+
         if dry_run:
             # Return a dry run result
             self.log.info(f"[DRY RUN] Would import Bitbucket Cloud repo {workspace}/{repo_slug} to {namespace}")
             return {path_with_namespace: {"response": "dry_run", "success": True}}
-        
+
         # Make the API request to import the repository
         host = self.config.destination_host
         token = self.config.destination_token
-        
+
         response = self.ext_import.import_from_bitbucket_cloud(
             host=host,
             token=token,
             data=import_data
         )
-        
+
         # Process response
         if isinstance(response, dict) and response.get('id'):
             result = {path_with_namespace: {"response": response, "success": True}}
@@ -228,7 +229,7 @@ class ImportClient(BaseClass):
         else:
             result = {path_with_namespace: {"response": response, "success": False}}
             self.log.error(f"Failed to import Bitbucket Cloud repo {workspace}/{repo_slug}: {response}")
-        
+
         return result
 
     def trigger_import_from_ghe(self, project, dst_pwn, tn, host, token, dry_run=True):
@@ -256,7 +257,7 @@ class ImportClient(BaseClass):
                 "attachments_import": False,
                 "collaborators_import": True
             },
-            "timeout_strategy": "pessimistic"
+            "timeout_strategy": self.config.timeout_strategy
         }
 
         if self.config.lower_case_project_path:
@@ -358,12 +359,12 @@ class ImportClient(BaseClass):
         repo = split[1]
         return project, repo
 
-    def get_external_repo_import_status(self, host, token, pid):
+    def get_external_repo_import_status(self, host, token, dstn_pwn, pid):
         error, import_status = is_error_message_present(
             self.projects.get_project_import_status(host, token, pid))
         if error or not import_status:
             self.log.error(
-                f"Repo {pid} import failed with status: {import_status.get('message')}")
+                f"Repo '{dstn_pwn}' import failed with status: {import_status}")
             return import_status
 
         # Save to file to avoid outputting long lists to log

@@ -44,7 +44,7 @@ class Config(BaseConfig):
     def shared_runners_enabled(self):
         return self.prop_bool(
             "DESTINATION", "shared_runners_enabled", default=False)
-    
+
     @property
     def migrate_system_hooks(self):
         """
@@ -184,12 +184,12 @@ class Config(BaseConfig):
     @property
     def src_parent_group_path(self):
         return self.prop("SOURCE", "src_parent_group_path")
-    
+
     # Bitbucket Cloud
     @property
     def src_parent_workspace(self):
         return self.prop("SOURCE", "src_parent_workspace")
-    
+
     # GitHub
     @property
     def src_parent_org(self):
@@ -198,7 +198,7 @@ class Config(BaseConfig):
     @property
     def source_registry(self):
         return self.prop("SOURCE", "src_registry_url")
-    
+
     @property
     def archive_project_suffix(self):
         return self.prop("SOURCE", "archive_project_suffix", default=" - migrated")
@@ -213,24 +213,24 @@ class Config(BaseConfig):
     def src_aws_secret_access_key(self, obfuscate=True):
         return self.prop("SOURCE", "src_aws_secret_access_key",
                          default=None, obfuscated=obfuscate)
-    
+
     @property
     def src_aws_codecommit_username(self):
         return self.prop("SOURCE", "src_aws_codecommit_username")
-    
+
     @property
     def src_aws_codecommit_password(self, obfuscate=True):
         return self.prop("SOURCE", "src_aws_codecommit_password",
                          default=None, obfuscated=obfuscate)
-    
+
     @property
     def src_aws_session_token(self, obfuscate=True):
         return self.prop("SOURCE", "src_aws_session_token",
                          default=None, obfuscated=obfuscate)
-    
+
     @property
     def src_aws_region(self):
-        return self.prop("SOURCE", "src_aws_region")    
+        return self.prop("SOURCE", "src_aws_region")
 
 # CI_SOURCE
     def list_ci_source_config(self, ci_source_options):
@@ -546,21 +546,21 @@ class Config(BaseConfig):
         Defaults to 30 seconds
         """
         return self.prop_int("APP", "poll_interval", default=30)
-    
+
     @property
     def list_task_timeout(self):
         """
         Sets the timeout for the concurrent list of async tasks to complete
         """
         return self.prop_int("APP", "list_task_timeout", default=86400)
-    
+
     @property
     def flower_url(self):
         """
         Sets the URL for the Celery task viewer app Flower
         """
         return self.prop("APP", "flower_url", default="http://localhost:5555")
-    
+
     @property
     def grafana_url(self):
         """
@@ -568,6 +568,14 @@ class Config(BaseConfig):
         """
         return self.prop("APP", "grafana_url", default="http://localhost:8300/d/logs/logs")
 
+    @property
+    def timeout_strategy(self):
+        """
+        Strategy for handling import timeouts.
+        Used only for imports from GitHub and BitBucket Server.
+        Value could be "pessimistic" (default) or "optimistic".
+        """
+        return self.prop("APP", "timeout_strategy", default="pessimistic")
 
 # HIDDEN PROPERTIES
 

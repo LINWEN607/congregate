@@ -1,6 +1,5 @@
 #!/bin/bash
 
-#
 # Congregate Docker Compose setup script
 #
 # This script sets up the directories and downloads the necessary
@@ -9,7 +8,6 @@
 # This script assumes you are running as sudo su
 #
 # Usage: ./setup_congregate.sh
-#
 
 main() {
     folders=(
@@ -36,8 +34,7 @@ main() {
     echo "Creating Congregate data directories"
     for folder in "${folders[@]}"; do
         create_folder $folder
-   
-    )
+    done
 
     echo "Seeding Congregate log files"
     for log_file in "${log_files[@]}"; do
@@ -64,7 +61,7 @@ main() {
 
     echo "Setting environment variable for Congregate data directory"
     echo "export CONGREGATE_DATA=$(pwd)/congregate-data" >> ~/.bashrc
-    
+
     echo "*********************************************"
     echo "PLEASE EXPLICITLY SOURCE YOUR ~/.bashrc FILE:"
     echo "source ~/.bashrc"
@@ -123,5 +120,4 @@ create_folder() {
 }
 
 ## Calling the main function
-
 main

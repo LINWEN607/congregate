@@ -55,7 +55,7 @@ class CodeCommitMigrateClient(MigrateClient):
                          subgroups_only,
                          scm_source,
                          group_structure)
-        
+
     def migrate(self):
         dry_log = misc_utils.get_dry_log(self.dry_run)
 
@@ -64,7 +64,7 @@ class CodeCommitMigrateClient(MigrateClient):
 
         # Migrate CodeCodemmit repositories as GL projects
         self.migrate_codecommit_repo_info(dry_log)
-     
+
     def migrate_codecommit_repo_info(self, dry_log):
         staged_projects = mig_utils.get_staged_projects()
         if staged_projects:
@@ -138,18 +138,18 @@ class CodeCommitMigrateClient(MigrateClient):
 
         if not self.groups.find_group_id_by_path(host, token, target_namespace):
             self.log.info(f"Creating target namespace: {target_namespace}")
-            
+
             # Add more detailed error logging
             result = self.groups_api.create_group(
-                host, 
+                host,
                 token,
                 {
                     "name": target_namespace,
                     "path": target_namespace,
-                    "visibility": "private"  
+                    "visibility": "private"
                 }
             )
-            
+
             if isinstance(result, requests.Response) and result.status_code == 403:
                 self.log.error(f"Group creation failed. Response: {result.text}")
                 return self.ext_import.get_failed_result(
@@ -194,7 +194,7 @@ class CodeCommitMigrateClient(MigrateClient):
             # Repo import status
             if dst_pid or project_id:
                 result[dstn_pwn]["import_status"] = self.ext_import.get_external_repo_import_status(
-                    host, token, dst_pid or project_id)
+                    host, token, dstn_pwn, dst_pid or project_id)
         else:
             log = f"Target namespace {target_namespace} does not exist"
             self.log.warning("Skipping import. " + log +
@@ -209,7 +209,7 @@ class CodeCommitMigrateClient(MigrateClient):
         # Set default branch
         self.branches.set_branch(
             path_with_namespace, pid, project.get("default_branch"))
-        
+
         # Pull Requests migration
         self.codecommit_projects_client.migrate_pull_requests(project, pid)
 

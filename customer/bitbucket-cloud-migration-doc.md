@@ -1,8 +1,10 @@
 # BitBucket Cloud migration doc
 
-Bitbucket Cloud importer works only with `bitbucket.org`. For BitBucket Server migration please refer to [this guide](./bitbucket-migration-features-matrix.md).
+The Bitbucket Cloud (BBC) importer works only with `bitbucket.org`.
 
-What can be migrated is described [here](https://docs.gitlab.com/ee/user/project/import/bitbucket.html). In addition for PR we have recently implemented [Merged / Closed by](https://gitlab.com/gitlab-org/gitlab-foss/-/issues/967) and [Reviewers](https://gitlab.com/gitlab-org/gitlab/-/issues/417578).
+BBC importer supported features are listed [here](https://docs.gitlab.com/ee/user/project/import/bitbucket.html). In addition to Pull Requests the importer has recently implemented [Merged / Closed by](https://gitlab.com/gitlab-org/gitlab-foss/-/issues/967) and [Reviewers](https://gitlab.com/gitlab-org/gitlab/-/issues/417578).
+
+For migrations from BitBucket Server and an overview of Congregate supported features please refer to [the BitBucket migration features matrix](./bitbucket-migration-features-matrix.md).
 
 ## Terminology
 
@@ -38,7 +40,7 @@ All that *the user importing repositories is entitled to see* will be shown (see
 
 ## User contribution mappings "caveats"
 
-- If user mapping fails despite matching names refere to [troubleshooting guide](https://docs.gitlab.com/ee/user/project/import/bitbucket.html#user-mapping-fails-despite-matching-names).
+- If user mapping fails despite matching names refer to [troubleshooting guide](https://docs.gitlab.com/ee/user/project/import/bitbucket.html#user-mapping-fails-despite-matching-names).
 - Username (BBC Nickname) is migrated and converted in comments into `plain text` (see more details in [this note](https://gitlab.com/gitlab-org/gitlab/-/issues/436307#note_1784021686)). See example below.
 
 ![BBC PR = GitLab MR](./img/bbc-pr-gitlab-mr.png)

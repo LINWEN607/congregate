@@ -135,7 +135,7 @@ class BitBucketServerMigrateClient(MigrateClient):
                         result, dstn_pwn, project, dst_pid)
                 else:
                     self.log.warning(
-                        f"Skipping import. Repo {dstn_pwn} has already been imported")
+                        f"Skipping import. Repo '{dstn_pwn}' has already been imported")
             # New import
             else:
                 result = self.ext_import.trigger_import_from_bb_server(
@@ -159,9 +159,9 @@ class BitBucketServerMigrateClient(MigrateClient):
             # Repo import status
             if dst_pid or project_id:
                 result[dstn_pwn]["import_status"] = self.ext_import.get_external_repo_import_status(
-                    host, token, dst_pid or project_id)
+                    host, token, dstn_pwn, dst_pid or project_id)
         else:
-            log = f"Target namespace {tn} does not exist"
+            log = f"Target namespace '{tn}' does not exist"
             self.log.warning("Skipping import. " + log +
                              f" for {project['path']}")
             result = self.ext_import.get_result_data(dstn_pwn, {

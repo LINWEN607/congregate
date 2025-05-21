@@ -7,7 +7,6 @@
 from gitlab_ps_utils import json_utils, misc_utils
 
 import congregate.helpers.migrate_utils as mig_utils
-from congregate.helpers.utils import is_dot_com
 
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.meta.base_migrate import MigrateClient
@@ -73,12 +72,12 @@ class BitbucketCloudMigrateClient(MigrateClient):
         staged_groups = mig_utils.get_staged_groups()
         if staged_groups and not self.skip_group_import and not self.group_structure and not self.config.wave_spreadsheet_path:
             mig_utils.validate_groups_and_projects(staged_groups)
-            
+
             # Add empty members list to each group if missing
             for group in staged_groups:
                 if "members" not in group:
                     group["members"] = []
-                    
+
             self.log.info(
                 f"{dry_log}Migrating Bitbucket Cloud workspaces as GitLab groups")
             results = list(r for r in self.multi.start_multi_process(
@@ -129,18 +128,18 @@ class BitbucketCloudMigrateClient(MigrateClient):
     def import_bitbucket_cloud_repo(self, project):
         """
         Import a Bitbucket Cloud repository to GitLab using GitLab's built-in importer
-        
+
         :param project: Project data from staged_projects
         :return: Import result
         """
         bb_username = self.config.source_username
         bb_token = self.config.source_token
-        
+
         dstn_pwn, tn = mig_utils.get_stage_wave_paths(project)
         host = self.config.destination_host
         token = self.config.destination_token
         project_id = None
-        
+
         # Parse the path_with_namespace to get the workspace and repo slug
         if '/' in project['path_with_namespace']:
             workspace, repo_slug = project['path_with_namespace'].split('/', 1)
@@ -149,10 +148,10 @@ class BitbucketCloudMigrateClient(MigrateClient):
             return self.ext_import.get_failed_result(
                 dstn_pwn,
                 data={"error": f"Invalid path_with_namespace: {project['path_with_namespace']}"})
-        
+
         # Use the configured workspace instead of the parsed one
         workspace = self.config.src_parent_workspace
-        
+
         if self.group_structure or self.groups.find_group_id_by_path(host, token, tn):
             # Already imported
             if dst_pid := self.projects.find_project_by_path(host, token, dstn_pwn):
@@ -184,24 +183,24 @@ class BitbucketCloudMigrateClient(MigrateClient):
                     result = self.ext_import.get_failed_result(
                         dstn_pwn,
                         data={"error": f"Failed import, with response/payload {result_response}. Unable to execute post migration phase"})
-            
+
             # Repo import status
             if dst_pid or project_id:
                 result[dstn_pwn]["import_status"] = self.ext_import.get_external_repo_import_status(
-                    host, token, dst_pid or project_id)
+                    host, token, dstn_pwn, dst_pid or project_id)
         else:
             log = f"Target namespace {tn} does not exist"
             self.log.warning("Skipping import. " + log + f" for {project['path']}")
             result = self.ext_import.get_result_data(dstn_pwn, {
                 "error": log
             })
-        
+
         return result
 
     def handle_bb_post_migration(self, result, path_with_namespace, project, pid):
         """
         Handle post-migration tasks for a Bitbucket Cloud repository
-        
+
         :param result: Current result
         :param path_with_namespace: Path with namespace
         :param project: Project data
@@ -210,45 +209,45 @@ class BitbucketCloudMigrateClient(MigrateClient):
         """
         # Extract members info
         members = project.pop("members", [])
-        
+
         # Add members to destination project
         result[path_with_namespace]["members"] = self.projects.add_members_to_destination_project(
             self.config.destination_host, self.config.destination_token, pid, members)
-        
+
         # Disable Shared CI
         self.disable_shared_ci(path_with_namespace, pid)
-        
+
         # Migrate any external CI data
         self.handle_ext_ci_src_migration(result, project, pid)
-        
+
         # Archive migrated repos on destination if the source was archived
         if project.get("isArchived"):
             result[path_with_namespace]["archived"] = self.archive_migrated_repo(pid, project)
         else:
             result[path_with_namespace]["archived"] = False
-        
+
         # Determine whether to remove all repo members
         result[path_with_namespace]["members"]["email"] = self.handle_member_retention(
             members, pid)
-        
+
         # Remove import user; SKIP if removing all other members
         if not self.remove_members:
             self.remove_import_user(pid)
-        
+
         return result
 
     def archive_migrated_repo(self, pid, project):
         """
         Archive a migrated repository on GitLab
-        
+
         :param pid: Project ID on GitLab
         :param project: Project data from Bitbucket Cloud
         :return: Success status
         """
         if project.get("isArchived"):
             response = self.gl_projects_api.archive_project(
-                self.config.destination_host, 
-                self.config.destination_token, 
+                self.config.destination_host,
+                self.config.destination_token,
                 pid
             )
             return response.status_code == 200
