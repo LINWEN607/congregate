@@ -36,7 +36,7 @@ class CodeCommitMigrateClient(MigrateClient):
                  group_structure=False):
         self.ext_import = ImportClient()
         self.project_repository_api = ProjectRepositoryApi()
-        self.codecommit_projects_client = ProjectsClient()
+        self.codecommit_projects_client = CodeCommitProjectsClient()
         self.branches = BranchesClient()
         super().__init__(dry_run,
                          processes,
