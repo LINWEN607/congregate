@@ -13,7 +13,7 @@ class TestProjectsClient(TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        self.projects_api = ProjectsClient()
+        self.projects_api = CodeCommitProjectsClient()
         # Mock the required components
         self.mock_api = MagicMock(spec=CodeCommitApiWrapper)
         self.mock_base_api = MagicMock(spec=CodeCommitWrapper)
