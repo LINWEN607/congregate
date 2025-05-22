@@ -354,7 +354,7 @@ def main():
             config = conf.Config()
             users = UsersClient()
             groups = GroupsClient()
-            projects = CodeCommitProjectsClient()
+            projects = ProjectsClient
             bb_repos = BBReposClient()
             variables = VariablesClient()
             branches = BranchesClient()
