@@ -7,7 +7,7 @@ from congregate.migration.meta.base_migrate import MigrateClient
 from congregate.migration.gitlab.external_import import ImportClient
 from congregate.migration.gitlab.branches import BranchesClient
 from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
-from congregate.migration.codecommit.projects import ProjectsClient
+from congregate.migration.codecommit.projects import CodeCommitProjectsClient
 from congregate.migration.codecommit.export import CodeCommitExportBuilder
 from congregate.helpers.migrate_utils import get_export_filename_from_namespace_and_name
 
