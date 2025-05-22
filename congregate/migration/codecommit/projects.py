@@ -8,7 +8,7 @@ from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
 import json
 
 
-class ProjectsClient(BaseClass):
+class CodeCommitProjectsClient(BaseClass):
     def __init__(self):
         self.api = CodeCommitApiWrapper()
         self.base_api = CodeCommitWrapper()
