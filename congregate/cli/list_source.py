@@ -39,7 +39,7 @@ from congregate.migration.teamcity.base import TeamcityClient as TeamcityData
 from congregate.helpers.congregate_mdbc import CongregateMongoConnector, mongo_connection
 
 from congregate.migration.codecommit.api.base import CodeCommitApiWrapper
-from congregate.migration.codecommit.projects import ProjectsClient as CodeCommitProjects
+from congregate.migration.codecommit.projects import CodeCommitProjectsClient as CodeCommitProjects
 from congregate.migration.codecommit.groups import GroupsClient as CodeCommitGroups
 
 from congregate.helpers.csv_utils import write_projects_csv, write_groups_csv, write_users_csv
