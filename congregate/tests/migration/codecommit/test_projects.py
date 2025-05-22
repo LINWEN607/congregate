@@ -9,7 +9,7 @@ from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
 
 @pytest.mark.unit_test
 class TestProjectsClient(TestCase):
-    """Test cases for ProjectsClient class."""
+    """Test cases for CodeCommitProjectsClient class."""
 
     def setUp(self):
         """Set up test fixtures."""
@@ -28,7 +28,7 @@ class TestProjectsClient(TestCase):
 
     def test_retrieve_project_info_no_processes(self):
         """Test retrieving project info without specifying processes."""
-        with patch.object(ProjectsClient, 'handle_retrieving_project') as mock_handle:
+        with patch.object(CodeCommitProjectsClient, 'handle_retrieving_project') as mock_handle:
             self.projects_api.retrieve_project_info()
             mock_handle.assert_called_once_with("CodeCommit")
 
