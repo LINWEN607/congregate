@@ -2,7 +2,7 @@ import pytest
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
 from congregate.helpers.congregate_mdbc import CongregateMongoConnector
-from congregate.migration.codecommit.projects import ProjectsClient
+from congregate.migration.codecommit.projects import CodeCommitProjectsClient
 from congregate.migration.codecommit.api.base import CodeCommitApiWrapper
 from congregate.migration.codecommit.base import CodeCommitWrapper
 from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
