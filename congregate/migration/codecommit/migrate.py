@@ -7,7 +7,7 @@ from congregate.migration.meta.base_migrate import MigrateClient
 from congregate.migration.gitlab.external_import import ImportClient
 from congregate.migration.gitlab.branches import BranchesClient
 from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
-from congregate.migration.codecommit.projects import ProjectsClient
+from congregate.migration.codecommit.projects import CodeCommitProjectsClient
 from congregate.migration.codecommit.export import CodeCommitExportBuilder
 from congregate.helpers.migrate_utils import get_export_filename_from_namespace_and_name
 
@@ -36,7 +36,7 @@ class CodeCommitMigrateClient(MigrateClient):
                  group_structure=False):
         self.ext_import = ImportClient()
         self.project_repository_api = ProjectRepositoryApi()
-        self.codecommit_projects_client = ProjectsClient()
+        self.codecommit_projects_client = CodeCommitProjectsClient()
         self.branches = BranchesClient()
         super().__init__(dry_run,
                          processes,

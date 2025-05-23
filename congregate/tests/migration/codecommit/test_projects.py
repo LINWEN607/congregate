@@ -2,18 +2,18 @@ import pytest
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
 from congregate.helpers.congregate_mdbc import CongregateMongoConnector
-from congregate.migration.codecommit.projects import ProjectsClient
+from congregate.migration.codecommit.projects import CodeCommitProjectsClient
 from congregate.migration.codecommit.api.base import CodeCommitApiWrapper
 from congregate.migration.codecommit.base import CodeCommitWrapper
 from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
 
 @pytest.mark.unit_test
 class TestProjectsClient(TestCase):
-    """Test cases for ProjectsClient class."""
+    """Test cases for CodeCommitProjectsClient class."""
 
     def setUp(self):
         """Set up test fixtures."""
-        self.projects_api = ProjectsClient()
+        self.projects_api = CodeCommitProjectsClient()
         # Mock the required components
         self.mock_api = MagicMock(spec=CodeCommitApiWrapper)
         self.mock_base_api = MagicMock(spec=CodeCommitWrapper)
@@ -28,7 +28,7 @@ class TestProjectsClient(TestCase):
 
     def test_retrieve_project_info_no_processes(self):
         """Test retrieving project info without specifying processes."""
-        with patch.object(ProjectsClient, 'handle_retrieving_project') as mock_handle:
+        with patch.object(CodeCommitProjectsClient, 'handle_retrieving_project') as mock_handle:
             self.projects_api.retrieve_project_info()
             mock_handle.assert_called_once_with("CodeCommit")
 
