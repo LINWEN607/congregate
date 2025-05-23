@@ -185,32 +185,40 @@ class AdoExportBuilder(ExportBuilder):
             if reviewer.get('isContainer'):
                 # This is situation of Group
                 team_id = reviewer.get('id')
-                for group_member in self.teams_api.get_team_members(self.project_id, team_id):
-                    if group_member:
-                        reviewer_ids.append({
-                            "user_id": self.get_new_member_id(group_member.get('identity')),
-                            "created_at": pr['creationDate'],
-                            "state": "unreviewed" # we don't know yet
-                        })
+                team = self.teams_api.get_team(self.project_id, team_id)
+                if not team:
+                    self.log.error(f"Failed to get team for team_id={team_id}. Most likely the team is deleted, but has references from an old PR.")
+                    continue
+                else:
+                    for group_member in self.teams_api.get_team_members(self.project_id, team_id):
+                        if group_member:
+                            reviewer_ids.append({
+                                "user_id": self.get_new_member_id(group_member.get('identity')),
+                                "created_at": pr['creationDate'],
+                                "state": "unreviewed" # we don't know yet
+                            })
             else:
                 # This is situation of User
                 state = 'approved' if reviewer['vote'] == 10 else 'unreviewed'
                 # get descriptor from avatar link 🤷‍♂️
-                reviewer["descriptor"] = dig(reviewer, '_links', 'avatar', 'href', default='').split('/')[-1]
+                reviewer["descriptor"] = reviewer.get('_links', {}).get('avatar', {}).get('href').split('/')[-1]
                 reviewer_ids.append({
                     "user_id": self.get_new_member_id(reviewer),
                     "created_at": pr['creationDate'],
                     "state": state
                 })
-
         # Deduplicating and taking "approved" state only
         result = {}
-        for reviewer in reviewer_ids:
-            user_id = reviewer.get('user_id')
-            if user_id not in result or reviewer.get('state') == 'approved':
-                result[user_id] = reviewer
-            
-        return list(result.values())
+        for r in reviewer_ids:
+            uid = r.get('user_id')
+            if uid not in result:
+                result[uid] = r
+            else:
+                if r.get('state') == 'approved':
+                    result[uid] = r
+        reviewer_ids = list(result.values())
+        
+        return reviewer_ids
 
     def add_label_links(self, label_links, pr):
         # GitLab Sea Buckthorn
