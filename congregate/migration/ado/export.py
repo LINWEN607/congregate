@@ -201,7 +201,7 @@ class AdoExportBuilder(ExportBuilder):
                 # This is situation of User
                 state = 'approved' if reviewer['vote'] == 10 else 'unreviewed'
                 # get descriptor from avatar link 🤷‍♂️
-                reviewer["descriptor"] = reviewer.get('_links', {}).get('avatar', {}).get('href').split('/')[-1]
+                reviewer["descriptor"] = dig(reviewer, '_links', 'avatar', 'href', default='').split('/')[-1]
                 reviewer_ids.append({
                     "user_id": self.get_new_member_id(reviewer),
                     "created_at": pr['creationDate'],
