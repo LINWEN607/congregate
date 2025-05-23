@@ -687,10 +687,12 @@ class GitLabMigrateClient(MigrateClient):
             results["project_feature_flags"] = self.project_feature_flags_client.migrate_project_feature_flags_for_project(
                 src_id, dst_id, project_feature_flags_users_lists.get('user_lists_conversion_list') if isinstance(project_feature_flags_users_lists, dict) else None)
 
+        # Premium+ features
         if self.config.source_tier not in ["core", "free"]:
-            # Push Rules - handled by GitLab Importer as of 13.6
-            results["push_rules"] = self.pushrules.migrate_push_rules(
-                src_id, dst_id, src_path)
+            if not self.config.airgap:
+                # Push Rules - handled by GitLab Importer as of 13.6
+                results["push_rules"] = self.pushrules.migrate_push_rules(
+                    src_id, dst_id, src_path)
 
             # Merge Request Approvals
             results["project_level_mr_approvals"] = MergeRequestApprovalsClient(dest_host=dest_host, dest_token=dest_token).migrate_project_level_mr_approvals(
