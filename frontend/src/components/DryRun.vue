@@ -3,7 +3,9 @@
         <div>Migration Overview<button id="hide-button" @click="hide()">X</button></div>
         <div v-if="!dryRun">
           <div class="warn">{{ commitInstructions }}</div>
-          <button @click="confirmMigration">Confirm</button>
+          <button @click="confirmMigration" :disabled="isConfirming">
+            {{ isConfirming ? 'Processing...' : 'Confirm' }}
+          </button>
         </div>
         <div class="sub" v-if="dryRun">{{ dryRunInstructions }}</div>
         <div v-if="jsonError">
@@ -57,7 +59,8 @@ export default {
               On the right, you can modify the payload before starting the migration to tweak as you see fit.`,
         commitInstructions: `You are about to commit this migration run. 
               Please review the payload on the right and click confirm to proceed.`,
-        jsonError: ""
+        jsonError: "",
+        isConfirming: false // Flag to prevent multiple submissions
     }
   },
   mounted: function() {
@@ -68,6 +71,8 @@ export default {
             this.right = JSON.stringify(data.right, null, 2)
         }
         this.dryRun = data.dryRun
+        // Reset the confirmation flag when showing the dialog
+        this.isConfirming = false
     })
   },
   beforeUnmount: function() {
@@ -95,11 +100,44 @@ export default {
       this.emitter.emit('save-modified-payload', JSON.parse(this.$refs['diff-editor'].editor.b.state.doc.toString()))
     },
     confirmMigration: function() {
-      this.saveModifiedPayload()
-      this.$nextTick(() => {
-        this.emitter.emit('confirm-migration')
-        this.visible = false
-      })
+      // Prevent multiple submissions
+      if (this.isConfirming) {
+        return
+      }
+      
+      // Set the flag immediately to block subsequent calls
+      this.isConfirming = true
+      
+      try {
+        // Validate JSON before proceeding
+        const payload = JSON.parse(this.$refs['diff-editor'].editor.b.state.doc.toString())
+        
+        // Save the modified payload
+        this.emitter.emit('save-modified-payload', payload)
+        
+        // Use nextTick to ensure DOM updates are processed
+        this.$nextTick(() => {
+          // Emit the confirmation event
+          this.emitter.emit('confirm-migration')
+          // Hide the dialog
+          this.visible = false
+          
+          // Reset the flag after a short delay to allow for re-opening the dialog
+          setTimeout(() => {
+            this.isConfirming = false
+          }, 500)
+        })
+      } catch (e) {
+        // Handle JSON parsing error
+        this.emitter.emit('alert', {
+          'message': 'The modified payload is not valid JSON. Please update the payload.',
+          'messageType': 'error'
+        })
+        this.jsonError = e.message
+        
+        // Reset the flag on error
+        this.isConfirming = false
+      }
     }
   }
 }
@@ -153,5 +191,11 @@ export default {
   text-align: center;
   font-weight: bold;
   font-size: smaller;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: #ccc;
 }
 </style>
