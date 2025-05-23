@@ -209,16 +209,12 @@ class AdoExportBuilder(ExportBuilder):
                 })
         # Deduplicating and taking "approved" state only
         result = {}
-        for r in reviewer_ids:
-            uid = r.get('user_id')
-            if uid not in result:
-                result[uid] = r
-            else:
-                if r.get('state') == 'approved':
-                    result[uid] = r
-        reviewer_ids = list(result.values())
-        
-        return reviewer_ids
+        for reviewer in reviewer_ids:
+            user_id = reviewer.get('user_id')
+            if user_id not in result or reviewer.get('state') == 'approved':
+                result[user_id] = reviewer
+            
+        return list(result.values())
 
     def add_label_links(self, label_links, pr):
         # GitLab Sea Buckthorn
