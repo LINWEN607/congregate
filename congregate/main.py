@@ -521,12 +521,9 @@ def main():
                 projects.count_unarchived_projects(local=arguments["--local"])
             if arguments["archive-staged-projects"]:
                 # GitLab as source and/or destination instance
-                if (config.source_type == "gitlab") and APPEND_SUFFIX:
+                if (config.source_type == "gitlab") or DEST:
                     projects.update_staged_projects_archive_state(
-                        append_suffix=APPEND_SUFFIX, dry_run=DRY_RUN, rollback=ROLLBACK)
-                elif (config.source_type == "gitlab") or DEST:
-                    projects.update_staged_projects_archive_state(
-                        dest=DEST, dry_run=DRY_RUN, rollback=ROLLBACK)
+                        dest=DEST, dry_run=DRY_RUN, rollback=ROLLBACK, append_suffix=APPEND_SUFFIX)
                 elif config.source_type == "github" or config.list_multiple_source_config("github_source"):
                     for single_source in config.list_multiple_source_config(
                             "github_source"):
