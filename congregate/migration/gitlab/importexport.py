@@ -713,13 +713,16 @@ class ImportExportClient(BaseGitLabClient):
         loc = self.config.location
         is_loc_supported(loc)
         exported = False
-        full_path_with_parent_namespace = get_full_path_with_parent_namespace(
-            full_path)
-        self.log.info(f"Searching on destination for group '{full_path_with_parent_namespace}'")
-        dst_gid = self.groups.find_group_id_by_path(
-            self.config.destination_host,
-            self.config.destination_token,
-            full_path_with_parent_namespace)
+        dst_gid = None
+        # Destination group lookup might not be possible if source is air-gapped
+        if not self.config.airgap:
+            full_path_with_parent_namespace = get_full_path_with_parent_namespace(
+                full_path)
+            self.log.info(f"Searching on destination for group '{full_path_with_parent_namespace}'")
+            dst_gid = self.groups.find_group_id_by_path(
+                self.config.destination_host,
+                self.config.destination_token,
+                full_path_with_parent_namespace)
         if dst_gid:
             self.log.warning(f"SKIP: Group '{full_path_with_parent_namespace}' with source ID {src_gid} and destination ID {dst_gid} found on destination")
         elif not dry_run:
@@ -730,7 +733,7 @@ class ImportExportClient(BaseGitLabClient):
                 exported = self.wait_for_group_download(src_gid)
                 if exported:
                     url = f"{self.src_host}/api/v4/groups/{src_gid}/export/download"
-                    self.log.info(f"Downloading group '{full_path}' (ID: {src_gid}) as {filename}")
+                    self.log.info(f"Downloading group '{full_path}' (ID: {src_gid}) as '{filename}'")
                     download_file(url, self.config.filesystem_path, filename=filename, headers={
                         "PRIVATE-TOKEN": self.src_token}, verify=self.config.ssl_verify, wait=67)
             # TODO: Refactor and sync with other scenarios (#119)

@@ -783,15 +783,25 @@ class GitLabMigrateClient(MigrateClient):
 
 @shared_task
 def export_task(project: dict, host: str, token: str):
-    client = GitLabMigrateClient(dry_run=False, skip_users=True,
-                                 skip_groups=True, skip_project_import=True)
+    client = GitLabMigrateClient(
+        dry_run=False,
+        skip_users=True,
+        skip_groups=True,
+        skip_project_import=True,
+        retain_contributors=True
+    )
     return client.handle_exporting_projects(project, src_host=host, src_token=token)
 
 
 @shared_task
 def import_task(file_path: str, group: dict, host: str, token: str):
-    client = GitLabMigrateClient(dry_run=False, skip_users=True,
-                                 skip_groups=True, skip_project_import=True)
+    client = GitLabMigrateClient(
+        dry_run=False,
+        skip_users=True,
+        skip_groups=True,
+        skip_project_import=True,
+        retain_contributors=True
+    )
     project_features, export_filename = extract_archive(file_path)
 
     return client.handle_importing_projects(project_features, dst_host=host, dst_token=token,

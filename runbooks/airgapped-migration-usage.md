@@ -8,7 +8,7 @@ Applicable **only** to GitLab -> GitLab migrations.
 
 - [Group export items](https://docs.gitlab.com/user/project/settings/import_export/#group-items-that-are-exported)
 - [Project export items](https://docs.gitlab.com/user/project/settings/import_export/#project-items-that-are-exported)
-  - Additional project features handled by Congregate
+  - Additional project features handled by Congregate:
     - Environments
     - CI/CD Variables
     - Pipeline Schedule Variables
@@ -16,21 +16,36 @@ Applicable **only** to GitLab -> GitLab migrations.
 
 ## Source data export
 
-Assuming a Congregate node on the source low-side network exists, you can trigger an export request by:
+Assuming a Congregate node on the source low-side network exists, you can use the CLI to perform the following:
 
-### Using the CLI
+- List
+- Stage
+- Export groups
+- Export projects w/ [additional features](#gitlab-features-in-scope) (separate `_artifact.tar.gz`)
 
-E.g. `congregate migrate --skip-users --skip-group-export --skip-group-import --skip-project-import` (add `--commit` to execute)
+Transfer the `/opt/congregate/data` folder to your import node before you move on to [the import phase](#destination-data-import).
 
-**NOTE:** Add `--retain-contributors` argument to preserve contributions from former project members. This is done by temporarily adding them as Guests to the source project, before exporting. They are removed afterwards.
+### Using the CLI on export
 
-### Using bare API
+- Stage all users
+  - E.g. `congregate stage-users . --commit`
+- Set `public_email` on source for all users, before exporting groups and projects
+  - E.g. `congregate set-staged-users-public-email --commit`
+- Stage groups and projects in scope of migration wave
+- Export staged groups and projects
+  - E.g. `congregate migrate --skip-users --skip-group-import --skip-project-import`
+  - Add `--commit` to execute
+  - Add `--retain-contributors` to preserve project contributions from former members
 
-Making the following cURL request:
+**NOTE:** Group export only triggers the [GitLab group export endpoint](https://docs.gitlab.com/api/group_import_export/#schedule-new-export), w/o additional [Congregate supported features](/customer/gitlab-migration-features-matrix.md).
+
+### Using bare API to export projects
+
+Make the following cURL request:
 
 ```bash
 curl --request POST \
-  --url http://<congregate-source-node>:8000/api/airgap/export \
+  --url http://localhost:8000/api/airgap/export \
   --header 'Content-Type: application/json' \
   --data '{
     "host": "https://<source-hostname>",
@@ -45,21 +60,31 @@ This will create a job on the Congregate node to trigger an export. For the end 
 
 ## Destination data import
 
-Importing to the destination network should be handled by the GitLab Admins on the destination. Assuming a Congregate node has been set up on the destination network, you can trigger an import request by:
+Importing to the destination network should be handled by the GitLab Admins on the destination. Assuming a Congregate node has been set up on the destination network, make sure all the [source exported data](#source-data-export) is transferred. Only then can you perform the following actions:
 
-### Using the CLI
+- Create users
+- Import groups w/o additional [Congregate supported features](/customer/gitlab-migration-features-matrix.md)
+- Import projects w/ [additional features](#gitlab-features-in-scope)
 
-E.g. `congregate migrate --skip-users --skip-group-export --skip-group-import --skip-project-export` (add `--commit` to execute)
+### Using the CLI on import
 
-**NOTE:** Add `--retain-contributors` argument to remove the [previously added](#using-the-cli) former members (contributors) from the destination project.
+- Stage all users
+  - E.g. `congregate stage-users . --commit`
+- Migrate users
+  - E.g. `congregate migrate --skip-group-export --skip-group-import --skip-project-export --skip-project-import`
+- Stage groups in scope of migration wave
+- Import staged groups
+  - E.g. `congregate migrate --skip-users --skip-group-export --skip-project-export --skip-project-import`
+  - Add `--commit` to execute
+- Import projects by using [bare API](#automated-bulk-import-example)
 
-### Using bare API
+### Using bare API to import projects
 
-Making the following cURL request:
+Make the following cURL request:
 
 ```bash
 curl --request POST \
-  --url http://<congregate-destination-node>:8000/api/airgap/import \
+  --url http://localhost:8000/api/airgap/import \
   --header 'Content-Type: multipart/form-data;' \
   --form host=https://<destination-hostname> \
   --form token=<destination-access-token> \
@@ -71,7 +96,8 @@ curl --request POST \
 
 #### Automated bulk import example
 
-This is a `bash` script example for migrating all project export files within a folder:
+- Make sure all project exports and their `_artifact.tar.gz` files are in the *downloads* folder w/ `ps-user:ps-user` permissions
+- Example `bash` script to migrate all project export files within a folder:
 
 ```bash
 for f in /path/to/downloaded/project/exports/*; do if [[ "$f" == *_artifact.tar.gz ]]; then curl --request POST \
@@ -84,5 +110,3 @@ for f in /path/to/downloaded/project/exports/*; do if [[ "$f" == *_artifact.tar.
 ```
 
 To follow the progress open the `flower` UI from the browser: `https://localhost:5555`.
-
-**NOTE:** Make sure the number of files is even i.e. both the `_artifact.tar.gz` and `.tar.gz` files are present for each downloaded project export.
