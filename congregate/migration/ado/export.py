@@ -186,7 +186,7 @@ class AdoExportBuilder(ExportBuilder):
                 # This is situation of Group
                 team_id = reviewer.get('id')
                 team = self.teams_api.get_team(self.project_id, team_id)
-                if not team:
+                if team.get('statusCode') != 200:
                     self.log.error(f"Failed to get team for team_id={team_id}. Most likely the team is deleted, but has references from an old PR.")
                     continue
                 else:
