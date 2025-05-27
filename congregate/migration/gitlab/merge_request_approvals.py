@@ -141,7 +141,6 @@ class MergeRequestApprovalsClient(DbOrHttpMixin, BaseGitLabClient):
                         d_host, d_token, full_path)
                     if dst_gid:
                         group_ids.append(dst_gid)
-                        break
         for pb in rule["protected_branches"]:
             if pb.get("name"):
                 p_branch = safe_json_response(self.projects_api.get_single_project_protected_branch(
