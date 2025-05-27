@@ -279,7 +279,11 @@ ui_port = 8000
 ### The flag that says if we should archive project on source ASAP
 archive_logic = False
 
+### Strategy for handling import timeouts.
+### Used only for imports from GitHub and BitBucket Server.
+### Value could be "pessimistic" (default) or "optimistic".
+# timeout_strategy = optimistic
+
 ###! **HIDDEN PROPERTIES**
 ### Path to a JSON file for remapping URLs during a GitLab to GitLab import. Notes:
 # remapping_file_path =
-
