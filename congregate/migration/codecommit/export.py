@@ -28,7 +28,7 @@ class CodeCommitExportBuilder(ExportBuilder):
         self.repository_id = source_project['id']
         self.members_map = {}
         self.project_metadata = Project(description=source_project['description'])
-        super().__init__(project=source_project['name'], clone_url=None)
+        super().__init__(project=source_project, clone_url=None)
         self.clone_url = self.build_clone_url()
         self.repo = self.clone_repo(self.project_path, self.clone_url)
         self.git_env = {
@@ -44,10 +44,10 @@ class CodeCommitExportBuilder(ExportBuilder):
         return filename
     
     def build_codecommit_data(self):
-        # merge_requests = self.build_merge_requests()
+        merge_requests = self.build_merge_requests()
         return ProjectExport(
             project_members=[],
-            # merge_requests=merge_requests
+            merge_requests=merge_requests
         )
     
     def build_mr_diff_files(self, source_sha, target_sha):

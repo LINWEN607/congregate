@@ -220,7 +220,7 @@ class CodeCommitMigrateClient(MigrateClient):
 
     def handle_exporting_codecommit_project(self, project):
         if not self.dry_run:
-            exported_file = CodeCommitExportBuilder(project).build_export()
+            exported_file = CodeCommitExportBuilder(project).create()
         else:
             exported_file = get_export_filename_from_namespace_and_name(project['path'], project['name'])
         self.log.info(f"DRY-RUN: Exported CodeCommit repo info to {exported_file}")
