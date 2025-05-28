@@ -140,6 +140,7 @@ class MergeRequestApprovalsClient(DbOrHttpMixin, BaseGitLabClient):
                     dst_gid = self.groups.find_group_id_by_path(
                         d_host, d_token, full_path)
                     if dst_gid:
+                        self.log.info(f"Found project MR approval rule '{rule.get('name')}' group {dst_gid} on destination")
                         group_ids.append(dst_gid)
         for pb in rule["protected_branches"]:
             if pb.get("name"):
