@@ -44,42 +44,42 @@ class CodeCommitExportBuilder(ExportBuilder):
         return filename
     
     def build_codecommit_data(self):
-        merge_requests = self.build_merge_requests()
+        #merge_requests = self.build_merge_requests()
         return ProjectExport(
             project_members=[],
-            merge_requests=merge_requests
+            #merge_requests=merge_requests
         )
     
     def build_mr_diff_files(self, source_sha, target_sha):
         diff_files = []
         count = 0
-        req = self.base_api.get_pull_request_diffs(self.project_name, self.repository_id, source_sha, target_sha)
-        if diffs := safe_json_response(req):
-            for change in diffs:
-                filename = change["afterBlob"]["path"].lstrip('/')
-                git_diff = self.repo.git.diff(source_sha, target_sha, '--', f"{filename}")
-                diff_string = '@@' + '@@'.join(git_diff.split('@@')[1:])
-                mode = re.search(r'100755|100644|100755', git_diff).group(0)
-                diff_files.append(MergeRequestDiffFile(
-                    relative_order=count,
-                    utf8_diff=diff_string,
-                    old_path=filename,
-                    new_path=filename,
-                    renamed_file=False,
-                    deleted_file=False,
-                    too_large=False,
-                    binary=True if Path(filename).suffix in ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.bmp', '.webp'] else False,
-                    encoded_file_path=False,
-                    new_file=True if change.get('changeType') == 'add' else False,
-                    a_mode=mode,
-                    b_mode=mode
-                ))
-                count += 1
+        #req = self.base_api.get_pull_request_diffs(self.repository_id, self.source_project.get('name'), source_sha, target_sha)
+        #if diffs := safe_json_response(req):
+        for change in self.base_api.get_pull_request_diffs(self.repository_id, self.source_project.get('name'), source_sha, target_sha):
+            filename = change["afterBlob"]["path"].lstrip('/')
+            git_diff = self.repo.git.diff(source_sha, target_sha, '--', f"{filename}")
+            diff_string = '@@' + '@@'.join(git_diff.split('@@')[1:])
+            mode = re.search(r'100755|100644|100755', git_diff).group(0)
+            diff_files.append(MergeRequestDiffFile(
+                relative_order=count,
+                utf8_diff=diff_string,
+                old_path=filename,
+                new_path=filename,
+                renamed_file=False,
+                deleted_file=False,
+                too_large=False,
+                binary=True if Path(filename).suffix in ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.bmp', '.webp'] else False,
+                encoded_file_path=False,
+                new_file=True if change.get('changeType') == 'add' else False,
+                a_mode=mode,
+                b_mode=mode
+            ))
+            count += 1
         return diff_files
 
     def build_merge_requests(self):
         merge_requests = []
-        for pr in self.base_api.get_detailed_pull_requests(project_id=self.project_id, repository_id=self.repository_id):
+        for pr in self.base_api.get_detailed_pull_requests(project_id=self.project_id, repository_name=self.source_project.get('name')):
             # Convert CodeCommit PR to GitLab MR format
             pr_id = pr["pullRequestId"]
             
@@ -91,6 +91,8 @@ class CodeCommitExportBuilder(ExportBuilder):
             start_sha = pr["pullRequestTargets"][0]["sourceCommit"]
             target_sha = pr["pullRequestTargets"][0]["destinationCommit"]
             merge_request_diffs = self.build_mr_diff_files(start_sha, target_sha)
+            self.log.info(pr["pullRequestTargets"][0])
+            self.log.info(pr["pullRequestTargets"][0]["mergeMetadata"])
             merge_requests.append(MergeRequests(
                 author=self.base_api.get_user_from_arn(pr["authorArn"]),
                 iid=pr_id,
@@ -98,8 +100,8 @@ class CodeCommitExportBuilder(ExportBuilder):
                 target_branch=pr["pullRequestTargets"][0]["destinationReference"].replace("refs/heads/", ""),
                 source_branch_sha=start_sha,
                 target_branch_sha=target_sha,
-                merge_commit_sha=pr["pullRequestTargets"][0]["mergeMetadata"]["mergeCommitId"],
-                squash_commit_sha= pr["pullRequestTargets"][0]["mergeMetadata"]["mergeCommitId"] if pr["pullRequestTargets"][0]["mergeMetadata"]["mergeOption"].lower() == 'squash_merge' else None,
+                merge_commit_sha=pr["pullRequestTargets"][0].get("mergeCommit"),
+                squash_commit_sha= pr["pullRequestTargets"][0].get("mergeCommit") if pr["pullRequestTargets"][0]["mergeMetadata"].get("mergeOption", '').lower() == 'squash_merge' else None,
                 title=pr['title'],
                 description=pr['description'],
                 state=self.pull_request_status(pr),

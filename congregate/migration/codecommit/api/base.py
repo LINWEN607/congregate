@@ -156,7 +156,7 @@ class CodeCommitApiWrapper(BaseClass):
         pr_list = []
 
         for pr in self.get_all_pull_requests(project_id, repository_name):
-            detailed_pr = self.get_pull_request(pr)
+            detailed_pr = self.get_pull_request(project_id, pr)
             pr_list.append(detailed_pr)
         
         return pr_list
@@ -225,6 +225,6 @@ class CodeCommitApiWrapper(BaseClass):
         return pull_request_comments
     
     # Placeholder method - TBD
-    def get_user_from_arn(arn):
+    def get_user_from_arn(self, arn):
         return Author(name="Mia Migrator", email="mia@migration.com")
 
