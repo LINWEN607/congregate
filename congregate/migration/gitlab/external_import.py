@@ -5,7 +5,7 @@ from gitlab_ps_utils.misc_utils import is_error_message_present, safe_json_respo
 from gitlab_ps_utils.dict_utils import dig
 from gitlab_ps_utils.json_utils import json_pretty
 from gitlab_ps_utils.string_utils import deobfuscate
-from urllib.parse import quote
+from urllib.parse import quote, quote_plus
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.migrate_utils import migration_dry_run, sanitize_project_path
@@ -89,8 +89,8 @@ class ImportClient(BaseClass):
         :param dry_run: (bool) If True, simulate the import without executing it.
         :return: (dict) Successful or failed result data.
         """
-        src_aws_codecommit_username = quote(self.config.src_aws_codecommit_username, safe='')
-        src_aws_codecommit_password = quote(self.config.src_aws_codecommit_password, safe='=')
+        src_aws_codecommit_username = self.config.src_aws_codecommit_username
+        src_aws_codecommit_password = quote_plus(self.config.src_aws_codecommit_password, safe='=')
         src_aws_region = self.config.src_aws_region
         # Get the namespace info for the target namespace
         namespace_response = self.projects.get_namespace_id_by_full_path(

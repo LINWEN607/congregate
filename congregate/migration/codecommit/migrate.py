@@ -74,48 +74,48 @@ class CodeCommitMigrateClient(MigrateClient):
                     staged_projects):
                 self.log.warning(
                     f"USER repos staged ({len(user_projects)}):\n{json_utils.json_pretty(user_projects)}")
-            if not self.skip_project_import:
-                self.log.info("Importing CodeCommit repos")
-                import_results = []
-                for p in staged_projects:
-                    result = self.import_codecommit_repo(p, p.get("name"))
-                    import_results.append(result)
-                #TODO: implement multi-processor with multiple function arguments
-                # import_results = list(ir for ir in self.multi.start_multi_process(
-                #     self.import_codecommit_repo, staged_projects, processes=self.processes, nestable=False))
-                self.are_results(import_results, "project", "import")
-                # append Total : Successful count of project imports
-                import_results.append(mig_utils.get_results(import_results))
-                self.log.info(
-                    f"### {dry_log}CodeCommit repos import result ###\n{json_utils.json_pretty(import_results)}")
-                mig_utils.write_results_to_file(import_results, log=self.log)
-            else:
-                self.log.warning(
-                    "SKIP: No CodeCommit repos staged for migration")
-            # TODO: Implement project export
-            # if not self.skip_project_export:
-            #     self.log.info(f"{dry_log}Exporting projects")
-            #     export_results = [self.handle_exporting_codecommit_project(prj) for prj in staged_projects]
-
-            #     self.are_results(export_results, "project", "export")
-
-            #     # Create list of projects that failed export
-            #     if failed := mig_utils.get_failed_export_from_results(
-            #             export_results):
-            #         self.log.warning("SKIP: Projects that failed to export or already exist on destination:\n{}".format(
-            #             json_pretty(failed)))
-
-            #     # Append total count of projects exported
-            #     export_results.append(mig_utils.get_results(export_results))
-            #     self.log.info("### {0}Project export results ###\n{1}"
-            #                   .format(dry_log, json_pretty(export_results)))
-
-            #     # Filter out the failed ones
-            #     staged_projects = mig_utils.get_staged_projects_without_failed_export(
-            #         staged_projects, failed)
-            # else:
+            # if not self.skip_project_import:
+            #     self.log.info("Importing CodeCommit repos")
+            #     import_results = []
+            #     for p in staged_projects:
+            #         result = self.import_codecommit_repo(p, p.get("name"))
+            #         import_results.append(result)
+            #     #TODO: implement multi-processor with multiple function arguments
+            #     # import_results = list(ir for ir in self.multi.start_multi_process(
+            #     #     self.import_codecommit_repo, staged_projects, processes=self.processes, nestable=False))
+            #     self.are_results(import_results, "project", "import")
+            #     # append Total : Successful count of project imports
+            #     import_results.append(mig_utils.get_results(import_results))
             #     self.log.info(
-            #         "SKIP: Assuming staged projects are already exported")
+            #         f"### {dry_log}CodeCommit repos import result ###\n{json_utils.json_pretty(import_results)}")
+            #     mig_utils.write_results_to_file(import_results, log=self.log)
+            # else:
+            #     self.log.warning(
+            #         "SKIP: No CodeCommit repos staged for migration")
+            # TODO: Implement project export
+            if not self.skip_project_export:
+                self.log.info(f"{dry_log}Exporting projects")
+                export_results = [self.handle_exporting_codecommit_project(prj) for prj in staged_projects]
+
+                self.are_results(export_results, "project", "export")
+
+                # Create list of projects that failed export
+                if failed := mig_utils.get_failed_export_from_results(
+                        export_results):
+                    self.log.warning("SKIP: Projects that failed to export or already exist on destination:\n{}".format(
+                        json_pretty(failed)))
+
+                # Append total count of projects exported
+                export_results.append(mig_utils.get_results(export_results))
+                self.log.info("### {0}Project export results ###\n{1}"
+                              .format(dry_log, json_pretty(export_results)))
+
+                # Filter out the failed ones
+                staged_projects = mig_utils.get_staged_projects_without_failed_export(
+                    staged_projects, failed)
+            else:
+                self.log.info(
+                    "SKIP: Assuming staged projects are already exported")
 
 
     def verify_token_permissions(self, host, token):
@@ -220,7 +220,7 @@ class CodeCommitMigrateClient(MigrateClient):
 
     def handle_exporting_codecommit_project(self, project):
         if not self.dry_run:
-            exported_file = CodeCommitExportBuilder(project).create()
+            exported_file = CodeCommitExportBuilder(project).build_export()
         else:
             exported_file = get_export_filename_from_namespace_and_name(project['path'], project['name'])
         self.log.info(f"DRY-RUN: Exported CodeCommit repo info to {exported_file}")
