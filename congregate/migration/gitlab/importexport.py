@@ -24,6 +24,7 @@ from congregate.helpers.migrate_utils import get_project_dest_namespace, is_user
     get_export_filename_from_namespace_and_name, get_dst_path_with_namespace, get_full_path_with_parent_namespace, \
     is_loc_supported, check_is_project_or_group_for_logging, migration_dry_run, check_download_directory, default_response, \
     get_stage_wave_paths
+from congregate.helpers.airgap_utils import extract_archive
 
 
 class ImportExportClient(BaseGitLabClient):
@@ -343,6 +344,9 @@ class ImportExportClient(BaseGitLabClient):
             self.log.info(
                 "Importing project {0} from filesystem to {1}".format(name, namespace))
             try:
+                if self.config.airgap:
+                    # Extract project archive and load data into mongo
+                    _, filename = extract_archive(filename)
                 # Handle large files
                 with open("%s/downloads/%s" % (self.config.filesystem_path, filename), "rb") as f:
                     m = MultipartEncoder(fields={
