@@ -91,7 +91,7 @@ def get_project_filename(p):
     return ""
 
 
-def get_export_filename_from_namespace_and_name(namespace, name=""):
+def get_export_filename_from_namespace_and_name(namespace, name="", airgap=False):
     """
     Determine exported filename for project or group (without name)
 
@@ -99,7 +99,7 @@ def get_export_filename_from_namespace_and_name(namespace, name=""):
         :param name: Project name
         :return: Exported filename
     """
-    return f"{namespace}{'/' + name if name else ''}.tar.gz".replace("/", "_").lower()
+    return f"{namespace}{'/' + name if name else ''}{'_artifact' if airgap else ''}.tar.gz".replace("/", "_").lower()
 
 
 def get_project_dest_namespace(p, mirror=False, group_path=None):

@@ -238,7 +238,7 @@ class ImportExportClient(BaseGitLabClient):
         namespace = project["namespace"]
         members = project.get("members", [])
         override_params = self.get_override_params(project)
-        filename = get_export_filename_from_namespace_and_name(namespace, name)
+        filename = get_export_filename_from_namespace_and_name(namespace, name, airgap=self.config.airgap)
         dry = get_dry_log(dry_run)
         import_id = None
 
