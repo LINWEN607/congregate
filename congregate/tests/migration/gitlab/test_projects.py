@@ -535,12 +535,16 @@ class ProjectsTests(unittest.TestCase):
     @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=PropertyMock)
     def test_create_staged_projects_fork_relation_no_orig(self, mock_parent_id, mock_token, mock_host, mock_staged, mock_find_id, mock_get_path):
-        mock_parent_id.side_effect = [None, None]
+        mock_parent_id.side_effect = [None, None, None, None]
         mock_host.return_value = "https://gitlabdestination.com"
         mock_token.return_value = "token"
         mock_find_id.side_effect = [1, None]
         mock_get_path.side_effect = [
-            "top-level-group/security-reports-fork", "pmm-demo/security-reports"]
+            "top-level-group/security-reports-fork",
+            "top-level-group/security-reports-fork",
+            "pmm-demo/security-reports",
+            "pmm-demo/security-reports",
+        ]
         mock_staged.return_value = self.mock_projects.get_staged_forked_projects()
         self.assertIsNone(self.projects.create_staged_projects_fork_relation())
 
@@ -551,12 +555,16 @@ class ProjectsTests(unittest.TestCase):
     @patch.object(ConfigurationValidator, 'destination_token', new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, 'dstn_parent_id', new_callable=PropertyMock)
     def test_create_staged_projects_fork_relation(self, mock_parent_id, mock_token, mock_host, mock_staged, mock_find_id, mock_get_path):
-        mock_parent_id.side_effect = [None, None]
+        mock_parent_id.side_effect = [None, None, None, None]
         mock_host.return_value = "https://gitlabdestination.com"
         mock_token.return_value = "token"
         mock_find_id.side_effect = [1, 2]
         mock_get_path.side_effect = [
-            "top-level-group/security-reports-fork", "pmm-demo/security-reports"]
+            "top-level-group/security-reports-fork",
+            "top-level-group/security-reports-fork",
+            "pmm-demo/security-reports",
+            "pmm-demo/security-reports",
+        ]
         mock_staged.return_value = self.mock_projects.get_staged_forked_projects()
         self.assertIsNone(self.projects.create_staged_projects_fork_relation())
 

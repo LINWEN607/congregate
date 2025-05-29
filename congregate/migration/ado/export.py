@@ -180,15 +180,41 @@ class AdoExportBuilder(ExportBuilder):
 
     def add_merge_request_reviewers(self, reviewer_ids, pr):
         reviewer_ids = []
-        for reviewer in pr.get('reviewers', []):
-            if reviewer:
-                state = 'reviewed' if reviewer['vote'] == 10 else 'unreviewed'
+        
+        for reviewer in self.pull_requests_api.get_all_pull_request_reviewers(self.project_id, self.repository_id, pr.get('pullRequestId')):
+            if reviewer.get('isContainer'):
+                # This is situation of Group
+                team_id = reviewer.get('id')
+                team = self.teams_api.get_team(self.project_id, team_id)
+                if team.get('statusCode') != 200:
+                    self.log.error(f"Failed to get team for team_id={team_id}. Most likely the team is deleted, but has references from an old PR.")
+                    continue
+                else:
+                    for group_member in self.teams_api.get_team_members(self.project_id, team_id):
+                        if group_member:
+                            reviewer_ids.append({
+                                "user_id": self.get_new_member_id(group_member.get('identity')),
+                                "created_at": pr['creationDate'],
+                                "state": "unreviewed" # we don't know yet
+                            })
+            else:
+                # This is situation of User
+                state = 'approved' if reviewer['vote'] == 10 else 'unreviewed'
+                # get descriptor from avatar link 🤷‍♂️
+                reviewer["descriptor"] = dig(reviewer, '_links', 'avatar', 'href', default='').split('/')[-1]
                 reviewer_ids.append({
                     "user_id": self.get_new_member_id(reviewer),
                     "created_at": pr['creationDate'],
                     "state": state
                 })
-        return reviewer_ids
+        # Deduplicating and taking "approved" state only
+        result = {}
+        for reviewer in reviewer_ids:
+            user_id = reviewer.get('user_id')
+            if user_id not in result or reviewer.get('state') == 'approved':
+                result[user_id] = reviewer
+            
+        return list(result.values())
 
     def add_label_links(self, label_links, pr):
         # GitLab Sea Buckthorn
@@ -254,7 +280,7 @@ class AdoExportBuilder(ExportBuilder):
     def build_clone_url(self, source_project):
         clone_url = source_project['http_url_to_repo']
         decoded_token = deobfuscate(self.config.source_token)
-        return clone_url.replace("@", f"{self.config.source_username}{decoded_token}@")
+        return clone_url.replace("@", f"{decoded_token}@")
 
     def build_mr_notes(self, pr_id):
         notes = []
@@ -446,7 +472,6 @@ class AdoExportBuilder(ExportBuilder):
 class AdoGroupExportBuilder(GroupExportBuilder):
     def __init__(self, source_group):
         self.source_group = source_group
-        print(source_group)
         self.group_metadata = Group(
             id=1,
             name=source_group['name'],
@@ -467,7 +492,6 @@ class AdoGroupExportBuilder(GroupExportBuilder):
 
     def build_ado_data(self):
         namespace_settings = self.namespace_settings()
-        print(namespace_settings)
         return GroupExport(
             namespace_settings=namespace_settings
         )

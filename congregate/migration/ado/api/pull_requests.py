@@ -70,3 +70,11 @@ class PullRequestsApi():
             "Authorization": f"Basic {token}"
         }
         return requests.get(object_url, headers=headers, stream=True, timeout=15)
+
+    def get_all_pull_request_reviewers(self, project_id, repository_id, pull_request_id):
+        """
+        Retrieve all reviewers for a pull request.
+
+        Core REST API: https://learn.microsoft.com/en-us/rest/api/azure/devops/git/pull-request-reviewers/get-pull-request-reviewers?view=azure-devops-rest-7.1
+        """
+        return self.api.list_all(f"{project_id}/_apis/git/repositories/{repository_id}/pullrequests/{pull_request_id}/reviewers")

@@ -57,7 +57,7 @@ class AzureDevOpsWrapper(BaseClass):
             "visibility": project["visibility"],
             "description": project.get("description", ""),
             "members": [] if self.subset else self.add_team_members([], project),
-            "http_url_to_repo": repository.get('webUrl', ''),
+            "http_url_to_repo": repository.get('remoteUrl', ''),
             "ssh_url_to_repo": repository.get('sshUrl', ''),
             "namespace": {
                 "id": dig(repository, 'project', 'id'),

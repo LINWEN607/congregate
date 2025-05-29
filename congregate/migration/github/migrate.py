@@ -7,7 +7,6 @@
 from gitlab_ps_utils import json_utils, misc_utils, string_utils
 
 import congregate.helpers.migrate_utils as mig_utils
-from congregate.helpers.utils import is_dot_com
 
 from congregate.migration.meta.base_migrate import MigrateClient
 from congregate.migration.gitlab.external_import import ImportClient
@@ -160,7 +159,7 @@ class GitHubMigrateClient(MigrateClient):
             # Repo import status
             if dst_pid or project_id:
                 result[dstn_pwn]["import_status"] = self.ext_import.get_external_repo_import_status(
-                    host, token, dst_pid or project_id)
+                    host, token, dstn_pwn, dst_pid or project_id)
         else:
             log = f"Target namespace {tn} does not exist"
             self.log.warning("Skipping import. " + log +

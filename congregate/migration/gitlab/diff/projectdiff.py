@@ -13,7 +13,7 @@ from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.issues import IssuesApi
 from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
 from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
-from congregate.helpers.migrate_utils import get_dst_path_with_namespace, get_target_project_path, is_gl_version_older_than
+from congregate.helpers.migrate_utils import get_dst_path_with_namespace, get_target_project_path, is_gl_version_older_than, get_stage_wave_paths
 from congregate.helpers.utils import to_camel_case
 
 
@@ -62,7 +62,7 @@ class ProjectDiffClient(BaseDiffClient):
 
     def generate_single_diff_report(self, project):
         diff_report = {}
-        project_path = get_dst_path_with_namespace(project)
+        project_path, _ = get_stage_wave_paths(project)
 
         if self.results.get(project_path) and type(self.results.get(project_path)) != int and (self.asset_exists(self.projects_api.get_project,
                                                                  self.results[project_path].get("id")) or isinstance(self.results.get(project_path), int)):
@@ -103,7 +103,7 @@ class ProjectDiffClient(BaseDiffClient):
                 project, "issues", "projects/:id/issues")
             project_diff["Total Number of Issue Comments"] = self.generate_nested_project_count_diff_graphql(
                 project, "issues", "notes")
-            
+
             project_diff["Total Number of Branches"] = self.generate_project_count_diff(
                 project, "projects/:id/repository/branches")
 
@@ -204,7 +204,7 @@ class ProjectDiffClient(BaseDiffClient):
         destination_count = self.gl_api.get_nested_total_count(
             self.config.destination_host, self.config.destination_token, destination_apis)
         return self.generate_count_diff(source_count, destination_count)
-    
+
     def generate_project_count_diff_graphql(self, project, entity, api, message=None):
         source_full_path = project['path_with_namespace']
         destination_full_path = get_target_project_path(project)
@@ -239,8 +239,8 @@ class ProjectDiffClient(BaseDiffClient):
             self.log.warning(f"[{entity}] retrieval for {source_full_path} failed. Skipping.")
 
         return self.generate_count_diff(source_count, destination_count)
-    
-    
+
+
     def generate_nested_project_count_diff_graphql(self, project, primary_entity, secondary_entity):
         source_full_path = project['path_with_namespace']
         destination_full_path = get_target_project_path(project)

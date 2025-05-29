@@ -205,10 +205,13 @@ class ProjectsClient(BaseClass):
         try:
             for sp in tqdm(staged_projects, total=len(staged_projects), colour=self.TANUKI, desc=self.DESC, unit=self.UNIT):
                 # Get source/destination project full path and ID
-                path = get_dst_path_with_namespace(
-                    sp) if dest else sp["path_with_namespace"]
-                pid = self.find_project_by_path(
-                    host, token, path) if dest else sp["id"]
+                if dest:
+                    path, _ = get_stage_wave_paths(sp)
+                    pid = self.find_project_by_path(
+                        host, token, path)
+                else:
+                    path = sp["path_with_namespace"]
+                    pid = sp["id"]
                 self.log.info(
                     f"{get_dry_log(dry_run)}{action_type} {host_type} ({host}) project {path}")
                 if not dry_run:
@@ -654,7 +657,7 @@ class ProjectsClient(BaseClass):
                         f"SKIP: Parent group {dst_grp_full_path} NOT found")
                     continue
                 # Validate whether the project namespace is already reserved
-                dst_path = get_dst_path_with_namespace(sp)
+                dst_path, _ = get_stage_wave_paths(sp)
                 dst_pid = self.find_project_by_path(host, token, dst_path)
                 if dst_pid:
                     self.log.info(
@@ -957,7 +960,7 @@ class ProjectsClient(BaseClass):
                 self.log.error(
                     f"SKIP: Original project '{orig_path}' NOT found")
                 return (False, False)
-            mirror_path = get_dst_path_with_namespace(staged_project)
+            mirror_path, _ = get_stage_wave_paths(staged_project)
             mirror_pid = self.find_project_by_path(
                 self.config.destination_host, self.config.destination_token, mirror_path)
             if not mirror_pid:
@@ -1026,14 +1029,14 @@ class ProjectsClient(BaseClass):
             if orig_project and not is_user_project(orig_project):
                 try:
                     # Validate fork source and destination project
-                    fork_path = get_dst_path_with_namespace(sp)
+                    fork_path, _ = get_stage_wave_paths(sp)
                     fork_pid = self.find_project_by_path(
                         host, token, fork_path)
                     if not fork_pid:
                         self.log.error(
                             f"SKIP: Fork project {fork_path} NOT found")
                         continue
-                    orig_path = get_dst_path_with_namespace(orig_project)
+                    orig_path, _ = get_stage_wave_paths(orig_project)
                     orig_pid = self.find_project_by_path(
                         host, token, orig_path)
                     if not orig_pid:

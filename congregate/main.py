@@ -320,7 +320,6 @@ def main():
             from congregate.migration.gitlab.users import UsersClient
             from congregate.migration.gitlab.groups import GroupsClient
             from congregate.migration.gitlab.projects import ProjectsClient
-            from congregate.migration.gitlab.variables import VariablesClient
             from congregate.migration.migrate import MigrateClient
             from congregate.migration.meta.base_migrate import MigrateClient as BaseMigrateClient
             from congregate.migration.gitlab.migrate import GitLabMigrateClient
@@ -338,16 +337,11 @@ def main():
             from congregate.migration.gitlab.diff.groupdiff import GroupDiffClient
             from congregate.migration.github.diff.repodiff import RepoDiffClient as GHRepoDiffClient
             from congregate.migration.bitbucket.diff.repodiff import RepoDiffClient as BBSRepoDiffClient
-            from congregate.migration.bitbucket_cloud.migrate import BitbucketCloudMigrateClient
             from congregate.helpers.user_util import map_users, map_and_stage_users_by_email_match
             from congregate.helpers.congregate_mdbc import CongregateMongoConnector
             from congregate.migration.github.repos import ReposClient as GHReposClient
             from congregate.migration.bitbucket.repos import ReposClient as BBReposClient
             from congregate.cli.ldap_group_sync import LdapGroupSync
-            from congregate.migration.codecommit.projects import ProjectsClient
-            from congregate.migration.codecommit.api.base import CodeCommitApiWrapper
-            from congregate.migration.codecommit.base import CodeCommitWrapper
-            from congregate.migration.codecommit.migrate import CodeCommitMigrateClient
 
 
 
@@ -356,7 +350,6 @@ def main():
             groups = GroupsClient()
             projects = ProjectsClient()
             bb_repos = BBReposClient()
-            variables = VariablesClient()
             branches = BranchesClient()
 
             if not config.ssl_verify:

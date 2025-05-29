@@ -104,12 +104,13 @@ class ContributorRetentionClient(BaseClass):
             self.log.info(
                 f"{dry_log}Adding contributor '{contributor}' to project '{self.full_path}'")
             self.log.info(
-                f"{dry_log}Set source user '{contributor}' public email'")
+                f"{dry_log}Setting source user '{contributor}' public email'")
             if not self.dry_run:
                 add_resp = self.projects.add_member(
                     self.src_id, self.config.source_host, self.config.source_token, new_member_payload.to_dict())
                 if not isinstance(add_resp, Response) or add_resp.status_code != 201:
                     self.log.error(f"Failed to add contributor '{data.get('username')}' as member to source project {self.src_id}:\n{add_resp} - {add_resp.text}")
+                    continue
                 # Set public_email field
                 self.update_contributor_public_email(
                     contributor, data, hide=False)

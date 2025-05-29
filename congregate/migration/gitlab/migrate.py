@@ -294,13 +294,11 @@ class GitLabMigrateClient(MigrateClient):
             filename: False
         }
         try:
-            self.log.info("{0}Exporting group {1} (ID: {2}) as {3}"
-                          .format(dry_log, full_path, gid, filename))
+            self.log.info(f"{dry_log}Exporting group '{full_path}' (ID: {gid}) as {filename}")
             result[filename] = self.ie.export_group(
                 gid, full_path, filename, dry_run=self.dry_run)
         except (IOError, RequestException) as oe:
-            self.log.error("Failed to export group {0} (ID: {1}) as {2} with error:\n{3}".format(
-                full_path, gid, filename, oe))
+            self.log.error(f"Failed to export group '{full_path}' (ID: {gid}) as {filename} with error:\n{oe}")
         except Exception as e:
             self.log.error(e)
             self.log.error(print_exc())
@@ -689,10 +687,12 @@ class GitLabMigrateClient(MigrateClient):
             results["project_feature_flags"] = self.project_feature_flags_client.migrate_project_feature_flags_for_project(
                 src_id, dst_id, project_feature_flags_users_lists.get('user_lists_conversion_list') if isinstance(project_feature_flags_users_lists, dict) else None)
 
+        # Premium+ features
         if self.config.source_tier not in ["core", "free"]:
-            # Push Rules - handled by GitLab Importer as of 13.6
-            results["push_rules"] = self.pushrules.migrate_push_rules(
-                src_id, dst_id, src_path)
+            if not self.config.airgap:
+                # Push Rules - handled by GitLab Importer as of 13.6
+                results["push_rules"] = self.pushrules.migrate_push_rules(
+                    src_id, dst_id, src_path)
 
             # Merge Request Approvals
             results["project_level_mr_approvals"] = MergeRequestApprovalsClient(dest_host=dest_host, dest_token=dest_token).migrate_project_level_mr_approvals(

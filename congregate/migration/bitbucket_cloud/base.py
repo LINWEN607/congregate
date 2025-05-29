@@ -94,6 +94,8 @@ class BitBucketCloud(BaseClass):
         Leave project repo members empty ([]) as they are retrieved during staging.
         """
         repo_path = dig(repo, 'project', 'key') or self.config.src_parent_workspace
+        # Example: {abc123-123-abc} -> abc123-123-abc
+        namespace_id = dig(repo, 'project', 'uuid')[1:-1]
         self.repo_groups = {}
         
         # Clean the UUID by removing curly braces if present
@@ -125,7 +127,7 @@ class BitBucketCloud(BaseClass):
             "name": repo["name"],
             # "archived": repo.get("archived", False),
             "namespace": {
-                "id": repo_path,
+                "id": namespace_id,
                 "path": repo_path,
                 "name": repo_path,
                 "kind": "group",
