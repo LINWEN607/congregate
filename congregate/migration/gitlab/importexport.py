@@ -21,7 +21,7 @@ from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi
 from congregate.migration.gitlab.api.namespaces import NamespacesApi
 from congregate.helpers.migrate_utils import get_project_dest_namespace, is_user_project, get_user_project_namespace, \
-    get_export_filename_from_namespace_and_name, get_dst_path_with_namespace, get_full_path_with_parent_namespace, \
+    get_export_filename_from_namespace_and_name, get_full_path_with_parent_namespace, \
     is_loc_supported, check_is_project_or_group_for_logging, migration_dry_run, check_download_directory, default_response, \
     get_stage_wave_paths
 from congregate.helpers.airgap_utils import extract_archive
@@ -239,7 +239,7 @@ class ImportExportClient(BaseGitLabClient):
         namespace = project["namespace"]
         members = project.get("members", [])
         override_params = self.get_override_params(project)
-        filename = get_export_filename_from_namespace_and_name(namespace, name, airgap=self.config.airgap)
+        filename = get_export_filename_from_namespace_and_name(namespace, name=name, airgap=self.config.airgap)
         dry = get_dry_log(dry_run)
         import_id = None
 
@@ -341,12 +341,13 @@ class ImportExportClient(BaseGitLabClient):
                 self.log.error(f"Error: The download directory '{download_dir}' does not exist. "
                                "Please create the directory and try again.")
                 os.killpg(os.getpgid(os.getpid()), signal.SIGKILL)
-            if self.config.airgap:
-                # Extract project archive and load data into mongo
-                _, filename = extract_archive(filename)
             upload_dir = f"{download_dir}/{filename}"
             self.log.info(f"Importing project '{name}' from filesystem ({upload_dir}) to '{namespace}")
             try:
+                if self.config.airgap:
+                    # Extract project archive and load data into mongo
+                    _, filename = extract_archive(upload_dir)
+
                 # Handle large files
                 with open(upload_dir, "rb") as f:
                     m = MultipartEncoder(fields={
@@ -613,7 +614,7 @@ class ImportExportClient(BaseGitLabClient):
                 return False
         if not dry_run:
             filename = get_export_filename_from_namespace_and_name(
-                namespace, name)
+                namespace, name=name)
             if loc == "filesystem":
                 exported = self.wait_for_export_to_finish(pid, name)
                 if exported:

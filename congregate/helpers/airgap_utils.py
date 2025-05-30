@@ -8,7 +8,7 @@ from dacite import from_dict
 from congregate.helpers.configuration_validator import Config
 from congregate.helpers.congregate_mdbc import mongo_connection
 from congregate.migration.meta.api_models.single_project_features import SingleProjectFeatures
-    
+
 def create_archive(pid, export_file):
     final_path = f"{export_file.split('.tar.gz')[0]}_artifact.tar.gz"
     with tarfile.TarFile.open(final_path, 'w:gz') as tar:
@@ -17,24 +17,39 @@ def create_archive(pid, export_file):
     return final_path
 
 def extract_archive(import_file):
-    # open tar for extraction
-    project_details = {}
-    project_export_filename = ''
-    with tarfile.TarFile.open(import_file, 'r:gz') as tar:
-        for tf in tar.getmembers():
-            if tf.name == "project_features.json":
-                # load project features into mongo
-                features = load((tar.extractfile(tf)))
-                project_details = features.get('project_details')
-                load_project_features(features)
-            elif ''.join(Path(tf.name).suffixes) == '.tar.gz':
-                # download project export
-                project_export_filename = tf.name
-                export_download_path = os.path.join(Config().filesystem_path, 'downloads', tf.name)
-                with open(export_download_path, 'wb') as export_tar:
-                    export_tar.write(tar.extractfile(tf).read())
-    
-    return project_details, project_export_filename
+    try:
+        # open tar for extraction
+        project_details = {}
+        project_export_filename = ''
+        with tarfile.TarFile.open(import_file, 'r:gz') as tar:
+            for tf in tar.getmembers():
+                if tf.name == "project_features.json":
+                    # load project features into mongo
+                    features = load((tar.extractfile(tf)))
+                    project_details = features.get('project_details')
+                    load_project_features(features)
+                elif ''.join(Path(tf.name).suffixes) == '.tar.gz':
+                    # download project export
+                    project_export_filename = tf.name
+                    export_download_path = os.path.join(Config().filesystem_path, 'downloads', tf.name)
+                    with open(export_download_path, 'wb') as export_tar:
+                        export_tar.write(tar.extractfile(tf).read())
+        return project_details, project_export_filename
+    except tarfile.TarError as e:
+        # Handle tar file specific errors
+        raise Exception("Error extracting tar file") from e
+    except FileNotFoundError as e:
+        # Handle file not found errors
+        raise Exception("File not found") from e
+    except PermissionError as e:
+        # Handle permission errors
+        raise Exception("Permission denied") from e
+    except OSError as e:
+        # Handle other OS-related errors (disk space, etc.)
+        raise Exception("OS error occurred") from e
+    except Exception as e:
+        # Handle any other unexpected errors
+        raise Exception("Unexpected error during archive extraction") from e
 
 def delete_project_export(filename):
     full_path = os.path.join(Config().filesystem_path, 'downloads', filename)
