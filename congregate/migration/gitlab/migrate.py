@@ -687,6 +687,15 @@ class GitLabMigrateClient(MigrateClient):
             results["project_feature_flags"] = self.project_feature_flags_client.migrate_project_feature_flags_for_project(
                 src_id, dst_id, project_feature_flags_users_lists.get('user_lists_conversion_list') if isinstance(project_feature_flags_users_lists, dict) else None)
 
+            if self.retain_contributors and not self.config.direct_transfer:
+                c_retention = None
+                self.log.info(
+                    f"Contributor Retention is enabled. Project {project['path_with_namespace']} has been imported so removing all project contributors as project members")
+                c_retention = ContributorRetentionClient(
+                    src_id, dst_id, project['path_with_namespace'], dry_run=self.dry_run)
+                c_retention.build_map()
+                c_retention.remove_contributors_from_project()
+
         # Premium+ features
         if self.config.source_tier not in ["core", "free"]:
             if not self.config.airgap:
@@ -705,15 +714,6 @@ class GitLabMigrateClient(MigrateClient):
 
         if self.config.remapping_file_path:
             self.projects.migrate_gitlab_variable_replace_ci_yml(dst_id)
-
-        c_retention = None
-        if self.retain_contributors and not self.config.direct_transfer:
-            self.log.info(
-                f"Contributor Retention is enabled. Project {project['path_with_namespace']} has been imported so removing all project contributors as project members")
-            c_retention = ContributorRetentionClient(
-                src_id, dst_id, project['path_with_namespace'], dry_run=self.dry_run)
-            c_retention.build_map()
-            c_retention.remove_contributors_from_project()
 
         self.remove_import_user(dst_id, host=dest_host, token=dest_token)
         if self.config.airgap:
@@ -799,8 +799,7 @@ def import_task(file_path: str, group: dict, host: str, token: str):
         dry_run=False,
         skip_users=True,
         skip_groups=True,
-        skip_project_import=True,
-        retain_contributors=True
+        skip_project_import=True
     )
     project_features, export_filename = extract_archive(file_path)
 
