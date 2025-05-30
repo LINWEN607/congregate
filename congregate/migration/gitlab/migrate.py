@@ -544,6 +544,8 @@ class GitLabMigrateClient(MigrateClient):
         dst_token = dst_token or self.config.destination_token
         src_host = self.config.source_host
         src_token = self.config.source_token
+        filename = filename or mig_utils.get_export_filename_from_namespace_and_name(
+            project["namespace"], name=project["name"], airgap=self.config.airgap)
         archived = False if self.config.airgap else self.projects_api.get_project_archive_state(
             src_host, src_token, src_id)
         dst_pwn, tn = mig_utils.get_stage_wave_paths(
@@ -563,7 +565,7 @@ class GitLabMigrateClient(MigrateClient):
                     import_status = safe_json_response(self.projects_api.get_project_import_status(
                         dst_host, dst_token, dst_pid))
                     self.log.info(
-                        f"Project {dst_pwn} (ID: {dst_pid}) found on destination, with import status: {import_status}")
+                        f"Project '{dst_pwn}' (ID: {dst_pid}) found on destination, with import status: {import_status}")
                     if self.only_post_migration_info and not self.dry_run:
                         import_id = dst_pid
                     else:
@@ -572,7 +574,7 @@ class GitLabMigrateClient(MigrateClient):
                     ie_client = ImportExportClient(
                         dest_host=dst_host, dest_token=dst_token)
                     import_id = ie_client.import_project(
-                        project, dry_run=self.dry_run, group_path=group_path or tn)
+                        project, filename, dry_run=self.dry_run, group_path=group_path or tn)
                 if import_id and not self.dry_run:
                     # Store project ID mapping
                     self.project_id_mapping[src_id] = import_id
@@ -615,7 +617,7 @@ class GitLabMigrateClient(MigrateClient):
                         message=f"Archiving active source project '{path}' (ID: {src_id})")
 
                 if self.config.airgap:
-                    self.log.info(f"Deleting project export file {filename}")
+                    self.log.info(f"Deleting project export file '{filename}'")
                     delete_project_export(filename)
 
                 # Write project id mapping file

@@ -226,7 +226,7 @@ class ImportExportClient(BaseGitLabClient):
                 check_is_project_or_group_for_logging(is_project).lower(), source_id, filename, response))
             return None
 
-    def import_project(self, project, dry_run=True, group_path=None):
+    def import_project(self, project, filename, dry_run=True, group_path=None):
         """
             Imports project to destination GitLab instance.
             Formats users, groups, migration info (aws, filesystem) during import process.
@@ -236,10 +236,8 @@ class ImportExportClient(BaseGitLabClient):
 
         name = project["name"]
         path = project["path"]
-        namespace = project["namespace"]
         members = project.get("members", [])
         override_params = self.get_override_params(project)
-        filename = get_export_filename_from_namespace_and_name(namespace, name=name, airgap=self.config.airgap)
         dry = get_dry_log(dry_run)
         import_id = None
 
@@ -383,10 +381,6 @@ class ImportExportClient(BaseGitLabClient):
                     if import_resp := self.projects_api.import_project(
                         self.config.destination_host, self.config.destination_token, data=data, files=files, headers=headers, message=message):
                         resp = import_resp
-            finally:
-                if self.config.airgap and filename:
-                    self.log.info(f"Deleting project export file '{filename}'")
-                    delete_project_export(filename)
         return resp if resp else default_response()
 
     def import_group(self, group, full_path, filename,
