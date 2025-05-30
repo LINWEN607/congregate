@@ -341,14 +341,14 @@ class ImportExportClient(BaseGitLabClient):
                 self.log.error(f"Error: The download directory '{download_dir}' does not exist. "
                                "Please create the directory and try again.")
                 os.killpg(os.getpgid(os.getpid()), signal.SIGKILL)
-            self.log.info(
-                "Importing project {0} from filesystem to {1}".format(name, namespace))
+            if self.config.airgap:
+                # Extract project archive and load data into mongo
+                _, filename = extract_archive(filename)
+            upload_dir = f"{download_dir}/{filename}"
+            self.log.info(f"Importing project '{name}' from filesystem ({upload_dir}) to '{namespace}")
             try:
-                if self.config.airgap:
-                    # Extract project archive and load data into mongo
-                    _, filename = extract_archive(filename)
                 # Handle large files
-                with open("%s/downloads/%s" % (self.config.filesystem_path, filename), "rb") as f:
+                with open(upload_dir, "rb") as f:
                     m = MultipartEncoder(fields={
                         "file": (filename, f),
                         "path": path,
@@ -359,15 +359,13 @@ class ImportExportClient(BaseGitLabClient):
                         "Private-Token": self.dest_token,
                         "Content-Type": m.content_type
                     }
-                    message = f"Importing project {name} with the following payload {m} and following members {members}"
+                    message = f"Importing project '{name}' with the following payload '{m}' and members '{members}'"
                     if import_resp := self.projects_api.import_project(
                         self.dest_host, self.dest_token, data=m, headers=headers, message=message):
                         resp = import_resp
             except AttributeError as ae:
-                self.log.error(
-                    "Large file upload failed for {0}. Using standard file upload, due to:\n{1}".format(
-                        filename, ae))
-                with open("%s/downloads/%s" % (self.config.filesystem_path, filename), "rb") as f:
+                self.log.error(f"Large file upload failed for '{filename}'. Using standard file upload:\n{ae}")
+                with open(upload_dir, "rb") as f:
                     data = {
                         "path": path,
                         "namespace": namespace,
@@ -379,7 +377,7 @@ class ImportExportClient(BaseGitLabClient):
                     headers = {
                         "Private-Token": self.config.destination_token
                     }
-                    message = "Importing project %s with the following payload %s and following members %s" % (
+                    message = f"Importing project '{name}' with the following payload '{data}' and members '{members}'" % (
                         name, data, members)
                     if import_resp := self.projects_api.import_project(
                         self.config.destination_host, self.config.destination_token, data=data, files=files, headers=headers, message=message):
