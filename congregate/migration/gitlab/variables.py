@@ -145,13 +145,15 @@ class VariablesClient(DbOrHttpMixin, BaseGitLabClient):
             self.log.info(
                 f"Migrating {var_type} '{name}' (ID: {new_id}) CI/CD variables")
             for var in var_list:
-                self.send_data(self.set_variables,
+                resp = self.send_data(self.set_variables,
                     (new_id, self.dest_host, self.dest_token, var_type),
                     'ci_variables',
                     src_id,
                     var,
                     airgap=self.config.airgap,
                     airgap_export=self.config.airgap_export)
+                if resp.status_code != 201:
+                    self.log.error(f"Failed to create {var_type} '{name}' (ID: {new_id}) CI/CD variable:\n{resp} - {resp.text}")
             return True
         except TypeError as te:
             self.log.error(f"{var_type} '{name}' variables:\n{te}")
