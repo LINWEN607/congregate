@@ -1,3 +1,5 @@
+from requests import Response
+
 from congregate.helpers.congregate_mdbc import CongregateMongoConnector
 
 
@@ -10,13 +12,20 @@ class DbOrHttpMixin():
 
     def send_data(self, req_func, params, key, src_id, data, airgap=False, airgap_export=False, mongo_coll=default_collection):
         if airgap and airgap_export:
-            mongo = CongregateMongoConnector()
-            mongo.db[mongo_coll].update_one(
-                {'id': src_id},
-                {'$push': {key: data}},
-                upsert=True)
-            mongo.close_connection()
-            return None
+            resp = Response()
+            resp.status_code = 100
+            try:
+                mongo = CongregateMongoConnector()
+                mongo.db[mongo_coll].update_one(
+                    {'id': src_id},
+                    {'$push': {key: data}},
+                    upsert=True)
+                mongo.close_connection()
+                resp.status_code = 201
+            except Exception as e:
+                resp.status_code = 500
+                resp.text = e
+            return resp
         return req_func(*params, data)
 
     def get_data(self, req_func, params, key, src_id, airgap=False, airgap_import=False, mongo_coll=default_collection):
