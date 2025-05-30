@@ -341,15 +341,15 @@ class ImportExportClient(BaseGitLabClient):
                 self.log.error(f"Error: The download directory '{download_dir}' does not exist. "
                                "Please create the directory and try again.")
                 os.killpg(os.getpgid(os.getpid()), signal.SIGKILL)
-            upload_dir = f"{download_dir}/{filename}"
-            self.log.info(f"Importing project '{name}' from filesystem ({upload_dir}) to '{namespace}")
+            upload_path = f"{download_dir}/{filename}"
+            self.log.info(f"Importing project '{name}' from filesystem ({upload_path}) to '{namespace}")
             try:
                 if self.config.airgap:
                     # Extract project archive and load data into mongo
-                    _, filename = extract_archive(upload_dir)
+                    _, filename = extract_archive(upload_path)
 
                 # Handle large files
-                with open(upload_dir, "rb") as f:
+                with open(f"{download_dir}/{filename}", "rb") as f:
                     m = MultipartEncoder(fields={
                         "file": (filename, f),
                         "path": path,
@@ -366,7 +366,7 @@ class ImportExportClient(BaseGitLabClient):
                         resp = import_resp
             except AttributeError as ae:
                 self.log.error(f"Large file upload failed for '{filename}'. Using standard file upload:\n{ae}")
-                with open(upload_dir, "rb") as f:
+                with open(f"{download_dir}/{filename}", "rb") as f:
                     data = {
                         "path": path,
                         "namespace": namespace,
