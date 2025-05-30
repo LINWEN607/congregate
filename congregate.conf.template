@@ -255,12 +255,17 @@ export_import_timeout = 3600
 #        "Override": "Override"}
 
 ### Mongo DB configuration
-mongo_host = localhost
-mongo_port = 27017
+### Value: "mongo" for docker-compose, "localhost" (default) for single node setup
+mongo_host = mongo
+# mongo_port = 27017
 
 ### Redis configuration - for running air-gapped migrations
-# redis_host = localhost
+### Value: "redis" for docker-compose, "localhost" (default) for single node setup
+redis_host = redis
 # redis_port = 6379
+
+### Direct transfer (DT) - toggle between file-based (false) and DT (true) migrations
+direct_transfer = true
 
 ### Setting to enforce SSL Verification with our API requests. Defaults to True
 ssl_verify = True
