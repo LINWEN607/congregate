@@ -30,6 +30,8 @@ class MergeRequestApprovalsClient(DbOrHttpMixin, BaseGitLabClient):
 
     def migrate_project_level_mr_approvals(self, old_id, new_id, name):
         try:
+            if self.config.airgap and self.config.airgap_import:
+                return self.migrate_project_approvals(new_id, old_id, name)
             if self.are_enabled(old_id):
                 return self.migrate_project_approvals(new_id, old_id, name)
             self.log.warning(
@@ -42,20 +44,21 @@ class MergeRequestApprovalsClient(DbOrHttpMixin, BaseGitLabClient):
 
     def migrate_project_approvals(self, new_id, old_id, name):
         try:
-            # migrate configuration
-            conf = safe_json_response(self.projects_api.get_project_level_mr_approval_configuration(
-                old_id, self.src_host, self.src_token))
-            error, conf = is_error_message_present(conf)
-            if error or not conf:
-                self.log.error(
-                    f"Failed to fetch project '{name}' MR approval configuration ({conf})")
-                return False
-            self.log.info(
-                f"Migrating project '{name}' MR approval configuration")
-            conf_payload = from_dict(
-                data_class=ProjectLevelApproverPayload, data=conf)
-            self.projects_api.change_project_level_mr_approval_configuration(
-                new_id, self.dest_host, self.dest_token, conf_payload.to_dict())
+            if not self.config.airgap:
+                # migrate configuration
+                conf = safe_json_response(self.projects_api.get_project_level_mr_approval_configuration(
+                    old_id, self.src_host, self.src_token))
+                error, conf = is_error_message_present(conf)
+                if error or not conf:
+                    self.log.error(
+                        f"Failed to fetch project '{name}' MR approval configuration ({conf})")
+                    return False
+                self.log.info(
+                    f"Migrating project '{name}' MR approval configuration")
+                conf_payload = from_dict(
+                    data_class=ProjectLevelApproverPayload, data=conf)
+                self.projects_api.change_project_level_mr_approval_configuration(
+                    new_id, self.dest_host, self.dest_token, conf_payload.to_dict())
 
             # migrate approval rules
             resp = self.get_data(
