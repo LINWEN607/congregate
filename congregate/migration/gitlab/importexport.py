@@ -24,7 +24,7 @@ from congregate.helpers.migrate_utils import get_project_dest_namespace, is_user
     get_export_filename_from_namespace_and_name, get_full_path_with_parent_namespace, \
     is_loc_supported, check_is_project_or_group_for_logging, migration_dry_run, check_download_directory, default_response, \
     get_stage_wave_paths
-from congregate.helpers.airgap_utils import extract_archive
+from congregate.helpers.airgap_utils import extract_archive, delete_project_export
 
 
 class ImportExportClient(BaseGitLabClient):
@@ -383,6 +383,10 @@ class ImportExportClient(BaseGitLabClient):
                     if import_resp := self.projects_api.import_project(
                         self.config.destination_host, self.config.destination_token, data=data, files=files, headers=headers, message=message):
                         resp = import_resp
+            finally:
+                if self.config.airgap and filename:
+                    self.log.info(f"Deleting project export file '{filename}'")
+                    delete_project_export(filename)
         return resp if resp else default_response()
 
     def import_group(self, group, full_path, filename,
