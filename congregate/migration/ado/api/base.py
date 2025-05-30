@@ -155,6 +155,52 @@ class AzureDevOpsApiWrapper(BaseClass):
 
             params["continuationToken"] = response.headers["X-MS-ContinuationToken"]
 
+    def list_all_in_tfs(self, api, params=None, sub_api=None):
+        """
+        Generates a list of all projects, groups, etc., or all items using $top/$skip paging.
+
+            :param api: (str) Specific ADO API endpoint (ex: projects)
+            :param params: (dict) Any query parameters needed in the request
+            :yields: Individual objects from the presumed array of data
+        """
+        # If params is None, initialize as empty dict
+        if params is None:
+            params = {}
+
+        # If $top is specified, use $skip/$top paging logic
+        if "$top" in params:
+            skip = params.get("$skip", 0)
+            top = params["$top"]
+            while True:
+                params["$skip"] = skip
+                response = self.generate_get_request(api, sub_api, params=params)
+                response.raise_for_status()
+                data = safe_json_response(response)
+                items = []
+                if data:
+                    items = data.get("value", []) or data.get("members", [])
+                    for item in items:
+                        yield item
+                if not items:
+                    break
+                skip += top
+        else:
+            # Fallback to continuation token logic
+            while True:
+                response = self.generate_get_request(api, sub_api, params=params)
+                response.raise_for_status()
+                data = safe_json_response(response)
+                if data:
+                    for item in data.get("value", []):
+                        yield item
+                    for item in data.get("members", []):
+                        yield item
+
+                if not any(key.lower() == "x-ms-continuationtoken" for key in response.headers):
+                    break
+
+                params["continuationToken"] = response.headers["X-MS-ContinuationToken"]
+
     def get_count(self, api, params=None):
         """
         Generates a count of all projects, groups, users, etc.
