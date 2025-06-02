@@ -304,8 +304,10 @@ class AzureDevopsMigrateClient(MigrateClient):
                         f"{get_dry_log(self.dry_run)}Project '{dst_pwn}' NOT found on destination, importing...")
                     ie_client = ImportExportClient(
                         dest_host=dst_host, dest_token=dst_token)
+                    filename = mig_utils.get_export_filename_from_namespace_and_name(
+                        project["namespace"], project["name"])
                     import_id = ie_client.import_project(
-                        project, dry_run=self.dry_run, group_path=group_path or tn)
+                        project, filename, dry_run=self.dry_run, group_path=group_path or tn)
                 if import_id and not self.dry_run:
                     # Disable Shared CI
                     self.disable_shared_ci(dst_pwn, import_id)
