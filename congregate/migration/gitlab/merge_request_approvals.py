@@ -24,15 +24,14 @@ class MergeRequestApprovalsClient(DbOrHttpMixin, BaseGitLabClient):
                          dest_host=dest_host, dest_token=dest_token)
 
     def are_enabled(self, pid):
-        project = self.projects_api.get_project(
-            pid, self.config.source_host, self.config.source_token).json()
-        return project.get("merge_requests_enabled", False)
+        if project:= safe_json_response(self.projects_api.get_project(
+            pid, self.config.source_host, self.config.source_token)):
+            return project.get("merge_requests_enabled", False)
+        return False
 
     def migrate_project_level_mr_approvals(self, old_id, new_id, name):
         try:
-            if self.config.airgap and self.config.airgap_import:
-                return self.migrate_project_approvals(new_id, old_id, name)
-            if self.are_enabled(old_id):
+            if (self.config.airgap and self.config.airgap_import) or self.are_enabled(old_id):
                 return self.migrate_project_approvals(new_id, old_id, name)
             self.log.warning(
                 f"Merge requests are disabled for project '{name}'")
@@ -49,51 +48,54 @@ class MergeRequestApprovalsClient(DbOrHttpMixin, BaseGitLabClient):
                 conf = safe_json_response(self.projects_api.get_project_level_mr_approval_configuration(
                     old_id, self.src_host, self.src_token))
                 error, conf = is_error_message_present(conf)
-                if error or not conf:
+                if error:
                     self.log.error(
                         f"Failed to fetch project '{name}' MR approval configuration ({conf})")
                     return False
-                self.log.info(
-                    f"Migrating project '{name}' MR approval configuration")
-                conf_payload = from_dict(
-                    data_class=ProjectLevelApproverPayload, data=conf)
-                self.projects_api.change_project_level_mr_approval_configuration(
-                    new_id, self.dest_host, self.dest_token, conf_payload.to_dict())
+                if conf:
+                    self.log.info(
+                        f"Migrating project '{name}' MR approval configuration")
+                    conf_payload = from_dict(
+                        data_class=ProjectLevelApproverPayload, data=conf)
+                    self.projects_api.change_project_level_mr_approval_configuration(
+                        new_id, self.dest_host, self.dest_token, conf_payload.to_dict())
 
             # migrate approval rules
-            resp = self.get_data(
+            approval_rules = self.get_data(
                 self.projects_api.get_all_project_level_mr_approval_rules,
                 (old_id, self.src_host, self.src_token),
                 'mr_approvers',
                 old_id,
                 airgap=self.config.airgap,
                 airgap_import=self.config.airgap_import)
-            approval_rules = iter(resp)
-            self.log.info(f"Migrating project '{name}' MR approval rules")
-            for rule in approval_rules:
-                error, rule = is_error_message_present(rule)
-                if error or not rule:
-                    self.log.error(
-                        f"Failed to fetch project '{name}' MR approval rules ({rule})")
-                    return False
-                user_ids, group_ids, protected_branch_ids = self.get_missing_rule_params(
-                    rule, new_id)
-                data = MergeRequestLevelApproverPayload(
-                    name=rule['name'],
-                    approvals_required=rule["approvals_required"],
-                    user_ids=user_ids,
-                    group_ids=group_ids,
-                    protected_branch_ids=protected_branch_ids
-                )
-                self.send_data(
-                    self.projects_api.create_project_level_mr_approval_rule,
-                    (new_id, self.dest_host, self.dest_token),
-                    'mr_approvers',
-                    new_id,
-                    data.to_dict(),
-                    airgap=self.config.airgap,
-                    airgap_export=self.config.airgap_export
-                )
+
+            error, approval_rules = is_error_message_present(approval_rules)
+            if error:
+                self.log.error(f"Failed to fetch project '{name}' MR approval rules: {approval_rules}")
+                return False
+            if approval_rules:
+                self.log.info(f"Migrating project '{name}' MR approval rules")
+                for rule in approval_rules:
+                    if self.config.airgap and self.config.airgap_import:
+                        user_ids, group_ids, protected_branch_ids = rule.get('user_ids', []), rule.get('group_ids', []), rule.get('protected_branch_ids', [])
+                    else:
+                        user_ids, group_ids, protected_branch_ids = self.get_missing_rule_params(rule, new_id)
+                    data = MergeRequestLevelApproverPayload(
+                        name=rule['name'],
+                        approvals_required=rule["approvals_required"],
+                        user_ids=user_ids,
+                        group_ids=group_ids,
+                        protected_branch_ids=protected_branch_ids)
+                    resp = self.send_data(
+                        self.projects_api.create_project_level_mr_approval_rule,
+                        (new_id, self.dest_host, self.dest_token),
+                        'mr_approvers',
+                        new_id,
+                        data.to_dict(),
+                        airgap=self.config.airgap,
+                        airgap_export=self.config.airgap_export)
+                    if resp.status_code != 201:
+                        self.log.error(f"Failed to create project '{name}' MR approval rule:\n{resp} - {resp.text}")
             return True
         except TypeError as te:
             self.log.error(f"Project '{name}' MR approvals:\n{te}")
