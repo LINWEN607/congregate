@@ -1,6 +1,6 @@
 from requests.exceptions import RequestException
 from requests import Response
-from gitlab_ps_utils.misc_utils import is_error_message_present, safe_json_response
+from gitlab_ps_utils.misc_utils import is_error_message_present
 
 from congregate.migration.gitlab.base_gitlab_client import BaseGitLabClient
 from congregate.helpers.db_or_http import DbOrHttpMixin
@@ -54,12 +54,14 @@ class VariablesClient(DbOrHttpMixin, BaseGitLabClient):
                 var_list = self.get_ci_variables(
                     old_id, self.src_host, self.src_token, var_type=var_type)
                 error, var_list = is_error_message_present(var_list)
-                if error or not var_list:
+                if error:
                     self.log.error(
                         f"Failed to fetch {var_type} '{name}' CI/CD variables: {var_list}")
                     return False
-                return self.migrate_variables(
-                    new_id, name, var_list, var_type, old_id)
+                if var_list:
+                    return self.migrate_variables(
+                        new_id, name, var_list, var_type, old_id)
+                return True
             self.log.info(
                 f"Jobs i.e. {var_type} '{name}' CI/CD variables are disabled")
             return None
@@ -109,7 +111,7 @@ class VariablesClient(DbOrHttpMixin, BaseGitLabClient):
 
     def handle_project_pipeline_variables(self, p_name, sps, dps_id, new_id, old_id):
         self.log.info(
-            f"Migrating project '{p_name}' pipeline schedule ({sps['description']}) variables")
+            f"Migrating project '{p_name}' pipeline schedule '{sps['description']}' variables")
 
         pipeline_schedule_vars = self.get_data(
             self.projects_api.get_single_project_pipeline_schedule,
@@ -120,25 +122,26 @@ class VariablesClient(DbOrHttpMixin, BaseGitLabClient):
             airgap_import=self.config.airgap_import
         )
 
-        if isinstance(pipeline_schedule_vars, Response):
-            for psv in pipeline_schedule_vars.json().get('variables', []):
-                self.send_data(self.create_project_pipeline_schedule_variable,
-                            (new_id, sps['id'], dps_id, self.dest_host,
-                                self.dest_token, psv),
-                            f"pipeline_schedule_variables",
-                            old_id,
-                            {'schedule_id': sps['id'], **psv},
-                            airgap=self.config.airgap, airgap_export=self.config.airgap_export)
-        else:
-            self.log.error(
-                f"Failed to retrieve project '{p_name}' pipeline schedule ({sps['description']}) variables")
+        error, pipeline_schedule_vars = is_error_message_present(pipeline_schedule_vars)
+        if error:
+            self.log.error(f"Failed to fetch project '{p_name}' pipeline schedule '{sps['description']}' variables: {pipeline_schedule_vars}")
+            return False
+
+        for psv in pipeline_schedule_vars.get('variables', []):
+            self.send_data(self.create_project_pipeline_schedule_variable,
+                (new_id, sps['id'], dps_id, self.dest_host,
+                    self.dest_token, psv),
+                "pipeline_schedule_variables",
+                old_id,
+                {'schedule_id': sps['id'], **psv},
+                airgap=self.config.airgap, airgap_export=self.config.airgap_export)
 
     def create_project_pipeline_schedule_variable(self, pid, spsid, dpsid, host, token, variable, data):
         if variable.get('schedule_id', -1) == spsid or not variable.get('schedule_id'):
             resp = self.projects_api.create_new_project_pipeline_schedule_variable(
                 pid, dpsid, host, token, data)
             if resp.status_code != 201:
-                self.log.error(f"Failed to create project {pid} scheduled pipeline {spsid} variable:\n{resp} - {resp.text}")
+                self.log.error(f"Failed to create project {pid} pipeline schedule {spsid} variable '{variable}':\n{resp} - {resp.text}")
 
     def migrate_variables(self, new_id, name, var_list, var_type, src_id):
         try:

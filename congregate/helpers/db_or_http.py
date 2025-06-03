@@ -10,6 +10,16 @@ class DbOrHttpMixin():
     """
     default_collection = "project_features"
 
+    def get_data(self, req_func, params, key, src_id, airgap=False, airgap_import=False, mongo_coll=default_collection):
+        if airgap and airgap_import:
+            mongo = CongregateMongoConnector()
+            record = mongo.safe_find_one(mongo_coll, {
+                'id': src_id
+            })
+            mongo.close_connection()
+            return record.get(key)
+        return req_func(*params)
+
     def send_data(self, req_func, params, key, src_id, data, airgap=False, airgap_export=False, mongo_coll=default_collection):
         if airgap and airgap_export:
             resp = Response()
@@ -27,13 +37,3 @@ class DbOrHttpMixin():
                 resp.text = e
             return resp
         return req_func(*params, data)
-
-    def get_data(self, req_func, params, key, src_id, airgap=False, airgap_import=False, mongo_coll=default_collection):
-        if airgap and airgap_import:
-            mongo = CongregateMongoConnector()
-            record = mongo.safe_find_one(mongo_coll, {
-                'id': src_id
-            })
-            mongo.close_connection()
-            return record.get(key)
-        return req_func(*params)
