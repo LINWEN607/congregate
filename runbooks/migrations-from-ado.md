@@ -62,6 +62,8 @@ src_access_token = <obfuscated token in with prepended colon>
 
 Instructions for user migration collapsed by default.
 
+If you are migrating from Azure DevOps Server or Team Foundation Server use [this application](../dev/bin/ado/tfs-client/) to get list of users from your instance.
+
 #### Prepare users
 
 * [ ] Review migration schedule (see customer migration schedule)
