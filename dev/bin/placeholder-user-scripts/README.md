@@ -82,9 +82,9 @@ python gitlab_user_mapping.py email_list_from_step_1.txt placeholder_users_from_
 
 ### Command Line Options:
 
-Options:
-    --log-level LEVEL          Set logging level: DEBUG, INFO, WARNING, ERROR, CRITICAL (default: INFO)
-    --help                     Show this help message and exit
+| Option | Description |
+|    `--log-level LEVEL` |         Set logging level: **DEBUG**, **INFO**, **WARNING**, **ERROR**, **CRITICAL** (default: **INFO**) |
+|    `--help`            |        Show this help message and exit |
 
 ### Example:
 
@@ -121,14 +121,14 @@ By default, the script runs in dry-run mode. Use the `--commit` flag to apply th
 This script will:
 
 1. Read the updated placeholder users CSV generated in [Step 3](#step-3-create-user-mappings)
-2. Make [API](https://docs.gitlab.com/api/group_placeholder_reassignments/#reassign-placeholders) calls to the destination GitLab instance that will reassign placeholder users to actual GitLab users
+2. Make [API](https://docs.gitlab.com/api/group_placeholder_reassignments/#reassign-placeholders) call to the destination GitLab instance that will reassign placeholder users to actual GitLab users
 
 ## Step 5: Cancel Reassignments (Optional)
 
 If needed, you can cancel any user reassignments that haven't been accepted:
 
 ```bash
-python cancel_reassignments.py placeholder_users-generated.csv
+python cancel_reassignment.py placeholder_users-generated.csv
 ```
 
 This will process the CSV file and call a GraphQL mutation to cancel the pending reassignments.
@@ -152,7 +152,7 @@ Throughout this process, several files will be generated:
 
 ## Notes
 
-- The scripts use GitLab's GraphQL API for efficient querying
+- The scripts use GitLab's [Group placeholder reassignments API](https://docs.gitlab.com/api/group_placeholder_reassignments/) and GraphQL [`Mutation.importSourceUserCancelReassignment`](https://docs.gitlab.com/api/graphql/reference/#mutationimportsourceusercancelreassignment)
 - Matching is done by email address (case-insensitive)
-- Admin-level API tokens are required to access user information
-- For placeholder updating, source_username is used as the matching key
+- Admin-level `api` scoped tokens are required to access user information
+- For placeholder updating, `source_username` is used as the matching key
