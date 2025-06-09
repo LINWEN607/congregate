@@ -3,6 +3,8 @@ import unittest
 from unittest import mock
 from pytest import mark, fixture
 import responses
+import respx
+from httpx import MockTransport, Response, Client
 from gitlab_ps_utils.exceptions import ConfigurationException
 from gitlab_ps_utils.string_utils import obfuscate
 from gitlab_ps_utils.api import GitLabApi
@@ -16,7 +18,6 @@ from congregate.tests.mockapi.bitbucket.users import MockUsersApi as BBSUsers
 from congregate.tests.mockapi.ado.users import MockUsersApi as ADOUsers
 from congregate.tests.mockapi.gitlab.token import invalid_token
 from congregate.tests.mockapi.gitlab.error import other_error
-
 
 @mark.unit_test
 class ConfigurationValidationTests(unittest.TestCase):
@@ -42,36 +43,34 @@ class ConfigurationValidationTests(unittest.TestCase):
         ConfigurationValidator().dstn_parent_id_validated_in_session = False
         ConfigurationValidator().import_user_id_validated_in_session = False
 
-    @responses.activate
-    @mock.patch.object(GitLabApi, "generate_v4_request_url")
+    @respx.mock
+    @mock.patch("gitlab_ps_utils.api.generate_v4_request_url")
     def test_fail_parent_id_validation(self, url):
         self.config.dstn_parent_id_validated_in_session = False
         url_value = "https://gitlab.example.com/api/v4/groups/1234"
         url.return_value = url_value
         self.config.as_obj().set("DESTINATION", "dstn_parent_group_id", "1234")
-        # pylint: disable=no-member
-        responses.add(responses.GET, url_value,
-                      json=self.groups.get_group_404(), status=404, content_type='text/json', match_querystring=True)
-        # pylint: enable=no-member
+        fail_response = Response(404, json=self.groups.get_group_404())
+        # Patch in the mock request
+        respx.get(url_value).mock(return_value=fail_response)
+            
         self.assertRaises(ConfigurationException,
-                          self.config.validate_dstn_parent_group_id, 1234)
+                        self.config.validate_dstn_parent_group_id, 1234)
 
-    @responses.activate
-    # pylint: enable=no-member
+    @respx.mock
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.validate_dstn_token')
-    @mock.patch.object(GitLabApi, "generate_v4_request_url")
+    @mock.patch("gitlab_ps_utils.api.generate_v4_request_url")
     def test_succeed_parent_id_validation(self, url, valid_token):
         self.config.dstn_parent_id_validated_in_session = False
-        print(self.config.dstn_parent_id_validated_in_session)
         url_value = "https://gitlab.example.com/api/v4/groups/4"
         url.return_value = url_value
         valid_token.return_value = True
         self.config.as_obj().set("DESTINATION", "dstn_parent_group_id", "1234")
         self.config.as_obj().set("DESTINATION", "dstn_parent_group_path", "twitter")
-        # pylint: disable=no-member
-        responses.add(responses.GET, url_value,
-                      json=self.groups.get_subgroup(), status=200, content_type='text/json', match_querystring=True)
-        # pylint: enable=no-member
+        # Define the mock request
+        response = Response(200, json=self.groups.get_subgroup())
+        # Patch in the mock request
+        respx.get(url_value).mock(return_value=response)
         self.assertTrue(self.config.dstn_parent_id, 1234)
 
     @responses.activate
@@ -866,3 +865,10 @@ class ConfigurationValidationTests(unittest.TestCase):
         app_settings.side_effect = [src_setting_resp]
 
         self.assertTrue(self.config.direct_transfer)
+
+
+def mock_api(*side_effect):
+    mock_handler = mock.Mock()
+    mock_handler.side_effect = side_effect
+    transport = MockTransport(mock_handler)
+    return mock_handler, transport

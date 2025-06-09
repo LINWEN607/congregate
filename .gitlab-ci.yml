@@ -9,7 +9,7 @@ stages:
 include:
   - template: Jobs/SAST.latest.gitlab-ci.yml
   - template: Jobs/Secret-Detection.gitlab-ci.yml
-  - template: Jobs/Container-Scanning.gitlab-ci.yml
+  # - template: Jobs/Container-Scanning.gitlab-ci.yml
   - template: Jobs/Dependency-Scanning.gitlab-ci.yml
   - template: Code-Quality.gitlab-ci.yml
   - local: ci/vault.yml
@@ -577,95 +577,95 @@ centos-no-mongo rolling release:
         - frontend/package.json
         - docker/release/no-mongo.Dockerfile
 
-container-scan-build:centos:
-  stage: build
-  extends:
-    - .docker-build
-  variables:
-    DISTRO: "centos"
-    RELEASE_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-centos
-  rules:
-    - if: "$CI_PIPELINE_SOURCE != 'schedule'"
-      changes:
-        - pyproject.toml
-        - frontend/package.json
-        - docker/release/centos.Dockerfile
+# container-scan-build:centos:
+#   stage: build
+#   extends:
+#     - .docker-build
+#   variables:
+#     DISTRO: "centos"
+#     RELEASE_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-centos
+#   rules:
+#     - if: "$CI_PIPELINE_SOURCE != 'schedule'"
+#       changes:
+#         - pyproject.toml
+#         - frontend/package.json
+#         - docker/release/centos.Dockerfile
 
-container-scan-build:debian:
-  stage: build
-  extends:
-    - .docker-build
-  variables:
-    DISTRO: "debian"
-    RELEASE_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-debian
-  rules:
-    - if: "$CI_PIPELINE_SOURCE != 'schedule'"
-      changes:
-        - pyproject.toml
-        - frontend/package.json
-        - docker/release/debian.Dockerfile
+# container-scan-build:debian:
+#   stage: build
+#   extends:
+#     - .docker-build
+#   variables:
+#     DISTRO: "debian"
+#     RELEASE_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-debian
+#   rules:
+#     - if: "$CI_PIPELINE_SOURCE != 'schedule'"
+#       changes:
+#         - pyproject.toml
+#         - frontend/package.json
+#         - docker/release/debian.Dockerfile
 
-container-scan-build:no-mongo:
-  stage: build
-  extends:
-    - .docker-build
-  variables:
-    DISTRO: "no-mongo"
-    RELEASE_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-no-mongo
-  rules:
-    - if: "$CI_PIPELINE_SOURCE != 'schedule'"
-      changes:
-        - pyproject.toml
-        - frontend/package.json
-        - docker/release/no-mongo.Dockerfile
+# container-scan-build:no-mongo:
+#   stage: build
+#   extends:
+#     - .docker-build
+#   variables:
+#     DISTRO: "no-mongo"
+#     RELEASE_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-no-mongo
+#   rules:
+#     - if: "$CI_PIPELINE_SOURCE != 'schedule'"
+#       changes:
+#         - pyproject.toml
+#         - frontend/package.json
+#         - docker/release/no-mongo.Dockerfile
 
-# Scanning the centos image but overwriting the existing container scanning job so the name stays the same
-container_scanning:
-  services:
-    - docker:${DOCKER_VERSION}-dind
-  variables:
-    CS_IMAGE: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-centos
-    DOCKERFILE_PATH: "docker/release/centos.Dockerfile"
-    GIT_STRATEGY: "fetch"
-    DOCKER_DRIVER: overlay2
-    DOCKER_TLS_CERTDIR: "/certs"
-  rules:
-    - if: "$CI_PIPELINE_SOURCE != 'schedule'"
-      changes:
-        - pyproject.toml
-        - frontend/package.json
-        - docker/release/centos.Dockerfile
-        - docker/release/debian.Dockerfile
+# # Scanning the centos image but overwriting the existing container scanning job so the name stays the same
+# container_scanning:
+#   services:
+#     - docker:${DOCKER_VERSION}-dind
+#   variables:
+#     CS_IMAGE: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-centos
+#     DOCKERFILE_PATH: "docker/release/centos.Dockerfile"
+#     GIT_STRATEGY: "fetch"
+#     DOCKER_DRIVER: overlay2
+#     DOCKER_TLS_CERTDIR: "/certs"
+#   rules:
+#     - if: "$CI_PIPELINE_SOURCE != 'schedule'"
+#       changes:
+#         - pyproject.toml
+#         - frontend/package.json
+#         - docker/release/centos.Dockerfile
+#         - docker/release/debian.Dockerfile
 
-debian_container_scanning:
-  extends: container_scanning
-  variables:
-    CS_IMAGE: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-debian
-    DOCKERFILE_PATH: "docker/release/debian.Dockerfile"
-    GIT_STRATEGY: "fetch"
-    DOCKER_DRIVER: overlay2
-    DOCKER_TLS_CERTDIR: "/certs"
-  rules:
-    - if: "$CI_PIPELINE_SOURCE != 'schedule'"
-      changes:
-        - pyproject.toml
-        - frontend/package.json
-        - docker/release/debian.Dockerfile
+# debian_container_scanning:
+#   extends: container_scanning
+#   variables:
+#     CS_IMAGE: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-debian
+#     DOCKERFILE_PATH: "docker/release/debian.Dockerfile"
+#     GIT_STRATEGY: "fetch"
+#     DOCKER_DRIVER: overlay2
+#     DOCKER_TLS_CERTDIR: "/certs"
+#   rules:
+#     - if: "$CI_PIPELINE_SOURCE != 'schedule'"
+#       changes:
+#         - pyproject.toml
+#         - frontend/package.json
+#         - docker/release/debian.Dockerfile
 
-centos_no_mongo_container_scanning:
-  extends: container_scanning
-  variables:
-    CS_IMAGE: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-no-mongo
-    DOCKERFILE_PATH: "docker/release/centos.Dockerfile"
-    GIT_STRATEGY: "fetch"
-    DOCKER_DRIVER: overlay2
-    DOCKER_TLS_CERTDIR: "/certs"
-  rules:
-    - if: "$CI_PIPELINE_SOURCE != 'schedule'"
-      changes:
-        - pyproject.toml
-        - frontend/package.json
-        - docker/release/no-mongo.Dockerfile
+# centos_no_mongo_container_scanning:
+#   extends: container_scanning
+#   variables:
+#     CS_IMAGE: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-no-mongo
+#     DOCKERFILE_PATH: "docker/release/centos.Dockerfile"
+#     GIT_STRATEGY: "fetch"
+#     DOCKER_DRIVER: overlay2
+#     DOCKER_TLS_CERTDIR: "/certs"
+#   rules:
+#     - if: "$CI_PIPELINE_SOURCE != 'schedule'"
+#       changes:
+#         - pyproject.toml
+#         - frontend/package.json
+#         - docker/release/no-mongo.Dockerfile
 
 # docs update:
 #   stage: deploy

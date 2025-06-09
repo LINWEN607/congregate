@@ -348,19 +348,26 @@ class ImportExportClient(BaseGitLabClient):
 
                 # Handle large files
                 with open(f"{download_dir}/{filename}", "rb") as f:
-                    m = MultipartEncoder(fields={
-                        "file": (filename, f),
+                    # m = MultipartEncoder(fields={
+                    #     "file": (filename, f),
+                    #     "path": path,
+                    #     "namespace": str(namespace),
+                    #     "name": name
+                    # })
+                    file = {
+                        "file": (filename, f)
+                    }
+                    data = {
                         "path": path,
                         "namespace": str(namespace),
                         "name": name
-                    })
-                    headers = {
-                        "Private-Token": self.dest_token,
-                        "Content-Type": m.content_type
                     }
-                    message = f"Importing project '{name}' with the following payload '{m}' and members '{members}'"
+                    headers = {
+                        "Private-Token": self.dest_token
+                    }
+                    message = f"Importing project '{name}' with the following payload '{data}' and members '{members}'"
                     if import_resp := self.projects_api.import_project(
-                        self.dest_host, self.dest_token, data=m, headers=headers, message=message):
+                        self.dest_host, self.dest_token, data=data, files=file, headers=headers, message=message):
                         resp = import_resp
             except AttributeError as ae:
                 self.log.error(f"Large file upload failed for '{filename}'. Using standard file upload:\n{ae}")
