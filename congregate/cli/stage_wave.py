@@ -94,7 +94,7 @@ class WaveStageCLI(BaseStageClass):
         # stage
         wave_data = wsh.read_file_as_json(
             df_filter=(
-                column_mapping["Wave name"],
+                "Wave Name",
                 wave_to_stage
             )
         )
@@ -107,23 +107,20 @@ class WaveStageCLI(BaseStageClass):
         self.check_spreadsheet_data()
         # Iterating over a spreadsheet row
         for row in wave_data:
-            repo_url = row.get(column_mapping["Source Url"], "").lower()
+            repo_url = row.get("Source http_url_to_repo", "").lower()
             if project := (self.project_urls.get(repo_url) or (self.project_urls.get(
                     repo_url + '.git')) or self.project_paths.get(self.sanitize_project_path(repo_url, host=scm_source))):
                 obj = self.get_project_metadata(project)
-                if parent_path := column_mapping.get("Parent Path"):
-                    obj["target_namespace"] = (
-                        row.get(parent_path, "") or "").strip("/")
-                    obj["override_dstn_ns"] = bool(row.get("Override"))
-                    if row.get("SWC AA ID"):
-                        obj['swc_manager_name'] = row.get('SWC Manager Name')
-                        obj['swc_manager_email'] = row.get('SWC Manager Email')
-                        obj['swc_id'] = row.get('SWC AA ID')
-                    else:
-                        self.log.info(
-                            f"No 'SWC AA ID' (SWC_ID) provided for {obj['target_namespace']}")
+                obj["target_namespace"] = (
+                    row.get("Target Namespace", "") or "").strip("/")
+                obj["override_dstn_ns"] = bool(row.get("Override"))
+                if row.get("SWC AA ID"):
+                    obj['swc_manager_name'] = row.get('SWC Manager Name')
+                    obj['swc_manager_email'] = row.get('SWC Manager Email')
+                    obj['swc_id'] = row.get('SWC AA ID')
                 else:
-                    self.parent_path_fail(parent_path)
+                    self.log.info(
+                        f"No 'SWC AA ID' (SWC_ID) provided for {obj['target_namespace']}")
                 self.append_project_data(
                     obj, wave_data, row, dry_run=dry_run)
             elif group := self.find_group(repo_url):
@@ -144,38 +141,26 @@ class WaveStageCLI(BaseStageClass):
         Check the spreadsheet against the values in the config file,
         return true if all good, warn if not.
         '''
-        if not (mapping := self.config.wave_spreadsheet_column_mapping):
+        if not (mapping := self.config.wave_spreadsheet_column_to_project_property_mapping):
             self.log.warning(
-                "No 'wave_spreadsheet_column_mapping' field in congregate.conf")
+                "No 'wave_spreadsheet_column_to_project_property_mapping' field in congregate.conf")
         if not (columns := self.config.wave_spreadsheet_columns):
             self.log.warning(
                 "No 'wave_spreadsheet_columns' field in congregate.conf")
-        if not self.check_spreadsheet_lengths(mapping, columns):
-            self.log.warning(
-                "The length of wave_spreadsheet_columns didn't match "
-                "wave_spreadsheet_column_mapping in congregate.conf"
-            )
         if not self.check_spreadsheet_kv(mapping, columns):
             self.log.warning(
-                "Mismatch between keys in wave_spreadsheet_columns and wave_spreadsheet_column_mapping"
+                "Mismatch between keys in wave_spreadsheet_columns and wave_spreadsheet_column_to_project_property_mapping"
             )
 
     def check_spreadsheet_kv(self, mapping, columns):
         '''
-        make sure each item in columns list exists in mapping dictionary.
+        make sure each item in mapping exists in columns.
         '''
         i = 0
         for item in mapping:
             if mapping[item] in columns:
                 i += 1
         return i == len(mapping)
-
-    def check_spreadsheet_lengths(self, mapping, columns):
-        '''
-        Compare the lengths of columns and mappings, return True if == False if not
-        '''
-
-        return len(mapping) == len(columns)
 
     def append_project_data(self, project, projects_to_stage,
                             wave_row, p_range=0, dry_run=True):
@@ -276,13 +261,10 @@ class WaveStageCLI(BaseStageClass):
         return None
 
     def handle_parent_group(self, wave_row, group):
-        if parent_path := self.config.wave_spreadsheet_column_mapping.get(
-                "Parent Path"):
-            group["full_path"] = self.append_parent_group_full_path(
-                group["full_path"], wave_row, parent_path)
-            group["parent_id"] = self.get_parent_id(wave_row, parent_path)
-        else:
-            self.parent_path_fail(parent_path)
+        parent_path = "Target Namespace"
+        group["full_path"] = self.append_parent_group_full_path(
+            group["full_path"], wave_row, parent_path)
+        group["parent_id"] = self.get_parent_id(wave_row, parent_path)
 
     def sanitize_project_path(self, http_url_to_repo, host=""):
         host = host if host else self.config.source_host

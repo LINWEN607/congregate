@@ -23,9 +23,16 @@ class StageWaveCSVGeneratorTests(unittest.TestCase):
         self.wcli = WaveStageCSVGeneratorCLI()
         spreadsheet_path.return_value = "test.xls"
         header_info = {
-            "headers": ["Wave name", "Wave date", "Source Url", "Parent Path"],
+            "headers": [
+                "Wave Name",
+                "Wave Date",
+                "Source http_url_to_repo",
+                "Source Namespace",
+                "Target Namespace",
+                "Override"
+            ],
             "header_map": {
-                "Source Url": "some_prop_doesnt_exist"
+                "Source http_url_to_repo": "some_prop_doesnt_exist"
             }
         }
 
@@ -37,8 +44,8 @@ class StageWaveCSVGeneratorTests(unittest.TestCase):
             )
 
         self.assertEqual(cm.output, [
-            "INFO:congregate.helpers.base_class:Generating wave file with header information: {'headers': ['Wave name', 'Wave date', 'Source Url', 'Parent Path'], 'header_map': {'Source Url': 'some_prop_doesnt_exist'}}",
-            "ERROR:congregate.helpers.base_class:Property some_prop_doesnt_exist does not exist on projects. Header map is {'Source Url': 'some_prop_doesnt_exist'}"
+            "INFO:congregate.helpers.base_class:Generating wave file with header information: {'headers': ['Wave Name', 'Wave Date', 'Source http_url_to_repo', 'Source Namespace', 'Target Namespace', 'Override'], 'header_map': {'Source http_url_to_repo': 'some_prop_doesnt_exist'}}",
+            "ERROR:congregate.helpers.base_class:Property some_prop_doesnt_exist does not exist on projects. Header map is {'Source http_url_to_repo': 'some_prop_doesnt_exist'}"
         ]
         )
 
