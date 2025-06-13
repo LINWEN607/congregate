@@ -21,22 +21,10 @@ class PullRequestsApi():
         Core REST API: https://learn.microsoft.com/en-us/rest/api/azure/devops/git/pull-requests/get-pull-requests?view=azure-devops-rest-7.1&tabs=HTTP
         """
         params = {
-            "status": "all"
+            "status": "all",
+            "$top": 100
         }
         return self.api.list_all(f"{project_id}/_apis/git/repositories/{repository_id}/pullrequests", params=params)
-
-    def get_all_pull_requests_in_tfs(self, project_id, repository_id):
-        """
-        Retrieve all pull requests.
-
-        Core REST API: https://learn.microsoft.com/en-us/rest/api/azure/devops/git/pull-requests/get-pull-requests?view=azure-devops-rest-7.1&tabs=HTTP
-        """
-        params = {
-            "status": "all",
-            "$top": 50
-        }
-        return self.api.list_all_in_tfs(f"{project_id}/_apis/git/repositories/{repository_id}/pullrequests", params=params)
-
 
     def get_all_pull_request_threads(self, project_id, repository_id, pull_request_id):
         """
