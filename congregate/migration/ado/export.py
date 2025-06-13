@@ -71,19 +71,9 @@ class AdoExportBuilder(ExportBuilder):
             issues=issues
         )
 
-
-    def get_all_pull_requests_by_host(self, project_id, repository_id):
-        """
-        Calls the appropriate pull requests API method based on the host_source.
-        """
-        if "dev.azure.com" in self.config.source_host:
-            return self.pull_requests_api.get_all_pull_requests(project_id=project_id, repository_id=repository_id)
-        else:
-            return self.pull_requests_api.get_all_pull_requests_in_tfs(project_id=project_id, repository_id=repository_id)
-
     def build_merge_requests(self):
         merge_requests = []
-        for pr in self.get_all_pull_requests_by_host(self.project_id, self.repository_id):
+        for pr in self.pull_requests_api.get_all_pull_requests(self.project_id, self.repository_id):
             # Convert Azure DevOps PR to GitLab MR format
             pr_id = pr['pullRequestId']
             merge_request_commits = self.build_mr_diff_commits(pr_id)
