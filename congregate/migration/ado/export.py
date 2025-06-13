@@ -1,5 +1,4 @@
 import re
-import pprint
 from copy import deepcopy as copy
 from pathlib import Path
 from gitlab_ps_utils.dict_utils import dig
@@ -432,7 +431,6 @@ class AdoExportBuilder(ExportBuilder):
         issues = []
         for wi in self.work_items_client.get_all_work_items(self.project):
             workitem = self.work_items_api.get_work_item(self.project_id, wi.get('id')).json()
-            pprint.pprint(workitem)
             author = workitem['fields'].get('System.CreatedBy', {})
             assignee = workitem['fields'].get('System.AssignedTo', {})
             issues.append(Issues(
