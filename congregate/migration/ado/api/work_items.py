@@ -17,3 +17,14 @@ class WorkItemsApi():
         }
         
         return self.api.generate_get_request(f"{project_id}/_apis/wit/workItems/{work_item_id}", params=params)
+    
+    def get_work_item_comments(self, project_id, work_item_id):
+        """
+        Retrieve all comments for a work item.
+
+        Core REST API: https://learn.microsoft.com/en-us/rest/api/azure/devops/wit/work-item-comments/list?view=azure-devops-rest-7.1&tabs=HTTP
+        """
+        params = {
+            "$expand": "all"
+        }
+        return self.api.list_all(f"{project_id}/_apis/wit/workItems/{work_item_id}/comments")

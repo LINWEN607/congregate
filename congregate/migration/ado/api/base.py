@@ -195,6 +195,8 @@ class AzureDevOpsApiWrapper(BaseClass):
                         yield item
                     for item in data.get("members", []):
                         yield item
+                    for item in data.get("comments", []):
+                        yield item
 
                 if not any(key.lower() == "x-ms-continuationtoken" for key in response.headers):
                     break

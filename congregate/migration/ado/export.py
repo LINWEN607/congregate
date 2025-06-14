@@ -435,10 +435,26 @@ class AdoExportBuilder(ExportBuilder):
                 state=self.issue_state(workitem['fields'].get('System.State', 'No State')),
                 iid=workitem['id'],
                 issue_assignees=[{"user_id": self.get_new_member_id(assignee)}],
-                # notes=self.build_issue_notes(wi['id']),
+                notes=self.build_issue_notes(wi.get('id')),
                 label_links=self.label_links(workitem),
             ))
         return issues
+
+    def build_issue_notes(self, work_item_id):
+        notes = []
+        for comment in self.work_items_api.get_work_item_comments(self.project_id, work_item_id):
+            if comment:
+                notes.append(Note(
+                    note=comment.get("text") or "",
+                    author_id=self.get_new_member_id(comment.get("createdBy")),
+                    project_id=1,
+                    created_at=comment.get("createdDate"),
+                    updated_at=comment.get("modifiedDate"),
+                    noteable_type="Issue",
+                    type="DiscussionNote",
+                    author=Author(name=comment.get("createdBy", {}).get("displayName", "Unknown"))
+                ))
+        return notes
 
     def issue_state(self, state):
         if state == 'New':
