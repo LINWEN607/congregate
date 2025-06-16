@@ -27,4 +27,4 @@ class WorkItemsApi():
         params = {
             "$expand": "all"
         }
-        return self.api.list_all(f"{project_id}/_apis/wit/workItems/{work_item_id}/comments")
+        return self.api.list_all(f"{project_id}/_apis/wit/workItems/{work_item_id}/comments", params=params)
