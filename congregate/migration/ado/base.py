@@ -41,7 +41,7 @@ class AzureDevOpsWrapper(BaseClass):
         transliterated_string = unidecode(input_string)
         return transliterated_string
 
-    def format_project(self, project, repository, count):
+    def format_project(self, project, repository, count, mongo=None):
         path_with_namespace = self.slugify(project["name"])
         if count > 1:
             path_with_namespace = os.path.join(self.slugify(project["name"]), self.slugify(repository["name"]))
