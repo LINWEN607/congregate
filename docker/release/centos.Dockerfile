@@ -31,7 +31,7 @@ RUN chown -R ps-user:wheel /data && \
 
 # Installing yum-installable libraries
 RUN yum update -y && \
-    yum install -y less vim jq curl git mongodb-org-5.0.31 mongodb-org-server-5.0.31 mongodb-org-shell-5.0.31 mongodb-org-mongos-5.0.31 mongodb-org-tools-5.0.31 \
+    yum install -y procps less vim jq curl git mongodb-org-5.0.31 mongodb-org-server-5.0.31 mongodb-org-shell-5.0.31 mongodb-org-mongos-5.0.31 mongodb-org-tools-5.0.31 \
     gcc openssl-devel bzip2-devel libffi-devel zlib-devel make epel-release xz-devel util-linux-user sqlite-devel && \
     yum install -y screen
 

@@ -7,30 +7,33 @@ class WaveStageCSVGeneratorCLI(BaseStageClass):
         super().__init__()
         self.project_json = self.open_projects_file()
 
+    def __get_nested_value(self, dictionary, path_string, default=None):
+        keys = path_string.split('.')
+        current = dictionary
+        
+        for key in keys:
+            if isinstance(current, dict) and key in current:
+                current = current[key]
+            else:
+                return default
+        
+        return current
+    
     def generate(self, 
-                 destination_file="data/sw.csv",
+                 destination_file="data/generated_wave_file.csv",
                  header_info=None,
                  dry_run=True):
         
-        if not header_info or not (isinstance(header_info, dict)):
-            header_info = {}
-        
-        # TODO: Even if they define headers, make sure these exist. These should *always* be there
-        if not header_info.get("headers") or not (isinstance(header_info.get("headers"), list)):
-            header_info["headers"] = ["Wave Name", "Wave Date", "Source Url", "Source Parent Path", "Destination Parent Path"]
-
-        if not header_info.get("header_map"):
-            # Set some defaults based on the default wave info
-            header_info["header_map"] = {
-                "Source Url": "http_url_to_repo",
-                "Source Parent Path": "path_with_namespace",
-                "Destination Parent Path": "path_with_namespace"
-            }
-
         self.log.info(f"Generating wave file with header information: {header_info}")
 
-        headers = header_info.get("headers")
-        header_map = header_info.get("header_map")
+        if header_info and header_info.get("headers"):
+            headers = header_info.get("headers")
+        else:
+            headers = self.config.wave_spreadsheet_columns
+        if header_info and header_info.get("header_map"):
+            header_map = header_info.get("header_map")
+        else:
+            header_map = self.config.wave_spreadsheet_column_to_project_property_mapping
 
         # Pre-check that headers and map actually make sense against project structure
         # rather than waiting to find an error deep in
@@ -42,7 +45,7 @@ class WaveStageCSVGeneratorCLI(BaseStageClass):
             project_property_name = header_map.get(header)
             if project_property_name and str(project_property_name).strip() != "":
                 # Now, see if we have the actual property in the project entity
-                if not project.get(project_property_name):
+                if not self.__get_nested_value(project, project_property_name):
                     self.log.error(
                         f"Property {project_property_name} does not exist on projects. Header map is {header_map}")
                     return
@@ -72,7 +75,7 @@ class WaveStageCSVGeneratorCLI(BaseStageClass):
                     project_property_name = header_map.get(header)
                     if project_property_name and str(project_property_name).strip() != "":                                                                                    
                         # Now, see if we have the actual property in the project entity
-                        project_property_value = str(project.get(project_property_name)).strip()                        
+                        project_property_value = str(self.__get_nested_value(project, project_property_name)).strip()                        
                         row.append(project_property_value)
                     else:
                         # No map for that header. Dump empty string

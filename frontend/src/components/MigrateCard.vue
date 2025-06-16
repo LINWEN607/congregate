@@ -151,42 +151,38 @@ export default {
       for (const [key, value] of form) {
           params[key] = Boolean(value)
       }
-      if (this.directTransfer === true) {
-        let migrateEndpoint = `${import.meta.env.VITE_API_ROOT}/api/direct_transfer/migrate`
-        if (params.hasOwnProperty('skip_projects')) {
-          migrateEndpoint += '/groups'
-        } else if (params.hasOwnProperty('skip_groups')) {
-          migrateEndpoint += '/projects'
-        } else {
-          migrateEndpoint += '/groups'
-        }
-        if (params) {
-          migrateEndpoint += '?' + new URLSearchParams(params).toString()
-        }
-        if (params.hasOwnProperty('commit')) {
-          this.dryRun = false
-        } else {
-          this.dryRun = true
-          this.systemStore.updateDirectTransferGeneratedRequest({})
-          this.systemStore.updateDirectTransferModifiedRequest({})
-        }
-        var payload = null
-        if (!Object.keys(this.systemStore.directTransferModifiedRequest).length == 0 && this.dryRun == false) {
-          payload = {"payload": toRaw(this.systemStore.directTransferModifiedRequest)}
-        } else {
-          payload = {}
-        }
-        axios.post(migrateEndpoint, payload).then(response => {
-          if (!params.hasOwnProperty('commit')) {
-            this.pollDryRunStatus(response.data.task_id)
-          } else {
-            this.dryRun = false
-            this.pollInitialRequest(response.data.task_id)
-          }
-        })
+      let migrateEndpoint = `${import.meta.env.VITE_API_ROOT}/api/direct_transfer/migrate`
+      if (params.hasOwnProperty('skip_projects')) {
+        migrateEndpoint += '/groups'
+      } else if (params.hasOwnProperty('skip_groups')) {
+        migrateEndpoint += '/projects'
       } else {
-        // trigger file-based or other SCM import request
+        migrateEndpoint += '/groups'
       }
+      if (params) {
+        migrateEndpoint += '?' + new URLSearchParams(params).toString()
+      }
+      if (params.hasOwnProperty('commit')) {
+        this.dryRun = false
+      } else {
+        this.dryRun = true
+        this.systemStore.updateDirectTransferGeneratedRequest({})
+        this.systemStore.updateDirectTransferModifiedRequest({})
+      }
+      var payload = null
+      if (!Object.keys(this.systemStore.directTransferModifiedRequest).length == 0 && this.dryRun == false) {
+        payload = {"payload": toRaw(this.systemStore.directTransferModifiedRequest)}
+      } else {
+        payload = {}
+      }
+      axios.post(migrateEndpoint, payload).then(response => {
+        if (!params.hasOwnProperty('commit')) {
+          this.pollDryRunStatus(response.data.task_id)
+        } else {
+          this.dryRun = false
+          this.pollInitialRequest(response.data.task_id)
+        }
+      })
     },
     updateStatusTable: function(endpoint) {
       return axios.get(`${import.meta.env.VITE_API_ROOT}/api/direct_transfer/${endpoint}`).then(response => {

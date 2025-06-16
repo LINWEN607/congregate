@@ -50,75 +50,85 @@ Run the script to retrieve placeholder users from the target GitLab group:
 python retrieve-placeholder-users-for-namespace.py
 ```
 
-Before running, modify the `group_full_path` and `customer_name` variables in the script with your target group path.
+Before running, set the required environment variables:
 
-This will generate a CSV file containing details about placeholder users, including:
+```bash
+export DESTINATION_GITLAB_ROOT="https://gitlab.example.com"
+export DESTINATION_ADMIN_ACCESS_TOKEN="somepat-xxxxxxxxxxxxxxxxxxxx"
+export DESTINATION_CUSTOMER_NAME="demo"
+export DESTINATION_TOP_LEVEL_GROUP="import-target"
+```
 
-- Source host
-- Import type
-- Source user identifier
-- Source user name
-- Source username
-- And other fields needed for the reassignment process
+This scripts calls the [API](https://docs.gitlab.com/api/group_placeholder_reassignments/#download-the-csv-file) and will generate a CSV file containing details about placeholder users. Example:
+
+```
+Source host,Import type,Source user identifier,Source user name,Source username,GitLab username,GitLab public email
+http://gitlab.example,gitlab_migration,11,Bob,bob,"",""
+http://gitlab.example,gitlab_migration,9,Alice,alice,"",""
+```
+The data is written to a CSV named with the pattern:
+
+```python
+output_file = f"{customer_name}_{group_full_path}_{timestamp}_placeholder_users.csv"  # Name of the output CSV file
+```
 
 ## Step 3: Create User Mappings
 
-Use the mapping script to match users between source and destination GitLab instances:
+Use the mapping script to match users between source and destination GitLab instances. As input, it requires the list of user emails from [Step 1](#step-1-receive-user-email-list) and placeholder users from [Step 2](#step-2-download-placeholder-users).
 
 ```bash
-python gitlab_user_mapping.py email_list.txt [OPTIONS]
+python gitlab_user_mapping.py email_list_from_step_1.txt placeholder_users_from_step_2.csv [OPTIONS]
 ```
 
 ### Command Line Options:
 
-| Option                       | Description                                                                              |
-| ---------------------------- | ---------------------------------------------------------------------------------------- |
-| `--output FILE`              | Specify a custom output CSV file path (default: gitlab_user_mapping_YYYYMMDD_HHMMSS.csv) |
-| `--update-placeholders FILE` | Path to a placeholder users CSV file to update with mapping information                  |
-| `--validate-mappings`        | Validate mappings by cross-checking destination users for consistency                    |
-| `--only-successful`          | Include only successfully mapped users in the output placeholder file                    |
-| `--record-missing-emails`    | Record emails not found in GitLab instances to separate CSV files                        |
-| `--log-level LEVEL`          | Set logging level: DEBUG, INFO, WARNING, ERROR, CRITICAL (default: INFO)                 |
-| `--help`                     | Show the help message and exit                                                           |
+| Option | Description |
+|    `--log-level LEVEL` |         Set logging level: **DEBUG**, **INFO**, **WARNING**, **ERROR**, **CRITICAL** (default: **INFO**) |
+|    `--help`            |        Show this help message and exit |
 
 ### Example:
 
 ```bash
-python gitlab_user_mapping.py email_list.txt --update-placeholders placeholder_users.csv --validate-mappings --only-successful --record-missing-emails --log-level INFO
+python gitlab_user_mapping.py email_list.txt customer_topgroup_20250401081822_placeholder_users.csv --log-level INFO
 ```
 
 This script will:
 
-1. Process each email in the list
-2. Find matching users in both GitLab instances
-3. Generate a mapping between source and destination users
-4. Update the placeholder users CSV with the correct GitLab user IDs
-5. Validate mappings to ensure consistency
-6. Record any emails that couldn't be found in either GitLab instance
+- Maps users between GitLab instances by email address
+- Update placeholder user IDs for migration processes
+- Validate mappings by cross-checking emails and usernames
+- Record emails not found in GitLab instances
+- Provide detailed logging and progress reporting
+
+See the [gitlab_user_mapping.py](./gitlab_user_mapping.py) script for more details on the process and output.
+
+The script outputs the updated file in the format:
+
+```bash
+    updated_map_YYYYMMDD_HHMMSS.csv
+```
 
 ## Step 4: Update Placeholder Mappings
 
 Upload the user mappings to reassign placeholder users to actual GitLab users:
 
 ```bash
-python update-placeholder-mapping.py --commit placeholder_users-generated.csv
+python update-placeholder-mapping.py [--commit] [input_csv_file]
 ```
 
 By default, the script runs in dry-run mode. Use the `--commit` flag to apply the changes.
 
 This script will:
 
-1. Read the updated placeholder users CSV
-2. Make GraphQL API calls to the destination GitLab instance
-3. Reassign placeholder users to actual GitLab users
-4. Log the results and record any failures
+1. Read the updated placeholder users CSV generated in [Step 3](#step-3-create-user-mappings)
+2. Make [API](https://docs.gitlab.com/api/group_placeholder_reassignments/#reassign-placeholders) call to the destination GitLab instance that will reassign placeholder users to actual GitLab users
 
 ## Step 5: Cancel Reassignments (Optional)
 
 If needed, you can cancel any user reassignments that haven't been accepted:
 
 ```bash
-python cancel_reassignments.py placeholder_users-generated.csv
+python cancel_reassignment.py placeholder_users-generated.csv
 ```
 
 This will process the CSV file and call a GraphQL mutation to cancel the pending reassignments.
@@ -142,7 +152,7 @@ Throughout this process, several files will be generated:
 
 ## Notes
 
-- The scripts use GitLab's GraphQL API for efficient querying
+- The scripts use GitLab's [Group placeholder reassignments API](https://docs.gitlab.com/api/group_placeholder_reassignments/) and GraphQL [`Mutation.importSourceUserCancelReassignment`](https://docs.gitlab.com/api/graphql/reference/#mutationimportsourceusercancelreassignment)
 - Matching is done by email address (case-insensitive)
-- Admin-level API tokens are required to access user information
-- For placeholder updating, source_username is used as the matching key
+- Admin-level `api` scoped tokens are required to access user information
+- For placeholder updating, `source_username` is used as the matching key
