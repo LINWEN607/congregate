@@ -443,7 +443,7 @@ class AdoExportBuilder(ExportBuilder):
     def build_issue_notes(self, work_item_id):
         notes = []
         for comment in self.work_items_api.get_work_item_comments(self.project_id, work_item_id):
-            if comment:
+            if comment and comment.get("text"):
                 notes.append(Note(
                     note=comment.get("text") or "",
                     author_id=self.get_new_member_id(comment.get("createdBy")),
