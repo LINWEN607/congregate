@@ -1,7 +1,9 @@
 import re
 import os
+import urllib.parse
 from unidecode import unidecode 
 from requests.exceptions import RequestException
+
 
 from gitlab_ps_utils.misc_utils import strip_netloc
 from gitlab_ps_utils.dict_utils import dig
@@ -39,7 +41,7 @@ class AzureDevOpsWrapper(BaseClass):
         transliterated_string = unidecode(input_string)
         return transliterated_string
 
-    def format_project(self, project, repository, count, mongo):
+    def format_project(self, project, repository, count, mongo=None):
         path_with_namespace = self.slugify(project["name"])
         if count > 1:
             path_with_namespace = os.path.join(self.slugify(project["name"]), self.slugify(repository["name"]))
@@ -48,6 +50,10 @@ class AzureDevOpsWrapper(BaseClass):
             full_path = path_with_namespace.split("/")[0]
         else: 
             full_path = path_with_namespace
+
+        remote_url = repository.get('remoteUrl', '')
+        if ' ' in remote_url:
+            remote_url = urllib.parse.quote(remote_url, safe=':/@')
             
         return {
             "name": repository["name"],
@@ -57,7 +63,7 @@ class AzureDevOpsWrapper(BaseClass):
             "visibility": project["visibility"],
             "description": project.get("description", ""),
             "members": [] if self.subset else self.add_team_members([], project),
-            "http_url_to_repo": repository.get('remoteUrl', ''),
+            "http_url_to_repo": remote_url,
             "ssh_url_to_repo": repository.get('sshUrl', ''),
             "namespace": {
                 "id": dig(repository, 'project', 'id'),
