@@ -179,6 +179,9 @@ src_access_token = *****
 [EXPORT]
 ### When exporting groups/projects to your local filesystem (default) the following fields are required:
 location = filesystem
+
+### Note: `downloads` will automatically be appended to the path you enter, here.
+### Eg: `/absolute_path` will resolve to `/absolute_path/downloads`
 filesystem_path = /absolute_path
 
 ### It is also possible to configure export to AWS (S3 bucket). This ONLY applies to project exports.
