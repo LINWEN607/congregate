@@ -137,3 +137,162 @@ class TestWaveStageCLI:
         mock_wsh_instance = Mock()
         mock_wsh_instance.read_file_as_json.return_value = []
         mock_wsh.return_value = mock_wsh
+
+    def test_check_spreadsheet_kv_all_items_exist(self, wave_stage_cli):
+        """Test check_spreadsheet_kv when all mapping items exist in columns"""
+        mapping = ['col1', 'col2', 'col3']
+        columns = ['col1', 'col2', 'col3', 'col4']
+        
+        result = wave_stage_cli.check_spreadsheet_kv(mapping, columns)
+        
+        assert result is True
+
+    def test_check_spreadsheet_kv_some_items_missing(self, wave_stage_cli):
+        """Test check_spreadsheet_kv when some mapping items are missing from columns"""
+        mapping = ['col1', 'col2', 'col3']
+        columns = ['col1', 'col3']  # col2 is missing
+        
+        result = wave_stage_cli.check_spreadsheet_kv(mapping, columns)
+        
+        assert result is False
+
+    def test_check_spreadsheet_kv_no_items_exist(self, wave_stage_cli):
+        """Test check_spreadsheet_kv when no mapping items exist in columns"""
+        mapping = ['col1', 'col2', 'col3']
+        columns = ['col4', 'col5', 'col6']
+        
+        result = wave_stage_cli.check_spreadsheet_kv(mapping, columns)
+        
+        assert result is False
+
+    def test_check_spreadsheet_kv_empty_mapping(self, wave_stage_cli):
+        """Test check_spreadsheet_kv with empty mapping"""
+        mapping = []
+        columns = ['col1', 'col2', 'col3']
+        
+        result = wave_stage_cli.check_spreadsheet_kv(mapping, columns)
+        
+        assert result is True  # 0 == len([]) is True
+
+    def test_check_spreadsheet_kv_empty_columns(self, wave_stage_cli):
+        """Test check_spreadsheet_kv with empty columns"""
+        mapping = ['col1', 'col2']
+        columns = []
+        
+        result = wave_stage_cli.check_spreadsheet_kv(mapping, columns)
+        
+        assert result is False  # 0 != len(['col1', 'col2'])
+
+    def test_check_spreadsheet_kv_both_empty(self, wave_stage_cli):
+        """Test check_spreadsheet_kv with both mapping and columns empty"""
+        mapping = []
+        columns = []
+        
+        result = wave_stage_cli.check_spreadsheet_kv(mapping, columns)
+        
+        assert result is True  # 0 == len([]) is True
+
+    def test_check_spreadsheet_data_all_valid(self, wave_stage_cli):
+        """Test check_spreadsheet_data when all configuration is valid"""
+        wave_stage_cli.config.wave_spreadsheet_column_to_project_property_mapping = ['col1', 'col2']
+        wave_stage_cli.config.wave_spreadsheet_columns = ['col1', 'col2', 'col3']
+        
+        wave_stage_cli.check_spreadsheet_data()
+        
+        # Should not log any warnings
+        wave_stage_cli.log.warning.assert_not_called()
+
+    def test_check_spreadsheet_data_missing_mapping(self, wave_stage_cli):
+        """Test check_spreadsheet_data when mapping configuration is missing"""
+        wave_stage_cli.config.wave_spreadsheet_column_to_project_property_mapping = None
+        wave_stage_cli.config.wave_spreadsheet_columns = ['col1', 'col2']
+        
+        wave_stage_cli.check_spreadsheet_data()
+        
+        wave_stage_cli.log.warning.assert_called_with(
+            "No 'wave_spreadsheet_column_to_project_property_mapping' field in congregate.conf"
+        )
+
+    def test_check_spreadsheet_data_empty_mapping(self, wave_stage_cli):
+        """Test check_spreadsheet_data when mapping configuration is empty"""
+        wave_stage_cli.config.wave_spreadsheet_column_to_project_property_mapping = []
+        wave_stage_cli.config.wave_spreadsheet_columns = ['col1', 'col2']
+        
+        wave_stage_cli.check_spreadsheet_data()
+        
+        wave_stage_cli.log.warning.assert_called_with(
+            "No 'wave_spreadsheet_column_to_project_property_mapping' field in congregate.conf"
+        )
+
+    def test_check_spreadsheet_data_missing_columns(self, wave_stage_cli):
+        """Test check_spreadsheet_data when columns configuration is missing"""
+        wave_stage_cli.config.wave_spreadsheet_column_to_project_property_mapping = ['col1', 'col2']
+        wave_stage_cli.config.wave_spreadsheet_columns = None
+        
+        wave_stage_cli.check_spreadsheet_data()
+        
+        wave_stage_cli.log.warning.assert_called_with(
+            "No 'wave_spreadsheet_columns' field in congregate.conf"
+        )
+
+    def test_check_spreadsheet_data_empty_columns(self, wave_stage_cli):
+        """Test check_spreadsheet_data when columns configuration is empty"""
+        wave_stage_cli.config.wave_spreadsheet_column_to_project_property_mapping = ['col1', 'col2']
+        wave_stage_cli.config.wave_spreadsheet_columns = []
+        
+        wave_stage_cli.check_spreadsheet_data()
+        
+        wave_stage_cli.log.warning.assert_called_with(
+            "No 'wave_spreadsheet_columns' field in congregate.conf"
+        )
+
+    def test_check_spreadsheet_data_mismatch_warning(self, wave_stage_cli):
+        """Test check_spreadsheet_data when there's a mismatch between mapping and columns"""
+        wave_stage_cli.config.wave_spreadsheet_column_to_project_property_mapping = ['col1', 'col2', 'col3']
+        wave_stage_cli.config.wave_spreadsheet_columns = ['col1', 'col2']  # col3 missing
+        
+        wave_stage_cli.check_spreadsheet_data()
+        
+        # Should log the mismatch warning
+        expected_calls = [
+            pytest.mock.call("Mismatch between keys in wave_spreadsheet_columns and wave_spreadsheet_column_to_project_property_mapping")
+        ]
+        wave_stage_cli.log.warning.assert_has_calls(expected_calls)
+
+    def test_check_spreadsheet_data_both_missing(self, wave_stage_cli):
+        """Test check_spreadsheet_data when both configurations are missing"""
+        wave_stage_cli.config.wave_spreadsheet_column_to_project_property_mapping = None
+        wave_stage_cli.config.wave_spreadsheet_columns = None
+        
+        wave_stage_cli.check_spreadsheet_data()
+        
+        # Should log both warnings
+        expected_calls = [
+            pytest.mock.call("No 'wave_spreadsheet_column_to_project_property_mapping' field in congregate.conf"),
+            pytest.mock.call("No 'wave_spreadsheet_columns' field in congregate.conf")
+        ]
+        wave_stage_cli.log.warning.assert_has_calls(expected_calls, any_order=True)
+
+    def test_check_spreadsheet_data_case_sensitive_columns(self, wave_stage_cli):
+        """Test check_spreadsheet_data with case-sensitive column matching"""
+        wave_stage_cli.config.wave_spreadsheet_column_to_project_property_mapping = ['Col1', 'col2']
+        wave_stage_cli.config.wave_spreadsheet_columns = ['col1', 'col2']  # Different case for Col1
+        
+        wave_stage_cli.check_spreadsheet_data()
+        
+        # Should log mismatch warning due to case sensitivity
+        wave_stage_cli.log.warning.assert_called_with(
+            "Mismatch between keys in wave_spreadsheet_columns and wave_spreadsheet_column_to_project_property_mapping"
+        )
+
+    def test_check_spreadsheet_data_duplicate_columns(self, wave_stage_cli):
+        """Test check_spreadsheet_data with duplicate columns"""
+        wave_stage_cli.config.wave_spreadsheet_column_to_project_property_mapping = ['col1', 'col1', 'col2']
+        wave_stage_cli.config.wave_spreadsheet_columns = ['col1', 'col2']
+        
+        wave_stage_cli.check_spreadsheet_data()
+        
+        # Should log mismatch warning due to duplicates
+        wave_stage_cli.log.warning.assert_called_with(
+            "Mismatch between keys in wave_spreadsheet_columns and wave_spreadsheet_column_to_project_property_mapping"
+        )
