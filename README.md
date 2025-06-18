@@ -41,4 +41,4 @@ For support questions please [create an issue](https://gitlab.com/gitlab-org/pro
 
 **Support Model:**
 - Community support is provided on a best-effort basis through GitLab issues with asynchronous responses
-- For dedicated support with SLAs and guaranteed response times, please engage our Professional Services team
+- For dedicated support with SLAs and guaranteed response times, please engage our [Professional Services](https://about.gitlab.com/professional-services/) team
