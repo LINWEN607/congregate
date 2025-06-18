@@ -151,7 +151,7 @@ class WaveStageCLI(BaseStageClass):
         '''
         i = 0
         for item in mapping:
-            if mapping[item] in columns:
+            if item in columns:
                 i += 1
         return i == len(mapping)
 
