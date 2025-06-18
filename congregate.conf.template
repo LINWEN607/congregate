@@ -266,7 +266,6 @@ wave_spreadsheet_columns = Wave Name, Wave Date, Source http_url_to_repo, Source
 wave_spreadsheet_column_to_project_property_mapping = {
     "Source http_url_to_repo": "http_url_to_repo",
     "Source Namespace": "namespace.full_path",
-    "Target Namespace": "namespace.full_path",
     "Source Project ID": "id"}
 
 ### Mongo DB configuration

@@ -33,7 +33,7 @@ class WaveStageCLI(BaseStageClass):
 
     def stage_data(self, wave_to_stage, dry_run=True,
                    skip_users=False, scm_source=None):
-        self.stage_wave(wave_to_stage, dry_run, scm_source)
+        self.stage_wave(wave_to_stage, skip_users=False, dry_run=dry_run, scm_source=scm_source)
         if user_projects := get_staged_user_projects(
                 remove_dupes(self.staged_projects)):
             self.log.warning(
@@ -47,7 +47,7 @@ class WaveStageCLI(BaseStageClass):
         if not dry_run:
             self.write_staging_files(skip_users=skip_users)
 
-    def stage_wave(self, wave_to_stage, dry_run=True, scm_source=None):
+    def stage_wave(self, wave_to_stage, skip_users=False, dry_run=True, scm_source=None):
         """
         Gets all IDs of repos from specific wave listed in wave stage spreadsheet
 
@@ -100,41 +100,34 @@ class WaveStageCLI(BaseStageClass):
         )
         if not wave_data:
             self.log.error(
-                f"Wave name is empty in '{wave_spreadsheet_path}' spreadsheet or the spreadsheet is empty.")
+                f"No rows for wave {wave_to_stage} found in '{wave_spreadsheet_path}' spreadsheet.")
             sys.exit(os.EX_CONFIG)
 
         # Some basic sanity checks for reading in spreadsheet data
         self.check_spreadsheet_data()
         # Iterating over a spreadsheet row
+        ids_to_stage = []
         for row in wave_data:
-            repo_url = row.get("Source http_url_to_repo", "").lower()
-            if project := (self.project_urls.get(repo_url) or (self.project_urls.get(
-                    repo_url + '.git')) or self.project_paths.get(self.sanitize_project_path(repo_url, host=scm_source))):
-                obj = self.get_project_metadata(project)
-                obj["target_namespace"] = (
-                    row.get("Target Namespace", "") or "").strip("/")
-                obj["override_dstn_ns"] = bool(row.get("Override"))
-                if row.get("SWC AA ID"):
-                    obj['swc_manager_name'] = row.get('SWC Manager Name')
-                    obj['swc_manager_email'] = row.get('SWC Manager Email')
-                    obj['swc_id'] = row.get('SWC AA ID')
-                else:
-                    self.log.info(
-                        f"No 'SWC AA ID' (SWC_ID) provided for {obj['target_namespace']}")
-                self.append_project_data(
-                    obj, wave_data, row, dry_run=dry_run)
-            elif group := self.find_group(repo_url):
-                group_copy = group.copy()
-                self.handle_parent_group(row, group_copy)
-                self.append_group_data(
-                    group_copy, wave_data, row, dry_run=dry_run)
+            # At this point, we should only have the relevant wave rows
+            # We can collect the Project IDs at this time to use for staging
+            # with ProjectStageCLI
+            if not row.get("Override"):
+                ids_to_stage.append(str((row.get("Source Project ID"))))
             else:
-                self.log.warning(f"Unable to find {repo_url} in listed data")
-                unable_to_find.append(repo_url)
+                # We currently use a additional field in the project entity called target_namespace
+                # that determines where a group or project will land (basically, full path to its parent)
+                # In conjunction with the Override flag, we determine if we should add the target_namespace
+                # and honor it or not
+                # How this conflicts is in some of our downstream computation of full_path, path_with_namespace
+                # and other fields that determine where to look on source and destination for existence
+                # and for moving items. The checks themselves can be inconsistent and layered, and don't all account
+                # for Override scenarios
+                # We need to streamline the way we determine the destination and the source to work consistently in the base case
+                # but use target_namespace if it exists
+                self.log.error(
+                    f"OVERRIDE is flagged True for row {row}. Feature is currently not implemented. Row will not be staged for migration.")
 
-        if unable_to_find:
-            self.log.warning("The following data was not found:\n{}".format(
-                "\n".join(unable_to_find)))
+        self.pcli.stage_data(ids_to_stage, dry_run=dry_run, skip_users=skip_users, scm_source=scm_source)
 
     def check_spreadsheet_data(self):
         '''

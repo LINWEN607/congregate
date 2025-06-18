@@ -265,15 +265,15 @@ def get_dst_path_with_namespace(p, mirror=False, group_path=None):
     """
     return f"{get_user_project_namespace(p) if is_user_project(p) else get_project_dest_namespace(p, mirror, group_path)}/{p.get('path')}"
 
-
 def get_target_namespace(project):
     if target_namespace := project.get("target_namespace"):
-        if (strip_netloc(target_namespace).lower() == project.get(
-                'namespace', '').lower()) or project.get("override_dstn_ns"):
+        stripped = urlparse(target_namespace).path
+        project_namespace = project.get('namespace', '').lower()
+        override_dstn_ns = project.get("override_dstn_ns")
+        if ((stripped == project_namespace) or override_dstn_ns):
             return target_namespace
         return f"{target_namespace}/{project.get('namespace')}"
     return None
-
 
 def get_results(res):
     """
