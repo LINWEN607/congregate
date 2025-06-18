@@ -114,16 +114,18 @@ class WaveStageCLI(BaseStageClass):
             if not row.get("Override"):
                 ids_to_stage.append(str((row.get("Source Project ID"))))
             else:
-                # We currently use a additional field in the project entity called target_namespace
-                # that determines where a group or project will land (basically, full path to its parent)
-                # In conjunction with the Override flag, we determine if we should add the target_namespace
-                # and honor it or not
-                # How this conflicts is in some of our downstream computation of full_path, path_with_namespace
-                # and other fields that determine where to look on source and destination for existence
-                # and for moving items. The checks themselves can be inconsistent and layered, and don't all account
-                # for Override scenarios
-                # We need to streamline the way we determine the destination and the source to work consistently in the base case
-                # but use target_namespace if it exists
+                '''
+                We currently use a additional field in the project entity called target_namespace
+                that determines where a group or project will land (basically, full path to its parent)
+                In conjunction with the Override flag, we determine if we should add the target_namespace
+                and honor it or not
+                How this conflicts is in some of our downstream computation of full_path, path_with_namespace
+                and other fields that determine where to look on source and destination for existence
+                and for moving items. The checks themselves can be inconsistent and layered, and don't all account
+                for Override scenarios
+                We need to streamline the way we determine the destination and the source to work consistently in the base case
+                but use target_namespace if it exists
+                '''
                 self.log.error(
                     f"OVERRIDE is flagged True for row {row}. Feature is currently not implemented. Row will not be staged for migration.")
 
