@@ -20,6 +20,7 @@ from congregate.helpers.utils import is_dot_com, get_congregate_path
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.instance import InstanceApi
 from congregate.migration.meta.constants import TOP_LEVEL_RESERVED_NAMES, SUBGROUP_RESERVED_NAMES, PROJECT_RESERVED_NAMES
+from urllib.parse import urlparse
 
 b = BaseClass()
 users_api = UsersApi()
