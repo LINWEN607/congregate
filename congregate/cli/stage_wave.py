@@ -33,7 +33,7 @@ class WaveStageCLI(BaseStageClass):
 
     def stage_data(self, wave_to_stage, dry_run=True,
                    skip_users=False, scm_source=None):
-        self.stage_wave(wave_to_stage, skip_users=False, dry_run=dry_run, scm_source=scm_source)
+        self.stage_wave(wave_to_stage, skip_users=skip_users, dry_run=dry_run, scm_source=scm_source)
         if user_projects := get_staged_user_projects(
                 remove_dupes(self.staged_projects)):
             self.log.warning(
@@ -75,7 +75,6 @@ class WaveStageCLI(BaseStageClass):
             self.open_projects_file(scm_source), "http_url_to_repo", lowercase=True)
         self.project_paths = rewrite_list_into_dict(
             self.open_projects_file(scm_source), "path_with_namespace", lowercase=True)
-        unable_to_find = []
 
         wave_spreadsheet_path = self.config.wave_spreadsheet_path
         if not os.path.isfile(wave_spreadsheet_path):
@@ -87,9 +86,6 @@ class WaveStageCLI(BaseStageClass):
             wave_spreadsheet_path,
             columns_to_use=self.config.wave_spreadsheet_columns
         )
-        # Simplifying the variable name, for readability.
-        column_mapping = self.config.wave_spreadsheet_column_mapping
-
         # This is reading the actual spreadsheet, filtering it to the desired
         # stage
         wave_data = wsh.read_file_as_json(
@@ -139,9 +135,11 @@ class WaveStageCLI(BaseStageClass):
         if not (mapping := self.config.wave_spreadsheet_column_to_project_property_mapping):
             self.log.warning(
                 "No 'wave_spreadsheet_column_to_project_property_mapping' field in congregate.conf")
+            return
         if not (columns := self.config.wave_spreadsheet_columns):
             self.log.warning(
                 "No 'wave_spreadsheet_columns' field in congregate.conf")
+            return
         if not self.check_spreadsheet_kv(mapping, columns):
             self.log.warning(
                 "Mismatch between keys in wave_spreadsheet_columns and wave_spreadsheet_column_to_project_property_mapping"
