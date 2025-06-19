@@ -1,11 +1,7 @@
 import os
-import sys
 import pytest
-import tempfile
-import json
 
 from congregate.cli.stage_wave import WaveStageCLI
-from congregate.migration.meta.etl import WaveSpreadsheetHandler
 
 @pytest.mark.unit_test
 class TestWaveStageCLI:
@@ -93,76 +89,6 @@ class TestWaveStageCLI:
         assert expected_msg in wave_stage_cli.log.error_calls
         assert len(wave_stage_cli.log.error_calls) == 1
 
-    def test_stage_data_with_user_projects_dot_com(self, wave_stage_cli, monkeypatch):
-        """Test stage_data method with user projects on gitlab.com."""
-        # Setup mock methods on the CLI instance
-        stage_wave_calls = []
-        email_check_calls = []
-        write_files_calls = []
-        
-        def mock_stage_wave(wave_name, skip_users=False, dry_run=True, scm_source=None):
-            stage_wave_calls.append({
-                'wave_name': wave_name,
-                'skip_users': skip_users,
-                'dry_run': dry_run,
-                'scm_source': scm_source
-            })
-        
-        def mock_email_check():
-            email_check_calls.append(True)
-        
-        def mock_write_files(skip_users=False):
-            write_files_calls.append({'skip_users': skip_users})
-        
-        wave_stage_cli.stage_wave = mock_stage_wave
-        wave_stage_cli.are_staged_users_without_public_email = mock_email_check
-        wave_stage_cli.write_staging_files = mock_write_files
-        wave_stage_cli.config.source_type = "gitlab"
-        wave_stage_cli.config.direct_transfer = False
-        wave_stage_cli.config.destination_host = "gitlab.com"
-        
-        # Mock external functions
-        monkeypatch.setattr('congregate.cli.stage_wave.remove_dupes', lambda x: ["project1", "project2"])
-        monkeypatch.setattr('congregate.cli.stage_wave.get_staged_user_projects', lambda x: ["user_project1"])
-        monkeypatch.setattr('congregate.cli.stage_wave.is_dot_com', lambda x: True)
-        monkeypatch.setattr('congregate.cli.stage_wave.json_pretty', lambda x: '["user_project1"]')
-        
-        # Execute
-        wave_stage_cli.stage_data("wave1", dry_run=False, skip_users=True, scm_source="source")
-        
-        # Verify
-        assert len(stage_wave_calls) == 1
-        assert stage_wave_calls[0]['wave_name'] == "wave1"
-        assert stage_wave_calls[0]['skip_users'] is True
-        assert stage_wave_calls[0]['dry_run'] is False
-        assert stage_wave_calls[0]['scm_source'] == "source"
-        
-        assert "USER projects staged (Count : 1):\n[\"user_project1\"]" in wave_stage_cli.log.warning_calls
-        assert "Please manually migrate USER projects to gitlab.com" in wave_stage_cli.log.warning_calls
-        assert len(email_check_calls) == 1
-        assert len(write_files_calls) == 1
-        assert write_files_calls[0]['skip_users'] is True
-
-    def test_stage_data_with_user_projects_not_dot_com(self, wave_stage_cli, monkeypatch):
-        """Test stage_data method with user projects not on gitlab.com."""
-        wave_stage_cli.stage_wave = lambda *args, **kwargs: None
-        wave_stage_cli.are_staged_users_without_public_email = lambda: None
-        wave_stage_cli.write_staging_files = lambda **kwargs: None
-        wave_stage_cli.config.source_type = "gitlab"
-        wave_stage_cli.config.direct_transfer = False
-        wave_stage_cli.config.destination_host = "custom.gitlab.com"
-        
-        monkeypatch.setattr('congregate.cli.stage_wave.remove_dupes', lambda x: ["project1", "project2"])
-        monkeypatch.setattr('congregate.cli.stage_wave.get_staged_user_projects', lambda x: ["user_project1"])
-        monkeypatch.setattr('congregate.cli.stage_wave.is_dot_com', lambda x: False)
-        monkeypatch.setattr('congregate.cli.stage_wave.json_pretty', lambda x: '["user_project1"]')
-        
-        wave_stage_cli.stage_data("wave1", dry_run=False)
-        
-        # Should log user projects but not the gitlab.com warning
-        assert "USER projects staged (Count : 1):\n[\"user_project1\"]" in wave_stage_cli.log.warning_calls
-        assert "Please manually migrate USER projects to gitlab.com" not in wave_stage_cli.log.warning_calls
-
     def test_stage_data_no_user_projects(self, wave_stage_cli, monkeypatch):
         """Test stage_data method with no user projects."""
         wave_stage_cli.stage_wave = lambda *args, **kwargs: None
@@ -170,8 +96,6 @@ class TestWaveStageCLI:
         wave_stage_cli.write_staging_files = lambda **kwargs: None
         wave_stage_cli.config.source_type = "gitlab"
         wave_stage_cli.config.direct_transfer = False
-        
-        monkeypatch.setattr('congregate.cli.stage_wave.get_staged_user_projects', lambda x: [])
         
         wave_stage_cli.stage_data("wave1", dry_run=True)
         
@@ -191,8 +115,6 @@ class TestWaveStageCLI:
         wave_stage_cli.config.source_type = "gitlab"
         wave_stage_cli.config.direct_transfer = True
         
-        monkeypatch.setattr('congregate.cli.stage_wave.get_staged_user_projects', lambda x: [])
-        
         wave_stage_cli.stage_data("wave1", dry_run=False)
         
         # Should not check for users without public email when direct_transfer is True
@@ -210,8 +132,6 @@ class TestWaveStageCLI:
         wave_stage_cli.write_staging_files = lambda **kwargs: None
         wave_stage_cli.config.source_type = "github"
         wave_stage_cli.config.direct_transfer = False
-        
-        monkeypatch.setattr('congregate.cli.stage_wave.get_staged_user_projects', lambda x: [])
         
         wave_stage_cli.stage_data("wave1", dry_run=False)
         

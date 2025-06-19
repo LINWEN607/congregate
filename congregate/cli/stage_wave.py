@@ -6,18 +6,12 @@ Copyright (c) 2022 - GitLab
 import os
 import sys
 
-from gitlab_ps_utils.misc_utils import get_dry_log, safe_json_response
-from gitlab_ps_utils.dict_utils import rewrite_list_into_dict, dig
-from gitlab_ps_utils.string_utils import clean_split
-from gitlab_ps_utils.list_utils import remove_dupes
-from gitlab_ps_utils.json_utils import json_pretty
+from gitlab_ps_utils.dict_utils import rewrite_list_into_dict
 
 from congregate.migration.meta.etl import WaveSpreadsheetHandler
 from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.cli.stage_base import BaseStageClass
 from congregate.cli.stage_projects import ProjectStageCLI
-from congregate.helpers.utils import is_dot_com
-from congregate.helpers.migrate_utils import get_staged_user_projects
 
 
 class WaveStageCLI(BaseStageClass):
@@ -34,18 +28,6 @@ class WaveStageCLI(BaseStageClass):
     def stage_data(self, wave_to_stage, dry_run=True,
                    skip_users=False, scm_source=None):
         self.stage_wave(wave_to_stage, skip_users=skip_users, dry_run=dry_run, scm_source=scm_source)
-        if user_projects := get_staged_user_projects(
-                remove_dupes(self.staged_projects)):
-            self.log.warning(
-                f"USER projects staged (Count : {len(user_projects)}):\n{json_pretty(user_projects)}")
-            if is_dot_com(self.config.destination_host):
-                self.log.warning(
-                    "Please manually migrate USER projects to gitlab.com")
-        # Direct-transfer uses Placeholder users
-        if self.config.source_type == "gitlab" and not self.config.direct_transfer:
-            self.are_staged_users_without_public_email()
-        if not dry_run:
-            self.write_staging_files(skip_users=skip_users)
 
     def stage_wave(self, wave_to_stage, skip_users=False, dry_run=True, scm_source=None):
         """
