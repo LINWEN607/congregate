@@ -1,14 +1,4 @@
-# Azure DevOps
-
-:white_check_mark: = supported
-
-:heavy_minus_sign: = not yet supported / in development
-
-:x: = not supported
-
-NOTE: Features not listed in the matrix should be presumed to be not yet supported.
-
-## Azure DevOps (SaaS)
+# Azure DevOps migration doc
 
 :white_check_mark: = Supported  
 :heavy_minus_sign: = Not yet supported / in development  
@@ -26,7 +16,10 @@ NOTE: Features not listed in the matrix should be presumed to be not yet support
 |                      | Work Item (WI)                   | Title, Description, Timestamp, State                  | :white_check_mark: |                       |                                           |
 |                      |                                  | WI Author, assignees                                  | :white_check_mark: |                       |                                           |
 |                      |                                  | WI comments (as-is)                                   | :white_check_mark: |                       |                                           |
-|                      |                                  | WI attachments, formatting                            | :construction:     |                       | Enhancements Epic <sup>4</sup>            |
+|                      |                                  | WI attachments                                        | :white_check_mark: |                       |                                           |
+|                      |                                  | WI description, comments formatting                   | :construction:     |                       | Enhancements Epic <sup>4</sup>            |
+|                      |                                  | WI linkage to MR                                      | :construction:     |                       | Enhancements Epic <sup>4</sup>            |
+|                      |                                  | Support various work item types                       | :construction:     |                       | Enhancements Epic <sup>4</sup>            |
 | **Azure Repos**      |                                  |                                                       |                    |                       |                                           |
 |                      | Git                              |                                                       |                    |                       |                                           |
 |                      |                                  | Commits, branches, tags                               | :white_check_mark: |                       |                                           |
