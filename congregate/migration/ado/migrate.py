@@ -387,7 +387,6 @@ class AzureDevopsMigrateClient(MigrateClient):
         )
         issues = safe_json_response(response)
         for issue in issues:
-            # pprint.pprint(issue)
             issue_iid = issue["iid"]
             notes_response = self.issues.get_all_project_issue_notes(
                 project_id,
