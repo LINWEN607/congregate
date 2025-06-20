@@ -26,7 +26,7 @@ class WorkItemsClient(BaseClass):
 
         wiql_query = (
             "SELECT [System.Id], [System.Title], [System.State] "
-            "FROM WorkItems WHERE [System.TeamProject] = '{}'".format(project_name)
+            "FROM WorkItems WHERE [System.TeamProject] = @project"
         )
         payload = json.dumps({"query": wiql_query})
 
