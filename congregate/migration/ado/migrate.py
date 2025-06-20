@@ -22,6 +22,7 @@ from congregate.migration.gitlab.importexport import ImportExportClient
 from congregate.migration.gitlab.branches import BranchesClient
 from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
 from congregate.migration.gitlab.api.merge_requests import MergeRequestsApi
+from congregate.migration.gitlab.api.issues import IssuesApi
 from congregate.migration.ado.api.pull_requests import PullRequestsApi
 from congregate.migration.gitlab.api.projects import ProjectsApi as GitlabProjectsApi
 from congregate.migration.ado.api.projects import ProjectsApi as AdoProjectsApi
@@ -58,6 +59,7 @@ class AzureDevopsMigrateClient(MigrateClient):
         self.ie = ImportExportClient()
         self.project_repository_api = ProjectRepositoryApi()
         self.merge_requests_api = MergeRequestsApi()
+        self.issues = IssuesApi()
         self.pull_requests_api = PullRequestsApi()
         self.gitlab_projects_api = GitlabProjectsApi()
         self.gitlab_variables_api = VariablesClient()
@@ -332,10 +334,10 @@ class AzureDevopsMigrateClient(MigrateClient):
 
     def process_attachments_after_import(self, project_id):
         """
-        Finds all ADO attachment URLs in merge request notes and replaces them
+        Finds all ADO attachment URLs in merge request and issue notes and replaces them
         with uploaded versions stored in GitLab.
         """
-        self.log.info(f"Processing attachments for project {project_id}...")
+        self.log.info(f"Processing attachments in merge requests for project {project_id}...")
 
         response = self.merge_requests_api.get_all_project_merge_requests(project_id, self.config.destination_host, self.config.destination_token)
         merge_requests = safe_json_response(response)
@@ -375,6 +377,57 @@ class AzureDevopsMigrateClient(MigrateClient):
                     self.log.info(f"Updated note {note_id} in MR {mr_id} with GitLab-hosted Attachments.")
                 else:
                     self.log.error(f"Failed to update note {note_id} in MR {mr_id}: {update_response.text}")
+
+        self.log.info(f"Processing attachments in issues for project {project_id}...")
+
+        response = self.issues.get_all_project_issues(
+            project_id, 
+            self.config.destination_host, 
+            self.config.destination_token
+        )
+        issues = safe_json_response(response)
+        for issue in issues:
+            # pprint.pprint(issue)
+            issue_iid = issue["iid"]
+            notes_response = self.issues.get_all_project_issue_notes(
+                project_id,
+                issue_iid,
+                self.config.destination_host,
+                self.config.destination_token,
+            )
+            notes = safe_json_response(notes_response)
+            for note in notes:
+                note_id = note["id"]
+                note_body = note["body"]
+                
+                # Find all ADO attachment links
+                attachment_urls = re.findall(constants.ADO_ATTACHMENT_PATTERN, note_body)
+                if not attachment_urls:
+                    continue  # No attachment to process
+                for markdown_prefix, file_name, ado_url in attachment_urls:
+                    is_image = markdown_prefix == "!"  # Identify images correctly
+                    # Process attachment and get new GitLab URL
+                    new_gitlab_url = self.process_attachment(ado_url.strip(), project_id)
+                    if new_gitlab_url:
+                        # Preserve correct Markdown formatting
+                        new_markdown = f"![]({new_gitlab_url})" if is_image else f"[{file_name}]({new_gitlab_url})"
+                        # Replace old ADO URL with new GitLab URL
+                        note_body = note_body.replace(f"{markdown_prefix}[{file_name}]({ado_url})", new_markdown)
+                # Update the note with new attachment links
+                data = {"body": note_body}
+                update_response = self.issues.update_project_issue_note(
+                    self.config.destination_host,
+                    self.config.destination_token,
+                    project_id,
+                    issue_iid,
+                    note_id,
+                    data=data
+                )
+                
+                if update_response.status_code == 200:
+                    self.log.info(f"Updated note {note_id} in issue {issue_iid} with GitLab-hosted Attachments.")
+                else:
+                    self.log.error(f"Failed to update note {note_id} in issue {issue_iid}: {update_response.text}")
 
     def process_attachment(self, ado_url, project_id):
         """
