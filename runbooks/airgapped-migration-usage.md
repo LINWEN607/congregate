@@ -6,27 +6,31 @@ Applicable **only** to GitLab -> GitLab migrations.
 
 ## Airgapped Migration Flow
 
-![airgap-flow](runbooks/uploads/airgapflow.png)
+![airgap-flow](/runbooks/uploads/airgapflow.png)
 
 This is the process of moving GitLab data (Users/Groups/Projects) between the customer environment that is completely isolated from external networks (air-gapped environments) and destination GitLab instance. Congregate plays an important role in migrating the data.
 
-Above is a generic flow diagram for an airgapped migration. Like you see in the flow diagram, there are two Congregate VMs.
+Above is a generic flow diagram for an airgapped migration. Like you see in the flow diagram, there are two Congregate VMs:
+
 1. VM1: Inside customer's network
 2. VM2: Outside customer's network. This VM is GitLab GCP Hosted.
 
-### Object Storage: 
-There are two options
+### Object Storage
+
+There are two options:
+
 1. Customer provides their own Object storage and allowlist our Congregate VM2 hosted outside their VPN
 2. PS team uses GitLab owned AWS/GCP cloud storage. AWS storage is used mostly in migrations
 
-### Migration Flow:
+### Migration Flow
 
 Migration should be performed in the following sequence to ensure proper dependencies: user accounts, followed by groups, and then projects
 
-#### Users migration:
-Verify that all users have been migrated to the destination by running the following command: 
+#### Users migration
 
-``` congregate search-for-staged-users --table ```
+Verify that all users have been migrated to the destination by running the following command:
+
+`congregate search-for-staged-users --table`
 
 The `user_stats.csv` file provides comprehensive user details, including their migration status (found/not found) on the destination system. Use this information to:
 
@@ -35,11 +39,11 @@ The `user_stats.csv` file provides comprehensive user details, including their m
 3. Verify all users are present before moving on to Groups and Projects migration
 
 #### Groups/Projects migration
+
 1. Congregate exporting the tar files of Groups/Projects from GitLab source
 2. AWS → Upload the tar files
 3. AWS → Download the tar files
 4. Congregate import the tar files on GitLab destination
-
 
 ### Setting up Congregate for air-gapped migrations
 
@@ -54,13 +58,10 @@ In an air-gapped environment, specifically where the source and destination inst
 - Access to the [congregate container registry](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/container_registry/2394823)
 - Admin access on source and destination. Refer to [this document](/runbooks/migration-pre-and-post-requisites.md) to perform all pre-requisite tasks before migration.
 
-
 ### Setting up the Congregate nodes
 
 - Refer to [this document](/runbooks/setting-up-direct-transfer-migrations.md) to setup Congregate on both the VMs
 - If the VM is inside a VPN and does not support `docker-compose`, one can also use the [single node](/docs/full_setup.md#installing-and-configuring-congregate-end-user) method to install Congregate
-
-
 
 ### Example Configuration for source VM1
 
@@ -70,12 +71,12 @@ In an air-gapped environment, specifically where the source and destination inst
 [SOURCE]
 src_hostname = https://gitlab.example.net
 src_type = GitLab
-src_access_token = 
-src_tier = 
+src_access_token =
+src_tier =
 
 # Optional
-src_parent_group_id = 
-src_parent_group_path = 
+src_parent_group_id =
+src_parent_group_path =
 
 [APP]
 airgap = True
@@ -94,16 +95,16 @@ filesystem_path = /opt/congregate
 ```bash
 [SOURCE]
 src_type = GitLab
-src_tier = 
+src_tier =
 
 [DESTINATION]
 dstn_hostname = https://gitlab.example.com
-dstn_access_token = 
-import_user_id = 
-username_suffix = 
-dstn_parent_group_id = 
-dstn_parent_group_path = 
-shared_runners_enabled = 
+dstn_access_token =
+import_user_id =
+username_suffix =
+dstn_parent_group_id =
+dstn_parent_group_path =
+shared_runners_enabled =
 
 [EXPORT]
 filesystem_path = /opt/congregate
@@ -118,7 +119,7 @@ airgap = True
 airgap_import = True
 mongo_host = mongo
 redis_host = redis
-processes = 
+processes =
 ```
 
 </details>
@@ -139,16 +140,15 @@ If you are seeing [SSL error](#ssl-error) while connecting to the source URL, yo
 
 #### SSL Error
 
-```bash (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: self signed certificate in certificate chain (_ssl.c:1149)')))' ```
+`(Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: self signed certificate in certificate chain (_ssl.c:1149)')))'`
 
-##### To install cert provided on Congregate VM:
+##### To install cert provided on Congregate VM
 
-```bash 
+```bash
 mv customer.crt /usr/local/share/ca-certificates/
 update-ca-certificates -f
-REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt 
+REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 ```
-
 
 ### GitLab features in scope
 
@@ -257,7 +257,6 @@ for f in /path/to/downloaded/project/exports/*; do if [[ "$f" == *_artifact.tar.
 
 To follow the progress open the `flower` UI from the browser: `https://localhost:5555`.
 
-
 ### Troubleshooting
 
 #### Checking logs
@@ -303,6 +302,7 @@ supervisorctl stop all
 # stop only gunicorn for example
 supervisorctl stop congregate-gunicorn
 ```
+
 #### Exports and imports taking over an hour
 
 By default, Congregate will poll the source and destination to check the status of an ongoing export/import.
