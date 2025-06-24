@@ -310,6 +310,11 @@ check ldap compose yaml:
         - pyproject.toml
         - poetry.lock
     - if: "$CI_PIPELINE_SOURCE == 'schedule' && $E2E_NIGHTLY"
+    - if: "$CI_PIPELINE_SOURCE == 'merge_request_event'"
+      changes:
+        - docker/test/*
+      variables:
+        TEST_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHORT_SHA-test-3.10
   timeout: 5 minutes
 
 .fallback-e2e-cleanup:
@@ -700,6 +705,11 @@ mvc:
         - "*.md"
         - docker/release/*
         - .gitlab-ci.yml
+    - if: "$CI_PIPELINE_SOURCE == 'merge_request_event'"
+      changes:
+        - docker/test/*
+      variables:
+        TEST_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHORT_SHA-test-3.10
 
 pages:
   stage: deploy
