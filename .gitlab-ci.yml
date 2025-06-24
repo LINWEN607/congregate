@@ -23,7 +23,7 @@ include:
 
 variables:
   DOCKER_VERSION: "20.10.22"
-  TEST_IMAGE_NAME: "$CI_REGISTRY_IMAGE/test-3.8:latest"
+  TEST_IMAGE_NAME: "$CI_REGISTRY_IMAGE/test-3.10:latest"
   CDK_IMAGE_NAME: "$CI_REGISTRY_IMAGE/cdk:3.8"
   BB_SERVER_SEED_IMAGE_NAME: "$CI_REGISTRY_IMAGE/bitbucket-seed:latest"
   JENKINS_SEED_IMAGE_NAME: "$CI_REGISTRY_IMAGE/jenkins-seed:latest"
@@ -152,7 +152,7 @@ build test image:
   stage: build
   script:
     - echo "SOURCE IS $CI_PIPELINE_SOURCE"
-    - cp ./docker/test/py38.Dockerfile ./Dockerfile
+    - cp ./docker/test/py310.Dockerfile ./Dockerfile
     - docker build --tag "$TEST_IMAGE_NAME" .
     - docker push "$TEST_IMAGE_NAME"
   rules:
