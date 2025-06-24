@@ -259,7 +259,7 @@ check ldap compose yaml:
   rules:
     - if: "$CI_PIPELINE_SOURCE == 'merge_request_event'"
       variables:
-        TEST_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHORT_SHA-test-3.8
+        TEST_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHORT_SHA-test-3.10
       changes:
         - docker/test/*
     - if: "$CI_PIPELINE_SOURCE != 'schedule'"
