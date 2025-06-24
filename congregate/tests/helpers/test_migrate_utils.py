@@ -1,6 +1,7 @@
 import unittest
+import respx
 from pytest import mark
-import responses
+from httpx import Response
 from unittest.mock import patch, PropertyMock, MagicMock
 
 from gitlab_ps_utils.api import GitLabApi
@@ -294,10 +295,8 @@ class MigrateTests(unittest.TestCase):
         self.assertEqual(mutils.get_project_dest_namespace(
             self.mock_projects.get_staged_double_nested_group_project()), "marketing/pmm/pmm/pmm-demo")
 
-    # pylint: disable=no-member
-    @responses.activate
-    # pylint: enable=no-member
-    @patch.object(GitLabApi, "generate_v4_request_url")
+    @respx.mock
+    @patch("gitlab_ps_utils.api.generate_v4_request_url")
     @patch.object(ConfigurationValidator, "import_user_id",
                   new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, "destination_host",
@@ -311,17 +310,17 @@ class MigrateTests(unittest.TestCase):
         user_id.return_value = 1
         url_value = "https://gitlab.com/api/v4/users/5"
         url.return_value = url_value
-        # pylint: disable=no-member
-        responses.add(responses.GET, url_value,
-                      json=self.mock_users.get_dummy_user(), status=200)
-        # pylint: enable=no-member
+        
+        respx.get(url_value).mock(return_value=Response(
+            status_code=200,
+            json=self.mock_users.get_dummy_user()
+        ))
+        
         self.assertEqual(mutils.get_user_project_namespace(
             self.mock_projects.get_staged_user_project()), "jdoe")
 
-    # pylint: disable=no-member
-    @responses.activate
-    # pylint: enable=no-member
-    @patch.object(GitLabApi, "generate_v4_request_url")
+    @respx.mock
+    @patch("gitlab_ps_utils.api.generate_v4_request_url")
     @patch.object(ConfigurationValidator, "import_user_id",
                   new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, "destination_host",
@@ -334,10 +333,12 @@ class MigrateTests(unittest.TestCase):
         user_id.return_value = 1
         url_value = "https://gitlab.com/api/v4/users/5"
         url.return_value = url_value
-        # pylint: disable=no-member
-        responses.add(responses.GET, url_value,
-                      json=self.mock_users.get_dummy_user(), status=200)
-        # pylint: enable=no-member
+        
+        respx.get(url_value).mock(return_value=Response(
+            status_code=200,
+            json=self.mock_users.get_dummy_user()
+        ))
+        
         self.assertEqual(mutils.get_user_project_namespace(
             self.mock_projects.get_staged_root_project()), "jdoe")
 
@@ -423,10 +424,8 @@ class MigrateTests(unittest.TestCase):
         }
         self.assertEqual(mutils.get_project_filename(staged_project), "")
 
-    # pylint: disable=no-member
-    @responses.activate
-    # pylint: enable=no-member
-    @patch.object(GitLabApi, "generate_v4_request_url")
+    @respx.mock
+    @patch("gitlab_ps_utils.api.generate_v4_request_url")
     @patch.object(ConfigurationValidator, "import_user_id",
                   new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, "destination_host",
@@ -452,19 +451,19 @@ class MigrateTests(unittest.TestCase):
         user_id.return_value = 5
         url_value = "https://gitlab.com/api/v4/users/5"
         url.return_value = url_value
-        # pylint: disable=no-member
-        responses.add(responses.GET, url_value,
-                      json=self.mock_users.get_dummy_user(), status=200)
-        # pylint: enable=no-member
+        
+        respx.get(url_value).mock(return_value=Response(
+            status_code=200,
+            json=self.mock_users.get_dummy_user()
+        ))
+        
         self.assertEqual(mutils.get_dst_path_with_namespace(
             self.mock_projects.get_staged_group_project()), "test-group/pmm-demo/spring-app-secure-2")
         self.assertEqual(mutils.get_dst_path_with_namespace(
             self.mock_projects.get_staged_user_project()), "jdoe/spring-app-secure-2")
 
-    # pylint: disable=no-member
-    @responses.activate
-    # pylint: enable=no-member
-    @patch.object(GitLabApi, "generate_v4_request_url")
+    @respx.mock
+    @patch("gitlab_ps_utils.api.generate_v4_request_url")
     @patch.object(ConfigurationValidator, "import_user_id",
                   new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, "destination_host",
@@ -484,17 +483,17 @@ class MigrateTests(unittest.TestCase):
         user_id.return_value = 5
         url_value = "https://gitlab.com/api/v4/users/5"
         url.return_value = url_value
-        # pylint: disable=no-member
-        responses.add(responses.GET, url_value,
-                      json=self.mock_users.get_current_user(), status=200)
-        # pylint: enable=no-member
+        
+        respx.get(url_value).mock(return_value=Response(
+            status_code=200,
+            json=self.mock_users.get_current_user()
+        ))
+        
         self.assertEqual(mutils.get_dst_path_with_namespace(
             self.mock_projects.get_staged_root_project()), "root/spring-app-secure-2")
 
-    # pylint: disable=no-member
-    @responses.activate
-    # pylint: enable=no-member
-    @patch.object(GitLabApi, "generate_v4_request_url")
+    @respx.mock
+    @patch("gitlab_ps_utils.api.generate_v4_request_url")
     @patch.object(ConfigurationValidator, "import_user_id",
                   new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, "destination_host",
@@ -520,19 +519,19 @@ class MigrateTests(unittest.TestCase):
         user_id.return_value = 5
         url_value = "https://gitlab.com/api/v4/users/5"
         url.return_value = url_value
-        # pylint: disable=no-member
-        responses.add(responses.GET, url_value,
-                      json=self.mock_users.get_dummy_user(), status=200)
-        # pylint: enable=no-member
+        
+        respx.get(url_value).mock(return_value=Response(
+            status_code=200,
+            json=self.mock_users.get_dummy_user()
+        ))
+        
         self.assertEqual(mutils.get_dst_path_with_namespace(
             self.mock_projects.get_staged_group_project()), "pmm-demo/spring-app-secure-2")
         self.assertEqual(mutils.get_dst_path_with_namespace(
             self.mock_projects.get_staged_user_project()), "jdoe/spring-app-secure-2")
 
-    # pylint: disable=no-member
-    @responses.activate
-    # pylint: enable=no-member
-    @patch.object(GitLabApi, "generate_v4_request_url")
+    @respx.mock
+    @patch("gitlab_ps_utils.api.generate_v4_request_url")
     @patch.object(ConfigurationValidator, "import_user_id",
                   new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, "destination_host",
@@ -552,10 +551,12 @@ class MigrateTests(unittest.TestCase):
         user_id.return_value = 5
         url_value = "https://gitlab.com/api/v4/users/5"
         url.return_value = url_value
-        # pylint: disable=no-member
-        responses.add(responses.GET, url_value,
-                      json=self.mock_users.get_current_user(), status=200)
-        # pylint: enable=no-member
+        
+        respx.get(url_value).mock(return_value=Response(
+            status_code=200,
+            json=self.mock_users.get_current_user()
+        ))
+        
         self.assertEqual(mutils.get_dst_path_with_namespace(
             self.mock_projects.get_staged_root_project()), "root/spring-app-secure-2")
 
