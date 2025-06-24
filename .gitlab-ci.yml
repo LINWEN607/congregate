@@ -297,6 +297,11 @@ check ldap compose yaml:
     - export GITLAB_DEST=http://gitlab-dest
     - export GITLAB_DEST_REG_URL=gitlab-dest:4567
   rules:
+    - if: "$CI_PIPELINE_SOURCE == 'merge_request_event'"
+      changes:
+        - docker/test/*
+      variables:
+        TEST_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHORT_SHA-test-3.10
     - if: "$CI_PIPELINE_SOURCE != 'schedule'"
       changes:
         - .gitlab-ci.yml
@@ -310,11 +315,6 @@ check ldap compose yaml:
         - pyproject.toml
         - poetry.lock
     - if: "$CI_PIPELINE_SOURCE == 'schedule' && $E2E_NIGHTLY"
-    - if: "$CI_PIPELINE_SOURCE == 'merge_request_event'"
-      changes:
-        - docker/test/*
-      variables:
-        TEST_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHORT_SHA-test-3.10
   timeout: 5 minutes
 
 .fallback-e2e-cleanup:
@@ -699,17 +699,17 @@ mvc:
   script:
     - echo "Placeholder job to trigger a min. pipeline for non-code related changes"
   rules:
+    - if: "$CI_PIPELINE_SOURCE == 'merge_request_event'"
+      changes:
+        - docker/test/*
+      variables:
+        TEST_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHORT_SHA-test-3.10
     - if: "($CI_MERGE_REQUEST_IID || $CI_COMMIT_BRANCH) && $CI_PIPELINE_SOURCE != 'schedule'"
       changes:
         - "**/*.md"
         - "*.md"
         - docker/release/*
         - .gitlab-ci.yml
-    - if: "$CI_PIPELINE_SOURCE == 'merge_request_event'"
-      changes:
-        - docker/test/*
-      variables:
-        TEST_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHORT_SHA-test-3.10
 
 pages:
   stage: deploy
