@@ -160,7 +160,7 @@ build test image:
       changes:
         - docker/test/*
       variables:
-        TEST_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHORT_SHA-test-3.8
+        TEST_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHORT_SHA-test-3.10
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
       changes:
         - docker/test/*
