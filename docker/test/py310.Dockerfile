@@ -1,4 +1,4 @@
-FROM python:3.10.18-bullseye
+FROM python:3.10.18-bookworm
 
 ENV APP_NAME=congregate \
     PIP_DEFAULT_TIMEOUT=100
