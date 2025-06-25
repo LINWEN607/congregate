@@ -2,9 +2,9 @@ import unittest
 import json
 import warnings
 from unittest.mock import patch, mock_open, PropertyMock, MagicMock
-import responses
+import respx
 from pytest import mark
-from requests.exceptions import RequestException
+from httpx import Response, RequestError
 from dacite import from_dict
 
 from gitlab_ps_utils.api import GitLabApi
@@ -15,7 +15,6 @@ from congregate.tests.mockapi.gitlab.users import MockUsersApi
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.users import UsersClient
-from congregate.migration.gitlab.api.groups import GroupsApi
 from congregate.migration.gitlab.api.namespaces import NamespacesApi
 from congregate.migration.gitlab.keys import KeysClient
 from congregate.helpers.congregate_mdbc import CongregateMongoConnector
@@ -35,16 +34,14 @@ class UsersTests(unittest.TestCase):
         self.users = UsersClient()
         self.migrate = MigrateClient(dry_run=False)
 
-    # pylint: disable=no-member
-    @responses.activate
-    # pylint: enable=no-member
+    @respx.mock
     @patch('congregate.helpers.conf.Config.source_type',
            new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.source_host',
            new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, 'source_token',
                   new_callable=PropertyMock)
-    @patch.object(GitLabApi, "generate_v4_request_url")
+    @patch("gitlab_ps_utils.api.generate_v4_request_url")
     def test_find_user_by_email_comparison_incorrect_user(
             self, url, src_token, src_host, src_type):
         url_value = "https://gitlabsource.com/api/v4/users/5"
@@ -52,16 +49,16 @@ class UsersTests(unittest.TestCase):
         src_token.return_value = "token"
         src_host.return_value = "https//gitlabsource.com"
         src_type.return_value = "gitlab"
-        # pylint: disable=no-member
-        responses.add(responses.GET, url_value,
-                      json=self.mock_users.get_user_404(), status=404)
-        # pylint: enable=no-member
+        
+        respx.get(url_value).mock(return_value=Response(
+            status_code=404,
+            json=self.mock_users.get_user_404()
+        ))
+        
         actual = self.users.find_user_by_email_comparison_with_id(5)
         self.assertIsNone(actual)
 
-    # pylint: disable=no-member
-    @responses.activate
-    # pylint: enable=no-member
+    @respx.mock
     @patch('congregate.helpers.conf.Config.source_type',
            new_callable=PropertyMock)
     @patch('congregate.helpers.conf.Config.source_host',
@@ -72,7 +69,7 @@ class UsersTests(unittest.TestCase):
            new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, 'destination_token',
                   new_callable=PropertyMock)
-    @patch.object(GitLabApi, "generate_v4_request_url")
+    @patch("gitlab_ps_utils.api.generate_v4_request_url")
     @patch.object(UsersApi, "search_for_user_by_email")
     def test_find_user_by_email_comparison_found_user(
             self, search, url, dest_token, dest_host, src_token, src_host, src_type):
@@ -83,10 +80,12 @@ class UsersTests(unittest.TestCase):
         src_type.return_value = "gitlab"
         dest_host.return_value = "https//gitlab.example.com"
         dest_token.return_value = "token"
-        # pylint: disable=no-member
-        responses.add(responses.GET, url_value,
-                      json=self.mock_users.get_dummy_user(), status=200)
-        # pylint: enable=no-member
+        
+        respx.get(url_value).mock(return_value=Response(
+            status_code=200,
+            json=self.mock_users.get_dummy_user()
+        ))
+        
         search.return_value = [self.mock_users.get_dummy_user()]
         actual = self.users.find_user_by_email_comparison_with_id(5)
         expected = self.mock_users.get_dummy_user()
@@ -214,9 +213,7 @@ class UsersTests(unittest.TestCase):
         search.return_value = []
         self.assertFalse(self.users.user_email_exists("notjdoe@email.com"))
 
-    # pylint: disable=no-member
-    @responses.activate
-    # pylint: enable=no-member
+    @respx.mock
     @patch('congregate.helpers.conf.Config.destination_host',
            new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, 'destination_token',
@@ -237,16 +234,17 @@ class UsersTests(unittest.TestCase):
         new_user = self.mock_users.get_dummy_user()
 
         url_value = "https://gitlabdestination.com/api/v4/users"
-        # pylint: disable=no-member
-        responses.add(responses.POST, url_value,
-                      json=self.mock_users.get_test_new_destination_users()[1], status=200)
-        # pylint: enable=no-member
+        respx.post(url_value).mock(return_value=Response(
+            status_code=200,
+            json=self.mock_users.get_test_new_destination_users()[1]
+        ))
+        
         url_value = "https://gitlabdestination.com/api/v4/users?search=%s&per_page=10&page=%d" % (
             new_user["email"], count.return_value)
-        # pylint: disable=no-member
-        responses.add(responses.GET, url_value,
-                      json=[self.mock_users.get_dummy_user()], status=200)
-        # pylint: enable=no-member
+        respx.get(url_value).mock(return_value=Response(
+            status_code=200,
+            json=[self.mock_users.get_dummy_user()]
+        ))
 
         expected = {
             "id": 27,
@@ -254,9 +252,7 @@ class UsersTests(unittest.TestCase):
         }
         self.assertEqual(self.migrate.handle_user_creation(new_user), expected)
 
-    # pylint: disable=no-member
-    @responses.activate
-    # pylint: enable=no-member
+    @respx.mock
     @patch('congregate.helpers.conf.Config.destination_host',
            new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, 'destination_token',
@@ -277,16 +273,23 @@ class UsersTests(unittest.TestCase):
         new_user = self.mock_users.get_dummy_user()
 
         url_value = "https://gitlabdestination.com/api/v4/users"
-        # pylint: disable=no-member
-        responses.add(responses.POST, url_value,
-                      json=self.mock_users.get_test_new_destination_users()[1], status=409)
-        # pylint: enable=no-member
+        respx.post(url_value).mock(return_value=Response(
+            status_code=409,
+            json=self.mock_users.get_test_new_destination_users()[1]
+        ))
+
+        url_value = f"https://gitlabdestination.com/api/v4/users?page=1&per_page=10"
+        respx.get(url_value).mock(return_value=Response(
+            status_code=200,
+            json=[self.mock_users.get_test_new_destination_users()[1]]
+        ))
+        
         url_value = "https://gitlabdestination.com/api/v4/users?search=%s&per_page=10&page=%d" % (
             new_user["email"], count.return_value)
-        # pylint: disable=no-member
-        responses.add(responses.GET, url_value,
-                      json=[self.mock_users.get_dummy_user()], status=200)
-        # pylint: enable=no-member
+        respx.get(url_value).mock(return_value=Response(
+            status_code=200,
+            json=[self.mock_users.get_dummy_user()]
+        ))
 
         expected = {
             "id": 27,
@@ -294,9 +297,7 @@ class UsersTests(unittest.TestCase):
         }
         self.assertEqual(self.migrate.handle_user_creation(new_user), expected)
 
-    # pylint: disable=no-member
-    @responses.activate
-    # pylint: enable=no-member
+    @respx.mock
     @patch('congregate.helpers.conf.Config.destination_host',
            new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, 'destination_token',
@@ -317,16 +318,22 @@ class UsersTests(unittest.TestCase):
         new_user = self.mock_users.get_dummy_user()
 
         url_value = "https://gitlabdestination.com/api/v4/users"
-        # pylint: disable=no-member
-        responses.add(responses.POST, url_value,
-                      json=self.mock_users.get_test_new_destination_users()[1], status=409)
-        # pylint: enable=no-member
-        url_value = "https://gitlabdestination.com/api/v4/users?search=%s&per_page=10&page=%d" % (
-            new_user["email"], count.return_value)
-        # pylint: disable=no-member
-        responses.add(responses.GET, url_value,
-                      json=[self.mock_users.get_dummy_user()], status=200)
-        # pylint: enable=no-member
+        respx.post(url_value).mock(return_value=Response(
+            status_code=409,
+            json=self.mock_users.get_dummy_user()
+        ))
+
+        url_value = f"https://gitlabdestination.com/api/v4/users?page=1&per_page=10"
+        respx.get(url_value).mock(return_value=Response(
+            status_code=200,
+            json=[self.mock_users.get_dummy_user()]
+        ))
+        
+        url_value = f"https://gitlabdestination.com/api/v4/users"
+        respx.get(url_value, params={"search": new_user['email'], "per_page": "10", "page": count.return_value}).mock(return_value=Response(
+            status_code=200,
+            json=[self.mock_users.get_dummy_user()]
+        ))
 
         expected = {
             "id": 27,
@@ -396,7 +403,7 @@ class UsersTests(unittest.TestCase):
 
         mock_search.return_value = [self.mock_users.get_dummy_user()]
 
-        mock_block.side_effect = RequestException()
+        mock_block.side_effect = RequestError("API call failed")
 
         with self.assertLogs(self.users.log, level="ERROR"):
             self.assertEqual(self.users.change_user_state(
@@ -454,7 +461,7 @@ class UsersTests(unittest.TestCase):
         user_block.json.return_value = self.mock_users.get_dummy_user_blocked()
         mock_block.return_value = user_block
 
-        mock_modify.side_effect = RequestException()
+        mock_modify.side_effect = RequestError("API call failed")
 
         with self.assertLogs(self.users.log, level="ERROR"):
             self.assertEqual(self.users.change_user_state(
@@ -492,6 +499,7 @@ class UsersTests(unittest.TestCase):
                 self.mock_users.get_dummy_user()).status_code, 201)
 
     def test_remove_inactive_users(self):
+        self.maxDiff = None
         read_data = json.dumps(
             self.mock_users.get_test_new_destination_users())
         with patch('builtins.open', mock_open(read_data=read_data)):
@@ -661,10 +669,8 @@ class UsersTests(unittest.TestCase):
         self.assertEqual(created_user_name,
                          f"{dummy_user['username']}_migrated")
 
-    # pylint: disable=no-member
-    @responses.activate
-    # pylint: enable=no-member
-    @patch.object(GitLabApi, "generate_v4_request_url")
+    @respx.mock
+    @patch("gitlab_ps_utils.api.generate_v4_request_url")
     @patch.object(UsersApi, "search_for_user_by_email")
     @patch('congregate.migration.gitlab.users.UsersClient.user_email_exists')
     @patch('congregate.helpers.conf.Config.destination_host',
@@ -682,19 +688,19 @@ class UsersTests(unittest.TestCase):
         url_value = "https://gitlabdestination.com/api/v4/users/5"
         url.return_value = url_value
         check.return_value = True
-        # pylint: disable=no-member
-        responses.add(responses.GET, url_value,
-                      json=self.mock_users.get_dummy_user(), status=200)
-        # pylint: enable=no-member
+        
+        respx.get(url_value).mock(return_value=Response(
+            status_code=200,
+            json=self.mock_users.get_dummy_user()
+        ))
+        
         search.return_value = [self.mock_users.get_dummy_user()]
         actual = self.users.find_user_primarily_by_email(user)
         expected = self.mock_users.get_dummy_user()
         self.assertDictEqual(expected, actual)
 
-    # pylint: disable=no-member
-    @responses.activate
-    # pylint: enable=no-member
-    @patch.object(GitLabApi, "generate_v4_request_url")
+    @respx.mock
+    @patch("gitlab_ps_utils.api.generate_v4_request_url")
     @patch.object(UsersApi, "search_for_user_by_email")
     @patch('congregate.migration.gitlab.users.UsersClient.user_email_exists')
     @patch('congregate.helpers.conf.Config.source_host',
@@ -717,46 +723,48 @@ class UsersTests(unittest.TestCase):
         url_value = "https://gitlabsource.com/api/v4/users/5"
         url.return_value = url_value
         check.return_value = True
-        # pylint: disable=no-member
-        responses.add(responses.GET, url_value,
-                      json=self.mock_users.get_dummy_user(), status=200)
-        # pylint: enable=no-member
+        
+        respx.get(url_value).mock(return_value=Response(
+            status_code=200,
+            json=self.mock_users.get_dummy_user()
+        ))
+        
         search.return_value = [self.mock_users.get_dummy_user()]
         actual = self.users.find_user_primarily_by_email(user)
         expected = self.mock_users.get_dummy_user()
         self.assertDictEqual(expected, actual)
 
-    # pylint: disable=no-member
-    @responses.activate
-    # pylint: enable=no-member
-    @patch.object(GitLabApi, "generate_v4_request_url")
+    @respx.mock
+    @patch("gitlab_ps_utils.api.generate_v4_request_url")
     @patch.object(UsersApi, "search_for_user_by_email")
     def test_find_user_primarily_by_email_with_invalid_object(
             self, search, url):
         user = {}
         url_value = "https://gitlabsource.com/api/v4/users/5"
         url.return_value = url_value
-        # pylint: disable=no-member
-        responses.add(responses.GET, url_value,
-                      json=self.mock_users.get_dummy_user(), status=200)
-        # pylint: enable=no-member
+        
+        respx.get(url_value).mock(return_value=Response(
+            status_code=200,
+            json=self.mock_users.get_dummy_user()
+        ))
+        
         search.return_value = [self.mock_users.get_dummy_user()]
         actual = self.users.find_user_primarily_by_email(user)
         self.assertIsNone(actual)
 
-    # pylint: disable=no-member
-    @responses.activate
-    # pylint: enable=no-member
-    @patch.object(GitLabApi, "generate_v4_request_url")
+    @respx.mock
+    @patch("gitlab_ps_utils.api.generate_v4_request_url")
     @patch.object(UsersApi, "search_for_user_by_email")
     def test_find_user_primarily_by_email_with_none(self, search, url):
         user = None
         url_value = "https://gitlabsource.com/api/v4/users/5"
         url.return_value = url_value
-        # pylint: disable=no-member
-        responses.add(responses.GET, url_value,
-                      json=self.mock_users.get_dummy_user(), status=200)
-        # pylint: enable=no-member
+        
+        respx.get(url_value).mock(return_value=Response(
+            status_code=200,
+            json=self.mock_users.get_dummy_user()
+        ))
+        
         search.return_value = [self.mock_users.get_dummy_user()]
         actual = self.users.find_user_primarily_by_email(user)
         self.assertIsNone(actual)
@@ -819,7 +827,7 @@ class UsersTests(unittest.TestCase):
     @patch.object(NamespacesApi, "get_namespace_by_full_path")
     def test_is_username_group_name_error_assumes_none(
             self, namespace_api, dest_token, dest_host):
-        namespace_api.side_effect = RequestException("API call failed")
+        namespace_api.side_effect = RequestError("API call failed")
         dest_host.return_value = "https://gitlabdestination.com"
         dest_token.return_value = "token"
         response = self.users.is_username_group_name(
@@ -848,9 +856,7 @@ class UsersTests(unittest.TestCase):
         self.assertEqual(
             self.users.get_user_creation_id_and_email(response), None)
 
-    # pylint: disable=no-member
-    @responses.activate
-    # pylint: enable=no-member
+    @respx.mock
     @patch('congregate.helpers.conf.Config.destination_host',
            new_callable=PropertyMock)
     @patch.object(ConfigurationValidator, 'destination_token',
@@ -873,17 +879,17 @@ class UsersTests(unittest.TestCase):
 
         # create_user
         url_value = "https://gitlabdestination.com/api/v4/users"
-        # pylint: disable=no-member
-        responses.add(responses.POST, url_value,
-                      json=self.mock_users.get_user_400(), status=400)
-        # pylint: enable=no-member
+        respx.post(url_value).mock(return_value=Response(
+            status_code=400,
+            json=self.mock_users.get_user_400()
+        ))
 
         # find_user_by_email_comparison_without_id
-        url_value = "https://gitlabdestination.com/api/v4/users?search=%s&per_page=10&page=%d" % (
-            new_user["email"], count.return_value)
-        # pylint: disable=no-member
-        responses.add(responses.GET, url_value, json=[], status=404)
-        # pylint: enable=no-member
+        url_value = "https://gitlabdestination.com/api/v4/users"
+        respx.get(url_value, params={"search": new_user["email"], "per_page": "10", "page": "1"}).mock(return_value=Response(
+            status_code=404,
+            json=[]
+        ))
 
         expected = {
             "id": None,

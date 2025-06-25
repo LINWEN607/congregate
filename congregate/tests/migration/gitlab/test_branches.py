@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch, PropertyMock, MagicMock
 from pytest import mark
-from requests.exceptions import RequestException
+from httpx import RequestError
 
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.migration.gitlab.branches import BranchesClient
@@ -33,7 +33,7 @@ class BranchesTests(unittest.TestCase):
         mock_host.return_value = "https://gitlabdestination.com"
         mock_token.return_value = "token"
         mock_staged.return_value = self.mock_projects.get_staged_projects()
-        mock_set.side_effect = RequestException()
+        mock_set.side_effect = RequestError("Failed")
         with self.assertLogs(self.branches.log, level="ERROR"):
             self.branches.set_default_branch(dry_run=False)
 

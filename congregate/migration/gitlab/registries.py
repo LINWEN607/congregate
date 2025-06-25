@@ -1,4 +1,4 @@
-from requests.exceptions import RequestException
+from httpx import RequestError
 from datetime import datetime
 import shutil
 
@@ -124,7 +124,7 @@ class RegistryClient(BaseClass):
         except APIError as ae:
             self.log.error(f"Failed to export registry, with error:\n{ae}")
             return False
-        except RequestException as re:
+        except RequestError as re:
             self.log.error(
                 f"Failed to migrate container registries for project {name}, with error:\n{re}")
             return False

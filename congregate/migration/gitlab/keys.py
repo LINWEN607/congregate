@@ -1,4 +1,4 @@
-from requests.exceptions import RequestException
+from httpx import RequestError
 
 from gitlab_ps_utils.misc_utils import is_error_message_present, strip_netloc
 from gitlab_ps_utils.dict_utils import pop_multiple_keys
@@ -46,7 +46,7 @@ class KeysClient(BaseGitLabClient):
         except TypeError as te:
             self.log.error(f"Project '{path}' deploy keys {resp} {te}")
             return False
-        except RequestException as re:
+        except RequestError as re:
             self.log.error(
                 f"Failed to migrate project '{path}' deploy keys, with error:\n{re}")
             return False
@@ -99,7 +99,7 @@ class KeysClient(BaseGitLabClient):
                 self.users_api.create_user_ssh_key(
                     self.config.destination_host, self.config.destination_token, new_user.get("id"), k)
             return True
-        except RequestException as re:
+        except RequestError as re:
             self.log.error(
                 f"Failed to migrate user '{email}' SSH keys, with error:\n{re}")
             return False
@@ -121,7 +121,7 @@ class KeysClient(BaseGitLabClient):
                 self.users_api.create_user_gpg_key(
                     self.config.destination_host, self.config.destination_token, new_user.get("id"), k)
             return True
-        except RequestException as re:
+        except RequestError as re:
             self.log.error(
                 f"Failed to migrate user '{email}' GPG keys, with error:\n{re}")
             return False

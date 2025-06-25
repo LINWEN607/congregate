@@ -1,6 +1,5 @@
 import sys
 import os
-import signal
 import errno
 import json
 
@@ -11,7 +10,7 @@ from pathlib import Path
 from shutil import copy
 from time import time
 from datetime import timedelta, datetime
-from requests import Response
+from httpx import Response
 from gitlab_ps_utils.misc_utils import is_error_message_present, get_dry_log, safe_json_response, strip_netloc
 from gitlab_ps_utils.json_utils import read_json_file_into_object, write_json_to_file
 from gitlab_ps_utils.dict_utils import dig
@@ -558,7 +557,5 @@ def check_download_directory(directory_path):
     return os.path.isdir(directory_path)
 
 def default_response():
-    resp = Response()
-    resp.status_code = 400
-    resp._content = b"Unable to execute import request"
+    resp = Response(400, content=b"Unable to execute import request")
     return resp

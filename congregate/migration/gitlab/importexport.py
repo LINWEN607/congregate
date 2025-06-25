@@ -10,8 +10,7 @@ from gitlab_ps_utils.misc_utils import get_dry_log, safe_json_response
 from gitlab_ps_utils.file_utils import download_file, is_gzip
 from gitlab_ps_utils.json_utils import json_pretty
 
-from requests.exceptions import RequestException
-from requests_toolbelt.multipart.encoder import MultipartEncoder
+from httpx import RequestError
 from congregate.migration.gitlab.base_gitlab_client import BaseGitLabClient
 from congregate.aws import AwsClient
 from congregate.migration.gitlab.projects import ProjectsClient
@@ -221,7 +220,7 @@ class ImportExportClient(BaseGitLabClient):
             response = self.trigger_export_and_get_response(
                 source_id, is_project, data=data, headers=headers)
             return response
-        except RequestException as e:
+        except RequestError as e:
             self.log.error("Failed to trigger {0} (ID: {1}) export as {2} with response {3}".format(
                 check_is_project_or_group_for_logging(is_project).lower(), source_id, filename, response))
             return None
@@ -346,14 +345,7 @@ class ImportExportClient(BaseGitLabClient):
                     # Extract project archive and load data into mongo
                     _, filename = extract_archive(upload_path)
 
-                # Handle large files
                 with open(f"{download_dir}/{filename}", "rb") as f:
-                    # m = MultipartEncoder(fields={
-                    #     "file": (filename, f),
-                    #     "path": path,
-                    #     "namespace": str(namespace),
-                    #     "name": name
-                    # })
                     file = {
                         "file": (filename, f)
                     }

@@ -1,4 +1,4 @@
-from requests.exceptions import RequestException
+from httpx import RequestError
 
 from gitlab_ps_utils.misc_utils import is_error_message_present, safe_json_response
 from gitlab_ps_utils.dict_utils import pop_multiple_keys
@@ -31,7 +31,7 @@ class PushRulesClient(BaseClass):
             self.projects_api.create_project_push_rule(
                 new_id, self.config.destination_host, self.config.destination_token, pr)
             return True
-        except RequestException as re:
+        except RequestError as re:
             self.log.error(
                 f"Failed to migrate {name} push rules, with error:\n{re}")
             return False

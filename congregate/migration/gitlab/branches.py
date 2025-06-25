@@ -1,4 +1,4 @@
-from requests.exceptions import RequestException
+from httpx import RequestError
 
 from gitlab_ps_utils.misc_utils import get_dry_log, is_error_message_present
 from congregate.helpers.base_class import BaseClass
@@ -36,6 +36,6 @@ class BranchesClient(BaseClass):
                         f"Failed to set project {path} default branch to {branch}, due to:\n{resp} - {resp.text}")
             else:
                 self.log.warning(f"Project {path} default branch not set")
-        except RequestException as e:
+        except RequestError as e:
             self.log.error(
                 f"Failed to set project {path} default branch to {branch}, with error:\n{e}")

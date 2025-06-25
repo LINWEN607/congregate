@@ -1,5 +1,5 @@
 import json
-from requests.exceptions import RequestException
+from httpx import RequestError
 from tqdm import tqdm
 from gitlab_ps_utils.misc_utils import get_timedelta, safe_json_response, strip_netloc, get_dry_log
 from gitlab_ps_utils.list_utils import remove_dupes
@@ -147,7 +147,7 @@ class GroupsClient(BaseClass):
                 elif not dry_run:
                     self.delete_group(resp, dest_full_path,
                                       permanent=permanent)
-            except RequestException as re:
+            except RequestError as re:
                 self.log.error(
                     f"Failed to delete group \n{json_pretty(sg)}\nwith error:\n{re}")
 

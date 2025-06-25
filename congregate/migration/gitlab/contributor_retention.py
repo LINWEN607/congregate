@@ -1,5 +1,5 @@
 import json
-from requests import Response
+from httpx import Response
 
 from gitlab_ps_utils.dict_utils import dig, rewrite_list_into_dict
 from gitlab_ps_utils.misc_utils import safe_json_response, get_dry_log

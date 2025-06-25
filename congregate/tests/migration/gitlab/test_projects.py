@@ -3,7 +3,7 @@ import unittest
 from unittest.mock import patch, PropertyMock, MagicMock
 from congregate.helpers.conf import Config
 from pytest import mark
-from requests.exceptions import RequestException
+from httpx import RequestError
 
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
@@ -299,7 +299,7 @@ class ProjectsTests(unittest.TestCase):
     def test_find_mirror_project_exception(self, mock_parent_id, mock_find_id, mock_get_path):
         mock_parent_id.return_value = None
         mock_get_path.return_value = "pmm-demo/spring-app-secure-2"
-        mock_find_id.side_effect = RequestException()
+        mock_find_id.side_effect = RequestError("API call failed")
         with self.assertLogs(self.projects.log, level="ERROR"):
             self.projects.find_mirror_project(
                 self.mock_projects.get_staged_group_project())
@@ -352,7 +352,7 @@ class ProjectsTests(unittest.TestCase):
         mock_host.return_value = "https://gitlabdestination.com"
         mock_token.return_value = "token"
         mock_staged.return_value = self.mock_projects.get_staged_projects()
-        mock_find.side_effect = RequestException()
+        mock_find.side_effect = RequestError("API call failed")
 
         mock_user = MagicMock()
         type(mock_user).status_code = PropertyMock(return_value=200)
@@ -384,7 +384,7 @@ class ProjectsTests(unittest.TestCase):
         mock_token.return_value = "token"
         mock_staged.return_value = self.mock_projects.get_staged_projects()
         mock_find.return_value = (2, "dictionary-web/darci3")
-        mock_get_mirrors.side_effect = RequestException()
+        mock_get_mirrors.side_effect = RequestError("API call failed")
         with self.assertLogs(self.projects.log, level="ERROR"):
             self.projects.toggle_staged_projects_push_mirror()
 
@@ -443,7 +443,7 @@ class ProjectsTests(unittest.TestCase):
         mock_token.return_value = "token"
         mock_staged.return_value = self.mock_projects.get_staged_projects()
         mock_find.return_value = (2, "dictionary-web/darci3")
-        mock_get_mirrors.side_effect = RequestException()
+        mock_get_mirrors.side_effect = RequestError("API call failed")
         with self.assertLogs(self.projects.log, level="ERROR"):
             self.projects.verify_staged_projects_push_mirror()
 
@@ -580,7 +580,7 @@ class ProjectsTests(unittest.TestCase):
         mock_token.return_value = "token"
         mock_staged.return_value = self.mock_projects.get_staged_forked_projects()
         mock_get_path.return_value = "top-level-group/security-reports-fork"
-        mock_find_id.side_effect = RequestException()
+        mock_find_id.side_effect = RequestError("API call failed")
         with self.assertLogs(self.projects.log, level="ERROR"):
             self.projects.create_staged_projects_fork_relation()
 

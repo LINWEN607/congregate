@@ -1,4 +1,4 @@
-from requests.exceptions import RequestException
+from httpx import RequestError
 from dacite import from_dict
 
 from gitlab_ps_utils.misc_utils import is_error_message_present, safe_json_response
@@ -98,7 +98,7 @@ class MergeRequestApprovalsClient(DbOrHttpMixin, BaseGitLabClient):
         except TypeError as te:
             self.log.error(f"Project '{name}' MR approvals:\n{te}")
             return False
-        except RequestException as re:
+        except RequestError as re:
             self.log.error(
                 f"Failed to migrate project '{name}' MR approvals:\n{re}")
             return False
