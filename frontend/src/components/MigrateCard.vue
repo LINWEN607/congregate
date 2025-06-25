@@ -124,6 +124,8 @@ export default {
   },
   beforeDestroy: function() {
     this.emitter.off('migration-in-progress')
+    this.emitter.off('save-modified-payload')
+    this.emitter.off('confirm-migration')
   },
   methods: {
     promptConfirmation: function() {
