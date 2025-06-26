@@ -357,7 +357,7 @@ class ImportExportClient(BaseGitLabClient):
                     headers = {
                         "Private-Token": self.dest_token
                     }
-                    message = f"Importing project '{name}' with the following payload '{data}' and members '{members}'"
+                    message = f"Importing project '{name}' using file '{filename}' with the following payload '{data}' and members '{members}'"
                     if import_resp := self.projects_api.import_project(
                         self.dest_host, self.dest_token, data=data, files=file, headers=headers, message=message):
                         resp = import_resp
