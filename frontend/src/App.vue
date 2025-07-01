@@ -67,7 +67,7 @@ export default {
       this.getJobsByStatus()
     })
   },
-  beforeDestroy: function() {
+  beforeUnmount: function() {
     this.emitter.off('check-jobs')
   },
   methods: {

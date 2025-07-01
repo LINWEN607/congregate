@@ -115,12 +115,11 @@ export default {
         // Save the modified payload
         this.emitter.emit('save-modified-payload', payload)
 
-        // Emit the confirmation event
-        this.emitter.emit('confirm-migration')
-        
         // Use nextTick to ensure DOM updates are processed
         this.$nextTick(() => {
-          
+          // Emit the confirmation event
+          this.emitter.emit('confirm-migration')
+
           // Hide the dialog
           this.visible = false
           

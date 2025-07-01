@@ -75,7 +75,7 @@ export default {
       this.userSummary = this.stagedUsers.length + "/" + counts.users
     })
   },
-  beforeDestroy: function () {
+  beforeUnmount: function () {
     this.emitter.off('update-stage')
     this.emitter.off('stream-list-stats')
   },

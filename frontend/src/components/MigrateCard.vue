@@ -112,6 +112,7 @@ export default {
   },
   mounted: function () {
     this.emitter.on('migration-in-progress', () => {
+      this.dryRun = false
       this.systemStore.updateMigrationInProgress(true)
       this.pollMigrationStatus()
     })
@@ -122,7 +123,7 @@ export default {
       this.triggerMigration()
     })
   },
-  beforeDestroy: function() {
+  beforeUnmount: function() {
     this.emitter.off('migration-in-progress')
     this.emitter.off('save-modified-payload')
     this.emitter.off('confirm-migration')
@@ -220,15 +221,18 @@ export default {
       let pollStatus = () => this.updateStatusTable(`import-status/${id}`)
       let validate = result => result.data.status == 'STARTED'
       let response = await poll(pollStatus, validate, 2500)
-      if (response.data.result != null && !response.data.result.hasOwnProperty('errors')) {
-        this.pollMigrationStatus()
-      } else if (response.data.result.hasOwnProperty('errors')) {
-        this.systemStore.updateMigrationInProgress(false)
-        this.emitter.emit('alert', {
-          'message': `Failed to trigger migration. Refer to task ${id} in the Task Queue`,
-          'messageType': 'error'
-        })
+      if (response.data.result != null) {
+        if (response.data.result.hasOwnProperty('errors')) {
+          this.systemStore.updateMigrationInProgress(false)
+          this.emitter.emit('alert', {
+            'message': `Failed to trigger migration. Refer to task ${id} in the Task Queue`,
+            'messageType': 'error'
+          })
+        } else {
+          this.pollMigrationStatus()
+        }
       }
+      
     },
     pollMigrationStatus: async function() {
       let pollStatus = () => this.updateStatusTable('migration-status')

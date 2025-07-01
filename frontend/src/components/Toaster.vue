@@ -22,7 +22,7 @@ export default {
           this.fireAlert(data)
       })
   },
-  beforeDestroy: function() {
+  beforeUnmount: function() {
       this.emitter.off('alert')
   },
   methods: {
