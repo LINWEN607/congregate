@@ -89,7 +89,7 @@ class ConfigurationValidator(Config):
         self.src_token_validated_in_session = self.validate_src_token(
             src_token) if not self.airgap else True
         return src_token
-    
+
     @property
     def src_aws_secret_access_key(self):
         obfuscated = True
@@ -100,7 +100,7 @@ class ConfigurationValidator(Config):
         self.src_token_validated_in_session = self.validate_src_token(
             src_token, "aws_secret_access_key") if not self.airgap else True
         return src_token
-    
+
     @property
     def src_aws_session_token(self):
         obfuscated = True
@@ -318,11 +318,11 @@ class ConfigurationValidator(Config):
             else:
                 raise ConfigurationException(
                     "source_token", msg=f"{msg}Invalid user authentication:\n{json_pretty(connection_data)}")
-            
+
     def validate_src_token_codecommit(self, token, token_type):
         """
-        Validate AWS CodeCommit credentials. 
-        Confirm that src_aws_secret_access_key, src_aws_session_token) are set. 
+        Validate AWS CodeCommit credentials.
+        Confirm that src_aws_secret_access_key, src_aws_session_token) are set.
         It also does a test call to confirm credentials are valid.
         """
 
@@ -381,9 +381,8 @@ class ConfigurationValidator(Config):
         if src_bulk_import and dest_bulk_import:
             if src_max_download == dest_max_download:
                 return True
-            else:
-                print(
-                    f"Warning: bulk_import_max_download_file_size does not match on source (max {src_max_download}) and destination (max {dest_max_download}). Update settings if possible. See docs: See docs: https://docs.gitlab.com/ee/api/settings.html#change-application-settings")
+            print(
+                f"Warning: bulk_import_max_download_file_size does not match on source (max {src_max_download}) and destination (max {dest_max_download}). Update settings if possible. See docs: See docs: https://docs.gitlab.com/ee/api/settings.html#change-application-settings")
         elif dest_bulk_import is False:
             # Assuming admin privileges and can officially confirm direct transfer is disabled
             raise ConfigurationException(
@@ -400,7 +399,9 @@ class ConfigurationValidator(Config):
         return True
 
     def __get_dt_configuration(self, host, token, dot_com):
-        if not dot_com:
+        user = safe_json_response(self.users.get_current_user(host, token))
+
+        if not dot_com and user.get("is_admin"):
             instance_api = InstanceApi()
             settings = safe_json_response(instance_api.get_application_settings(
                 host, token))
@@ -408,12 +409,11 @@ class ConfigurationValidator(Config):
                 # Return actual settings from the API
                 return self.__get_bulk_import_settings(
                     settings)
-            else:
-                # Return an empty tuple since we can't get a valid response
-                return (None, None)
-        else:
-            # Return default values
-            return True, 5120
+            # Return an empty tuple since we can't get a valid response
+            return (None, None)
+        # Return default values
+        # gitlab.com or Owner of shared self-managed tenancy
+        return True, 5120
 
     def __get_bulk_import_settings(self, settings):
         return (settings.get("bulk_import_enabled", False),
