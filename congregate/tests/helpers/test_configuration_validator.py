@@ -639,12 +639,17 @@ class ConfigurationValidationTests(unittest.TestCase):
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_token_validated_in_session')
     @mock.patch.object(GitLabApi, "generate_v4_request_url")
     @mock.patch.object(InstanceApi, "get_application_settings")
-    def test_direct_transfer_all_good(self, app_settings, url, src_token, dstn_token):
+    def test_direct_transfer_all_good_admin(self, app_settings, url, src_token, dstn_token):
         # Mock validate src and dstn tokens
         src_token.return_value = True
         dstn_token.return_value = True
-        url_value = "htts://gitlab.example.com/api/v4/application_settings"
+        url_value = "htts://gitlab.example.com/api/v4/user"
         url.return_value = url_value
+
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                      json=self.users.get_admin_user(), status=200, content_type='text/json', match_querystring=True)
+        # pylint: enable=no-member
 
         # Set direct_transfer to true to trigger validation
         self.config.as_obj().set("APP", "direct_transfer", "true")
@@ -667,13 +672,38 @@ class ConfigurationValidationTests(unittest.TestCase):
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.src_token_validated_in_session')
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_token_validated_in_session')
     @mock.patch.object(GitLabApi, "generate_v4_request_url")
+    def test_direct_transfer_all_good_non_admin(self, url, src_token, dstn_token):
+        # Mock validate src and dstn tokens
+        src_token.return_value = True
+        dstn_token.return_value = True
+        url_value = "htts://gitlab.example.com/api/v4/user"
+        url.return_value = url_value
+
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                      json=self.users.get_current_user(), status=200, content_type='text/json', match_querystring=True)
+        # pylint: enable=no-member
+
+        # Set direct_transfer to true to trigger validation
+        self.config.as_obj().set("APP", "direct_transfer", "true")
+
+        self.assertTrue(self.config.direct_transfer)
+
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.src_token_validated_in_session')
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_token_validated_in_session')
+    @mock.patch.object(GitLabApi, "generate_v4_request_url")
     @mock.patch.object(InstanceApi, "get_application_settings")
     def test_direct_transfer_not_enabled_on_dstn(self, app_settings, url, src_token, dstn_token):
         # Mock validate src and dstn tokens
         src_token.return_value = True
         dstn_token.return_value = True
-        url_value = "htts://gitlab.example.com/api/v4/application_settings"
+        url_value = "htts://gitlab.example.com/api/v4/user"
         url.return_value = url_value
+
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                      json=self.users.get_admin_user(), status=200, content_type='text/json', match_querystring=True)
+        # pylint: enable=no-member
 
         # Set direct_transfer to true to trigger validation
         self.config.as_obj().set("APP", "direct_transfer", "true")
@@ -704,8 +734,13 @@ class ConfigurationValidationTests(unittest.TestCase):
         # Mock validate src and dstn tokens
         src_token.return_value = True
         dstn_token.return_value = True
-        url_value = "htts://gitlab.example.com/api/v4/application_settings"
+        url_value = "htts://gitlab.example.com/api/v4/user"
         url.return_value = url_value
+
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                      json=self.users.get_admin_user(), status=200, content_type='text/json', match_querystring=True)
+        # pylint: enable=no-member
 
         # Set direct_transfer to true to trigger validation
         self.config.as_obj().set("APP", "direct_transfer", "true")
@@ -736,8 +771,13 @@ class ConfigurationValidationTests(unittest.TestCase):
         # Mock validate src and dstn tokens
         src_token.return_value = True
         dstn_token.return_value = True
-        url_value = "htts://gitlab.example.com/api/v4/application_settings"
+        url_value = "htts://gitlab.example.com/api/v4/user"
         url.return_value = url_value
+
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                      json=self.users.get_admin_user(), status=200, content_type='text/json', match_querystring=True)
+        # pylint: enable=no-member
 
         # Set direct_transfer to true to trigger validation
         self.config.as_obj().set("APP", "direct_transfer", "true")
@@ -765,8 +805,13 @@ class ConfigurationValidationTests(unittest.TestCase):
         # Mock validate src and dstn tokens
         src_token.return_value = True
         dstn_token.return_value = True
-        url_value = "htts://gitlab.example.com/api/v4/application_settings"
+        url_value = "htts://gitlab.example.com/api/v4/user"
         url.return_value = url_value
+
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                      json=self.users.get_admin_user(), status=200, content_type='text/json', match_querystring=True)
+        # pylint: enable=no-member
 
         # Set direct_transfer to true to trigger validation
         self.config.as_obj().set("APP", "direct_transfer", "true")
@@ -792,8 +837,13 @@ class ConfigurationValidationTests(unittest.TestCase):
         # Mock validate src and dstn tokens
         src_token.return_value = True
         dstn_token.return_value = True
-        url_value = "htts://gitlab.example.com/api/v4/application_settings"
+        url_value = "htts://gitlab.example.com/api/v4/user"
         url.return_value = url_value
+
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                      json=self.users.get_admin_user(), status=200, content_type='text/json', match_querystring=True)
+        # pylint: enable=no-member
 
         # Set direct_transfer to true to trigger validation
         self.config.as_obj().set("APP", "direct_transfer", "true")
@@ -819,8 +869,13 @@ class ConfigurationValidationTests(unittest.TestCase):
         # Mock validate src and dstn tokens
         src_token.return_value = True
         dstn_token.return_value = True
-        url_value = "htts://gitlab.example.com/api/v4/application_settings"
+        url_value = "htts://gitlab.example.com/api/v4/user"
         url.return_value = url_value
+
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                      json=self.users.get_admin_user(), status=200, content_type='text/json', match_querystring=True)
+        # pylint: enable=no-member
 
         # Set direct_transfer to true to trigger validation
         self.config.as_obj().set("APP", "direct_transfer", "true")
@@ -846,13 +901,18 @@ class ConfigurationValidationTests(unittest.TestCase):
     @mock.patch.object(ConfigurationValidator, 'destination_host', new_callable=mock.PropertyMock)
     @mock.patch.object(GitLabApi, "generate_v4_request_url")
     @mock.patch.object(InstanceApi, "get_application_settings")
-    def test_direct_transfer_gitlab_dot_com(self, app_settings, url, dest_host, src_token, dstn_token):
+    def test_direct_transfer_gitlab_dot_com_admin(self, app_settings, url, dest_host, src_token, dstn_token):
         # Mock validate src and dstn tokens
         dest_host.return_value = 'https://gitlab.com'
         src_token.return_value = True
         dstn_token.return_value = True
-        url_value = "htts://gitlab.com/api/v4/application_settings"
+        url_value = "htts://gitlab.example.com/api/v4/user"
         url.return_value = url_value
+
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                      json=self.users.get_admin_user(), status=200, content_type='text/json', match_querystring=True)
+        # pylint: enable=no-member
 
         # Set direct_transfer to true to trigger validation
         self.config.as_obj().set("APP", "direct_transfer", "true")
@@ -864,5 +924,27 @@ class ConfigurationValidationTests(unittest.TestCase):
 
         # Add mock objects to get_application_settings side effects
         app_settings.side_effect = [src_setting_resp]
+
+        self.assertTrue(self.config.direct_transfer)
+
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.src_token_validated_in_session')
+    @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_token_validated_in_session')
+    @mock.patch.object(ConfigurationValidator, 'destination_host', new_callable=mock.PropertyMock)
+    @mock.patch.object(GitLabApi, "generate_v4_request_url")
+    def test_direct_transfer_gitlab_dot_com_admin(self, url, dest_host, src_token, dstn_token):
+        # Mock validate src and dstn tokens
+        dest_host.return_value = 'https://gitlab.com'
+        src_token.return_value = True
+        dstn_token.return_value = True
+        url_value = "htts://gitlab.example.com/api/v4/user"
+        url.return_value = url_value
+
+        # pylint: disable=no-member
+        responses.add(responses.GET, url_value,
+                      json=self.users.get_current_user(), status=200, content_type='text/json', match_querystring=True)
+        # pylint: enable=no-member
+
+        # Set direct_transfer to true to trigger validation
+        self.config.as_obj().set("APP", "direct_transfer", "true")
 
         self.assertTrue(self.config.direct_transfer)
