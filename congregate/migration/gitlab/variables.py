@@ -1,5 +1,4 @@
-from requests.exceptions import RequestException
-from requests import Response
+from httpx import Response, RequestError
 from gitlab_ps_utils.misc_utils import is_error_message_present, safe_json_response
 
 from congregate.migration.gitlab.base_gitlab_client import BaseGitLabClient
@@ -158,7 +157,7 @@ class VariablesClient(DbOrHttpMixin, BaseGitLabClient):
         except TypeError as te:
             self.log.error(f"{var_type} '{name}' variables:\n{te}")
             return False
-        except RequestException as re:
+        except RequestError as re:
             self.log.error(
                 f"Failed to migrate {var_type} '{name}' CI/CD variables:\n{re}")
             return False

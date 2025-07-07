@@ -1,4 +1,4 @@
-FROM python:3.8.20-slim-bullseye
+FROM python:3.10.18-slim-bookworm
 
 # Add ps-user and give them sudo privileges
 RUN adduser ps-user && \

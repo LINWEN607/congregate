@@ -1,6 +1,6 @@
 import json
 import requests
-from requests.exceptions import RequestException
+from httpx import RequestError
 from gitlab_ps_utils.decorators import stable_retry
 from gitlab_ps_utils.dict_utils import pop_multiple_keys
 from congregate.helpers.base_class import BaseClass
@@ -152,7 +152,7 @@ class MirrorClient(BaseClass):
 
             return response["id"]
             # self.log.debug(put_response.json())
-        except RequestException as e:
+        except RequestError as e:
             self.log.error(e)
             return None
 
@@ -174,7 +174,7 @@ class MirrorClient(BaseClass):
                                 project["id"])
                             self.log.info(
                                 "Mirrored project {0} ({1})".format(encoded_name, resp))
-                        except RequestException as e:
+                        except RequestError as e:
                             self.log.error("Failed to mirror project {0} ({1}), with error:\n{2}".format(
                                 encoded_name, resp, e))
                 else:

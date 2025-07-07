@@ -60,7 +60,7 @@ export default {
       this.pollListStatus()
     })
   },
-  beforeDestroy: function() {
+  beforeUnmount: function() {
     this.emitter.off('listing-in-progress')
   },
   methods: {

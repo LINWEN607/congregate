@@ -36,12 +36,17 @@ def trigger_staged_migration(entity_type, dry_run=True):
 @direct_transfer_routes.route('/import-status/<id>', methods=['GET'])
 def get_import_status(id):
     res = get_task_status(id)
+    if res.state == 'FAILURE':
+        # Casts an Exception object to string to be able to return JSON
+        result = str(res.result)
+    else:
+        result = res.result
     return jsonify({
         'task-id': id,
         'status': res.state,
         'task_name': res.name,
         'entity_name': find_arg_prop(res, 'destination_name'),
-        'result': res.result
+        'result': result
     }), 200
 
 @direct_transfer_routes.route('/migration-status', methods=['GET'])

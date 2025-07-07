@@ -6,7 +6,7 @@
 
 from json import loads as json_loads
 from traceback import print_exc
-from requests.exceptions import RequestException
+from httpx import RequestError
 
 from gitlab_ps_utils.misc_utils import safe_json_response, strip_netloc, get_dry_log
 from gitlab_ps_utils.json_utils import write_json_to_file, json_pretty
@@ -276,7 +276,7 @@ class GitLabMigrateClient(MigrateClient):
             if imported:
                 result = list(self.groups_api.get_all_bulk_group_import_entities(
                     host, token, bid))
-        except (RequestException, KeyError, OverflowError) as oe:
+        except (RequestError, KeyError, OverflowError) as oe:
             self.log.error(
                 f"Failed to import bulk group groups with error:\n{oe}")
         except Exception as e:
@@ -297,7 +297,7 @@ class GitLabMigrateClient(MigrateClient):
             self.log.info(f"{dry_log}Exporting group '{full_path}' (ID: {gid}) as {filename}")
             result[filename] = self.ie.export_group(
                 gid, full_path, filename, dry_run=self.dry_run)
-        except (IOError, RequestException) as oe:
+        except (IOError, RequestError) as oe:
             self.log.error(f"Failed to export group '{full_path}' (ID: {gid}) as {filename} with error:\n{oe}")
         except Exception as e:
             self.log.error(e)
@@ -345,7 +345,7 @@ class GitLabMigrateClient(MigrateClient):
             if import_id and not self.dry_run:
                 result[full_path_with_parent_namespace] = self.migrate_single_group_features(
                     src_gid, import_id, full_path)
-        except (RequestException, KeyError, OverflowError) as oe:
+        except (RequestError, KeyError, OverflowError) as oe:
             self.log.error(
                 f"Failed to import group {full_path} (ID: {src_gid}) as {filename} with error:\n{oe}")
         except Exception as e:
@@ -387,7 +387,7 @@ class GitLabMigrateClient(MigrateClient):
             elif not self.dry_run:
                 self.log.warning(
                     f"SKIP: Sub-group '{full_path_with_parent_namespace}' NOT found on destination")
-        except (RequestException, KeyError, OverflowError) as oe:
+        except (RequestError, KeyError, OverflowError) as oe:
             self.log.error(
                 f"Failed to migrate sub-group {full_path_with_parent_namespace} (ID: {src_gid}) features with error:\n{oe}")
         except Exception as e:
@@ -529,7 +529,7 @@ class GitLabMigrateClient(MigrateClient):
                         f"Archiving source project '{project_path}' (ID: {pid})")
                     self.projects_api.archive_project(
                         self.config.source_host, self.config.source_token, pid)
-        except (IOError, RequestException) as oe:
+        except (IOError, RequestError) as oe:
             self.log.error(
                 f"Failed to export/download project {project_path} (ID: {pid}) as {filename} with error:\n{oe}")
         except Exception as e:
@@ -598,7 +598,7 @@ class GitLabMigrateClient(MigrateClient):
             elif not self.dry_run:
                 self.log.warning(
                     f"Skipping import. Target namespace {tn} does not exist for project '{path}'")
-        except (RequestException, KeyError, OverflowError) as oe:
+        except (RequestError, KeyError, OverflowError) as oe:
             self.log.error(
                 f"Failed to import project '{path}' (ID: {src_id}):\n{oe}")
         except Exception as e:

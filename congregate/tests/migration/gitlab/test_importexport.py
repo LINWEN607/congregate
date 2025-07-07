@@ -1,8 +1,8 @@
 import unittest
-import responses
+import respx
 from pytest import mark
 from unittest.mock import MagicMock, PropertyMock, patch
-from requests.models import Response
+from httpx import Response
 
 from gitlab_ps_utils.api import GitLabApi
 from congregate.helpers.configuration_validator import ConfigurationValidator
@@ -18,9 +18,7 @@ class ImportExportClientTests(unittest.TestCase):
     def setUp(self):
         self.ie = ImportExportClient()
         self.mock_groups = MockGroupsApi()
-        self.import_response = Response()
-        self.import_response.status_code = 202
-        self.import_response._content = b'{ "id": 12345, "name": "name", "name_with_namespace": "path" }'
+        self.import_response = Response(202, json={"id": 12345, "name": "name", "name_with_namespace": "path"})
         self.original_project_name = "original_project_name"
         self.original_project_filename = "original_project_filename"
         self.original_project_path = "original_project_path"
@@ -81,9 +79,7 @@ class ImportExportClientTests(unittest.TestCase):
         mock_wait.return_value = 0.01
         mock_max_wait.return_value = 0.1
 
-        import_response_none = Response()
-        import_response_none.status_code = 404
-        import_response_none._content = b'{"message": "not found"}'
+        import_response_none = Response(404, content=b'{"message": "not found"}')
 
         import_id = self.ie.get_import_id_from_response(import_response_none, self.original_project_filename, self.original_project_name,
                                                         self.original_project_path, self.original_namespace_path, self.original_project_override_params, self.members)
@@ -379,10 +375,8 @@ class ImportExportClientTests(unittest.TestCase):
         mock_export_group.return_value = ok_export_mock
         self.assertFalse(self.ie.wait_for_group_download(1, retry=False))
 
-    # pylint: disable=no-member
-    @responses.activate
-    # pylint: enable=no-member
-    @patch.object(GitLabApi, "generate_v4_request_url")
+    @respx.mock
+    @patch("gitlab_ps_utils.api.generate_v4_request_url")
     @patch('congregate.migration.gitlab.groups.GroupsClient.find_group_by_path')
     @patch.object(ConfigurationValidator, 'destination_token',
                   new_callable=PropertyMock)
@@ -392,10 +386,10 @@ class ImportExportClientTests(unittest.TestCase):
         mock_find_group_by_path.return_value = self.mock_groups.get_group()
         url_value = "https://gitlabdestination.com/api/v4/groups/1"
         url.return_value = url_value
-        # pylint: disable=no-member
-        responses.add(responses.GET, url_value,
-                      json=self.mock_groups.get_group(), status=200)
-        # pylint: enable=no-member
+        respx.get(url_value).mock(return_value=Response(
+            status_code=200, 
+            json=self.mock_groups.get_group()
+        ))
         self.assertTrue(self.ie.wait_for_group_import("mock"))
 
     @patch('congregate.migration.gitlab.groups.GroupsClient.find_group_by_path')

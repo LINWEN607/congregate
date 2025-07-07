@@ -1,5 +1,4 @@
-from requests import Response
-from requests.exceptions import RequestException
+from httpx import Response, RequestError
 
 from congregate.helpers.base_class import BaseClass
 from gitlab_ps_utils.misc_utils import get_dry_log, is_error_message_present
@@ -64,7 +63,7 @@ class HooksClient(BaseClass):
 
             except TypeError as te:
                 self.log.error(f"System hooks {resp} {te}")
-            except RequestException as re:
+            except RequestError as re:
                 self.log.error(
                     f"Failed to migrate system hooks, with error:\n{re}")
 
@@ -91,7 +90,7 @@ class HooksClient(BaseClass):
         except TypeError as te:
             self.log.error(f"Project '{path}' (ID: {old_id}) hooks {resp} {te}")
             return False
-        except RequestException as re:
+        except RequestError as re:
             self.log.error(
                 f"Failed to migrate project '{path}' (ID: {old_id}) hooks\n{re}")
             return False
@@ -120,7 +119,7 @@ class HooksClient(BaseClass):
             self.log.error(
                 f"Group {full_path} (ID: {old_id}) hooks {resp} {te}")
             return False
-        except RequestException as re:
+        except RequestError as re:
             self.log.error(
                 f"Failed to migrate group {full_path} (ID: {old_id}) hooks, with error:\n{re}")
             return False

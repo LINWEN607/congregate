@@ -52,10 +52,6 @@ export default {
       },
       parent: document.getElementById('editor-container')
     })
-  },
-  beforeUnmount() {
-  },
-  methods: {
   }
 }
 </script>

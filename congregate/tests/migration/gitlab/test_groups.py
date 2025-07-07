@@ -1,5 +1,6 @@
 import unittest
-import responses
+import respx
+import httpx
 from unittest import mock
 from pytest import mark
 
@@ -47,8 +48,7 @@ class GroupsTests(unittest.TestCase):
         mock_list_all.return_value = []
         self.assertFalse(self.groups.is_group_non_empty(group))
 
-    # pylint: disable=no-member
-    @responses.activate
+    @respx.mock
     @mock.patch('congregate.helpers.conf.Config.destination_host',
                 new_callable=mock.PropertyMock)
     @mock.patch.object(ConfigurationValidator,
@@ -62,13 +62,12 @@ class GroupsTests(unittest.TestCase):
         url_value = "https://gitlab.com/api/v4/groups"
         mock_list_all.return_value = [
             self.mock_groups.get_all_subgroups_list()[0]]
-        responses.add(
-            responses.GET,
-            url_value,
-            json=self.mock_groups.get_group(),
-            status=200,
-            content_type='text/json',
-            match_querystring=True)
+        
+        respx.get(url_value).mock(return_value=httpx.Response(
+            status_code=200,
+            json=self.mock_groups.get_group()
+        ))
+        
         group = self.mock_groups.get_group()
         group["projects"] = []
         self.assertTrue(self.groups.is_group_non_empty(group))

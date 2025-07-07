@@ -1,7 +1,6 @@
 import os
 import sys
-from requests import Response
-from requests.exceptions import RequestException, HTTPError
+from httpx import Response, RequestError, HTTPError
 from pandas import DataFrame, Series, set_option
 from dacite import from_dict
 from celery import shared_task
@@ -95,12 +94,12 @@ class UsersClient(BaseClass):
             # Log the HTTP status code and response message for troubleshooting
             self.log.info(f"No group found with user '{old_user}' namespace: {response.status_code}: {response.text}")
             return False
+        except RequestError as re:
+            self.log.error(
+                f"Request failed while checking group namespace for user '{old_user}': {re}")
         except HTTPError as http_err:
             self.log.error(
                 f"HTTP error occurred while checking group namespace for user '{old_user}': {http_err}")
-        except RequestException as re:
-            self.log.error(
-                f"Request failed while checking group namespace for user '{old_user}': {re}")
         except Exception as err:
             self.log.error(f"An error occurred: {err}")
 
@@ -225,7 +224,7 @@ class UsersClient(BaseClass):
         try:
             self.__handle_parent_group_members(
                 dry_run, add_members, access_level, target_level)
-        except RequestException as re:
+        except RequestError as re:
             self.log.error(
                 f"Failed to {'add or ' if add_members else ''}update parent group {parent_id} members, with error:\n{re}")
 
@@ -287,7 +286,7 @@ class UsersClient(BaseClass):
                     f"Updating project member roles '{current_level}' -> '{target_level}'")
                 self.__update_members_access_level(
                     "project", current_role, target_role, dry_run=dry_run)
-        except RequestException as re:
+        except RequestError as re:
             self.log.error(
                 f"Failed to update group/project members access levels:\n{re}")
         except Exception as e:
@@ -413,7 +412,7 @@ class UsersClient(BaseClass):
                     else:
                         self.projects_api.remove_member(
                             sid, m.get("id"), host, token)
-        except RequestException as re:
+        except RequestError as re:
             self.log.error(
                 f"Failed to remove {m.get('name')} from {staged_path}, with error:\n{re}")
 
@@ -676,7 +675,7 @@ class UsersClient(BaseClass):
                     f"{text} user '{user_data['username']}' email {user_data['email']} (status: {response})")
                 return response
             return None
-        except RequestException as e:
+        except RequestError as e:
             self.log.error(
                 f"Failed request to {text} user {user_data}, with error:\n{e}")
             return None
@@ -693,7 +692,7 @@ class UsersClient(BaseClass):
             if not isinstance(resp, Response) or resp.status_code != 200:
                 self.log.error(
                     f"Failed to add {user_msg}, with response:\n{resp} - {resp.text}")
-        except RequestException as e:
+        except RequestError as e:
             self.log.error(
                 f"Failed request to add {user_msg}, with error:\n{e}")
 
@@ -714,7 +713,7 @@ class UsersClient(BaseClass):
                 # or it already existed
                 response = find_user_by_email_comparison_without_id(email)
                 return self.get_user_creation_id_and_email(response)
-            except RequestException as e:
+            except RequestError as e:
                 return self.log_and_return_failed_user_creation(f"{log_resp}\n{e}", email)
         elif response.status_code == 400:
             return self.log_and_return_failed_user_creation(f"{log_resp} improperly formatted request:\n{error_resp}", email)
@@ -771,7 +770,7 @@ class UsersClient(BaseClass):
                     else:
                         self.log.info("Ignoring {0}. User existed before {1} hours".format(
                             user["email"], self.config.max_asset_expiration_time))
-                except RequestException as re:
+                except RequestError as re:
                     self.log.error(
                         "Failed to remove user\n{0}\nwith error:\n{1}".format(json_pretty(su), re))
 
@@ -827,7 +826,7 @@ class UsersClient(BaseClass):
                         f"Overwrite source user '{username}' public email '{pub_email}' -> '{email}'")
                 self.set_public_email(
                     user.get("id"), set_email, username, host, token, dry_run=dry_run)
-            except RequestException as re:
+            except RequestError as re:
                 self.log.error(
                     f"Failed to set source user '{su.get('username')}' public email '{set_email}':\n{re}")
                 continue
@@ -852,19 +851,19 @@ class UsersClient(BaseClass):
             dest_primary = u["dest"]["primary"]
             src_public = u["src"]["public"]
             src_id = u["src"]["id"]
-            # Catch duplicate email RequestException and continue
+            # Catch duplicate email RequestError and continue
             try:
                 if dest_primary not in u["src"].values() and not dry_run:
                     self.add_user_email(dest_primary, src_id, m, host, token)
-            except RequestException as re:
+            except RequestError as re:
                 self.log.error(
                     f"Failed to add user '{m}' destination '{dest_primary}' primary as source secondary email:\n{re}")
-            # Catch any other RequestException
+            # Catch any other RequestError
             try:
                 if dest_primary != src_public and not dry_run:
                     self.set_public_email(
                         src_id, dest_primary, m, host, token, dry_run=dry_run)
-            except RequestException as re:
+            except RequestError as re:
                 self.log.error(
                     f"Failed to set user '{m}' destination '{dest_primary}' primary as source public email:\n{re}")
             else:
