@@ -7,7 +7,6 @@ import respx
 from httpx import MockTransport, Response
 from gitlab_ps_utils.exceptions import ConfigurationException
 from gitlab_ps_utils.string_utils import obfuscate
-from gitlab_ps_utils.api import GitLabApi
 from congregate.migration.gitlab.api.instance import InstanceApi
 from congregate.helpers.configuration_validator import ConfigurationValidator
 from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
@@ -675,7 +674,7 @@ class ConfigurationValidationTests(unittest.TestCase):
     @respx.mock
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.src_token_validated_in_session')
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_token_validated_in_session')
-    @mock.patch.object(GitLabApi, "generate_v4_request_url")
+    @mock.patch("gitlab_ps_utils.api.generate_v4_request_url")
     def test_direct_transfer_all_good_non_admin(self, url, src_token, dstn_token):
         # Mock validate src and dstn tokens
         src_token.return_value = True
@@ -696,7 +695,7 @@ class ConfigurationValidationTests(unittest.TestCase):
     @respx.mock
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.src_token_validated_in_session')
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_token_validated_in_session')
-    @mock.patch.object(GitLabApi, "generate_v4_request_url")
+    @mock.patch("gitlab_ps_utils.api.generate_v4_request_url")
     @mock.patch.object(InstanceApi, "get_application_settings")
     def test_direct_transfer_not_enabled_on_dstn(self, app_settings, url, src_token, dstn_token):
         # Mock validate src and dstn tokens
@@ -942,7 +941,7 @@ class ConfigurationValidationTests(unittest.TestCase):
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.src_token_validated_in_session')
     @mock.patch('congregate.helpers.configuration_validator.ConfigurationValidator.dstn_token_validated_in_session')
     @mock.patch.object(ConfigurationValidator, 'destination_host', new_callable=mock.PropertyMock)
-    @mock.patch.object(GitLabApi, "generate_v4_request_url")
+    @mock.patch("gitlab_ps_utils.api.generate_v4_request_url")
     def test_direct_transfer_gitlab_dot_com_non_admin(self, url, dest_host, src_token, dstn_token):
         # Mock validate src and dstn tokens
         dest_host.return_value = 'https://gitlab.com'
