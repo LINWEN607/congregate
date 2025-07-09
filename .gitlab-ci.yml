@@ -23,8 +23,8 @@ include:
 
 variables:
   DOCKER_VERSION: "20.10.22"
-  TEST_IMAGE_NAME: "$CI_REGISTRY_IMAGE/test-3.8:latest"
-  CDK_IMAGE_NAME: "$CI_REGISTRY_IMAGE/cdk:3.8"
+  TEST_IMAGE_NAME: "$CI_REGISTRY_IMAGE/test-3.10:latest"
+  CDK_IMAGE_NAME: "$CI_REGISTRY_IMAGE/cdk:3.10"
   BB_SERVER_SEED_IMAGE_NAME: "$CI_REGISTRY_IMAGE/bitbucket-seed:latest"
   JENKINS_SEED_IMAGE_NAME: "$CI_REGISTRY_IMAGE/jenkins-seed:latest"
   SAST_EXCLUDED_ANALYZERS: "brakeman,flawfinder,gosec,kubesec,mobsf,phpcs-security-audit,pmd-apex,security-code-scan,sobelow,spotbugs"
@@ -152,7 +152,7 @@ build test image:
   stage: build
   script:
     - echo "SOURCE IS $CI_PIPELINE_SOURCE"
-    - cp ./docker/test/py38.Dockerfile ./Dockerfile
+    - cp ./docker/test/py310.Dockerfile ./Dockerfile
     - docker build --tag "$TEST_IMAGE_NAME" .
     - docker push "$TEST_IMAGE_NAME"
   rules:
@@ -160,7 +160,7 @@ build test image:
       changes:
         - docker/test/*
       variables:
-        TEST_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHORT_SHA-test-3.8
+        TEST_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHORT_SHA-test-3.10
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
       changes:
         - docker/test/*
@@ -180,7 +180,7 @@ build cdk image:
       changes:
         - docker/dev/**/*
       variables:
-        CDK_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHORT_SHA-cdk-3.8
+        CDK_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHORT_SHA-cdk-3.10
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'schedule'"
       changes:
         - docker/test/*
@@ -259,7 +259,7 @@ check ldap compose yaml:
   rules:
     - if: "$CI_PIPELINE_SOURCE == 'merge_request_event'"
       variables:
-        TEST_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHORT_SHA-test-3.8
+        TEST_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHORT_SHA-test-3.10
       changes:
         - docker/test/*
     - if: "$CI_PIPELINE_SOURCE != 'schedule'"
@@ -297,6 +297,11 @@ check ldap compose yaml:
     - export GITLAB_DEST=http://gitlab-dest
     - export GITLAB_DEST_REG_URL=gitlab-dest:4567
   rules:
+    - if: "$CI_PIPELINE_SOURCE == 'merge_request_event'"
+      changes:
+        - docker/test/*
+      variables:
+        TEST_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHORT_SHA-test-3.10
     - if: "$CI_PIPELINE_SOURCE != 'schedule'"
       changes:
         - .gitlab-ci.yml
@@ -694,6 +699,11 @@ mvc:
   script:
     - echo "Placeholder job to trigger a min. pipeline for non-code related changes"
   rules:
+    - if: "$CI_PIPELINE_SOURCE == 'merge_request_event'"
+      changes:
+        - docker/test/*
+      variables:
+        TEST_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHORT_SHA-test-3.10
     - if: "($CI_MERGE_REQUEST_IID || $CI_COMMIT_BRANCH) && $CI_PIPELINE_SOURCE != 'schedule'"
       changes:
         - "**/*.md"

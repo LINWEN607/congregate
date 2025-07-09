@@ -488,10 +488,7 @@ def kick_off_bulk_import(self, payload, dry_run=True):
             'status': 'dry run successful',
             'dry_run_data': dt_entities
         }
-    return {
-        'status': 'failed to trigger migration',
-        'errors': errors
-    }
+    raise Exception(f'Failed to trigger migration. Refer to the logs for any additional details. Any response errors: ({errors})')
 
 
 @shared_task(name='watch-import-status')

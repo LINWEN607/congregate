@@ -4,7 +4,7 @@ from os.path import dirname
 import datetime
 from sqlite3 import DataError
 from time import time, sleep
-from requests.exceptions import RequestException
+from httpx import RequestError
 from tqdm import tqdm
 from celery import shared_task
 
@@ -117,7 +117,7 @@ class ProjectsClient(BaseClass):
                     self.log.error(
                         f"Failed to find project '{path}' shared group '{dst_full_path}' on destination using new ID {new_gid}")
             return True
-        except RequestException as re:
+        except RequestError as re:
             self.log.error(
                 f"Failed to POST shared group '{dst_full_path}' to project '{path}', with error:\n{re}")
             return False
@@ -151,7 +151,7 @@ class ProjectsClient(BaseClass):
                 elif not dry_run:
                     self.delete_project(
                         resp, path_with_namespace, permanent=permanent)
-            except RequestException as re:
+            except RequestError as re:
                 self.log.error(
                     f"Failed to find project '{path_with_namespace}' on destination:\n{re}")
 
@@ -256,7 +256,7 @@ class ProjectsClient(BaseClass):
                             if resp.status_code != 201:
                                 self.log.error(
                                     f"Failed to {action_type.lower()} {host_type} ({host}) project {path}, with response:\n{resp} - {resp.text}")
-        except RequestException as re:
+        except RequestError as re:
             self.log.error(
                 f"Failed to {action_type.lower()} {host_type} ({host}) projects, with error:\n{re}")
         finally:
@@ -689,7 +689,7 @@ class ProjectsClient(BaseClass):
                     elif resp.status_code != 201:
                         self.log.error(
                             f"Failed to create and edit project {dst_path}, with response:\n{resp} - {resp.text}")
-            except RequestException as re:
+            except RequestError as re:
                 self.log.error(
                     f"Failed to create project {path_with_namespace} with error:\n{re}")
                 continue
@@ -767,7 +767,7 @@ class ProjectsClient(BaseClass):
                 if resp.status_code != 200:
                     self.log.error(
                         f"Failed to start destination project '{mirror_path}' ({mirror_pid}) pull mirror:\n{resp} - {resp.text}")
-        except RequestException as re:
+        except RequestError as re:
             self.log.error(
                 f"Failed to create destination project '{mirror_path}' ({mirror_pid}) pull mirror:\n{re}")
 
@@ -810,7 +810,7 @@ class ProjectsClient(BaseClass):
                     elif force:
                         # Push commit (skip-ci) to new branch and delete branch
                         self.trigger_mirroring(host, token, sp, dst_pid)
-            except RequestException as re:
+            except RequestError as re:
                 self.log.error(
                     f"Failed to create project {sp.get('path_with_namespace')} push mirror, with error:\n{re}")
                 continue
@@ -845,7 +845,7 @@ class ProjectsClient(BaseClass):
             else:
                 self.projects_api.delete_branch(
                     host, token, pid, branch)
-        except RequestException as re:
+        except RequestError as re:
             self.log.error(
                 f"Failed to commit branch {branch} payload {commit_data} to project {pid}, with error:\n{re}")
         finally:
@@ -894,7 +894,7 @@ class ProjectsClient(BaseClass):
                     if resp.status_code != 200:
                         self.log.error(
                             f"Failed to {'disable' if disable else 'enable'} {project} push mirror to {mirror_path}, with response:\n{resp} - {resp.text}")
-            except RequestException as re:
+            except RequestError as re:
                 self.log.error(
                     f"Failed to toggle project {sp.get('path_with_namespace')} push mirror, with error:\n{re}")
                 continue
@@ -911,7 +911,7 @@ class ProjectsClient(BaseClass):
             try:
                 self.verify_staged_projects(
                     host, token, sp, disabled, keep_div_refs)
-            except RequestException as re:
+            except RequestError as re:
                 self.log.error(
                     f"Failed to verify project {sp.get('path_with_namespace')} push mirror, with error:\n{re}")
                 continue
@@ -968,7 +968,7 @@ class ProjectsClient(BaseClass):
                     f"SKIP: Mirror project '{mirror_path}' NOT found")
                 return (mirror_pid, False)
             return (mirror_pid, mirror_path)
-        except RequestException as re:
+        except RequestError as re:
             self.log.error(
                 f"Failed to find staged project '{staged_project.get('path_with_namespace')}' original and/or mirror project:\n{re}")
             return (False, False)
@@ -989,7 +989,7 @@ class ProjectsClient(BaseClass):
                     continue
                 self.delete_push_mirrors(
                     host, token, orig_pid, sp_path, remove_all, dry_run)
-            except RequestException as re:
+            except RequestError as re:
                 self.log.error(
                     f"Failed to DELETE project '{sp_path}' push mirror, with error:\n{re}")
                 continue
@@ -1051,7 +1051,7 @@ class ProjectsClient(BaseClass):
                         if resp.status_code != 201:
                             self.log.error(
                                 f"Failed to create forked from {orig_path} to {fork_path} project relation, with response {resp} - {resp.text}")
-                except RequestException as re:
+                except RequestError as re:
                     self.log.error(
                         f"Failed to create project {sp.get('path_with_namespace')} fork relation, with error:\n{re}")
                     continue
@@ -1156,7 +1156,7 @@ class ProjectsClient(BaseClass):
             else:
                 self.log.info(
                     f"No contributors found for project '{project_path}'")
-        except RequestException as re:
+        except RequestError as re:
             self.log.error(
                 f"Failed to list project '{project_path}' contributors, with error:\n{re}")
         return contributors

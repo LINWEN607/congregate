@@ -1,6 +1,5 @@
 import sys
 import os
-import signal
 import errno
 import json
 
@@ -11,7 +10,7 @@ from pathlib import Path
 from shutil import copy
 from time import time
 from datetime import timedelta, datetime
-from requests import Response
+from httpx import Response
 from gitlab_ps_utils.misc_utils import is_error_message_present, get_dry_log, safe_json_response, strip_netloc
 from gitlab_ps_utils.json_utils import read_json_file_into_object, write_json_to_file
 from gitlab_ps_utils.dict_utils import dig
@@ -20,6 +19,7 @@ from congregate.helpers.utils import is_dot_com, get_congregate_path
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.instance import InstanceApi
 from congregate.migration.meta.constants import TOP_LEVEL_RESERVED_NAMES, SUBGROUP_RESERVED_NAMES, PROJECT_RESERVED_NAMES
+from urllib.parse import urlparse
 
 b = BaseClass()
 users_api = UsersApi()
@@ -265,15 +265,15 @@ def get_dst_path_with_namespace(p, mirror=False, group_path=None):
     """
     return f"{get_user_project_namespace(p) if is_user_project(p) else get_project_dest_namespace(p, mirror, group_path)}/{p.get('path')}"
 
-
 def get_target_namespace(project):
     if target_namespace := project.get("target_namespace"):
-        if (strip_netloc(target_namespace).lower() == project.get(
-                'namespace', '').lower()) or project.get("override_dstn_ns"):
+        stripped = urlparse(target_namespace).path
+        project_namespace = project.get('namespace', '').lower()
+        override_dstn_ns = project.get("override_dstn_ns")
+        if ((stripped == project_namespace) or override_dstn_ns):
             return target_namespace
         return f"{target_namespace}/{project.get('namespace')}"
     return None
-
 
 def get_results(res):
     """
@@ -557,7 +557,5 @@ def check_download_directory(directory_path):
     return os.path.isdir(directory_path)
 
 def default_response():
-    resp = Response()
-    resp.status_code = 400
-    resp._content = b"Unable to execute import request"
+    resp = Response(400, content=b"Unable to execute import request")
     return resp

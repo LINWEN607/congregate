@@ -125,6 +125,24 @@ class IssuesApi(GitLabApiWrapper):
             None
         )
 
+    def update_project_issue_note(self, host, token, project_id, issue_iid, note_id, data):
+        """
+        Modify existing note of an issue.
+
+        GitLab API Doc: https://docs.gitlab.com/api/notes/#modify-existing-issue-note
+
+            :param: project_id: (int) GitLab project ID
+            :param: issue_iid: (int) Internal ID of an issue
+            :param: note_id: (int) Note ID
+            :param: host: (str) GitLab host URL
+            :param: token: (str) Access token to GitLab instance
+            :param: data: (dict) Structure containing key value pairs to be changed. One field is currently supported (not required):
+                'body': (str) The body of the note to be updated
+            :yield: Response object containing the response to PUT /projects/:id/issues/:issue_iid/notes/:note_id
+        """
+        endpoint = f"projects/{project_id}/issues/{issue_iid}/notes/{note_id}"
+        return self.api.generate_put_request(host, token, endpoint, json.dumps(data))
+
     def get_project_issue_awards(self, host, token, project_id, issue_iid):
         """
         Get a list of all award emoji for a specified issue

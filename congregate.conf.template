@@ -179,6 +179,9 @@ src_access_token = *****
 [EXPORT]
 ### When exporting groups/projects to your local filesystem (default) the following fields are required:
 location = filesystem
+
+### Note: `downloads` will automatically be appended to the path you enter, here.
+### Eg: `/absolute_path` will resolve to `/absolute_path/downloads`
 filesystem_path = /absolute_path
 
 ### It is also possible to configure export to AWS (S3 bucket). This ONLY applies to project exports.
@@ -239,20 +242,30 @@ export_import_timeout = 3600
 # Default absolute path for Congregate container
 # wave_spreadsheet_path = /opt/congregate/data/waves.csv
 
-### Specify the column names for congregate to use from the spreadsheet. These names will be required to the right of the colon in the next configuration item.
-# wave_spreadsheet_columns = Migration wave, Date of execution, Source Url, Group Path, Override
+### Specify the column names for Congregate to use from the spreadsheet
+### These will be the column headers in the wave spreadsheet
+### Example sheet at templates/stage-wave-template.csv
+### DO NOT SHORTEN ONLY EXTEND
+### Wave Name will be blank when generated. It is used to stage the waves with --stage-wave by name
+### Wave Date will be blank when generated. It is purely for tracking purposes
+### Source http_url_to_repo will be pre-filled with the http_url_to_repo for the source project, generated from the listed projects.json file
+### Source Namespace will be pre-filled with project.namespace.full_path for the project designated 
+### by Source http_url_to_repo. Note: This does NOT include the project path as part of the full_path. Only group structure
+### Target Namespace will be blank when generated. This field is currently not used as we are re-designing the 
+### functionality to move destinations
+### Override will be blank when generated. This field is currently not used as we are re-designing the 
+### functionality to move destinations
+### Source Project ID is the the Project ID for the project on source. Can be useful if you need to stage via an ID list from the CLI
+wave_spreadsheet_columns = Wave Name, Wave Date, Source http_url_to_repo, Source Namespace, Target Namespace, Override, Source Project ID
 
-### Provide a mapping of the current "expected" values to the actual columns in the spreadsheet. The keys are the "expected" and CANNOT CHANGE and the values are the column names from wave_spreadsheet_columns
-### Make sure the dictionary mappings are written either in a single line, e.g.
-# wave_spreadsheet_column_mapping = {"Wave name": "Migration wave", "Wave date": "Date of execution", "Source Url": "Source Url", "Parent Path": "Group Path", "Override": "Override"}
-
-### Or, for better readability, in space/tab indented new lines, with the closing bracket part of the last line/mapping, e.g.
-# wave_spreadsheet_column_mapping = {
-#        "Wave name": "Migration wave",
-#        "Wave date": "Date of execution",
-#        "Source Url": "Source Url",
-#        "Parent Path": "Group Path",
-#        "Override": "Override"}
+### Determines what columns in the wave sheet map to what properties in our project object
+### The key should be column names from wave_spreadsheet_columns and the values properties in the Project object
+### It is not recommended to modify this base form, but it can be extended if needed
+### Nested values are supported (eg: namespace.full_path)
+wave_spreadsheet_column_to_project_property_mapping = {
+    "Source http_url_to_repo": "http_url_to_repo",
+    "Source Namespace": "namespace.full_path",
+    "Source Project ID": "id"}
 
 ### Mongo DB configuration
 ### Value: "mongo" for docker-compose, "localhost" (default) for single node setup

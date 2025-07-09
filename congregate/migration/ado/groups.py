@@ -33,7 +33,7 @@ class GroupsClient(BaseClass):
             mongo = CongregateMongoConnector()
         if project:
             count = self.api.get_count(f'{project["id"]}/_apis/git/repositories')
-            if count > 1:
+            if count >= 1:
                 mongo.insert_data(
                     f"groups-{strip_netloc(self.config.source_host)}",
                     self.base_api.format_group(project, mongo))

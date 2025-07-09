@@ -37,5 +37,8 @@ Congregate gathers (meta)data from source system(s), transforms and down-selects
 - [GitLab Partner Program](https://partners.gitlab.com/English/?ReturnUrl=/prm/English/c/Training)
 - [Project Structure](STRUCTURE.md)
 
-For support questions please [create an issue](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/issues/new?issuable_template=congregate-support)
-from our Congregate support [issue template](./.gitlab/issue_templates/congregate-support.md).
+For support questions please [create an issue](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/issues/new?issuable_template=congregate-support) using our Congregate support [issue template](./.gitlab/issue_templates/congregate-support.md). 
+
+**Support Model:**
+- Community support is provided on a best-effort basis through GitLab issues with asynchronous responses
+- For dedicated support with SLAs and guaranteed response times, please engage our [Professional Services](https://about.gitlab.com/professional-services/) team

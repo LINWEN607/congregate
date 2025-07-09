@@ -1,11 +1,7 @@
 import os
-import tempfile
-import shutil
-import subprocess
-import requests
 from pathlib import Path
 from traceback import print_exc
-from requests.exceptions import RequestException
+from httpx import RequestError
 from congregate.helpers.base_class import BaseClass
 from congregate.migration.gitlab.api.users import UsersApi
 from congregate.migration.gitlab.api.packages import PackagesApi
@@ -77,7 +73,7 @@ class PackagesClient(BaseClass):
                             {'Migrated': False, 'Package': package.get('name')})
                 except Exception:
                     self.log.error(print_exc())
-        except RequestException as re:
+        except RequestError as re:
             self.log.error(
                 f"Failed to get all project '{project_name}' (ID:{src_id}) packages, due to a request exception:\n{re}")
         except Exception as e:
@@ -123,7 +119,7 @@ class PackagesClient(BaseClass):
                         content=file_content,
                         file_name=file_name
                     ))
-        except RequestException as re:
+        except RequestError as re:
             self.log.error(
                 f"Failed to retrieve package files for '{package.get('name')}', version '{package.get('version')}'")
             self.log.error(re)

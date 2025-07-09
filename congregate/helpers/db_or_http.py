@@ -1,4 +1,4 @@
-from requests import Response
+from httpx import Response
 
 from congregate.helpers.congregate_mdbc import CongregateMongoConnector
 
@@ -22,8 +22,7 @@ class DbOrHttpMixin():
 
     def send_data(self, req_func, params, key, src_id, data, airgap=False, airgap_export=False, mongo_coll=default_collection):
         if airgap and airgap_export:
-            resp = Response()
-            resp.status_code = 100
+            resp = Response(100)
             try:
                 mongo = CongregateMongoConnector()
                 mongo.db[mongo_coll].update_one(

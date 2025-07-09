@@ -2,7 +2,8 @@ import json
 import base64
 import re
 from bs4 import BeautifulSoup as bs
-from gitlab_ps_utils.misc_utils import is_error_message_present, pretty_print_key
+from httpx import Response
+from gitlab_ps_utils.misc_utils import is_error_message_present, pretty_print_key, safe_json_response
 from gitlab_ps_utils.dict_utils import rewrite_list_into_dict, is_nested_dict, dig, find as nested_find
 from gitlab_ps_utils.jsondiff import Comparator
 from gitlab_ps_utils.json_utils import read_json_file_into_object
@@ -411,6 +412,8 @@ class BaseDiffClient(BaseClass):
 
     def ignore_keys(self, data):
         if data is not None:
+            if isinstance(data, Response):
+                data = safe_json_response(data)
             if isinstance(data, list):
                 for i, _ in enumerate(data):
                     if isinstance(data[i], str):

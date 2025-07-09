@@ -1,5 +1,5 @@
-Wave name,Wave date,Source URL,Parent Path,Override
-wave_1,2049-01-01,https://github.example.net/parent_1/project_1,parent_group/nested,yes,,,    # Migrate only the project to the destination Parent Path
-wave_1,2049-01-01,https://github.example.net/parent_1/project_2,parent_group/nested,,,,       # Migrate entire source structure, including project, to the destination Parent Path
-wave_2,2049-02-01,https://github.example.net/parent_2/project_1,parent_group/nested,yes,,,
-wave_3,2049-03-01,https://github.example.net/parent_3/project_1,parent_group/nested,yes,,,
+Wave Name, Wave Date, Source http_url_to_repo, Source Namespace, Target Namespace, Override, Source Project ID
+wave_1,2049-01-01,https://gitlab.example.net/parent_1/project_1.git,parent_group/nested_group,parent_group/nested_group,yes,1
+wave_1,2049-01-01,https://gitlab.example.net/parent_1/project_2.git,parent_group/nested_group,parent_group/nested_group,,2
+wave_2,2049-02-01,https://gitlab.example.net/parent_2/project_1.git,parent_group/nested_group,parent_group/nested_group,yes,3
+wave_3,2049-03-01,https://gitlab.example.net/parent_3/project_1.git,parent_group/nested_group,parent_group/nested_group,yes,4

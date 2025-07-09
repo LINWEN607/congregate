@@ -1,5 +1,4 @@
-from requests.exceptions import RequestException
-from requests import Response
+from httpx import RequestError
 from gitlab_ps_utils.misc_utils import is_error_message_present
 
 from congregate.migration.gitlab.base_gitlab_client import BaseGitLabClient
@@ -140,8 +139,10 @@ class VariablesClient(DbOrHttpMixin, BaseGitLabClient):
         if variable.get('schedule_id', -1) == spsid or not variable.get('schedule_id'):
             resp = self.projects_api.create_new_project_pipeline_schedule_variable(
                 pid, dpsid, host, token, data)
-            if resp.status_code != 201:
+            # 400 means it already exists
+            if resp.status_code not in [201, 400]:
                 self.log.error(f"Failed to create project {pid} pipeline schedule {spsid} variable '{variable}':\n{resp} - {resp.text}")
+                return False
 
     def migrate_variables(self, new_id, name, var_list, var_type, src_id):
         try:
@@ -155,13 +156,15 @@ class VariablesClient(DbOrHttpMixin, BaseGitLabClient):
                     var,
                     airgap=self.config.airgap,
                     airgap_export=self.config.airgap_export)
-                if resp.status_code != 201:
+                # 400 means it already exists
+                if resp.status_code not in [201, 400]:
                     self.log.error(f"Failed to create {var_type} '{name}' (ID: {new_id}) CI/CD variable:\n{resp} - {resp.text}")
+                    return False
             return True
         except TypeError as te:
             self.log.error(f"{var_type} '{name}' variables:\n{te}")
             return False
-        except RequestException as re:
+        except RequestError as re:
             self.log.error(
                 f"Failed to migrate {var_type} '{name}' CI/CD variables:\n{re}")
             return False

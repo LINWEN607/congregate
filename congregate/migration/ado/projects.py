@@ -49,7 +49,7 @@ class ProjectsClient(BaseClass):
                 and repository.get("isDisabled", False) is False
                 and repository.get("defaultBranch")
             ):
-                formatted_project = self.base_api.format_project(project, repository, count, mongo)
+                formatted_project = self.base_api.format_project(project, repository, count)
                 mongo.insert_data(collection_name, formatted_project)
         mongo.close_connection()
 

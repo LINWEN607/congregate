@@ -1,5 +1,5 @@
 import json
-from requests.exceptions import RequestException
+from httpx import RequestError
 from tqdm import tqdm
 from gitlab_ps_utils.misc_utils import get_timedelta, safe_json_response, strip_netloc, get_dry_log
 from gitlab_ps_utils.list_utils import remove_dupes
@@ -147,7 +147,7 @@ class GroupsClient(BaseClass):
                 elif not dry_run:
                     self.delete_group(resp, dest_full_path,
                                       permanent=permanent)
-            except RequestException as re:
+            except RequestError as re:
                 self.log.error(
                     f"Failed to delete group \n{json_pretty(sg)}\nwith error:\n{re}")
 
@@ -248,27 +248,31 @@ class GroupsClient(BaseClass):
             f"Adding {len(members)} member{'s' if len(members) > 1 else ''} to group ID {group_id}:\n{json_pretty(members)}")
         field = self.config.user_mapping_field
         for member in members:
-            user = search_for_user_by_user_mapping_field(
-                field, member, host, token)
-            result[member[field]] = False
-            if user.get("id"):
-                member["user_id"] = user.get("id")
-                if member["user_id"]:
-                    # Due to 400 error: user_id, username are mutually exclusive
-                    member.pop("username", None)
-                    resp = self.groups_api.add_member_to_group(
-                        group_id, host, token, member)
-                    if resp.status_code != 200:
-                        self.log.warning(
-                            f"Failed to add member '{member}' to group {group_id}:\n{resp} - {resp.text}")
+            if member.get("email") != None:
+                user = search_for_user_by_user_mapping_field(
+                    field, member, host, token)
+                result[member[field]] = False
+                if user.get("id"):
+                    member["user_id"] = user.get("id")
+                    if member["user_id"]:
+                        # Due to 400 error: user_id, username are mutually exclusive
+                        member.pop("username", None)
+                        resp = self.groups_api.add_member_to_group(
+                            group_id, host, token, member)
+                        if resp.status_code != 200:
+                            self.log.warning(
+                                f"Failed to add member '{member}' to group {group_id}:\n{resp} - {resp.text}")
+                        else:
+                            result[member[field]] = True
                     else:
-                        result[member[field]] = True
+                        self.log.warning(
+                            f"Failed to add member '{member}' to group {group_id}, user not found")
                 else:
                     self.log.warning(
-                        f"Failed to add member '{member}' to group {group_id}, user not found")
+                        f"Failed to add member '{member}' to group {group_id}, failed to search for user in source")
             else:
                 self.log.warning(
-                    f"Failed to add member '{member}' to group {group_id}, failed to search for user in source")
+                    f"The member is None, not able to add the member to group {group_id}, ")
         return result
 
     def find_and_stage_group_bulk_entities(self, groups):

@@ -58,7 +58,11 @@ class UsersApi(GitLabApiWrapper):
             :yield: Generator returning JSON of each result from GET /users
         """
         # For future, as of 17.3, consider using '?humans=true' instead
-        return self.api.list_all(host, token, "users?exclude_internal=true&without_project_bots=true")
+        params = {
+            'exclude_internal': True,
+            'without_project_bots': True
+        }
+        return self.api.list_all(host, token, "users", params=params)
 
     def create_user(self, host, token, data, message=None):
         """
@@ -101,7 +105,7 @@ class UsersApi(GitLabApiWrapper):
             :yield: Generator containing JSON results from GET /users?search=:email
         """
         if email is not None and isinstance(email, str):
-            return self.api.list_all(host, token, f"users?search={quote_plus(email)}", per_page=10)
+            return self.api.list_all(host, token, f"users", params={"search": email}, per_page=10)
         else:
             return {}
 

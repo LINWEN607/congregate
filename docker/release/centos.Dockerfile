@@ -31,25 +31,25 @@ RUN chown -R ps-user:wheel /data && \
 
 # Installing yum-installable libraries
 RUN yum update -y && \
-    yum install -y less vim jq curl git mongodb-org-5.0.31 mongodb-org-server-5.0.31 mongodb-org-shell-5.0.31 mongodb-org-mongos-5.0.31 mongodb-org-tools-5.0.31 \
+    yum install -y procps less vim jq curl git mongodb-org-5.0.31 mongodb-org-server-5.0.31 mongodb-org-shell-5.0.31 mongodb-org-mongos-5.0.31 mongodb-org-tools-5.0.31 \
     gcc openssl-devel bzip2-devel libffi-devel zlib-devel make epel-release xz-devel util-linux-user sqlite-devel && \
     yum install -y screen
 
 # Install Python
 RUN cd /opt && \
-    curl https://www.python.org/ftp/python/3.8.20/Python-3.8.20.tgz -o Python-3.8.20.tgz && \
-    tar xzf Python-3.8.20.tgz && \
-    cd Python-3.8.20 && \
+    curl https://www.python.org/ftp/python/3.10.18/Python-3.10.18.tgz -o Python-3.10.18.tgz && \
+    tar xzf Python-3.10.18.tgz && \
+    cd Python-3.10.18 && \
     ./configure --enable-optimizations && \
     sudo make altinstall && \
     cd /opt && \
-    rm Python-3.8.20.tgz && \
-    rm -r Python-3.8.20
+    rm Python-3.10.18.tgz && \
+    rm -r Python-3.10.18
 
 # The alias takes precendence once you are in an interactive shell (-it)
 # in Docker, so this "fixes" the build steps afterwards, but doesn't seem to
 # break anything else
-RUN echo -e '#!/bin/bash\npython3.8 "$@"' > /usr/local/sbin/python && \
+RUN echo -e '#!/bin/bash\npython3.10 "$@"' > /usr/local/sbin/python && \
     chmod +x /usr/local/sbin/python
 
 # Install Node
@@ -59,7 +59,7 @@ yum install -y nodejs
 # Create python symlinks
 RUN rm -f /usr/bin/python3 && \
     cd /usr/bin && \
-    ln -s python3.8 python3 && \
+    ln -s python3.10 python3 && \
     rm /usr/local/sbin/python
 
 # Set permissions to execute the congregate command
@@ -84,12 +84,12 @@ RUN export PATH=$PATH:$HOME/.local/bin && \
 # Set up the bashrc
 RUN echo 'if [ -z "$(ps aux | grep mongo | grep -v grep)" ]; then sudo mongod --fork --logpath /var/log/mongodb/mongod.log; fi' >> ~/.bashrc && \
     echo 'if [ -z "$(ps aux | grep mongo | grep -v grep)" ]; then sudo mongod --fork --logpath /var/log/mongodb/mongod.log; fi' >> ~/.zshrc
-RUN echo "alias python='python3.8'" >> ~/.bashrc && \
-    echo "alias python='python3.8'" >> ~/.zshrc
-RUN echo "alias python3='python3.8'" >> ~/.bashrc && \
-    echo "alias python3='python3.8'" >> ~/.zshrc
-RUN echo "alias pip='python3.8 -m pip'" >> ~/.bashrc && \
-    echo "alias pip='python3.8 -m pip'" >> ~/.zshrc
+RUN echo "alias python='python3.10'" >> ~/.bashrc && \
+    echo "alias python='python3.10'" >> ~/.zshrc
+RUN echo "alias python3='python3.10'" >> ~/.bashrc && \
+    echo "alias python3='python3.10'" >> ~/.zshrc
+RUN echo "alias pip='python3.10 -m pip'" >> ~/.bashrc && \
+    echo "alias pip='python3.10 -m pip'" >> ~/.zshrc
 RUN echo "alias ll='ls -al'" >> ~/.bashrc && \
     echo "alias ll='ls -al'" >> ~/.zshrc
 RUN echo "alias license='cat /opt/congregate/LICENSE'" >> ~/.bashrc && \
@@ -97,7 +97,7 @@ RUN echo "alias license='cat /opt/congregate/LICENSE'" >> ~/.bashrc && \
 
 
 RUN echo "CHECKING PYTHON VERSION" && \
-    python3.8 -V
+    python3.10 -V
 
 # Install congregate
 RUN cd /opt/congregate && \
@@ -108,9 +108,9 @@ RUN cd /opt/congregate && \
     git commit -m "Initial commit"
 
 # Install poetry
-RUN python3.8 -m pip install --user poetry==1.8.5 && \
-    python3.8 -m poetry --version && \
-    python3.8 -m poetry install
+RUN python3.10 -m pip install --user poetry==1.8.5 && \
+    python3.10 -m poetry --version && \
+    python3.10 -m poetry install
 
 # Install node dependencies
 RUN cd frontend && \

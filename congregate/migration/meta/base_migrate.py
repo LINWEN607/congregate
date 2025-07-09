@@ -9,8 +9,7 @@ import sys
 from time import time
 from traceback import print_exc
 from importlib import import_module
-from requests import Response
-from requests.exceptions import RequestException
+from httpx import Response, RequestError
 
 from gitlab_ps_utils import json_utils, misc_utils, string_utils, dict_utils
 
@@ -211,7 +210,7 @@ class MigrateClient(BaseClass):
                 self.gl_post_user_creation(new_user, old_user, email, user)
             if not self.dry_run and self.config.source_type == "bitbucket server":
                 self.bb_post_user_creation(new_user, username, email, user)
-        except RequestException as e:
+        except RequestError as e:
             self.log.error(
                 f"Failed to create user {user_data}, with error:\n{e}")
         except Exception as e:
@@ -360,7 +359,7 @@ class MigrateClient(BaseClass):
             else:
                 self.log.info(
                     f"Successfully removed import user (ID: {import_uid}) from {gl_type} (ID: {dst_id})")
-        except RequestException as re:
+        except RequestError as re:
             self.log.error(
                 f"Failed to remove import user (ID: {import_uid}) from {gl_type} (ID: {dst_id}), with error:\n{re}")
 
@@ -431,14 +430,15 @@ class MigrateClient(BaseClass):
             }
 
             # Share the destination group with the shared group in the destination
-            share_response = self.groups_api.share_group(self.config.destination_host, self.config.destination_token, dst_gid, data=data)
+            resp = self.groups_api.share_group(self.config.destination_host, self.config.destination_token, dst_gid, data=data)
 
-            if share_response.status_code == 201:
+            # 409 means it's already shared
+            if resp.status_code not in [201, 409]:
+                self.log.error(f"Failed to share group '{shared_group_id}' with group ID '{dst_gid}':\n{resp} - {resp.text}")
+                result[shared_group_id] = False
+            else:
                 self.log.info(f"Successfully shared group '{shared_group_id}' with group ID '{dst_gid}' ")
                 result[shared_group_id] = True
-            else:
-                self.log.error(f"Failed to share group '{shared_group_id}' with group ID '{dst_gid}' : {share_response.content}")
-                result[shared_group_id] = False
         return result
 
     def migrate_external_group(self, group):

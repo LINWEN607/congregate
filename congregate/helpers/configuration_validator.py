@@ -89,7 +89,7 @@ class ConfigurationValidator(Config):
         self.src_token_validated_in_session = self.validate_src_token(
             src_token) if not self.airgap else True
         return src_token
-    
+
     @property
     def src_aws_secret_access_key(self):
         obfuscated = True
@@ -100,7 +100,7 @@ class ConfigurationValidator(Config):
         self.src_token_validated_in_session = self.validate_src_token(
             src_token, "aws_secret_access_key") if not self.airgap else True
         return src_token
-    
+
     @property
     def src_aws_session_token(self):
         obfuscated = True
@@ -318,11 +318,11 @@ class ConfigurationValidator(Config):
             else:
                 raise ConfigurationException(
                     "source_token", msg=f"{msg}Invalid user authentication:\n{json_pretty(connection_data)}")
-            
+
     def validate_src_token_codecommit(self, token, token_type):
         """
-        Validate AWS CodeCommit credentials. 
-        Confirm that src_aws_secret_access_key, src_aws_session_token) are set. 
+        Validate AWS CodeCommit credentials.
+        Confirm that src_aws_secret_access_key, src_aws_session_token) are set.
         It also does a test call to confirm credentials are valid.
         """
 
@@ -375,32 +375,33 @@ class ConfigurationValidator(Config):
         dest_bulk_import, dest_max_download = self.__get_dt_configuration(
             self.destination_host, self.destination_token, dest_gitlab_dot_com)
         if src_bulk_import is None:
-            print("Warning: Cannot confirm bulk import is enabled on source. This could be due to using a regular user personal access token. See docs: https://docs.gitlab.com/ee/api/settings.html#get-current-application-settings")
+            print(f"Warning: Cannot confirm bulk import is enabled on {self.source_host}. This could be due to using a regular user personal access token. See docs: https://docs.gitlab.com/ee/api/settings.html#get-current-application-settings")
         if dest_bulk_import is None:
-            print("Warning: Cannot confirm bulk import is enabled on destination. This could be due to using a regular user personal access token. See docs: https://docs.gitlab.com/ee/api/settings.html#get-current-application-settings")
+            print(f"Warning: Cannot confirm bulk import is enabled on {self.destination_host}. This could be due to using a regular user personal access token. See docs: https://docs.gitlab.com/ee/api/settings.html#get-current-application-settings")
         if src_bulk_import and dest_bulk_import:
             if src_max_download == dest_max_download:
                 return True
-            else:
-                print(
-                    f"Warning: bulk_import_max_download_file_size does not match on source (max {src_max_download}) and destination (max {dest_max_download}). Update settings if possible. See docs: See docs: https://docs.gitlab.com/ee/api/settings.html#change-application-settings")
+            print(
+                f"Warning: 'bulk_import_max_download_file_size' does not match on {self.source_host} (max {src_max_download}) and {self.destination_host} (max {dest_max_download}). Update settings if possible. See docs: See docs: https://docs.gitlab.com/ee/api/settings.html#change-application-settings")
         elif dest_bulk_import is False:
             # Assuming admin privileges and can officially confirm direct transfer is disabled
             raise ConfigurationException(
-                'direct_transfer', f"Direct transfer is not enabled on the destination instance. Please enable it in the admin settings. See docs: https://docs.gitlab.com/ee/administration/settings/import_and_export_settings.html#enable-migration-of-groups-and-projects-by-direct-transfer"
+                'direct_transfer', f"Direct transfer is not enabled on {self.destination_host}. Please enable it in the admin settings. See docs: https://docs.gitlab.com/ee/administration/settings/import_and_export_settings.html#enable-migration-of-groups-and-projects-by-direct-transfer"
             )
         elif src_bulk_import is False:
             raise ConfigurationException(
-                'direct_transfer', f"Direct transfer is not enabled on the source instance. Please enable it in the admin settings. See docs: https://docs.gitlab.com/ee/administration/settings/import_and_export_settings.html#enable-migration-of-groups-and-projects-by-direct-transfer"
+                'direct_transfer', f"Direct transfer is not enabled on {self.source_host}. Please enable it in the admin settings. See docs: https://docs.gitlab.com/ee/administration/settings/import_and_export_settings.html#enable-migration-of-groups-and-projects-by-direct-transfer"
             )
         elif not (src_bulk_import or dest_bulk_import):
             raise ConfigurationException(
-                'direct_transfer', f"Cannot confirm if bulk import is enabled on either source or destination. This is likely due to using standard user access tokens on both self-managed instances. Please use an admin token for at least the source instance"
+                'direct_transfer', f"Cannot confirm if bulk import is enabled on either {self.source_host} or {self.destination_host}. This is likely due to using standard user access tokens on both self-managed instances. Please use an admin token for at least the source instance"
             )
         return True
 
     def __get_dt_configuration(self, host, token, dot_com):
-        if not dot_com:
+        user = safe_json_response(self.users.get_current_user(host, token))
+
+        if not dot_com and user.get("is_admin"):
             instance_api = InstanceApi()
             settings = safe_json_response(instance_api.get_application_settings(
                 host, token))
@@ -408,12 +409,12 @@ class ConfigurationValidator(Config):
                 # Return actual settings from the API
                 return self.__get_bulk_import_settings(
                     settings)
-            else:
-                # Return an empty tuple since we can't get a valid response
-                return (None, None)
-        else:
-            # Return default values
-            return True, 5120
+            # Return an empty tuple since we can't get a valid response
+            return (None, None)
+        # Return default values
+        # gitlab.com or Owner of shared self-managed tenancy
+        print(f"Warning: Without Admin access to confirm, assuming direct transfer is enabled on {host}")
+        return True, 5120
 
     def __get_bulk_import_settings(self, settings):
         return (settings.get("bulk_import_enabled", False),

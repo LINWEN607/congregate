@@ -131,33 +131,7 @@ class AzureDevOpsApiWrapper(BaseClass):
 
     def list_all(self, api, params=None, sub_api=None):
         """
-        Generates a list of all projects, groups, etc.
-
-            :param api: (str) Specific ADO API endpoint (ex: projects)
-            :param params: (str) Any query parameters needed in the request
-            :yields: Individual objects from the presumed array of data
-        """
-
-        while True:
-            response = self.generate_get_request(api, sub_api, params=params)
-            response.raise_for_status()
-            if data := safe_json_response(response):
-                for item in data.get("value", []):
-                    yield item
-                for item in data.get("members", []):
-                    yield item
-
-            if params is None:
-                params = {}
-
-            if not any(key.lower() == "x-ms-continuationtoken" for key in response.headers):
-                break
-
-            params["continuationToken"] = response.headers["X-MS-ContinuationToken"]
-
-    def list_all_in_tfs(self, api, params=None, sub_api=None):
-        """
-        Generates a list of all projects, groups, etc., or all items using $top/$skip paging.
+        Generates a list of all projects, groups, etc., or all items using $top/$skip paging or continuation token.
 
             :param api: (str) Specific ADO API endpoint (ex: projects)
             :param params: (dict) Any query parameters needed in the request
@@ -194,6 +168,8 @@ class AzureDevOpsApiWrapper(BaseClass):
                     for item in data.get("value", []):
                         yield item
                     for item in data.get("members", []):
+                        yield item
+                    for item in data.get("comments", []):
                         yield item
 
                 if not any(key.lower() == "x-ms-continuationtoken" for key in response.headers):

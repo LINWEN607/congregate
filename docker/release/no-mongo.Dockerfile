@@ -51,8 +51,8 @@ RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | b
 RUN curl https://pyenv.run | bash && \
     [[ -d $PYENV_ROOT/bin ]] && \
     eval "$(pyenv init -)" && \
-    pyenv install 3.8 && \
-    pyenv global 3.8
+    pyenv install 3.10 && \
+    pyenv global 3.10
 
 # Install oh-my-zsh
 RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"

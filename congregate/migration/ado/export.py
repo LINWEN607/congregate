@@ -1,5 +1,4 @@
 import re
-import pprint
 from copy import deepcopy as copy
 from pathlib import Path
 from gitlab_ps_utils.dict_utils import dig
@@ -72,19 +71,9 @@ class AdoExportBuilder(ExportBuilder):
             issues=issues
         )
 
-
-    def get_all_pull_requests_by_host(self, project_id, repository_id):
-        """
-        Calls the appropriate pull requests API method based on the host_source.
-        """
-        if "dev.azure.com" in self.config.source_host:
-            return self.pull_requests_api.get_all_pull_requests(project_id=project_id, repository_id=repository_id)
-        else:
-            return self.pull_requests_api.get_all_pull_requests_in_tfs(project_id=project_id, repository_id=repository_id)
-
     def build_merge_requests(self):
         merge_requests = []
-        for pr in self.get_all_pull_requests_by_host(self.project_id, self.repository_id):
+        for pr in self.pull_requests_api.get_all_pull_requests(self.project_id, self.repository_id):
             # Convert Azure DevOps PR to GitLab MR format
             pr_id = pr['pullRequestId']
             merge_request_commits = self.build_mr_diff_commits(pr_id)
@@ -196,7 +185,7 @@ class AdoExportBuilder(ExportBuilder):
                 # This is situation of Group
                 team_id = reviewer.get('id')
                 team = self.teams_api.get_team(self.project_id, team_id)
-                if team.get('statusCode') != 200:
+                if team.status_code != 200:
                     self.log.error(f"Failed to get team for team_id={team_id}. Most likely the team is deleted, but has references from an old PR.")
                     continue
                 else:
@@ -432,7 +421,6 @@ class AdoExportBuilder(ExportBuilder):
         issues = []
         for wi in self.work_items_client.get_all_work_items(self.project):
             workitem = self.work_items_api.get_work_item(self.project_id, wi.get('id')).json()
-            pprint.pprint(workitem)
             author = workitem['fields'].get('System.CreatedBy', {})
             assignee = workitem['fields'].get('System.AssignedTo', {})
             issues.append(Issues(
@@ -441,16 +429,29 @@ class AdoExportBuilder(ExportBuilder):
                 title=workitem['fields'].get('System.Title', 'No Title'),
                 description=workitem['fields'].get('System.Description', 'No Description'),
                 created_at=workitem['fields'].get('System.CreatedDate', 'No Created Date'),
-                # updated_at=workitem['fields'].get('System.ChangedDate'),
-                # updated_by_id=gl_author,
-                # state=workitem['fields'].get('System.State', 'No State'),
                 state=self.issue_state(workitem['fields'].get('System.State', 'No State')),
                 iid=workitem['id'],
                 issue_assignees=[{"user_id": self.get_new_member_id(assignee)}],
-                # notes=self.build_issue_notes(wi['id']),
+                notes=self.build_issue_notes(wi.get('id')),
                 label_links=self.label_links(workitem),
             ))
         return issues
+
+    def build_issue_notes(self, work_item_id):
+        notes = []
+        for comment in self.work_items_api.get_work_item_comments(self.project_id, work_item_id):
+            if comment and comment.get("text"):
+                notes.append(Note(
+                    note=comment.get("text") or "",
+                    author_id=self.get_new_member_id(comment.get("createdBy")),
+                    project_id=1,
+                    created_at=comment.get("createdDate"),
+                    updated_at=comment.get("modifiedDate"),
+                    noteable_type="Issue",
+                    type="DiscussionNote",
+                    author=Author(name=comment.get("createdBy", {}).get("displayName", "Unknown"))
+                ))
+        return notes
 
     def issue_state(self, state):
         if state == 'New':

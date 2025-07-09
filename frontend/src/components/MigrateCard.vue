@@ -112,6 +112,7 @@ export default {
   },
   mounted: function () {
     this.emitter.on('migration-in-progress', () => {
+      this.dryRun = false
       this.systemStore.updateMigrationInProgress(true)
       this.pollMigrationStatus()
     })
@@ -122,8 +123,10 @@ export default {
       this.triggerMigration()
     })
   },
-  beforeDestroy: function() {
+  beforeUnmount: function() {
     this.emitter.off('migration-in-progress')
+    this.emitter.off('save-modified-payload')
+    this.emitter.off('confirm-migration')
   },
   methods: {
     promptConfirmation: function() {
@@ -151,42 +154,38 @@ export default {
       for (const [key, value] of form) {
           params[key] = Boolean(value)
       }
-      if (this.directTransfer === true) {
-        let migrateEndpoint = `${import.meta.env.VITE_API_ROOT}/api/direct_transfer/migrate`
-        if (params.hasOwnProperty('skip_projects')) {
-          migrateEndpoint += '/groups'
-        } else if (params.hasOwnProperty('skip_groups')) {
-          migrateEndpoint += '/projects'
-        } else {
-          migrateEndpoint += '/groups'
-        }
-        if (params) {
-          migrateEndpoint += '?' + new URLSearchParams(params).toString()
-        }
-        if (params.hasOwnProperty('commit')) {
-          this.dryRun = false
-        } else {
-          this.dryRun = true
-          this.systemStore.updateDirectTransferGeneratedRequest({})
-          this.systemStore.updateDirectTransferModifiedRequest({})
-        }
-        var payload = null
-        if (!Object.keys(this.systemStore.directTransferModifiedRequest).length == 0 && this.dryRun == false) {
-          payload = {"payload": toRaw(this.systemStore.directTransferModifiedRequest)}
-        } else {
-          payload = {}
-        }
-        axios.post(migrateEndpoint, payload).then(response => {
-          if (!params.hasOwnProperty('commit')) {
-            this.pollDryRunStatus(response.data.task_id)
-          } else {
-            this.dryRun = false
-            this.pollInitialRequest(response.data.task_id)
-          }
-        })
+      let migrateEndpoint = `${import.meta.env.VITE_API_ROOT}/api/direct_transfer/migrate`
+      if (params.hasOwnProperty('skip_projects')) {
+        migrateEndpoint += '/groups'
+      } else if (params.hasOwnProperty('skip_groups')) {
+        migrateEndpoint += '/projects'
       } else {
-        // trigger file-based or other SCM import request
+        migrateEndpoint += '/groups'
       }
+      if (params) {
+        migrateEndpoint += '?' + new URLSearchParams(params).toString()
+      }
+      if (params.hasOwnProperty('commit')) {
+        this.dryRun = false
+      } else {
+        this.dryRun = true
+        this.systemStore.updateDirectTransferGeneratedRequest({})
+        this.systemStore.updateDirectTransferModifiedRequest({})
+      }
+      var payload = null
+      if (!Object.keys(this.systemStore.directTransferModifiedRequest).length == 0 && this.dryRun == false) {
+        payload = {"payload": toRaw(this.systemStore.directTransferModifiedRequest)}
+      } else {
+        payload = {}
+      }
+      axios.post(migrateEndpoint, payload).then(response => {
+        if (!params.hasOwnProperty('commit')) {
+          this.pollDryRunStatus(response.data.task_id)
+        } else {
+          this.dryRun = false
+          this.pollInitialRequest(response.data.task_id)
+        }
+      })
     },
     updateStatusTable: function(endpoint) {
       return axios.get(`${import.meta.env.VITE_API_ROOT}/api/direct_transfer/${endpoint}`).then(response => {
@@ -222,15 +221,18 @@ export default {
       let pollStatus = () => this.updateStatusTable(`import-status/${id}`)
       let validate = result => result.data.status == 'STARTED'
       let response = await poll(pollStatus, validate, 2500)
-      if (response.data.result != null && !response.data.result.hasOwnProperty('errors')) {
-        this.pollMigrationStatus()
-      } else if (response.data.result.hasOwnProperty('errors')) {
-        this.systemStore.updateMigrationInProgress(false)
-        this.emitter.emit('alert', {
-          'message': `Failed to trigger migration. Refer to task ${id} in the Task Queue`,
-          'messageType': 'error'
-        })
+      if (response.data.result != null) {
+        if (response.data.result.hasOwnProperty('errors')) {
+          this.systemStore.updateMigrationInProgress(false)
+          this.emitter.emit('alert', {
+            'message': `Failed to trigger migration. Refer to task ${id} in the Task Queue`,
+            'messageType': 'error'
+          })
+        } else {
+          this.pollMigrationStatus()
+        }
       }
+      
     },
     pollMigrationStatus: async function() {
       let pollStatus = () => this.updateStatusTable('migration-status')

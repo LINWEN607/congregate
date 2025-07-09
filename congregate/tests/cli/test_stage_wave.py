@@ -1,588 +1,430 @@
-import unittest
-from unittest import mock
-from pytest import mark
+import os
+import pytest
+
 from congregate.cli.stage_wave import WaveStageCLI
-from congregate.cli.stage_base import BaseStageClass
-from congregate.migration.meta.etl import WaveSpreadsheetHandler
-from congregate.tests.mockapi.gitlab.projects import MockProjectsApi
-from congregate.tests.mockapi.gitlab.groups import MockGroupsApi
-from congregate.tests.mockapi.gitlab.users import MockUsersApi
 
+@pytest.mark.unit_test
+class TestWaveStageCLI:
+    
+    @pytest.fixture
+    def wave_stage_cli(self, monkeypatch):
+        """Create a WaveStageCLI instance with mocked dependencies."""
+        # Create mock classes using simple callables
+        def mock_project_stage_cli():
+            return type('MockProjectStageCLI', (), {})()
+        
+        def mock_groups_api():
+            return type('MockGroupsApi', (), {})()
+        
+        def mock_base_stage_init(self):
+            pass
+        
+        # Apply patches
+        monkeypatch.setattr('congregate.cli.stage_wave.ProjectStageCLI', mock_project_stage_cli)
+        monkeypatch.setattr('congregate.cli.stage_wave.GroupsApi', mock_groups_api)
+        monkeypatch.setattr('congregate.cli.stage_wave.BaseStageClass.__init__', mock_base_stage_init)
+        
+        cli = WaveStageCLI()
+        
+        # Create mock objects for the CLI with proper call tracking
+        class MockLogger:
+            def __init__(self):
+                self.error_calls = []
+                self.warning_calls = []
+            
+            def error(self, msg):
+                self.error_calls.append(msg)
+            
+            def warning(self, msg):
+                self.warning_calls.append(msg)
+            
+            def assert_called_once_with(self, msg):
+                return len([c for c in self.error_calls if c == msg]) == 1
+            
+            def assert_any_call(self, msg):
+                return msg in self.warning_calls
+            
+            def assert_not_called(self):
+                return len(self.warning_calls) == 0
+        
+        cli.log = MockLogger()
+        cli.config = type('MockConfig', (), {})()
+        cli.staged_projects = []
+        cli.staged_groups = []
+        cli.staged_users = []
+        return cli
 
-@mark.unit_test
-class StageWaveTests(unittest.TestCase):
-    def setUp(self):
-        self.projects_api = MockProjectsApi()
-        self.groups_api = MockGroupsApi()
-        self.users_api = MockUsersApi()
-        self.mock = mock.MagicMock()
-        self.wcli = WaveStageCLI()
+    def test_init(self, monkeypatch):
+        """Test WaveStageCLI initialization."""
+        base_init_called = []
+        
+        def mock_pcli():
+            return type('MockProjectStageCLI', (), {})()
+        
+        def mock_groups_api():
+            return type('MockGroupsApi', (), {})()
+        
+        def mock_base_init(self):
+            base_init_called.append(True)
+        
+        monkeypatch.setattr('congregate.cli.stage_wave.ProjectStageCLI', mock_pcli)
+        monkeypatch.setattr('congregate.cli.stage_wave.GroupsApi', mock_groups_api)
+        monkeypatch.setattr('congregate.cli.stage_wave.BaseStageClass.__init__', mock_base_init)
+        
+        cli = WaveStageCLI()
+        
+        assert len(base_init_called) == 1
+        assert hasattr(cli, 'pcli')
+        assert hasattr(cli, 'groups_api')
 
-    @mock.patch.object(WaveStageCLI, 'get_parent_id')
-    @mock.patch.object(WaveStageCLI, 'open_users_file')
-    @mock.patch.object(WaveStageCLI, 'open_groups_file')
-    @mock.patch('congregate.helpers.conf.Config.wave_spreadsheet_columns', new_callable=mock.PropertyMock)
-    @mock.patch('congregate.helpers.conf.Config.wave_spreadsheet_column_mapping', new_callable=mock.PropertyMock)
-    @mock.patch('congregate.helpers.conf.Config.wave_spreadsheet_path', new_callable=mock.PropertyMock)
-    @mock.patch('congregate.helpers.conf.Config.source_type', new_callable=mock.PropertyMock)
-    @mock.patch.object(WaveSpreadsheetHandler, "read_file_as_json")
-    @mock.patch.object(BaseStageClass, "open_projects_file")
-    @mock.patch('os.path.isfile', new_callable=mock.PropertyMock)
-    def test_stage_wave(self, mock_isfile, projects, read_as_json, mock_source_type, spreadsheet_path, column_mapping, columns_to_use, mock_groups, mock_users, mock_parent_id):
-        mock_source_type.return_value = "gitlab"
-        mock_users.return_value = self.users_api.get_all_users_list()
-        mock_groups.return_value = self.groups_api.get_all_groups_list()
-        projects.return_value = self.projects_api.get_all_projects()
-        spreadsheet_path.return_value = "test.xls"
-        mock_isfile.return_value = True
-        mock_parent_id.side_effect = [None, None]
-        column_mapping.return_value = {
-            "Wave name": "Wave name",
-            "Wave date": "Wave date",
-            "Source Url": "Source Url",
-            "Parent Path": "Parent Path"
-        }
-        columns_to_use.return_value = [
-            "Wave name", "Wave date", "Source Url", "Parent Path"]
-        read_as_json.return_value = [
-            {
-                "Wave name": "Wave1",
-                "not needed": "asdflkasjdf",
-                "not needed_2": 123,
-                "Wave date": 1609459200000,
-                "notneeded3": -1,
-                "notneeded4": "qqq",
-                "Source Url": "http://example.com/diaspora/diaspora-client.git",
-                "Parent Path": "group_path_1"
-            },
-            {
-                "Wave name": "Wave1",
-                "not needed": "asdflkasjdf",
-                "not needed_2": 124,
-                "Wave date": 1609459200000,
-                "notneeded3": 0,
-                "notneeded4": "qqq",
-                "Source Url": "http://example.com/brightbox/puppet.git",
-                "Parent Path": "group_path_2"
-            }
+    def test_parent_path_fail(self, wave_stage_cli):
+        """Test parent_path_fail method exits with proper error."""
+        parent_path = "invalid_path"
+        
+        with pytest.raises(SystemExit) as exc_info:
+            wave_stage_cli.parent_path_fail(parent_path)
+        
+        assert exc_info.value.code == os.EX_CONFIG
+        expected_msg = f"'Parent Path' column missing or misspelled ({parent_path}). Exiting..."
+        assert expected_msg in wave_stage_cli.log.error_calls
+        assert len(wave_stage_cli.log.error_calls) == 1
+
+    def test_stage_data_no_user_projects(self, wave_stage_cli, monkeypatch):
+        """Test stage_data method with no user projects."""
+        wave_stage_cli.stage_wave = lambda *args, **kwargs: None
+        wave_stage_cli.are_staged_users_without_public_email = lambda: None
+        wave_stage_cli.write_staging_files = lambda **kwargs: None
+        wave_stage_cli.config.source_type = "gitlab"
+        wave_stage_cli.config.direct_transfer = False
+        
+        wave_stage_cli.stage_data("wave1", dry_run=True)
+        
+        # Should not call warning about user projects
+        assert not any("USER projects staged" in str(call) for call in wave_stage_cli.log.warning_calls)
+
+    def test_stage_data_direct_transfer(self, wave_stage_cli, monkeypatch):
+        """Test stage_data method with direct transfer enabled."""
+        email_check_calls = []
+        
+        def mock_email_check():
+            email_check_calls.append(True)
+        
+        wave_stage_cli.stage_wave = lambda *args, **kwargs: None
+        wave_stage_cli.are_staged_users_without_public_email = mock_email_check
+        wave_stage_cli.write_staging_files = lambda **kwargs: None
+        wave_stage_cli.config.source_type = "gitlab"
+        wave_stage_cli.config.direct_transfer = True
+        
+        wave_stage_cli.stage_data("wave1", dry_run=False)
+        
+        # Should not check for users without public email when direct_transfer is True
+        assert len(email_check_calls) == 0
+
+    def test_stage_data_non_gitlab_source(self, wave_stage_cli, monkeypatch):
+        """Test stage_data method with non-gitlab source type."""
+        email_check_calls = []
+        
+        def mock_email_check():
+            email_check_calls.append(True)
+        
+        wave_stage_cli.stage_wave = lambda *args, **kwargs: None
+        wave_stage_cli.are_staged_users_without_public_email = mock_email_check
+        wave_stage_cli.write_staging_files = lambda **kwargs: None
+        wave_stage_cli.config.source_type = "github"
+        wave_stage_cli.config.direct_transfer = False
+        
+        wave_stage_cli.stage_data("wave1", dry_run=False)
+        
+        # Should not check for users without public email when source_type is not gitlab
+        assert len(email_check_calls) == 0
+
+    def test_stage_wave_file_not_exists(self, wave_stage_cli, monkeypatch):
+        """Test stage_wave method when spreadsheet file doesn't exist."""
+        monkeypatch.setattr('os.path.isfile', lambda x: False)
+        monkeypatch.setattr('congregate.cli.stage_wave.WaveSpreadsheetHandler', lambda *args, **kwargs: None)
+        monkeypatch.setattr('congregate.cli.stage_wave.rewrite_list_into_dict', lambda x, y, **kwargs: x)
+        
+        wave_stage_cli.config.wave_spreadsheet_path = "/nonexistent/path"
+        wave_stage_cli.the_number_of_instance = lambda scm_source=None: 0
+        wave_stage_cli.open_projects_file = lambda scm_source=None: []
+        wave_stage_cli.open_users_file = lambda scm_source=None: []
+        wave_stage_cli.open_groups_file = lambda scm_source=None: []
+        
+        with pytest.raises(SystemExit) as exc_info:
+            wave_stage_cli.stage_wave("wave1")
+        
+        assert exc_info.value.code == os.EX_CONFIG
+        assert len(wave_stage_cli.log.error_calls) == 1
+
+    def test_stage_wave_scm_source_not_found(self, wave_stage_cli, monkeypatch):
+        """Test stage_wave method when scm_source instance is not found."""
+        monkeypatch.setattr('os.path.isfile', lambda x: True)
+        monkeypatch.setattr('congregate.cli.stage_wave.rewrite_list_into_dict', lambda x, y, **kwargs: {})
+        
+        mock_wsh_instance = type('MockWaveSpreadsheetHandler', (), {})()
+        mock_wsh_instance.read_file_as_json = lambda **kwargs: [{"Source Project ID": "123"}]
+        
+        def mock_wsh_constructor(*args, **kwargs):
+            return mock_wsh_instance
+        
+        monkeypatch.setattr('congregate.cli.stage_wave.WaveSpreadsheetHandler', mock_wsh_constructor)
+        
+        wave_stage_cli.config.wave_spreadsheet_path = "/valid/path"
+        wave_stage_cli.config.wave_spreadsheet_columns = ["col1", "col2"]
+        wave_stage_cli.config.wave_spreadsheet_column_mapping = {}
+        wave_stage_cli.the_number_of_instance = lambda scm_source: -1  # Returns -1 for not found
+        wave_stage_cli.open_projects_file = lambda scm_source=None: []
+        wave_stage_cli.open_users_file = lambda scm_source=None: []
+        wave_stage_cli.open_groups_file = lambda scm_source=None: []
+        wave_stage_cli.check_spreadsheet_data = lambda: None
+        
+        # Mock pcli.stage_data
+        stage_data_calls = []
+        def mock_stage_data(*args, **kwargs):
+            stage_data_calls.append(args)
+        wave_stage_cli.pcli.stage_data = mock_stage_data
+        
+        wave_stage_cli.stage_wave("wave1", scm_source="unknown_host")
+        
+        # Should log warning about not finding the instance
+        assert any("Couldn't find the correct GH instance with hostname: unknown_host" in call 
+                  for call in wave_stage_cli.log.warning_calls)
+
+    def test_stage_wave_no_wave_data(self, wave_stage_cli, monkeypatch):
+        """Test stage_wave method when no wave data is found."""
+        monkeypatch.setattr('os.path.isfile', lambda x: True)
+        
+        # Create a mock spreadsheet handler
+        def mock_wsh_constructor(*args, **kwargs):
+            mock_instance = type('MockWaveSpreadsheetHandler', (), {})()
+            mock_instance.read_file_as_json = lambda **kwargs: []
+            return mock_instance
+        
+        monkeypatch.setattr('congregate.cli.stage_wave.WaveSpreadsheetHandler', mock_wsh_constructor)
+        monkeypatch.setattr('congregate.cli.stage_wave.rewrite_list_into_dict', lambda x, y, **kwargs: x)
+        
+        wave_stage_cli.config.wave_spreadsheet_path = "/valid/path"
+        wave_stage_cli.config.wave_spreadsheet_columns = ["col1", "col2"]
+        wave_stage_cli.the_number_of_instance = lambda scm_source=None: 0
+        wave_stage_cli.open_projects_file = lambda scm_source=None: []
+        wave_stage_cli.open_users_file = lambda scm_source=None: []
+        wave_stage_cli.open_groups_file = lambda scm_source=None: []
+        wave_stage_cli.check_spreadsheet_data = lambda: None
+        
+        with pytest.raises(SystemExit) as exc_info:
+            wave_stage_cli.stage_wave("wave1")
+        
+        assert exc_info.value.code == os.EX_CONFIG
+        assert any("No rows for wave wave1 found" in call for call in wave_stage_cli.log.error_calls)
+
+    def test_stage_wave_with_override_flag(self, wave_stage_cli, monkeypatch):
+        """Test stage_wave method when override flag is set."""
+        monkeypatch.setattr('os.path.isfile', lambda x: True)
+        monkeypatch.setattr('congregate.cli.stage_wave.rewrite_list_into_dict', lambda x, y, **kwargs: {})
+        
+        mock_wsh_instance = type('MockWaveSpreadsheetHandler', (), {})()
+        mock_wsh_instance.read_file_as_json = lambda **kwargs: [
+            {"Source Project ID": "123", "Override": True}
         ]
-        expected = [
-            {
-                "id": 4,
-                "name": "Diaspora Client",
-                "namespace": "diaspora",
-                "path": "diaspora-client",
-                "path_with_namespace": "diaspora/diaspora-client",
-                "visibility": "private",
-                "description": "Project that does stuff",
-                "jobs_enabled": None,
-                "packages_enabled": None,
-                "project_type": "group",
-                "members": [
-                    {
-                        "id": 2,
-                        "username": "john_doe",
-                        "name": "John Doe",
-                        "state": "active",
-                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
-                        "expires_at": "2012-10-22T14:13:35Z",
-                        "access_level": 30
-                    }
-                ],
-                'http_url_to_repo': 'http://example.com/diaspora/diaspora-client.git',
-                'shared_runners_enabled': True,
-                'archived': False,
-                'shared_with_groups': [],
-                'default_branch': 'master',
-                'target_namespace': 'group_path_1',
-                'override_dstn_ns': False
-            },
-            {
-                "id": 80,
-                "name": "Puppet",
-                "namespace": "brightbox",
-                "path": "puppet",
-                "path_with_namespace": "brightbox/puppet",
-                "visibility": "private",
-                "description": None,
-                "jobs_enabled": None,
-                "packages_enabled": None,
-                "project_type": "group",
-                "members": [
-                    {
-                        "id": 2,
-                        "username": "john_doe",
-                        "name": "John Doe",
-                        "state": "active",
-                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
-                        "expires_at": "2012-10-22T14:13:35Z",
-                        "access_level": 30
-                    }
-                ],
-                'http_url_to_repo': 'http://example.com/brightbox/puppet.git',
-                'shared_runners_enabled': True,
-                'archived': False,
-                'shared_with_groups': [],
-                'default_branch': 'master',
-                'target_namespace': 'group_path_2',
-                'override_dstn_ns': False
-            }
+        
+        def mock_wsh_constructor(*args, **kwargs):
+            return mock_wsh_instance
+        
+        monkeypatch.setattr('congregate.cli.stage_wave.WaveSpreadsheetHandler', mock_wsh_constructor)
+        
+        wave_stage_cli.config.wave_spreadsheet_path = "/valid/path"
+        wave_stage_cli.config.wave_spreadsheet_columns = ["col1", "col2"]
+        wave_stage_cli.config.wave_spreadsheet_column_mapping = {}
+        wave_stage_cli.the_number_of_instance = lambda scm_source=None: 0
+        wave_stage_cli.open_projects_file = lambda scm_source=None: []
+        wave_stage_cli.open_users_file = lambda scm_source=None: []
+        wave_stage_cli.open_groups_file = lambda scm_source=None: []
+        wave_stage_cli.check_spreadsheet_data = lambda: None
+        
+        # Mock pcli.stage_data to capture what gets staged
+        stage_data_calls = []
+        def mock_stage_data(ids, *args, **kwargs):
+            stage_data_calls.append(ids)
+        wave_stage_cli.pcli.stage_data = mock_stage_data
+        
+        wave_stage_cli.stage_wave("wave1")
+        
+        # Should log error about override feature not implemented
+        assert any("OVERRIDE is flagged True" in call for call in wave_stage_cli.log.error_calls)
+        # Should stage empty list since override row is skipped
+        assert len(stage_data_calls) == 1
+        assert stage_data_calls[0] == []
+
+    def test_stage_wave_success_with_valid_data(self, wave_stage_cli, monkeypatch):
+        """Test stage_wave method with valid data and successful execution."""
+        monkeypatch.setattr('os.path.isfile', lambda x: True)
+        monkeypatch.setattr('congregate.cli.stage_wave.rewrite_list_into_dict', lambda x, y, **kwargs: {})
+        
+        mock_wsh_instance = type('MockWaveSpreadsheetHandler', (), {})()
+        mock_wsh_instance.read_file_as_json = lambda **kwargs: [
+            {"Source Project ID": "123", "Override": False},
+            {"Source Project ID": "456"}  # No Override key (falsy)
         ]
+        
+        def mock_wsh_constructor(*args, **kwargs):
+            return mock_wsh_instance
+        
+        monkeypatch.setattr('congregate.cli.stage_wave.WaveSpreadsheetHandler', mock_wsh_constructor)
+        
+        wave_stage_cli.config.wave_spreadsheet_path = "/valid/path"
+        wave_stage_cli.config.wave_spreadsheet_columns = ["col1", "col2"]
+        wave_stage_cli.config.wave_spreadsheet_column_mapping = {}
+        wave_stage_cli.the_number_of_instance = lambda scm_source=None: 0
+        wave_stage_cli.open_projects_file = lambda scm_source=None: []
+        wave_stage_cli.open_users_file = lambda scm_source=None: []
+        wave_stage_cli.open_groups_file = lambda scm_source=None: []
+        wave_stage_cli.check_spreadsheet_data = lambda: None
+        
+        # Mock pcli.stage_data to capture what gets staged  
+        stage_data_calls = []
+        def mock_stage_data(ids, *args, **kwargs):
+            stage_data_calls.append(ids)
+        wave_stage_cli.pcli.stage_data = mock_stage_data
+        
+        wave_stage_cli.stage_wave("wave1")
+        
+        # Should stage both project IDs as strings
+        assert len(stage_data_calls) == 1
+        assert stage_data_calls[0] == ["123", "456"]
 
-        self.wcli.stage_wave("Wave1")
-        actual = self.wcli.staged_projects
+    def test_check_spreadsheet_kv_all_items_exist(self, wave_stage_cli):
+        """Test check_spreadsheet_kv when all mapping items exist in columns"""
+        mapping = {'col1': 'property1', 'col2': 'property2', 'col3': 'property3'}
+        columns = ['col1', 'col2', 'col3', 'col4']
+        
+        result = wave_stage_cli.check_spreadsheet_kv(mapping, columns)
+        
+        assert result is True
 
-        self.assertEqual(len(expected), len(actual))
-        for i, j in enumerate(expected):
-            self.assertDictEqual(j, actual[i])
+    def test_check_spreadsheet_kv_some_items_missing(self, wave_stage_cli):
+        """Test check_spreadsheet_kv when some mapping items are missing from columns"""
+        mapping = {'col1': 'property1', 'col2': 'property2', 'col3': 'property3'}
+        columns = ['col1', 'col3']  # col2 is missing
+        
+        result = wave_stage_cli.check_spreadsheet_kv(mapping, columns)
+        
+        assert result is False
 
-    @mock.patch.object(WaveStageCLI, 'get_parent_id')
-    @mock.patch.object(WaveStageCLI, 'open_users_file')
-    @mock.patch.object(WaveStageCLI, 'open_groups_file')
-    @mock.patch('congregate.helpers.conf.Config.wave_spreadsheet_columns', new_callable=mock.PropertyMock)
-    @mock.patch('congregate.helpers.conf.Config.wave_spreadsheet_column_mapping', new_callable=mock.PropertyMock)
-    @mock.patch('congregate.helpers.conf.Config.wave_spreadsheet_path', new_callable=mock.PropertyMock)
-    @mock.patch('congregate.helpers.conf.Config.source_type', new_callable=mock.PropertyMock)
-    @mock.patch('congregate.helpers.conf.Config.source_host', new_callable=mock.PropertyMock)
-    @mock.patch.object(WaveSpreadsheetHandler, "read_file_as_json")
-    @mock.patch.object(BaseStageClass, "open_projects_file")
-    @mock.patch('os.path.isfile', new_callable=mock.PropertyMock)
-    def test_stage_wave_mixed_project(self, mock_isfile, projects, read_as_json, mock_source_host, mock_source_type, spreadsheet_path, column_mapping, columns_to_use, mock_groups, mock_users, mock_parent_id):
-        mock_source_type.return_value = "gitlab"
-        mock_users.return_value = self.users_api.get_all_users_list()
-        mock_groups.return_value = self.groups_api.get_all_groups_list()
-        projects.return_value = self.projects_api.get_all_projects()
-        mock_source_host.return_value = "http://example.com/"
-        spreadsheet_path.return_value = "test.xls"
-        mock_parent_id.side_effect = [None, None]
-        mock_isfile.return_value = True
-        column_mapping.return_value = {
-            "Wave name": "Wave name",
-            "Wave date": "Wave date",
-            "Source Url": "Source Url",
-            "Parent Path": "Parent Path"
-        }
-        columns_to_use.return_value = [
-            "Wave name", "Wave date", "Source Url", "Parent Path"]
-        read_as_json.return_value = [
-            {
-                "Wave name": "Wave1",
-                "not needed": "asdflkasjdf",
-                "not needed_2": 123,
-                "Wave date": 1609459200000,
-                "notneeded3": -1,
-                "notneeded4": "qqq",
-                "Source Url": "http://example.com/diaspora/diaspora-client.git",
-                "Parent Path": "group_path_1"
-            },
-            {
-                "Wave name": "Wave1",
-                "not needed": "asdflkasjdf",
-                "not needed_2": 124,
-                "Wave date": 1609459200000,
-                "notneeded3": 0,
-                "notneeded4": "qqq",
-                "Source Url": "http://example.com/brightbox/puppet",
-                "Parent Path": "group_path_2"
-            }
-        ]
-        expected = [
-            {
-                "id": 4,
-                "name": "Diaspora Client",
-                "namespace": "diaspora",
-                "path": "diaspora-client",
-                "path_with_namespace": "diaspora/diaspora-client",
-                "visibility": "private",
-                "description": "Project that does stuff",
-                "jobs_enabled": None,
-                "packages_enabled": None,
-                "project_type": "group",
-                "members": [
-                    {
-                        "id": 2,
-                        "username": "john_doe",
-                        "name": "John Doe",
-                        "state": "active",
-                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
-                        "expires_at": "2012-10-22T14:13:35Z",
-                        "access_level": 30
-                    }
-                ],
-                'http_url_to_repo': 'http://example.com/diaspora/diaspora-client.git',
-                'shared_runners_enabled': True,
-                'archived': False,
-                'shared_with_groups': [],
-                'default_branch': 'master',
-                'target_namespace': 'group_path_1',
-                'override_dstn_ns': False
-            },
-            {
-                "id": 80,
-                "name": "Puppet",
-                "namespace": "brightbox",
-                "path": "puppet",
-                "path_with_namespace": "brightbox/puppet",
-                "visibility": "private",
-                "description": None,
-                "jobs_enabled": None,
-                "packages_enabled": None,
-                "project_type": "group",
-                "members": [
-                    {
-                        "id": 2,
-                        "username": "john_doe",
-                        "name": "John Doe",
-                        "state": "active",
-                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
-                        "expires_at": "2012-10-22T14:13:35Z",
-                        "access_level": 30
-                    }
-                ],
-                'http_url_to_repo': 'http://example.com/brightbox/puppet.git',
-                'shared_runners_enabled': True,
-                'archived': False,
-                'shared_with_groups': [],
-                'default_branch': 'master',
-                'target_namespace': 'group_path_2',
-                'override_dstn_ns': False
-            }
-        ]
+    def test_check_spreadsheet_kv_no_items_exist(self, wave_stage_cli):
+        """Test check_spreadsheet_kv when no mapping items exist in columns"""
+        mapping = {'col1': 'property1', 'col2': 'property2', 'col3': 'property3'}
+        columns = ['col4', 'col5', 'col6']
+        
+        result = wave_stage_cli.check_spreadsheet_kv(mapping, columns)
+        
+        assert result is False
 
-        self.wcli.stage_wave("Wave1")
-        actual = self.wcli.staged_projects
+    def test_check_spreadsheet_kv_empty_mapping(self, wave_stage_cli):
+        """Test check_spreadsheet_kv with empty mapping"""
+        mapping = {}
+        columns = ['col1', 'col2', 'col3']
+        
+        result = wave_stage_cli.check_spreadsheet_kv(mapping, columns)
+        
+        assert result is True  # 0 == len({}) is True
 
-        self.assertEqual(len(expected), len(actual))
-        for i, j in enumerate(expected):
-            self.assertDictEqual(j, actual[i])
+    def test_check_spreadsheet_kv_empty_columns(self, wave_stage_cli):
+        """Test check_spreadsheet_kv with empty columns"""
+        mapping = {'col1': 'property1', 'col2': 'property2'}
+        columns = []
+        
+        result = wave_stage_cli.check_spreadsheet_kv(mapping, columns)
+        
+        assert result is False  # 0 != len({'col1': 'property1', 'col2': 'property2'})
 
-    @mock.patch.object(WaveStageCLI, 'get_parent_id')
-    @mock.patch.object(WaveStageCLI, 'open_users_file')
-    @mock.patch.object(WaveStageCLI, 'open_groups_file')
-    @mock.patch('congregate.helpers.conf.Config.wave_spreadsheet_columns', new_callable=mock.PropertyMock)
-    @mock.patch('congregate.helpers.conf.Config.wave_spreadsheet_column_mapping', new_callable=mock.PropertyMock)
-    @mock.patch('congregate.helpers.conf.Config.wave_spreadsheet_path', new_callable=mock.PropertyMock)
-    @mock.patch('congregate.helpers.conf.Config.source_type', new_callable=mock.PropertyMock)
-    @mock.patch('congregate.helpers.conf.Config.source_host', new_callable=mock.PropertyMock)
-    @mock.patch.object(WaveSpreadsheetHandler, "read_file_as_json")
-    @mock.patch.object(BaseStageClass, "open_projects_file")
-    @mock.patch('os.path.isfile', new_callable=mock.PropertyMock)
-    def test_stage_wave_mixed_project_and_group(self, mock_isfile, projects, read_as_json, mock_source_host, mock_source_type, spreadsheet_path, column_mapping, columns_to_use, mock_groups, mock_users, mock_parent_id):
-        mock_source_type.return_value = "gitlab"
-        mock_users.return_value = self.users_api.get_all_users_list()
-        mock_groups.return_value = self.groups_api.get_all_groups_list()
-        projects.return_value = self.projects_api.get_all_projects()
-        mock_source_host.return_value = "http://example.com/"
-        spreadsheet_path.return_value = "test.xls"
-        mock_parent_id.side_effect = [None, None]
-        mock_isfile.return_value = True
-        column_mapping.return_value = {
-            "Wave name": "Wave name",
-            "Wave date": "Wave date",
-            "Source Url": "Source Url",
-            "Parent Path": "Parent Path"
-        }
-        columns_to_use.return_value = [
-            "Wave name", "Wave date", "Source Url", "Parent Path"]
-        read_as_json.return_value = [
-            {
-                "Wave name": "Wave1",
-                "not needed": "asdflkasjdf",
-                "not needed_2": 123,
-                "Wave date": 1609459200000,
-                "notneeded3": -1,
-                "notneeded4": "qqq",
-                "Source Url": "http://example.com/diaspora/diaspora-client.git",
-                "Parent Path": "group_path_1"
-            },
-            {
-                "Wave name": "Wave1",
-                "not needed": "asdflkasjdf",
-                "not needed_2": 124,
-                "Wave date": 1609459200000,
-                "notneeded3": 0,
-                "notneeded4": "qqq",
-                "Source Url": "http://example.com/foo-bar-3",
-                "Parent Path": "group_path_2"
-            }
-        ]
-        expected = [
-            {
-                "id": 4,
-                "name": "Diaspora Client",
-                "namespace": "diaspora",
-                "path": "diaspora-client",
-                "path_with_namespace": "diaspora/diaspora-client",
-                "visibility": "private",
-                "description": "Project that does stuff",
-                "jobs_enabled": None,
-                "packages_enabled": None,
-                "project_type": "group",
-                "members": [
-                    {
-                        "id": 2,
-                        "username": "john_doe",
-                        "name": "John Doe",
-                        "state": "active",
-                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
-                        "expires_at": "2012-10-22T14:13:35Z",
-                        "access_level": 30
-                    }
-                ],
-                "http_url_to_repo": "http://example.com/diaspora/diaspora-client.git",
-                "shared_runners_enabled": True,
-                "archived": False,
-                "shared_with_groups": [],
-                "default_branch": "master",
-                "target_namespace": "group_path_1",
-                "override_dstn_ns": False
-            },
-            {
-                "id": 6,
-                "name": "Puppet",
-                "namespace": "brightbox",
-                "path": "puppet",
-                "path_with_namespace": "brightbox/puppet",
-                "visibility": "private",
-                "description": None,
-                "jobs_enabled": None,
-                "packages_enabled": None,
-                "project_type": "group",
-                "members": [
-                    {
-                        "id": 2,
-                        "username": "john_doe",
-                        "name": "John Doe",
-                        "state": "active",
-                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
-                        "expires_at": "2012-10-22T14:13:35Z",
-                        "access_level": 30
-                    }
-                ],
-                "http_url_to_repo": "http://example.com/brightbox/puppet.git",
-                "shared_runners_enabled": True,
-                "archived": False,
-                "shared_with_groups": [],
-                "default_branch": "master",
-                "target_namespace": "group_path_2"
-            }
-        ]
+    def test_check_spreadsheet_kv_both_empty(self, wave_stage_cli):
+        """Test check_spreadsheet_kv with both mapping and columns empty"""
+        mapping = {}
+        columns = []
+        
+        result = wave_stage_cli.check_spreadsheet_kv(mapping, columns)
+        
+        assert result is True  # 0 == len({}) is True
 
-        self.wcli.stage_wave("Wave1")
-        actual = self.wcli.staged_projects
+    def test_check_spreadsheet_data_all_valid(self, wave_stage_cli):
+        """Test check_spreadsheet_data when all configuration is valid"""
+        wave_stage_cli.config.wave_spreadsheet_column_to_project_property_mapping = {'col1': 'prop1', 'col2': 'prop2'}
+        wave_stage_cli.config.wave_spreadsheet_columns = ['col1', 'col2', 'col3']
+        
+        wave_stage_cli.check_spreadsheet_data()
+        
+        # Should not log any warnings
+        assert len(wave_stage_cli.log.warning_calls) == 0
 
-        self.assertEqual(len(expected), len(actual))
-        for i, j in enumerate(expected):
-            self.assertDictEqual(j, actual[i])
+    def test_check_spreadsheet_data_missing_mapping(self, wave_stage_cli):
+        """Test check_spreadsheet_data when mapping configuration is missing"""
+        wave_stage_cli.config.wave_spreadsheet_column_to_project_property_mapping = None
+        wave_stage_cli.config.wave_spreadsheet_columns = ['col1', 'col2']
+        
+        wave_stage_cli.check_spreadsheet_data()
+        
+        expected_msg = "No 'wave_spreadsheet_column_to_project_property_mapping' field in congregate.conf"
+        assert expected_msg in wave_stage_cli.log.warning_calls
 
-    @mock.patch.object(WaveStageCLI, 'get_parent_id')
-    @mock.patch.object(WaveStageCLI, 'open_users_file')
-    @mock.patch.object(WaveStageCLI, 'open_groups_file')
-    @mock.patch('congregate.helpers.conf.Config.wave_spreadsheet_columns', new_callable=mock.PropertyMock)
-    @mock.patch('congregate.helpers.conf.Config.wave_spreadsheet_column_mapping', new_callable=mock.PropertyMock)
-    @mock.patch('congregate.helpers.conf.Config.wave_spreadsheet_path', new_callable=mock.PropertyMock)
-    @mock.patch('congregate.helpers.conf.Config.source_type', new_callable=mock.PropertyMock)
-    @mock.patch.object(WaveSpreadsheetHandler, "read_file_as_json")
-    @mock.patch.object(BaseStageClass, "open_projects_file")
-    @mock.patch('os.path.isfile', new_callable=mock.PropertyMock)
-    def test_stage_wave_with_parent_group(self, mock_isfile, projects, read_as_json, mock_source_type, spreadsheet_path, column_mapping, columns_to_use, mock_groups, mock_users, mock_parent_id):
-        mock_source_type.return_value = "gitlab"
-        mock_users.return_value = self.users_api.get_all_users_list()
-        mock_groups.return_value = self.groups_api.get_all_groups_list()
-        projects.return_value = self.projects_api.get_all_projects()
-        spreadsheet_path.return_value = "test.xls"
-        mock_isfile.return_value = True
-        column_mapping.return_value = {
-            "Wave name": "Wave name",
-            "Wave date": "Wave date",
-            "Source Url": "Source Url",
-            "swc_manager_name": "SWC Manager Name",
-            "swc_manager_email": "SWC Manager Email",
-            "swc_id": "SWC AA ID",
-            "Parent Path": "Target Parent Group",
-            "Override": "Override"
-        }
-        columns_to_use.return_value = [
-            "Wave name", "Wave date", "Source Url", "Group", "SWC Manager Name", "SWC Manager Email", "SWC AA ID", "Target Parent Group", "Override"]
+    def test_check_spreadsheet_data_empty_mapping(self, wave_stage_cli):
+        """Test check_spreadsheet_data when mapping configuration is empty"""
+        wave_stage_cli.config.wave_spreadsheet_column_to_project_property_mapping = {}
+        wave_stage_cli.config.wave_spreadsheet_columns = ['col1', 'col2']
+        
+        wave_stage_cli.check_spreadsheet_data()
+        
+        expected_msg = "No 'wave_spreadsheet_column_to_project_property_mapping' field in congregate.conf"
+        assert expected_msg in wave_stage_cli.log.warning_calls
 
-        mock_parent_id.side_effect = [None, None]
+    def test_check_spreadsheet_data_missing_columns(self, wave_stage_cli):
+        """Test check_spreadsheet_data when columns configuration is missing"""
+        wave_stage_cli.config.wave_spreadsheet_column_to_project_property_mapping = {'col1': 'prop1', 'col2': 'prop2'}
+        wave_stage_cli.config.wave_spreadsheet_columns = None
+        
+        wave_stage_cli.check_spreadsheet_data()
+        
+        expected_msg = "No 'wave_spreadsheet_columns' field in congregate.conf"
+        assert expected_msg in wave_stage_cli.log.warning_calls
 
-        read_as_json.return_value = [
-            {
-                "Wave name": "Wave1",
-                "not needed": "asdflkasjdf",
-                "not needed_2": 123,
-                "Wave date": 1609459200000,
-                "Group": "/path/to/group",
-                "notneeded3": -1,
-                "notneeded4": "qqq",
-                "Source Url": "http://example.com/diaspora/diaspora-client.git",
-                "SWC Manager Name": "application owner name",
-                "SWC Manager Email": "owner@example.com",
-                "SWC AA ID": "application group",
-                "Target Parent Group": "target_parent_group",
-                "Override": "true"
-            },
-            {
-                "Wave name": "Wave1",
-                "not needed": "asdflkasjdf",
-                "not needed_2": 124,
-                "Wave date": 1609459200000,
-                "Group": "/path/to/group",
-                "notneeded3": 0,
-                "notneeded4": "qqq",
-                "Source Url": "http://example.com/brightbox/puppet.git",
-                "SWC Manager Name": "application owner name",
-                "SWC Manager Email": "owner@example.com",
-                "SWC AA ID": "application group",
-                "Target Parent Group": "should_not_matter",
-                "Override": None
-            }
-        ]
-        expected = [
-            {
-                "id": 4,
-                "name": "Diaspora Client",
-                "namespace": "diaspora",
-                "path": "diaspora-client",
-                "path_with_namespace": "diaspora/diaspora-client",
-                "visibility": "private",
-                "description": "Project that does stuff",
-                "jobs_enabled": None,
-                "packages_enabled": None,
-                "project_type": "group",
-                "members": [
-                    {
-                        "id": 2,
-                        "username": "john_doe",
-                        "name": "John Doe",
-                        "state": "active",
-                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
-                        "expires_at": "2012-10-22T14:13:35Z",
-                        "access_level": 30
-                    }
-                ],
-                'http_url_to_repo': 'http://example.com/diaspora/diaspora-client.git',
-                'shared_runners_enabled': True,
-                'archived': False,
-                'shared_with_groups': [],
-                'default_branch': 'master',
-                'target_namespace': 'target_parent_group',
-                "swc_manager_name": "application owner name",
-                "swc_manager_email": "owner@example.com",
-                "swc_id": "application group",
-                "override_dstn_ns": True
-            },
-            {
-                "id": 80,
-                "name": "Puppet",
-                "namespace": "brightbox",
-                "path": "puppet",
-                "path_with_namespace": "brightbox/puppet",
-                "visibility": "private",
-                "description": None,
-                "jobs_enabled": None,
-                "packages_enabled": None,
-                "project_type": "group",
-                "members": [
-                    {
-                        "id": 2,
-                        "username": "john_doe",
-                        "name": "John Doe",
-                        "state": "active",
-                        "avatar_url": "https://www.gravatar.com/avatar/c2525a7f58ae3776070e44c106c48e15?s=80&d=identicon",
-                        "expires_at": "2012-10-22T14:13:35Z",
-                        "access_level": 30
-                    }
-                ],
-                'http_url_to_repo': 'http://example.com/brightbox/puppet.git',
-                'shared_runners_enabled': True,
-                'archived': False,
-                'shared_with_groups': [],
-                'default_branch': 'master',
-                'target_namespace': 'should_not_matter',
-                "swc_manager_name": "application owner name",
-                "swc_manager_email": "owner@example.com",
-                "swc_id": "application group",
-                "override_dstn_ns": False
-            }
-        ]
+    def test_check_spreadsheet_data_empty_columns(self, wave_stage_cli):
+        """Test check_spreadsheet_data when columns configuration is empty"""
+        wave_stage_cli.config.wave_spreadsheet_column_to_project_property_mapping = {'col1': 'prop1', 'col2': 'prop2'}
+        wave_stage_cli.config.wave_spreadsheet_columns = []
+        
+        wave_stage_cli.check_spreadsheet_data()
+        
+        expected_msg = "No 'wave_spreadsheet_columns' field in congregate.conf"
+        assert expected_msg in wave_stage_cli.log.warning_calls
 
-        self.wcli.stage_wave("Wave1")
-        actual = self.wcli.staged_projects
+    def test_check_spreadsheet_data_mismatch_warning(self, wave_stage_cli):
+        """Test check_spreadsheet_data when there's a mismatch between mapping and columns"""
+        wave_stage_cli.config.wave_spreadsheet_column_to_project_property_mapping = {'col1': 'prop1', 'col2': 'prop2', 'col3': 'prop3'}
+        wave_stage_cli.config.wave_spreadsheet_columns = ['col1', 'col2']  # col3 missing
+        
+        wave_stage_cli.check_spreadsheet_data()
+        
+        # Should log the mismatch warning
+        expected_msg = "Mismatch between keys in wave_spreadsheet_columns and wave_spreadsheet_column_to_project_property_mapping"
+        assert expected_msg in wave_stage_cli.log.warning_calls
 
-        self.assertEqual(len(expected), len(actual))
-        for i, j in enumerate(expected):
-            self.assertDictEqual(j, actual[i])
+    def test_check_spreadsheet_data_case_sensitive_columns(self, wave_stage_cli):
+        """Test check_spreadsheet_data with case-sensitive column matching"""
+        wave_stage_cli.config.wave_spreadsheet_column_to_project_property_mapping = {'Col1': 'prop1', 'col2': 'prop2'}
+        wave_stage_cli.config.wave_spreadsheet_columns = ['col1', 'col2']  # Different case for Col1
+        
+        wave_stage_cli.check_spreadsheet_data()
+        
+        # Should log mismatch warning due to case sensitivity
+        expected_msg = "Mismatch between keys in wave_spreadsheet_columns and wave_spreadsheet_column_to_project_property_mapping"
+        assert expected_msg in wave_stage_cli.log.warning_calls
 
-    @mock.patch.object(WaveStageCLI, 'open_users_file')
-    @mock.patch.object(WaveStageCLI, 'open_groups_file')
-    @mock.patch('congregate.helpers.conf.Config.wave_spreadsheet_columns', new_callable=mock.PropertyMock)
-    @mock.patch('congregate.helpers.conf.Config.wave_spreadsheet_column_mapping', new_callable=mock.PropertyMock)
-    @mock.patch('congregate.helpers.conf.Config.wave_spreadsheet_path', new_callable=mock.PropertyMock)
-    @mock.patch.object(WaveSpreadsheetHandler, "read_file_as_json")
-    @mock.patch.object(BaseStageClass, "open_projects_file")
-    @mock.patch('os.path.isfile', new_callable=mock.PropertyMock)
-    @mock.patch('sys.exit', new_callable=mock.PropertyMock)
-    def test_get_ids_to_stage_wave_no_waves(self, mock_sysExit, mock_isFile, projects, read_as_json, spreadsheet_path, column_mapping, columns_to_use, mock_groups, mock_users):
-        mock_users.return_value = self.users_api.get_all_users_list()
-        mock_groups.return_value = self.groups_api.get_all_groups_list()
-        projects.return_value = self.projects_api.get_all_projects()
-        spreadsheet_path.return_value = "test.xls"
-        mock_isFile.return_value = True
-        mock_sysExit.return_value = True
-        column_mapping.return_value = {
-            "Wave name": "Wave name",
-            "Wave date": "Wave date",
-            "Source Url": "Source Url"
-        }
-        columns_to_use.return_value = ["Wave name", "Wave date", "Source Url"]
-        read_as_json.return_value = []
-        expected = []
-        self.wcli.stage_wave("Wave1")
-        actual = self.wcli.staged_projects
-        self.assertListEqual(expected, actual)
-
-    @mock.patch('congregate.helpers.conf.Config.source_host', new_callable=mock.PropertyMock)
-    def test_sanitize_project_path(self, mock_host):
-        mock_host.return_value = "http://gitlab.com"
-        url = "http://gitlab.com/path/to/repo.git"
-
-        expected = "path/to/repo.git"
-        actual = self.wcli.sanitize_project_path(url)
-
-        self.assertEqual(expected, actual)
-
-    @mock.patch('congregate.helpers.conf.Config.source_host', new_callable=mock.PropertyMock)
-    def test_sanitize_project_path_with_spaces(self, mock_host):
-        mock_host.return_value = "http://gitlab.com"
-        url = "http://gitlab.com/path/to/repo.git    "
-
-        expected = "path/to/repo.git"
-        actual = self.wcli.sanitize_project_path(url)
-
-        self.assertEqual(expected, actual)
-
-    def test_find_group(self):
-        self.wcli.group_paths = {
-            "test-group": {
-                "path": "test-group"
-            }
-        }
-        expected = {
-            "path": "test-group"
-        }
-        actual = self.wcli.find_group("http://github.test.com/test-group")
-
-        self.assertEqual(expected, actual)
-
-    def test_find_group_invalid(self):
-        self.wcli.group_paths = {
-            "test-group": {
-                "path": "test-group"
-            }
-        }
-        actual = self.wcli.find_group(
-            "http://github.test.com/test-group/test-group")
-
-        self.assertIsNone(actual)
+    def test_check_spreadsheet_data_duplicate_columns(self, wave_stage_cli):
+        """Test check_spreadsheet_data with duplicate columns"""
+        wave_stage_cli.config.wave_spreadsheet_column_to_project_property_mapping = {'col1': 'prop1', 'col2': 'prop2'}
+        wave_stage_cli.config.wave_spreadsheet_columns = ['col1', 'col2']
+        
+        wave_stage_cli.check_spreadsheet_data()
+        
+        # Should not log mismatch warning since there are no duplicates in the dictionary keys
+        expected_msg = "Mismatch between keys in wave_spreadsheet_columns and wave_spreadsheet_column_to_project_property_mapping"
+        assert expected_msg not in wave_stage_cli.log.warning_calls

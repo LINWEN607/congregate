@@ -87,7 +87,9 @@ Prepared by GitLab Professional Services
 
 # Migration Process Overview
 
-The Migration Process Overview is intended to be a high level outline, describing the process to plan, execute, and report on a migration. For the majority of migration cases, [Congregate](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate) will be used to orchestrate migrations in waves. Some tasks will need to happen infrequently, others every wave, some multiple times per wave. Project migrations should start with a small number in the Phase 1 Pilot Migrations and then start ramping up in the Phase 4 Main Migrations as issues are addressed.
+The Migration Process Overview is intended to be a high-level outline, describing the process to plan, execute, and report on an API-based migration. Pieces of it around the pre/post expectations and planning for developers and the all-up system can also be relevant for GEO-based migrations.
+
+For the majority of API-based migration cases, [Congregate](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate) will be used to orchestrate migrations in waves. Some tasks will need to happen infrequently, others every wave, some multiple times per wave. Project migrations should start with a small number in the Phase 1 Pilot Migrations and then start ramping up in the Phase 4 Main Migrations as issues are addressed.
 
 Before actual production migrations, your communication plan for end users should be developed, and shared with users who will be migrated. Stakeholders who can verify functionality for a completed migration should be identified ahead of time. Schedule of said verifications should be decided ahead of time as well. I.e. will they verify immediately after the migration, during a planned outage window? Will they verify the following day when they are available?
 

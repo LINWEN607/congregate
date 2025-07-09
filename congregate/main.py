@@ -230,7 +230,7 @@ if __name__ == '__main__':
     from gitlab_ps_utils.dict_utils import dig
     from gitlab_ps_utils.string_utils import obfuscate, deobfuscate
     from congregate.helpers import conf
-    from congregate.helpers.configuration_validator import ConfigurationValidator
+    
     from congregate.helpers.utils import get_congregate_path, rotate_logs, stitch_json_results
     from congregate.helpers.ui_utils import spin_up_ui
 else:
@@ -242,7 +242,6 @@ else:
     from gitlab_ps_utils.dict_utils import dig
     from gitlab_ps_utils.string_utils import obfuscate, deobfuscate
     from congregate.helpers import conf
-    from congregate.helpers.configuration_validator import ConfigurationValidator
     from congregate.helpers.utils import get_congregate_path, rotate_logs, stitch_json_results
     from congregate.helpers.ui_utils import spin_up_ui
 
@@ -312,6 +311,7 @@ def main():
             log.info(
                 "Config CLI has been Deprecated. Validate config file by running `congregate validate-config`")
         elif arguments["validate-config"]:
+            from congregate.helpers.configuration_validator import ConfigurationValidator
             c = ConfigurationValidator()
             for v in dir(c):
                 getattr(c, v)

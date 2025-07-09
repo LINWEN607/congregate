@@ -1,11 +1,7 @@
-import warnings
 import unittest
-from unittest.mock import patch, PropertyMock, MagicMock
+from unittest.mock import patch, MagicMock
 
-import pytest
 from pytest import mark
-from requests.exceptions import RequestException
-from requests import Response
 
 from congregate.migration.gitlab.api.project_feature_flags import ProjectFeatureFlagsApi
 from congregate.migration.gitlab.project_feature_flags import ProjectFeatureFlagClient
