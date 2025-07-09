@@ -158,7 +158,6 @@ REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
     - Environments
     - CI/CD Variables
     - Pipeline Schedule Variables
-    - Merge Request Approvals
 
 ### Source data export
 

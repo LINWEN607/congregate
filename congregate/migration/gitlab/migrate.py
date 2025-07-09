@@ -705,9 +705,9 @@ class GitLabMigrateClient(MigrateClient):
                 results["push_rules"] = self.pushrules.migrate_push_rules(
                     src_id, dst_id, src_path)
 
-            # Merge Request Approvals
-            results["project_level_mr_approvals"] = MergeRequestApprovalsClient(dest_host=dest_host, dest_token=dest_token).migrate_project_level_mr_approvals(
-                src_id, dst_id, src_path)
+                # Merge Request Approvals
+                results["project_level_mr_approvals"] = MergeRequestApprovalsClient(dest_host=dest_host, dest_token=dest_token).migrate_project_level_mr_approvals(
+                    src_id, dst_id, src_path)
 
         # Source fields
         results["src_id"] = src_id
