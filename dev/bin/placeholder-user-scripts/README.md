@@ -61,11 +61,12 @@ export DESTINATION_TOP_LEVEL_GROUP="import-target"
 
 This scripts calls the [API](https://docs.gitlab.com/api/group_placeholder_reassignments/#download-the-csv-file) and will generate a CSV file containing details about placeholder users. Example:
 
-```
+```csv
 Source host,Import type,Source user identifier,Source user name,Source username,GitLab username,GitLab public email
 http://gitlab.example,gitlab_migration,11,Bob,bob,"",""
 http://gitlab.example,gitlab_migration,9,Alice,alice,"",""
 ```
+
 The data is written to a CSV named with the pattern:
 
 ```python
@@ -80,13 +81,14 @@ Use the mapping script to match users between source and destination GitLab inst
 python gitlab_user_mapping.py email_list_from_step_1.txt placeholder_users_from_step_2.csv [OPTIONS]
 ```
 
-### Command Line Options:
+### Command Line Options
 
-| Option | Description |
-|    `--log-level LEVEL` |         Set logging level: **DEBUG**, **INFO**, **WARNING**, **ERROR**, **CRITICAL** (default: **INFO**) |
-|    `--help`            |        Show this help message and exit |
+| Option              | Description                                                                                      |
+| ------------------- | ------------------------------------------------------------------------------------------------ |
+| `--log-level LEVEL` | Set logging level: **DEBUG**, **INFO**, **WARNING**, **ERROR**, **CRITICAL** (default: **INFO**) |
+| `--help`            | Show this help message and exit                                                                  |
 
-### Example:
+### Example
 
 ```bash
 python gitlab_user_mapping.py email_list.txt customer_topgroup_20250401081822_placeholder_users.csv --log-level INFO
