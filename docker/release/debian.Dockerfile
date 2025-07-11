@@ -78,8 +78,8 @@ RUN export PATH=$PATH:$HOME/.local/bin && \
     echo "export PATH=$PATH" >> ~/.zshrc
 
 # Install poetry
-RUN python -m pip install --user poetry==1.8.5 && \
-    python -m poetry --version && \
+RUN python -m pip install --user poetry==1.8.5 setuptools==80.9.0 && \
+    python3.10 -m poetry --version && \
     python -m poetry install
 
 USER root
