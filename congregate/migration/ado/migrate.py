@@ -175,9 +175,6 @@ class AzureDevopsMigrateClient(MigrateClient):
             else:
                 self.log.info(
                     "SKIP: Assuming staged projects are already exported")
-            # print(self.skip_project_export)
-            # print(self.skip_project_import)
-
 
             if not self.skip_project_import:
                 self.log.info("{}Importing projects".format(dry_log))
