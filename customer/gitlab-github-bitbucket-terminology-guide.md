@@ -31,10 +31,9 @@
 | **Subgrouping**       | ✅ Yes                       | ⚠️ Teams (permission scope)  | ❌ Not Available                  | ❌ Not Available           |
 | **Visibility Levels** | Public / Internal / Private | Public / Internal¹ / Private | Public / Private                 | Public / Private          |
 
-### Note:
-
-¹ GitHub's *Internal* visibility is available only in Enterprise Cloud orgs and exposes repos to all members.
-² Bitbucket’s *Public* visibility is limited; Projects and Workspaces are private by default.
+ > [!note]
+-  ¹ GitHub's *Internal* visibility is available only in Enterprise Cloud orgs and exposes repos to all members.
+-  ² Bitbucket’s *Public* visibility is limited; Projects and Workspaces are private by default.
 
 ---
 
