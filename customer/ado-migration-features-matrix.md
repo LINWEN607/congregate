@@ -17,9 +17,9 @@
 |                      |                                  | WI Author, assignees                                  | :white_check_mark: |                       |                                           |
 |                      |                                  | WI comments (as-is)                                   | :white_check_mark: |                       |                                           |
 |                      |                                  | WI attachments                                        | :white_check_mark: |                       |                                           |
+|                      |                                  | WI types support <sup>7</sup>                         | :white_check_mark: |                       |                                           |
 |                      |                                  | WI description, comments formatting                   | :construction:     |                       | Enhancements Epic <sup>4</sup>            |
 |                      |                                  | WI linkage to MR                                      | :construction:     |                       | Enhancements Epic <sup>4</sup>            |
-|                      |                                  | Support various work item types                       | :construction:     |                       | Enhancements Epic <sup>4</sup>            |
 | **Azure Repos**      |                                  |                                                       |                    |                       |                                           |
 |                      | Git                              |                                                       |                    |                       |                                           |
 |                      |                                  | Commits, branches, tags                               | :white_check_mark: |                       |                                           |
@@ -39,3 +39,4 @@
 4. [Enhancements Epic](https://gitlab.com/groups/gitlab-org/professional-services-automation/tools/migration/-/epics/129)
 5. [Enhancements Epic](https://gitlab.com/groups/gitlab-org/professional-services-automation/tools/migration/-/epics/118)
 6. [Variable groups linked to secrets in Azure Key Vault](https://learn.microsoft.com/en-us/azure/devops/pipelines/library/link-variable-groups-to-key-vaults?view=azure-devops) are currently **not** migrated when the value is empty ([known issue](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/issues/1239))
+7. Portfolio Level work items are migrated as Epic to Group scope; Backlog Level work items are migrated as Issue / Task to Project scope (per [this note](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/issues/1267#note_2578007646)).
