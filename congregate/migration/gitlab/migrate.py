@@ -638,7 +638,7 @@ class GitLabMigrateClient(MigrateClient):
         results["id"] = dst_id
 
         # Set default branch
-        self.branches.set_branch(src_path, dst_id, project["default_branch"])
+        self.branches.set_branch(src_path, dst_id, project.get("default_branch"))
 
         # Shared with groups
         results["shared_with_groups"] = self.projects.add_shared_groups(
