@@ -27,6 +27,7 @@ class CodeCommitExportBuilder(ExportBuilder):
         self.project_id = source_project['namespace']
         self.repository_id = source_project['id']
         self.members_map = {}
+        self.project_name = source_project['name']
         self.project_metadata = Project(description=source_project['description'])
         super().__init__(project=source_project, clone_url=None)
         self.clone_url = self.build_clone_url()
@@ -128,8 +129,8 @@ class CodeCommitExportBuilder(ExportBuilder):
                 ),
                 # merged_at=dig(pr, 'lastMergeCommit', 'committer', 'date') if pr.get('lastMergeCommit') else None,
                 # closed_at=pr.get('lastMergeTargetUpdateTime') if pr.get('lastMergeCommit') else None,
-                notes=self.build_mr_notes(pr_id),
-                author_id=self.get_new_member_id(pr['createdBy'])
+                notes=self.build_mr_notes(pr_id)
+                # author_id=self.get_new_member_id(pr['createdBy'])
             ))
         return merge_requests
 
@@ -154,10 +155,10 @@ class CodeCommitExportBuilder(ExportBuilder):
     
     def build_mr_notes(self, pr_id):
         notes = []
-        for comment in self.base_api.get_all_pull_request_threads(project_id=self.project_id, repository_id=self.repository_id, pull_request_id=pr_id):
+        for comment in self.base_api.get_all_pull_request_threads(project_id=self.project_id, repository_name=self.project_name, pull_request_id=pr_id):
             notes.append(Note(
                 note=comment['content'],
-                author_id=self.get_new_member_id(comment['author']),
+                author_id=comment['author'],
                 project_id=1,
                 created_at=comment['creationDate'],
                 updated_at=comment['lastModifiedDate'],

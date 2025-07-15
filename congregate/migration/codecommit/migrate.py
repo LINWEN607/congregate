@@ -130,17 +130,6 @@ class CodeCommitMigrateClient(MigrateClient):
                 self.are_results(import_results, "project", "import")
             
 
-    def verify_token_permissions(self, host, token):
-        try:
-            test_response = self.groups_api.get_groups(host, token)
-            self.log.info(f"Token permissions test response: {test_response.status_code}")
-            if test_response.status_code == 403:
-                self.log.error(f"Token validation failed. Response: {test_response.text}")
-            return test_response.status_code == 200
-        except Exception as e:
-            self.log.error(f"Token validation error: {str(e)}")
-            return False
-
     def import_codecommit_repo(self, project, repo_name):
         dstn_pwn, tn = mig_utils.get_stage_wave_paths(project)
         host = self.config.destination_host
@@ -273,7 +262,7 @@ class CodeCommitMigrateClient(MigrateClient):
                     ie_client = ImportExportClient(
                         dest_host=dst_host, dest_token=dst_token)
                     import_id = ie_client.import_project(
-                        project, dry_run=self.dry_run, group_path=group_path or tn)
+                        project, filename, dry_run=self.dry_run, group_path=group_path or tn)
                 if import_id and not self.dry_run:
                     # Disable Shared CI
                     self.disable_shared_ci(dst_pwn, import_id)

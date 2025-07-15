@@ -52,13 +52,14 @@ class ExportBuilder(BaseClass):
         """
         # Create git bundle
         if self.repo is None:
-            self.repo = self.clone_repo(self.project_path, self.export_dir.name, self.clone_url)
-        git_bundle_path = self.create_git_bundle(self.project, self.export_dir.name)
-        if git_bundle_path:
-            self.log.info(f"Created Git bundle at {git_bundle_path}")
-        else:
-            self.log.error(f"Failed to create Git bundle for {self.project['name']}")
+            self.repo = self.clone_repo(self.project_path, self.clone_url)
+        try:
+            git_bundle_path = self.create_git_bundle(self.project, self.export_dir.name)
+            if git_bundle_path:
+                self.log.info(f"Created Git bundle at {git_bundle_path}")
+        except (GitCommandError, Exception) as e:
             raise
+            
 
         # Create snippets directory
         os.makedirs(os.path.join(self.export_dir.name, 'snippets'), exist_ok=True)
@@ -137,10 +138,10 @@ class ExportBuilder(BaseClass):
         except GitCommandError as e:
             self.log.error(
                 f"Git command error while creating bundle for {project_path}: {str(e)}")
-            return False
+            raise
         except Exception as e:
             self.log.error(f"Error creating Git bundle for {project_path}: {str(e)}")
-            return False
+            raise
     
     def clone_repo(self, project_path, clone_url) -> Repo:
         if not self.git_env:
@@ -195,7 +196,7 @@ class ExportBuilder(BaseClass):
         """
         with open(output_path, "w") as f:
             if isinstance(data, dict):
-                f.write(f"{dumps(item.to_dict())}\n")
+                f.write(f"{dumps(data.to_dict())}\n")
             elif isinstance(data, list):
                 for item in data:
                     f.write(f"{dumps(item.to_dict())}\n")
