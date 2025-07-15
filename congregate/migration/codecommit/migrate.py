@@ -1,3 +1,6 @@
+from traceback import print_exc
+from requests.exceptions import RequestException
+from json import loads as json_loads
 from gitlab_ps_utils import json_utils, misc_utils
 from gitlab_ps_utils.json_utils import json_pretty
 
@@ -8,6 +11,7 @@ from congregate.migration.gitlab.external_import import ImportClient
 from congregate.migration.gitlab.branches import BranchesClient
 from congregate.migration.gitlab.api.project_repository import ProjectRepositoryApi
 from congregate.migration.codecommit.projects import CodeCommitProjectsClient
+from congregate.migration.gitlab.importexport import ImportExportClient
 from congregate.migration.codecommit.export import CodeCommitExportBuilder
 from congregate.helpers.migrate_utils import get_export_filename_from_namespace_and_name
 
@@ -74,49 +78,57 @@ class CodeCommitMigrateClient(MigrateClient):
                     staged_projects):
                 self.log.warning(
                     f"USER repos staged ({len(user_projects)}):\n{json_utils.json_pretty(user_projects)}")
+            # if not self.skip_project_import:
+            #     self.log.info("Importing CodeCommit repos")
+            #     import_results = []
+            #     for p in staged_projects:
+            #         result = self.import_codecommit_repo(p, p.get("name"))
+            #         import_results.append(result)
+            #     #TODO: implement multi-processor with multiple function arguments
+            #     # import_results = list(ir for ir in self.multi.start_multi_process(
+            #     #     self.import_codecommit_repo, staged_projects, processes=self.processes, nestable=False))
+            #     self.are_results(import_results, "project", "import")
+            #     # append Total : Successful count of project imports
+            #     import_results.append(mig_utils.get_results(import_results))
+            #     self.log.info(
+            #         f"### {dry_log}CodeCommit repos import result ###\n{json_utils.json_pretty(import_results)}")
+            #     mig_utils.write_results_to_file(import_results, log=self.log)
+            # else:
+            #     self.log.warning(
+            #         "SKIP: No CodeCommit repos staged for migration")
+            # TODO: Implement project export
+            if not self.skip_project_export:
+                self.log.info(f"{dry_log}Exporting projects")
+                export_results = [self.handle_exporting_codecommit_project(prj) for prj in staged_projects]
+
+                self.are_results(export_results, "project", "export")
+
+                # Create list of projects that failed export
+                if failed := mig_utils.get_failed_export_from_results(
+                        export_results):
+                    self.log.warning("SKIP: Projects that failed to export or already exist on destination:\n{}".format(
+                        json_pretty(failed)))
+
+                # Append total count of projects exported
+                export_results.append(mig_utils.get_results(export_results))
+                self.log.info("### {0}Project export results ###\n{1}"
+                              .format(dry_log, json_pretty(export_results)))
+
+                # Filter out the failed ones
+                staged_projects = mig_utils.get_staged_projects_without_failed_export(
+                    staged_projects, failed)
+            else:
+                self.log.info(
+                    "SKIP: Assuming staged projects are already exported")
+                
             if not self.skip_project_import:
-                self.log.info("Importing CodeCommit repos")
+                self.log.info(f"{dry_log}Importing projects")
                 import_results = []
                 for p in staged_projects:
-                    result = self.import_codecommit_repo(p, p.get("name"))
+                    result = self.handle_importing_codecommit_project(p, p.get("path"))
                     import_results.append(result)
-                #TODO: implement multi-processor with multiple function arguments
-                # import_results = list(ir for ir in self.multi.start_multi_process(
-                #     self.import_codecommit_repo, staged_projects, processes=self.processes, nestable=False))
                 self.are_results(import_results, "project", "import")
-                # append Total : Successful count of project imports
-                import_results.append(mig_utils.get_results(import_results))
-                self.log.info(
-                    f"### {dry_log}CodeCommit repos import result ###\n{json_utils.json_pretty(import_results)}")
-                mig_utils.write_results_to_file(import_results, log=self.log)
-            else:
-                self.log.warning(
-                    "SKIP: No CodeCommit repos staged for migration")
-            # TODO: Implement project export
-            # if not self.skip_project_export:
-            #     self.log.info(f"{dry_log}Exporting projects")
-            #     export_results = [self.handle_exporting_codecommit_project(prj) for prj in staged_projects]
-
-            #     self.are_results(export_results, "project", "export")
-
-            #     # Create list of projects that failed export
-            #     if failed := mig_utils.get_failed_export_from_results(
-            #             export_results):
-            #         self.log.warning("SKIP: Projects that failed to export or already exist on destination:\n{}".format(
-            #             json_pretty(failed)))
-
-            #     # Append total count of projects exported
-            #     export_results.append(mig_utils.get_results(export_results))
-            #     self.log.info("### {0}Project export results ###\n{1}"
-            #                   .format(dry_log, json_pretty(export_results)))
-
-            #     # Filter out the failed ones
-            #     staged_projects = mig_utils.get_staged_projects_without_failed_export(
-            #         staged_projects, failed)
-            # else:
-            #     self.log.info(
-            #         "SKIP: Assuming staged projects are already exported")
-
+            
 
     def verify_token_permissions(self, host, token):
         try:
@@ -227,3 +239,57 @@ class CodeCommitMigrateClient(MigrateClient):
         return {
             exported_file: True
         }
+    
+    def handle_importing_codecommit_project(self, project, group_path=None, filename=None):
+        src_id = project["id"]
+        path = project["path_with_namespace"]
+        dst_host = self.config.destination_host
+        dst_token = self.config.destination_token
+        dst_pwn, tn = mig_utils.get_stage_wave_paths(
+            project, group_path=group_path)
+        result = {
+            dst_pwn: False
+        }
+        import_id = None
+        try:
+            if self.groups.find_group_id_by_path(dst_host, dst_token, tn):
+                if isinstance(project, str):
+                    project = json_loads(project)
+                dst_pid = self.projects.find_project_by_path(
+                    dst_host, dst_token, dst_pwn)
+
+                if dst_pid:
+                    import_status = misc_utils.safe_json_response(self.projects_api.get_project_import_status(
+                        dst_host, dst_token, dst_pid))
+                    self.log.info(
+                        f"Project {dst_pwn} (ID: {dst_pid}) found on destination, with import status: {import_status}")
+                    if self.only_post_migration_info and not self.dry_run:
+                        import_id = dst_pid
+                    else:
+                        result[dst_pwn] = dst_pid
+                else:
+                    self.log.info(
+                        f"{mig_utils.get_dry_log(self.dry_run)}Project '{dst_pwn}' NOT found on destination, importing...")
+                    ie_client = ImportExportClient(
+                        dest_host=dst_host, dest_token=dst_token)
+                    import_id = ie_client.import_project(
+                        project, dry_run=self.dry_run, group_path=group_path or tn)
+                if import_id and not self.dry_run:
+                    # Disable Shared CI
+                    self.disable_shared_ci(dst_pwn, import_id)
+                    # Post import features
+                    self.log.info(
+                        f"Migrating additional source project '{path}' (ID: {src_id}) GitLab features")
+                    # Process attachments in MRs after project import
+                    # self.process_attachments_after_import(import_id)
+                    result[dst_pwn] = import_id
+            elif not self.dry_run:
+                self.log.warning(
+                    f"Skipping import. Target namespace {tn} does not exist for project '{path}'")
+        except (RequestException, KeyError, OverflowError) as oe:
+            self.log.error(
+                f"Failed to import project '{path}' (ID: {src_id}):\n{oe}")
+        except Exception as e:
+            self.log.error(e)
+            self.log.error(print_exc())
+        return result

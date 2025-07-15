@@ -207,7 +207,7 @@ class Config(BaseConfig):
     @property
     def src_aws_access_key_id(self):
         return self.prop("SOURCE", "src_aws_access_key_id",
-                         default=None, obfuscated=True)
+                         default=None, obfuscated=False)
 
     @property
     def src_aws_secret_access_key(self, obfuscate=True):

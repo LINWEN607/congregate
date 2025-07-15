@@ -5,6 +5,7 @@ from gitlab_ps_utils.misc_utils import is_error_message_present, safe_json_respo
 from gitlab_ps_utils.dict_utils import dig
 from gitlab_ps_utils.json_utils import json_pretty
 from gitlab_ps_utils.string_utils import deobfuscate
+from urllib.parse import quote, quote_plus
 
 from congregate.helpers.base_class import BaseClass
 from congregate.helpers.migrate_utils import migration_dry_run, sanitize_project_path
@@ -89,7 +90,7 @@ class ImportClient(BaseClass):
         :return: (dict) Successful or failed result data.
         """
         src_aws_codecommit_username = self.config.src_aws_codecommit_username
-        src_aws_codecommit_password = deobfuscate(self.config.src_aws_codecommit_password)
+        src_aws_codecommit_password = quote_plus(self.config.src_aws_codecommit_password, safe='=')
         src_aws_region = self.config.src_aws_region
         # Get the namespace info for the target namespace
         namespace_response = self.projects.get_namespace_id_by_full_path(
@@ -113,7 +114,7 @@ class ImportClient(BaseClass):
             "name": repo_name,
             "path": repo_name.lower() if self.config.lower_case_project_path else repo_name,
             "namespace_id": namespace_id,
-            "import_url": f'https://{src_aws_codecommit_username}:{src_aws_codecommit_password}@git-codecommit.{src_aws_region}.amazonaws.com/v1/repos/{repo_name}',
+            "import_url": f"https://{src_aws_codecommit_username}:{src_aws_codecommit_password}@git-codecommit.{src_aws_region}.amazonaws.com/v1/repos/{repo_name}",
             "visibility": "private"
         }
 
@@ -379,7 +380,7 @@ class ImportClient(BaseClass):
         value = {
             "import_error": import_error,
             "gh_rate_limit_status": safe_json_response(GitHubUsersApi(self.config.source_host, self.config.source_token).get_rate_limit_status())
-            if import_error else None,
+            if import_error and self.config.source_type.lower() == "github" else None,
             "stats": stats,
             "failed_relations": failed_relations
         }
