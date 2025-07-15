@@ -231,6 +231,10 @@ export_import_status_check_time = 10
 ### The export part is only applicable to GL->GL migrations
 export_import_timeout = 3600
 
+### The number of seconds before httpx times out making an API request to a GitLab instances
+### Default is 60 seconds
+gitlab_api_request_timeout = 60
+
 ### Presents the Slack Incoming Webhooks URL for sending alerts (logs) to a dedicated GitLab internal private channel.
 ### Optionally used during customer migrations, mainly to gitlab.com, but also an option for migrations to self-managed.
 ### For GitLab PS it can be found in the Professional Services 1Password Vault under _GitLab ps_migration_alerting Slack webhook_
