@@ -6,8 +6,10 @@ from gitlab_ps_utils.string_utils import deobfuscate
 from gitlab_ps_utils.misc_utils import safe_json_response
 from congregate.migration.meta.custom_importer.export_builder import ExportBuilder
 from congregate.migration.meta.custom_importer.group_export_builder import GroupExportBuilder
+from congregate.migration.ado.base_ado_export_builder import BaseAdoExportBuilder
 from congregate.migration.meta.custom_importer.data_models.tree.merge_requests import MergeRequests
 from congregate.migration.meta.custom_importer.data_models.tree.issues import Issues
+from congregate.migration.meta.custom_importer.data_models.tree.epics import Epics
 from congregate.migration.meta.custom_importer.data_models.tree.project_members import ProjectMembers
 from congregate.migration.meta.custom_importer.data_models.tree.project_member_user import ProjectMemberUser
 from congregate.migration.meta.custom_importer.data_models.project_export import ProjectExport
@@ -32,8 +34,11 @@ from congregate.migration.meta import constants
 
 import congregate.helpers.migrate_utils as mig_utils
 
-class AdoExportBuilder(ExportBuilder):
+
+class AdoExportBuilder(ExportBuilder, BaseAdoExportBuilder):
     def __init__(self, source_project):
+        ExportBuilder.__init__(self, source_project, clone_url=None)
+        BaseAdoExportBuilder.__init__(self)
         self.source_project = source_project
         self.repositories_api = RepositoriesApi()
         self.pull_requests_api = PullRequestsApi()
@@ -45,9 +50,7 @@ class AdoExportBuilder(ExportBuilder):
         self.gitlab_users_api = GitlabUsersApi()
         self.project_id = source_project['project_id']
         self.repository_id = source_project['id']
-        self.members_map = {}
         self.project_metadata = Project(description=source_project['description'])
-        super().__init__(source_project, clone_url=None)
         self.clone_url = self.build_clone_url(self.source_project)
         self.repo = self.clone_repo(self.project_path, self.clone_url)
         self.git_env = {
@@ -56,19 +59,17 @@ class AdoExportBuilder(ExportBuilder):
         }
     
     def create(self):
-        tree = self.build_ado_data()
+        tree = self.build_ado_project_data()
         self.build_export(tree, self.project_metadata)
         filename = self.create_export_tar_gz()
         self.delete_cloned_repo()
         return filename
     
-    def build_ado_data(self):
-        merge_requests = self.build_merge_requests()
-        issues = self.build_issues()
+    def build_ado_project_data(self):
         return ProjectExport(
             project_members=self.build_project_members(),
-            merge_requests=merge_requests,
-            issues=issues
+            merge_requests=self.build_merge_requests(),
+            issues=self.build_issues()
         )
 
     def build_merge_requests(self):
@@ -142,21 +143,6 @@ class AdoExportBuilder(ExportBuilder):
                     expires_at=None
                 ))
         return project_members
-
-    def convert_access_level(self, ado_access_level):
-        # ADO access levels: https://learn.microsoft.com/en-us/azure/devops/organizations/security/access-levels?view=azure-devops
-
-        # Convert ADO access levels to GitLab access levels
-        if ado_access_level == 'Stakeholder':
-            return 10  # Guest
-        elif ado_access_level == 'Basic':
-            return 30  # Developer
-        elif ado_access_level == 'Visual Studio Subscriber':
-            return 40  # Maintainer
-        elif ado_access_level == 'Advanced':
-            return 50  # Owner
-        else:
-            return 20  # Reporter (default)
 
     def pull_request_status(self, pr):
         # ADO: https://learn.microsoft.com/en-us/rest/api/azure/devops/git/pull-requests/get-pull-request-by-id?view=azure-devops-rest-7.1&tabs=HTTP#pullrequeststatus
@@ -247,7 +233,7 @@ class AdoExportBuilder(ExportBuilder):
 
     def add_metrics(self, pr):
         metrics = {
-            "merged_by_id": self.get_merged_by_user(pr) if self.pull_request_status(pr) == 'merged' else None,
+            "merged_by_id": self.get_merged_by_user(pr, self.project_id, self.repository_id) if self.pull_request_status(pr) == 'merged' else None,
         }
         return metrics
 
@@ -256,25 +242,6 @@ class AdoExportBuilder(ExportBuilder):
         for username in source_project["members"]:
             assignee_ids.append(self.get_new_member_id(username.get("id")))
         return assignee_ids
-
-    def add_to_members_map(self, member):
-        member_copy = copy(member)
-        guid = member.get('descriptor', member.get('id'))
-        member_copy['id'] = len(self.members_map.keys())+1
-        self.members_map[guid] = member_copy
-
-    def get_merged_by_user(self, pr):
-        request = self.pull_requests_api.get_pull_request(self.project_id, self.repository_id, pr['pullRequestId'])
-        return self.get_new_member_id(safe_json_response(request).get('closedBy'))
-
-    def get_new_member_id(self, member):
-        if not member:
-            return None
-        if mid := dig(self.members_map, member.get('descriptor'), 'id', default=dig(self.members_map, member['id'], 'id')):
-            return mid
-        else:
-            self.add_to_members_map(member)
-            return self.get_new_member_id(member)
 
     def build_clone_url(self, source_project):
         clone_url = source_project['http_url_to_repo']
@@ -419,22 +386,43 @@ class AdoExportBuilder(ExportBuilder):
 
     def build_issues(self):
         issues = []
-        for wi in self.work_items_client.get_all_work_items(self.project):
-            workitem = self.work_items_api.get_work_item(self.project_id, wi.get('id')).json()
-            author = workitem['fields'].get('System.CreatedBy', {})
-            assignee = workitem['fields'].get('System.AssignedTo', {})
-            issues.append(Issues(
-                author_id=self.get_new_member_id(author),
-                project_id=1,
-                title=workitem['fields'].get('System.Title', 'No Title'),
-                description=workitem['fields'].get('System.Description', 'No Description'),
-                created_at=workitem['fields'].get('System.CreatedDate', 'No Created Date'),
-                state=self.issue_state(workitem['fields'].get('System.State', 'No State')),
-                iid=workitem['id'],
-                issue_assignees=[{"user_id": self.get_new_member_id(assignee)}],
-                notes=self.build_issue_notes(wi.get('id')),
-                label_links=self.label_links(workitem),
-            ))
+        # Work item types that should be mapped to GitLab Issues (project-level)
+        issue_types = [
+            'user story', 'product backlog item', 'requirement', 'issue', 'bug', 'task', 'impediment',
+            # Add more as needed
+        ]
+        for wi in self.work_items_client.get_all_work_items(self.project['project_id']):
+            workitem = self.work_items_api.get_work_item(self.project['project_id'], wi.get('id')).json()
+            fields = workitem.get('fields', {})
+            work_item_type = fields.get('System.WorkItemType', 'Issue')
+            work_item_type_lc = work_item_type.lower()
+            # Only process as Issue if not Epic/Feature (those are handled as epics)
+            if work_item_type_lc in issue_types:
+                author = fields.get('System.CreatedBy', {})
+                assignee = fields.get('System.AssignedTo', {})
+                label_links = self.label_links(workitem)
+                # Add a label for the work item type
+                label_links.append({
+                    "target_type": "Issue",
+                    "created_at": fields.get('System.CreatedDate'),
+                    "updated_at": fields.get('System.ChangedDate'),
+                    "label": {
+                        "title": work_item_type,
+                        "color": self.work_item_type_color(work_item_type),
+                    }
+                })
+                issues.append(Issues(
+                    author_id=self.get_new_member_id(author),
+                    project_id=1,
+                    title=fields.get('System.Title', 'No Title'),
+                    description=fields.get('System.Description', 'No Description'),
+                    created_at=fields.get('System.CreatedDate', 'No Created Date'),
+                    state=self.issue_state(fields.get('System.State', 'No State')),
+                    iid=workitem['id'],
+                    issue_assignees=[{"user_id": self.get_new_member_id(assignee)}],
+                    label_links=label_links,
+                    work_item_type={"ado": work_item_type},
+                ))
         return issues
 
     def build_issue_notes(self, work_item_id):
@@ -466,56 +454,80 @@ class AdoExportBuilder(ExportBuilder):
             return 'opened'
 
 
-    def label_links(self, workitem):
-        label_links = []
-        for label in workitem.get('fields', {}).get('System.Tags', '').split('; '):
-            if label:
-                label_links.append({
-                    "target_type": "Issue",
-                    "created_at": workitem['fields'].get('System.CreatedDate'),
-                    "updated_at": workitem['fields'].get('System.ChangedDate'),
-                    "label": {
-                        "title": label.strip(),
-                        "color": "#cccccc",
-                    }
-                })
-        return label_links
-
-class AdoGroupExportBuilder(GroupExportBuilder):
+class AdoGroupExportBuilder(GroupExportBuilder, BaseAdoExportBuilder):
     def __init__(self, source_group):
+        GroupExportBuilder.__init__(self, source_group)
+        BaseAdoExportBuilder.__init__(self)
         self.source_group = source_group
+        self.work_items_api = WorkItemsApi()
+        self.work_items_client = WorkItemsClient()
+        self.ado_users_api = ADOUsersApi()
+        self.gitlab_users_api = GitlabUsersApi()
         self.group_metadata = Group(
             id=1,
+            tree_path=[1],
             name=source_group['name'],
             path=source_group['path'],
-            description=source_group['description'],
-            membership_lock=True,
-            # https://docs.gitlab.com/development/permissions/predefined_roles/#general-permissions
-            visibility_level=self.convert_visibility_level(source_group.get('visibility')),
-            tree_path=[1]
+            description=source_group.get('description', ''),
+            visibility_level=self.convert_visibility_level(source_group.get('visibility', 'private'))
         )
-        super().__init__(source_group)
 
     def create(self):
-        tree = self.build_ado_data()
+        tree = self.build_ado_group_data()
         self.build_export(tree, self.group_metadata)
         filename = self.create_export_tar_gz()
         return filename
 
-    def build_ado_data(self):
-        namespace_settings = self.namespace_settings()
+    def build_epics(self):
+        epics = []
+        epic_types = [
+            'epic', 'feature'
+        ]
+
+        for wi in self.work_items_client.get_all_work_items(self.source_group['id']):
+            workitem = self.work_items_api.get_work_item(self.source_group['id'], wi.get('id')).json()
+            fields = workitem.get('fields', {})
+            work_item_type = fields.get('System.WorkItemType', 'Epic')
+            work_item_type_lc = work_item_type.lower()
+            if work_item_type_lc in epic_types:
+                label_links = self.label_links(workitem)
+                label_links.append({
+                    "type": "Issue",
+                    "created_at": fields.get('System.CreatedDate'),
+                    "updated_at": fields.get('System.ChangedDate'),
+                    "label": {
+                        "title": work_item_type,
+                        "description": f"{work_item_type} label",
+                        "type": "GroupLabel",
+                        "group_id": 1,
+                        "color": self.work_item_type_color(work_item_type),
+                    }
+                })
+                epics.append(Epics(
+                    id=wi.get('id'),
+                    group_id=1,
+                    author_id=self.get_new_member_id(fields.get('System.CreatedBy', {})),
+                    iid=wi.get('id'),
+                    title=fields.get('System.Title', ''),
+                    description=fields.get('System.Description', ''),
+                    state='opened' if fields.get('System.State', '').lower() != 'closed' else 'closed',
+                    label_links=label_links,
+                    created_at=fields.get('System.CreatedDate'),
+                    updated_at=fields.get('System.ChangedDate'),
+                    confidential=fields.get('System.IsConfidential', False),
+                    total_opened_issue_count=fields.get('System.ChildCount', 0),
+                    total_closed_issue_count=0,  # We'll need to calculate this
+                    issue_id=wi.get('id'),
+                    imported=0,
+                ))
+        return epics
+
+
+    def build_ado_group_data(self):
         return GroupExport(
-            namespace_settings=namespace_settings
+            epics=self.build_epics(),
+            namespace_settings=self.namespace_settings()
         )
 
     def namespace_settings(self):
         return {"prevent_sharing_groups_outside_hierarchy":True}
-    
-    def convert_visibility_level(self, visibility):
-        if visibility == "private":
-            return 0
-        elif visibility == "public":
-            return 20
-        return 0
-
-

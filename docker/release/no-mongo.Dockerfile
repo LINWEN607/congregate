@@ -76,7 +76,8 @@ RUN cd /opt/congregate && \
     git commit -m "Initial commit"
 
 # Install poetry
-RUN python -m pip install --user poetry==1.8.5 && \
+RUN python -m pip install --user poetry==1.8.5 setuptools==80.9.0 && \
+    python3.10 -m poetry --version && \
     poetry --version && \
     poetry install
 

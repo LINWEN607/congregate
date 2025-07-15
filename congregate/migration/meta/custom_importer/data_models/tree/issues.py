@@ -40,7 +40,7 @@ class Issues:
     design_versions: Optional[List] = field(default_factory=list)
     designs: Optional[List] = field(default_factory=list)
     discussion_locked: Optional[bool] = None
-    epic_issue: Optional[dict]  = field(default_factory=dict)
+    # epic_issue: Optional[dict]  = field(default_factory=dict)
     events: Optional[List] = field(default_factory=list)
     external_key: Optional[str] = None
     health_status: Optional[str] = None

@@ -175,9 +175,6 @@ class AzureDevopsMigrateClient(MigrateClient):
             else:
                 self.log.info(
                     "SKIP: Assuming staged projects are already exported")
-            # print(self.skip_project_export)
-            # print(self.skip_project_import)
-
 
             if not self.skip_project_import:
                 self.log.info("{}Importing projects".format(dry_log))
@@ -371,7 +368,7 @@ class AzureDevopsMigrateClient(MigrateClient):
                         note_body = note_body.replace(f"{markdown_prefix}[{file_name}]({ado_url})", new_markdown)
 
                 # Update the note with new attachment links
-                update_response = self.merge_requests_api.update_merge_request_note(self.config.destination_host, self.config.destination_token, project_id, mr_id, note_id, note=note_body)
+                update_response = self.merge_requests_api.update_merge_request_note(self.config.destination_host, self.config.destination_token, project_id, mr_id, note_id, note_body)
 
                 if update_response.status_code == 200:
                     self.log.info(f"Updated note {note_id} in MR {mr_id} with GitLab-hosted Attachments.")

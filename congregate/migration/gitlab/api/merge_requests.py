@@ -145,7 +145,9 @@ class MergeRequestsApi(GitLabApiWrapper):
             :param: token: (str) Access token to GitLab instance
             :return: Response object containing the response to PUT /projects/:id/merge_requests/:merge_request_iid/notes/:note_id
         """
-        return self.api.generate_put_request(host, token, "projects/%d/merge_requests/%d/notes/%d?body=%s" % (project_id, mr_iid, note_id, note), None)
+        endpoint = f"projects/{project_id}/merge_requests/{mr_iid}/notes/{note_id}"
+        data = {"body": note}
+        return self.api.generate_put_request(host, token, endpoint, json.dumps(data))
 
     def get_merge_request_changes(self, host, token, project_id, mr_iid):
         """

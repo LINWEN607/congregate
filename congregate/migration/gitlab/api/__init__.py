@@ -5,4 +5,4 @@ from congregate.helpers.utils import get_congregate_path
 app_path = get_congregate_path()
 log_name = 'congregate'
 config = Config()
-glapi = GitLabApi(app_path=app_path, log_name=log_name, ssl_verify=config.ssl_verify)
+glapi = GitLabApi(app_path=app_path, log_name=log_name, ssl_verify=config.ssl_verify, timeout=config.gitlab_api_request_timeout)

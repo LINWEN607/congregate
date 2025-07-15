@@ -9,20 +9,16 @@ class WorkItemsClient(BaseClass):
         self.headers = {}
         super().__init__()
 
-    def get_all_work_items(self, project):
+    def get_all_work_items(self, project_id):
         """
         Retrieves all work items for a given Azure DevOps project.
 
         Args:
-            project (dict): Dictionary containing 'project_id' and 'name' keys.
+            project_id (str): The ID of the Azure DevOps project.
 
         Returns:
             list: List of work items, empty if none found.
         """
-        project_id = project.get('project_id')
-        project_name = project.get('name')
-        if not project_id or not project_name:
-            return []
 
         wiql_query = (
             "SELECT [System.Id], [System.Title], [System.State] "

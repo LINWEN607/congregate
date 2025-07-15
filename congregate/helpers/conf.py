@@ -577,6 +577,15 @@ class Config(BaseConfig):
         """
         return self.prop("APP", "timeout_strategy", default="pessimistic")
 
+    @property
+    def gitlab_api_request_timeout(self):
+        """
+        Number of seconds before API requests to a GitLab instance timeout
+
+        Default is 60 seconds
+        """
+        return self.prop("APP", "gitlab_api_request_timeout", default=60)
+
 # HIDDEN PROPERTIES
 
     # Used only by "map-users" and "map-and-stage-users-by-email-match" command
