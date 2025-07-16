@@ -338,7 +338,7 @@ class ConfigurationValidator(Config):
                 'codecommit',
                 aws_access_key_id=self.src_aws_access_key_id,
                 aws_secret_access_key=src_aws_secret_access_key,
-                aws_session_token=src_aws_session_token if src_aws_session_token else None,
+                aws_session_token=src_aws_session_token,
                 region_name=self.src_aws_region
             )
 
