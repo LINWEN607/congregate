@@ -681,3 +681,11 @@ class Config(BaseConfig):
     @property
     def ado_api_version(self):
         return self.prop("SOURCE", "api_version", default="7.2-preview")
+
+    @property
+    def skip_staging_parents(self):
+        """
+        Do not stage parent groups of staged groups and projects
+        Use when migrating missing subgroup layers or only projects
+        """
+        return self.prop("APP", "skip_staging_parents", default=False)

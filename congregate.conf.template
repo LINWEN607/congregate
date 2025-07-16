@@ -304,3 +304,6 @@ archive_logic = False
 ###! **HIDDEN PROPERTIES**
 ### Path to a JSON file for remapping URLs during a GitLab to GitLab import. Notes:
 # remapping_file_path =
+
+### Do not stage parent groups of staged groups and projects
+# skip_staging_parents = False
