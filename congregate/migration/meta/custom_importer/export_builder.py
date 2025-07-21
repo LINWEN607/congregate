@@ -25,6 +25,8 @@ class ExportBuilder(BaseClass):
         - Build the packaged tar.gz file
     '''
 
+    BINARY_FORMATS = ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.bmp', '.webp']
+
     def __init__(self, project, clone_url, git_env=None):
         super().__init__()
         self.export_dir = tempfile.TemporaryDirectory()

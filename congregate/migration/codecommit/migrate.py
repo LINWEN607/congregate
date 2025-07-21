@@ -106,13 +106,11 @@ class CodeCommitMigrateClient(MigrateClient):
                 # Create list of projects that failed export
                 if failed := mig_utils.get_failed_export_from_results(
                         export_results):
-                    self.log.warning("SKIP: Projects that failed to export or already exist on destination:\n{}".format(
-                        json_pretty(failed)))
+                    self.log.warning(f"SKIP: Projects that failed to export or already exist on destination:\n{json_pretty(failed)}")
 
                 # Append total count of projects exported
                 export_results.append(mig_utils.get_results(export_results))
-                self.log.info("### {0}Project export results ###\n{1}"
-                              .format(dry_log, json_pretty(export_results)))
+                self.log.info(f"### {dry_log}Project export results ###\n{json_pretty(export_results)}")
 
                 # Filter out the failed ones
                 staged_projects = mig_utils.get_staged_projects_without_failed_export(

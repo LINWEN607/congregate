@@ -2,7 +2,7 @@
 
 > **TL;DR**  
 > The HTTPS password that Congregate places in the `import_url` **must not contain the `/` character**.  
-> If your generated password includes a slash, click **“Generate credentials”** again until you obtain one that does not.
+> If your generated password includes a `/`, click **"Generate credentials"** again until you obtain one that does not.
 
 ## 1. Create/choose an IAM user
 
@@ -12,20 +12,20 @@
    *or*
    * the scoped policy you really need **AWSCodeCommitPowerUser**.
 3. Go to **Select the CodeCommit user you just created ▸ Go to the Security credentials tab**
-4. Choose **“Create access key” from Access keys**.
+4. Choose **"Create access key" from Access keys**.
 
-AWS [Docs](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html): **“Step 1: Create an IAM user for CodeCommit”**  
+AWS [Docs](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html): **"Step 1: Create an IAM user for CodeCommit"**  
 
 ## 2. Generate HTTPS credentials
 
 1. Go to **IAM -> Users -> Select the CodeCommit user you just created -> Go to the Security credentials tab**
-2. Choose **“Generate credentials” from HTTPS Git credentials for AWS CodeCommit**.
+2. Choose **"Generate credentials" from HTTPS Git credentials for AWS CodeCommit**.
 3. Look at the generated **Password**:
-   * If it **contains `/`**, click **Refresh Password** until it does **not**.  
+   * If it **contains `/`**, click **Refresh Password** until it does **not**. 
      (`+` and `=` are fine; only `/` breaks GitLab 17.2+ imports.)
 4. Copy the **Username** and **Password** – you will not see them again.
 
-AWS [Docs](https://docs.aws.amazon.com/codecommit/latest/userguide/setting-up-gc.html): **“Setup for HTTPS users using Git credentials”**  
+AWS [Docs](https://docs.aws.amazon.com/codecommit/latest/userguide/setting-up-gc.html): **"Setup for HTTPS users using Git credentials"**  
 
 ## 3. Populate `congregate.conf`
 

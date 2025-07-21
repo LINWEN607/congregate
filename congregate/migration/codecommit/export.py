@@ -1,6 +1,5 @@
 import re
 import os
-from urllib.parse import quote_plus
 from copy import deepcopy as copy
 from pathlib import Path
 from gitlab_ps_utils.dict_utils import dig
@@ -69,9 +68,9 @@ class CodeCommitExportBuilder(ExportBuilder):
                 renamed_file=False,
                 deleted_file=False,
                 too_large=False,
-                binary=True if Path(filename).suffix in ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.bmp', '.webp'] else False,
+                binary=Path(filename).suffix in self.BINARY_FORMATS,
                 encoded_file_path=False,
-                new_file=True if change.get('changeType') == 'add' else False,
+                new_file=change.get('changeType') == 'add',
                 a_mode=mode,
                 b_mode=mode
             ))
@@ -92,8 +91,6 @@ class CodeCommitExportBuilder(ExportBuilder):
             start_sha = pr["pullRequestTargets"][0]["sourceCommit"]
             target_sha = pr["pullRequestTargets"][0]["destinationCommit"]
             merge_request_diffs = self.build_mr_diff_files(start_sha, target_sha)
-            self.log.info(pr["pullRequestTargets"][0])
-            self.log.info(pr["pullRequestTargets"][0]["mergeMetadata"])
             merge_requests.append(MergeRequests(
                 author=self.base_api.get_user_from_arn(pr["authorArn"]),
                 iid=pr_id,
@@ -124,12 +121,15 @@ class CodeCommitExportBuilder(ExportBuilder):
                     files_count=len(merge_request_diffs),
                     sorted=True,
                     diff_type='regular',
+                    # TODO: Implement merge requests
                     #merge_request_diff_commits=merge_request_commits,
                     merge_request_diff_files=merge_request_diffs
                 ),
+                # TODO: Implement timestamps
                 # merged_at=dig(pr, 'lastMergeCommit', 'committer', 'date') if pr.get('lastMergeCommit') else None,
                 # closed_at=pr.get('lastMergeTargetUpdateTime') if pr.get('lastMergeCommit') else None,
                 notes=self.build_mr_notes(pr_id)
+                # TODO: Implement author
                 # author_id=self.get_new_member_id(pr['createdBy'])
             ))
         return merge_requests
@@ -146,7 +146,7 @@ class CodeCommitExportBuilder(ExportBuilder):
 
     def build_clone_url(self):
         src_aws_codecommit_username = self.config.src_aws_codecommit_username
-        src_aws_codecommit_password = quote_plus(self.config.src_aws_codecommit_password, safe='=')
+        src_aws_codecommit_password = self.config.src_aws_codecommit_password
         src_aws_region = self.config.src_aws_region
         
         # clone_url = source_project['http_url_to_repo']

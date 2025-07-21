@@ -309,7 +309,7 @@ class AdoExportBuilder(ExportBuilder, BaseAdoExportBuilder):
                     renamed_file=False,
                     deleted_file=False,
                     too_large=False,
-                    binary=True if Path(filename).suffix in ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.bmp', '.webp'] else False,
+                    binary=Path(filename).suffix in self.BINARY_FORMATS,
                     encoded_file_path=False,
                     new_file=True if change.get('changeType') == 'add' else False,
                     a_mode=mode,
