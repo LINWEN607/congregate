@@ -1,9 +1,10 @@
 """
 Congregate - GitLab instance migration utility
 
-Copyright (c) 2022 - GitLab
+Copyright (c) 2025 - GitLab
 """
 
+from urllib.parse import quote_plus
 from gitlab_ps_utils.base_config import BaseConfig
 from congregate.helpers.utils import get_congregate_path
 
@@ -220,8 +221,9 @@ class Config(BaseConfig):
 
     @property
     def src_aws_codecommit_password(self, obfuscate=True):
-        return self.prop("SOURCE", "src_aws_codecommit_password",
-                         default=None, obfuscated=obfuscate)
+        return quote_plus(self.prop("SOURCE", "src_aws_codecommit_password",
+                         default=None, obfuscated=obfuscate), safe='=')
+
 
     @property
     def src_aws_session_token(self, obfuscate=True):
