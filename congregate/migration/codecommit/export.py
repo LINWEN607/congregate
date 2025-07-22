@@ -44,15 +44,18 @@ class CodeCommitExportBuilder(ExportBuilder):
         return filename
     
     def build_codecommit_data(self):
-        #merge_requests = self.build_merge_requests()
+        # TODO: Implement merge requests
+        # merge_requests = self.build_merge_requests()
         return ProjectExport(
             project_members=[],
+            # TODO: Implement merge requests
             #merge_requests=merge_requests
         )
     
     def build_mr_diff_files(self, source_sha, target_sha):
         diff_files = []
         count = 0
+        # TODO: Implement merge requests diffs
         #req = self.base_api.get_pull_request_diffs(self.repository_id, self.source_project.get('name'), source_sha, target_sha)
         #if diffs := safe_json_response(req):
         for change in self.base_api.get_pull_request_diffs(self.repository_id, self.source_project.get('name'), source_sha, target_sha):
@@ -148,9 +151,6 @@ class CodeCommitExportBuilder(ExportBuilder):
         src_aws_codecommit_username = self.config.src_aws_codecommit_username
         src_aws_codecommit_password = self.config.src_aws_codecommit_password
         src_aws_region = self.config.src_aws_region
-        
-        # clone_url = source_project['http_url_to_repo']
-        # decoded_token = deobfuscate(self.config.source_token)
         return f"https://{src_aws_codecommit_username}:{src_aws_codecommit_password}@git-codecommit.{src_aws_region}.amazonaws.com/v1/repos/{self.source_project.get('name')}"
     
     def build_mr_notes(self, pr_id):
