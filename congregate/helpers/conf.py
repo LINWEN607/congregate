@@ -584,7 +584,7 @@ class Config(BaseConfig):
 
         Default is 60 seconds
         """
-        return self.prop("APP", "gitlab_api_request_timeout", default=60)
+        return self.prop_int("APP", "gitlab_api_request_timeout", default=60)
 
 # HIDDEN PROPERTIES
 
