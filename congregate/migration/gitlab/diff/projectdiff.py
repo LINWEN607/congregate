@@ -62,8 +62,7 @@ class ProjectDiffClient(BaseDiffClient):
 
     def generate_single_diff_report(self, project):
         diff_report = {}
-        project_path, _ = get_stage_wave_paths(project)
-
+        project_path = get_dst_path_with_namespace(project)
         if self.results.get(project_path) and type(self.results.get(project_path)) != int and (self.asset_exists(self.projects_api.get_project,
                                                                  self.results[project_path].get("id")) or isinstance(self.results.get(project_path), int)):
             project_diff = self.handle_endpoints(project)
@@ -87,25 +86,87 @@ class ProjectDiffClient(BaseDiffClient):
 
     def handle_endpoints(self, project):
         project_diff = {}
-        # General endpoint
+        # General endpoint - keep using REST API for this as it's more comprehensive
         project_diff["/projects/:id"] = self.generate_project_diff(
             project, self.projects_api.get_project, obfuscate=True)
 
-        # TODO: Add GraphQL query for project statistics
-
         if not self.rollback:
-            # Basic Project Stat Counts
-            project_diff["Total Number of Merge Requests"] = self.generate_project_count_diff_graphql(
-                project, "merge_requests", "projects/:id/merge_requests")
-            project_diff["Total Number of Merge Request Comments"] = self.generate_nested_project_count_diff_graphql(
-                project, "merge_requests", "notes")
-            project_diff["Total Number of Issues"] = self.generate_project_count_diff_graphql(
-                project, "issues", "projects/:id/issues")
-            project_diff["Total Number of Issue Comments"] = self.generate_nested_project_count_diff_graphql(
-                project, "issues", "notes")
+            # Use a single consolidated GraphQL query to fetch all counts
+            graphql_data = self.fetch_consolidated_graphql_data(project)
+            
+            if graphql_data and graphql_data.get("success"):
+                # Extract counts from the GraphQL response
+                source_data = graphql_data.get("source", {})
+                destination_data = graphql_data.get("destination", {})
+                
+                # Process all the counts we've fetched via GraphQL
+                self.log.info(f"Using consolidated GraphQL query results for project stats")
+                
+                # Commit Counts
+                project_diff["Commit Counts"] = {
+                    "source": source_data.get("commitCount", 0),
+                    "destination": destination_data.get("commitCount", 0),
+                    "accuracy": 1.0 if source_data.get("commitCount") == destination_data.get("commitCount") else 0.0,
+                    "diff": {"source": source_data.get("commitCount", 0), "destination": destination_data.get("commitCount", 0)} 
+                        if source_data.get("commitCount") != destination_data.get("commitCount") else None
+                }
 
-            project_diff["Total Number of Branches"] = self.generate_project_count_diff(
-                project, "projects/:id/repository/branches")
+                # Branch Counts
+                project_diff["Branch Counts"] = {
+                    "source": source_data.get("branchCount", 0),
+                    "destination": destination_data.get("branchCount", 0),
+                    "accuracy": 1.0 if source_data.get("branchCount") == destination_data.get("branchCount") else 0.0,
+                    "diff": {"source": source_data.get("branchCount", 0), "destination": destination_data.get("branchCount", 0)} 
+                        if source_data.get("branchCount") != destination_data.get("branchCount") else None
+                }
+                # Merge Requests Counts
+                project_diff["Merge Requests Counts"] = {
+                    "source": source_data.get("mrCount", 0),
+                    "destination": destination_data.get("mrCount", 0),
+                    "accuracy": 1.0 if source_data.get("mrCount") == destination_data.get("mrCount") else 0.0,
+                    "diff": {"source": source_data.get("mrCount", 0), "destination": destination_data.get("mrCount", 0)}
+                        if source_data.get("mrCount") != destination_data.get("mrCount") else None
+                }
+                
+                # Merge Request Comments
+                project_diff["Merge Request Comments"] = {
+                    "source": source_data.get("mrCommentCount", 0),
+                    "destination": destination_data.get("mrCommentCount", 0),
+                    "accuracy": 1.0 if source_data.get("mrCommentCount") == destination_data.get("mrCommentCount") else 0.0,
+                    "diff": {"source": source_data.get("mrCommentCount", 0), "destination": destination_data.get("mrCommentCount", 0)}
+                        if source_data.get("mrCommentCount") != destination_data.get("mrCommentCount") else None
+                }
+                
+                # Issues Counts
+                project_diff["Issues Counts"] = {
+                    "source": source_data.get("issueCount", 0),
+                    "destination": destination_data.get("issueCount", 0),
+                    "accuracy": 1.0 if source_data.get("issueCount") == destination_data.get("issueCount") else 0.0,
+                    "diff": {"source": source_data.get("issueCount", 0), "destination": destination_data.get("issueCount", 0)}
+                        if source_data.get("issueCount") != destination_data.get("issueCount") else None
+                }
+                
+                # Issue Comments
+                project_diff["Issue Comments"] = {
+                    "source": source_data.get("issueCommentCount", 0),
+                    "destination": destination_data.get("issueCommentCount", 0),
+                    "accuracy": 1.0 if source_data.get("issueCommentCount") == destination_data.get("issueCommentCount") else 0.0,
+                    "diff": {"source": source_data.get("issueCommentCount", 0), "destination": destination_data.get("issueCommentCount", 0)}
+                        if source_data.get("issueCommentCount") != destination_data.get("issueCommentCount") else None
+                }
+            else:
+                # Fallback to original methods if GraphQL fails
+                self.log.warning("Consolidated GraphQL query failed, falling back to individual queries")
+                project_diff["Commit Counts"] = self.generate_project_count_diff(
+                    project, "projects/:id/repository/commits")
+                project_diff["Merge Requests Counts"] = self.generate_project_count_diff_graphql(
+                    project, "merge_requests", "projects/:id/merge_requests")
+                project_diff["Issues Counts"] = self.generate_project_count_diff_graphql(
+                    project, "issues", "projects/:id/issues")
+                project_diff["Merge Request Comments"] = self.generate_nested_project_count_diff_graphql(
+                    project, "merge_requests", "notes")
+                project_diff["Issue Comments"] = self.generate_nested_project_count_diff_graphql(
+                    project, "issues", "notes")
 
             # CI/CD
             project_diff["/projects/:id/variables"] = self.generate_project_diff(
@@ -132,8 +193,6 @@ class ProjectDiffClient(BaseDiffClient):
                 project, self.repository_api.get_all_project_repository_contributors)
             project_diff["/projects/:id/protected_tags"] = self.generate_project_diff(
                 project, self.projects_api.get_all_project_protected_tags)
-
-            # Repository
             project_diff["/projects/:id/forks"] = self.generate_project_diff(
                 project, self.projects_api.get_all_project_forks)
             project_diff["/projects/:id/protected_branches"] = self.generate_project_diff(
@@ -176,7 +235,223 @@ class ProjectDiffClient(BaseDiffClient):
                     project, self.projects_api.get_all_project_level_mr_approval_rules)
                 project_diff["/projects/:id/push_rule"] = self.generate_project_diff(
                     project, self.projects_api.get_all_project_push_rules)
+        
         return project_diff
+
+    def fetch_consolidated_graphql_data(self, project):
+        """
+        Fetch consolidated project data using GraphQL with pagination for accurate counts
+        """
+        source_full_path = project['path_with_namespace']
+        destination_full_path = get_target_project_path(project)
+        
+        # Function to fetch data with pagination
+        def fetch_with_pagination(host, token, full_path, after_issues="", after_mrs=""):
+            query = """
+            query ProjectStats($fullPath: ID!, $afterIssues: String, $afterMRs: String) {
+            project(fullPath: $fullPath) {
+                id
+                name
+                issues(after: $afterIssues, first: 100) {
+                count
+                pageInfo {
+                    endCursor
+                    hasNextPage
+                }
+                nodes {
+                    notes {
+                    count
+                    }
+                }
+                }
+                mergeRequests(after: $afterMRs, first: 100) {
+                count
+                pageInfo {
+                    endCursor
+                    hasNextPage
+                }
+                nodes {
+                    notes {
+                    count
+                    }
+                }
+                }
+                statistics {
+                commitCount
+                }
+                repository {
+                rootRef
+                }
+            }
+            }
+            """
+            
+            variables = {
+                "fullPath": full_path,
+                "afterIssues": after_issues,
+                "afterMRs": after_mrs
+            }
+            
+            response = safe_json_response(self.gl_api.generate_post_request(
+                host, token, None, json_dumps({"query": query, "variables": variables}), graphql_query=True
+            ))
+            
+            return response
+        
+        # Function to fetch branch count using REST API
+        def fetch_branch_count(host, token, project_id):
+            try:
+                count = self.gl_api.get_total_count(
+                    host, token, f"projects/{project_id}/repository/branches")
+                return count
+            except Exception as e:
+                self.log.error(f"Error fetching branch count: {str(e)}")
+                return 0
+        
+        # Function to process all pages for a given host/token
+        def process_all_pages(host, token, full_path, project_id):
+            data = {
+                "issueCount": 0,
+                "mrCount": 0,
+                "issueCommentCount": 0,
+                "mrCommentCount": 0,
+                "commitCount": 0,
+                "branchCount": 0
+            }
+            
+            # First page
+            resp = fetch_with_pagination(host, token, full_path)
+            if not resp or "data" not in resp or "project" not in resp["data"]:
+                self.log.warning(f"Failed to fetch initial GraphQL data for {full_path}")
+                return None
+            
+            project_data = resp["data"]["project"]
+            
+            # Set the counts that don't need pagination
+            data["issueCount"] = dig(project_data, "issues", "count", default=0)
+            data["mrCount"] = dig(project_data, "mergeRequests", "count", default=0)
+            data["commitCount"] = dig(project_data, "statistics", "commitCount", default=0)
+            
+            # Fetch branch count separately with REST API
+            data["branchCount"] = fetch_branch_count(host, token, project_id)
+            
+            # Process first page of issues
+            for issue in dig(project_data, "issues", "nodes", default=[]):
+                data["issueCommentCount"] += dig(issue, "notes", "count", default=0)
+            
+            # Process first page of merge requests
+            for mr in dig(project_data, "mergeRequests", "nodes", default=[]):
+                data["mrCommentCount"] += dig(mr, "notes", "count", default=0)
+            
+            # Paginate through issues if needed
+            issues_has_next = dig(project_data, "issues", "pageInfo", "hasNextPage", default=False)
+            issues_cursor = dig(project_data, "issues", "pageInfo", "endCursor", default="")
+            
+            while issues_has_next:
+                self.log.info(f"Fetching next page of issues for {full_path}")
+                resp = fetch_with_pagination(host, token, full_path, after_issues=issues_cursor, after_mrs="")
+                if not resp or "data" not in resp or "project" not in resp["data"]:
+                    break
+                    
+                project_data = resp["data"]["project"]
+                
+                # Process this page of issues
+                for issue in dig(project_data, "issues", "nodes", default=[]):
+                    data["issueCommentCount"] += dig(issue, "notes", "count", default=0)
+                
+                # Update pagination info
+                issues_has_next = dig(project_data, "issues", "pageInfo", "hasNextPage", default=False)
+                issues_cursor = dig(project_data, "issues", "pageInfo", "endCursor", default="")
+            
+            # Paginate through merge requests if needed
+            mrs_has_next = dig(project_data, "mergeRequests", "pageInfo", "hasNextPage", default=False)
+            mrs_cursor = dig(project_data, "mergeRequests", "pageInfo", "endCursor", default="")
+            
+            while mrs_has_next:
+                self.log.info(f"Fetching next page of merge requests for {full_path}")
+                resp = fetch_with_pagination(host, token, full_path, after_issues="", after_mrs=mrs_cursor)
+                if not resp or "data" not in resp or "project" not in resp["data"]:
+                    break
+                    
+                project_data = resp["data"]["project"]
+                
+                # Process this page of merge requests
+                for mr in dig(project_data, "mergeRequests", "nodes", default=[]):
+                    data["mrCommentCount"] += dig(mr, "notes", "count", default=0)
+                
+                # Update pagination info
+                mrs_has_next = dig(project_data, "mergeRequests", "pageInfo", "hasNextPage", default=False)
+                mrs_cursor = dig(project_data, "mergeRequests", "pageInfo", "endCursor", default="")
+            
+            return data
+        
+        # Get project IDs
+        source_id = project["id"]
+        destination_id = self.get_destination_id(project)
+        
+        # Process source and destination
+        source_data = process_all_pages(self.config.source_host, self.config.source_token, source_full_path, source_id)
+        destination_data = process_all_pages(self.config.destination_host, self.config.destination_token, destination_full_path, destination_id)
+
+        accuracy = self.calculate_count_accuracy(source_data.get("mrCommentCount", 0), 
+                                                destination_data.get("mrCommentCount", 0))
+
+        return {
+            "success": source_data is not None and destination_data is not None,
+            "source": source_data or {},
+            "destination": destination_data or {}
+        }
+
+    def extract_count_from_graphql(self, project_data, path_to_count):
+        """
+        Extract counts from GraphQL response and format in the diff structure
+        """
+        source_data = project_data.get("source")
+        destination_data = project_data.get("destination")
+        
+        # Extract counts using the path (e.g., "repository.branchCount")
+        source_count = 0
+        destination_count = 0
+        
+        if source_data:
+            parts = path_to_count.split('.')
+            temp = source_data
+            for part in parts:
+                if temp and isinstance(temp, dict) and part in temp:
+                    temp = temp[part]
+                else:
+                    temp = None
+                    break
+            source_count = temp if isinstance(temp, int) else 0
+        
+        if destination_data:
+            parts = path_to_count.split('.')
+            temp = destination_data
+            for part in parts:
+                if temp and isinstance(temp, dict) and part in temp:
+                    temp = temp[part]
+                else:
+                    temp = None
+                    break
+            destination_count = temp if isinstance(temp, int) else 0
+        
+        # Calculate accuracy - either 100% or 0% based on exact match
+        accuracy = 1.0 if source_count == destination_count else 0.0
+        
+        # Create a diff structure if there's a mismatch
+        diff = None
+        if source_count != destination_count:
+            diff = {
+                "source": source_count,
+                "destination": destination_count
+            }
+        
+        return {
+            "source": source_count,
+            "destination": destination_count,
+            "accuracy": accuracy,
+            "diff": diff
+        }
 
     def generate_project_diff(self, project, endpoint, **kwargs):
         return self.generate_diff(project, "path_with_namespace", endpoint,
@@ -189,7 +464,24 @@ class ProjectDiffClient(BaseDiffClient):
             self.config.source_host, self.config.source_token, api.replace(":id", str(source_id)))
         destination_count = self.gl_api.get_total_count(
             self.config.destination_host, self.config.destination_token, api.replace(":id", str(destination_id)))
-        return self.generate_count_diff(source_count, destination_count)
+        
+        # Calculate accuracy - either 100% or 0% based on exact match
+        accuracy = 1.0 if source_count == destination_count else 0.0
+        
+        # Create a diff structure if there's a mismatch
+        diff = None
+        if source_count != destination_count:
+            diff = {
+                "source": source_count,
+                "destination": destination_count
+            }
+        
+        return {
+            "source": source_count,
+            "destination": destination_count,
+            "accuracy": accuracy,
+            "diff": diff
+        }
 
     def generate_nested_project_count_diff(self, project, apis):
         source_id = project["id"]
@@ -238,9 +530,24 @@ class ProjectDiffClient(BaseDiffClient):
         else:
             self.log.warning(f"[{entity}] retrieval for {source_full_path} failed. Skipping.")
 
-        return self.generate_count_diff(source_count, destination_count)
-
-
+        # Calculate accuracy
+        accuracy = self.calculate_count_accuracy(source_count, destination_count)
+        
+        # Create a diff structure if there's a mismatch
+        diff = None
+        if source_count != destination_count:
+            diff = {
+                "source": source_count,
+                "destination": destination_count
+            }
+        
+        return {
+            "source": source_count,
+            "destination": destination_count,
+            "accuracy": accuracy,
+            "diff": diff
+        }
+    
     def generate_nested_project_count_diff_graphql(self, project, primary_entity, secondary_entity):
         source_full_path = project['path_with_namespace']
         destination_full_path = get_target_project_path(project)
@@ -248,7 +555,24 @@ class ProjectDiffClient(BaseDiffClient):
         formatted_secondary_entity = to_camel_case(secondary_entity)
         source_count = self.get_total_nested_count(self.config.source_host, self.config.source_token, source_full_path, formatted_primary_entity, formatted_secondary_entity)
         destination_count = self.get_total_nested_count(self.config.destination_host, self.config.destination_token, destination_full_path, formatted_primary_entity, formatted_secondary_entity)
-        return self.generate_count_diff(source_count, destination_count)
+
+        # Calculate accuracy - either 100% or 0% based on exact match
+        accuracy = self.calculate_count_accuracy(source_count, destination_count)
+        
+        # Create a diff structure if there's a mismatch
+        diff = None
+        if source_count != destination_count:
+            diff = {
+                "source": source_count,
+                "destination": destination_count
+            }
+        
+        return {
+            "source": source_count,
+            "destination": destination_count,
+            "accuracy": accuracy,
+            "diff": diff
+        }    
 
     def get_total_nested_count(self, host, token, full_path, primary_entity, secondary_entity):
         count = 0
