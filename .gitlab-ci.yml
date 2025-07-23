@@ -711,6 +711,30 @@ mvc:
         - docker/release/*
         - .gitlab-ci.yml
 
+docs site build test:
+  stage: test
+  rules:
+    - if: "$CI_PIPELINE_SOURCE == 'merge_request_event'"
+      changes:
+        - "**/*.md"
+        - "*.md"
+        - mkdocs.yml
+  dependencies:
+    - code_quality
+  script:
+    - mkdir -p data
+    # This is usually set in the .test-job extend or reference, but we don't want the congregate init that comes with it
+    - export PATH="/root/.local/bin:$PATH"
+    # Disable parallel installer to avoid "Key Error" issues
+    - poetry install
+    # TODO
+    # - cp gl-code-quality-report.json congregate/docs/source/_static/
+    - poetry run mkdocs build
+  retry: 2
+  artifacts:
+    paths:
+      - site
+
 pages:
   stage: deploy
   rules:
@@ -726,7 +750,6 @@ pages:
     # This is usually set in the .test-job extend or reference, but we don't want the congregate init that comes with it
     - export PATH="/root/.local/bin:$PATH"
     # Disable parallel installer to avoid "Key Error" issues
-    # - poetry config experimental.new-installer false
     - poetry install
     # TODO
     # - cp gl-code-quality-report.json congregate/docs/source/_static/
