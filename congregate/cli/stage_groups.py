@@ -178,8 +178,9 @@ class GroupStageCLI(BaseStageClass):
         dry = get_dry_log(dry_run)
 
         # Stage all parent groups first
-        if parent_id := group.get("parent_id"):
-            self.add_group_and_parents(parent_id, dry_run)
+        if not self.config.skip_staging_parents:
+            if parent_id := group.get("parent_id"):
+                self.add_group_and_parents(parent_id, dry_run)
 
         # Stage the current group's projects
         for pid in group.get("projects", []):

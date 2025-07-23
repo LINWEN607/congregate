@@ -30,6 +30,8 @@ export SOURCE_ADMIN_ACCESS_TOKEN="glpat-xxxxxxxxxxxxxxxxxxxx"
 # For destination GitLab instance
 export DESTINATION_GITLAB_ROOT="https://gitlab.example.com"
 export DESTINATION_ADMIN_ACCESS_TOKEN="glpat-xxxxxxxxxxxxxxxxxxxx"
+export DESTINATION_CUSTOMER_NAME="demo"
+export DESTINATION_TOP_LEVEL_GROUP="import-target"
 ```
 
 ## Step 1: Receive User Email List
@@ -44,19 +46,12 @@ user3@example.com
 
 ## Step 2: Download Placeholder Users
 
+Before running, make sure to complete the [prerequisites](#prerequisites).
+
 Run the script to retrieve placeholder users from the target GitLab group:
 
 ```bash
 python retrieve-placeholder-users-for-namespace.py
-```
-
-Before running, set the required environment variables:
-
-```bash
-export DESTINATION_GITLAB_ROOT="https://gitlab.example.com"
-export DESTINATION_ADMIN_ACCESS_TOKEN="somepat-xxxxxxxxxxxxxxxxxxxx"
-export DESTINATION_CUSTOMER_NAME="demo"
-export DESTINATION_TOP_LEVEL_GROUP="import-target"
 ```
 
 This scripts calls the [API](https://docs.gitlab.com/api/group_placeholder_reassignments/#download-the-csv-file) and will generate a CSV file containing details about placeholder users. Example:
@@ -115,7 +110,7 @@ The script outputs the updated file in the format:
 Upload the user mappings to reassign placeholder users to actual GitLab users:
 
 ```bash
-python update-placeholder-mapping.py [--commit] [input_csv_file]
+python update-placeholder-mapping.py --group-id DESTINATION_TOP_LEVEL_GROUP [--commit] [input_csv_file]
 ```
 
 By default, the script runs in dry-run mode. Use the `--commit` flag to apply the changes.
@@ -139,9 +134,9 @@ This will process the CSV file and call a GraphQL mutation to cancel the pending
 
 Throughout this process, several files will be generated:
 
-1. `placeholder_users.csv`: Initial export of placeholder users
+1. `customer_topgroup_YYYYMMDD_HHMMSS_placeholder_users.csv`: Initial export of placeholder users
 2. `gitlab_user_mapping_YYYYMMDD_HHMMSS.csv`: Mapping between source and destination users
-3. `placeholder_users-generated.csv`: Updated placeholder users with assignee IDs
+3. `updated_map_YYYYMMDD_HHMMSS.csv`: Updated placeholder users with assignee IDs
 4. `gitlab_user_mapping_YYYYMMDD_HHMMSS.log`: Detailed log of the mapping process
 5. (Optional) CSV files recording emails not found in GitLab instances
 

@@ -207,7 +207,8 @@ class ProjectStageCLI(BaseStageClass):
         try:
             if o_type == "group" or (o_type == "user" and not is_dot_com(self.config.destination_host)):
                 if parent_group_id := dig(project, "namespace", "id"):
-                    self.add_group_and_parents(parent_group_id, dry_run=dry_run)
+                    if not self.config.skip_staging_parents:
+                        self.add_group_and_parents(parent_group_id, dry_run=dry_run)
                     self.log.info(
                         f"{get_dry_log(dry_run)}Staging {o_type} project '{o_path}' (ID: {o_id})"
                         f"[{len(self.staged_projects) + 1}/{len(p_range) if p_range else len(projects_to_stage)}]")

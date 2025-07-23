@@ -5,40 +5,70 @@
 [![coverage](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/badges/master/coverage.svg)](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/tree/master/congregate/tests)
 [![latest release](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/badges/release.svg)](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/releases)
 
->>>
-Released under the [MIT License](LICENSE).
-
-Customers are very welcome to trial and evaluate Congregate today. However it's recommended that you do independently review the features and functionality to ensure it meets your requirements while also being aware of any current key limitations noted below. For help troubleshooting or using Congregate, Customers need to enter into a paid engagement with GitLab Professional Services.
-
-If you are planning to use Congregate to migrate to gitlab.com from a self-managed instance of GitLab, BitBucket (Server and Data Center), or GitHub Enterprise, you will need an admin token to conduct the migration due to some of the elevated APIs GitLab Professional Services uses during Service engagements.
-
->>>
-
 ![Congregate](./img/overview.png)
 
-Congregate is an automation wrapper around the [**GitLab APIs**](https://docs.gitlab.com/ee/api/api_resources.html#rest-api-resources), in particular the [group](https://docs.gitlab.com/ee/api/group_import_export.html) and [project](https://docs.gitlab.com/ee/api/project_import_export.html) export/import and [user](https://docs.gitlab.com/ee/api/users.html) APIs.
+## Congregate Migration Tool
 
-It is [**limited**](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/blob/master/customer/famq.md) by the functionality of those APIs. [**Here**](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/blob/master/customer/gitlab-migration-features-matrix.md) are ways in which congregate extends that functionality.
+Congregate is a migration orchestration tool that moves data from various source systems into a destination GitLab instance. Built as a wrapper around the [GitLab APIs](https://docs.gitlab.com/ee/api/api_resources.html#rest-api-resources), it supports many migration methodologies, focusing on the following two GitLab->GitLab migration methods:
 
-Congregate is a migration tool that can move data from many different Source Code Management (SCM) and Continuous Integration (CI) systems into a GitLab Self Managed (SM) instance hosted in the customer data center/cloud or GitLab.com. It is what GitLab Professional Services uses for large scale migration engagements. It is being shared in a [source-available](https://about.gitlab.com/solutions/open-source/) way, under the [GitLab EE license](https://en.wikipedia.org/wiki/Source-available_software#GitLab_Enterprise_Edition_License_(EE_License)), for collaboration with Customers and Partners.
+- **[Direct Transfer](https://docs.gitlab.com/user/group/import)** - Direct API-based migration
+- **[File Based](https://docs.gitlab.com/user/project/settings/import_export)** - Export/import via files
 
-Congregate gathers (meta)data from source system(s), transforms and down-selects it to prepare for migration, and migrates the data into the destination GitLab instance. Check out our [quick-start guide](./docs/using-congregate.md#quick-start) to get started with congregate today.
+[GitLab Professional Services](https://about.gitlab.com/professional-services) uses Congregate for large-scale migration engagements.
 
-- [Contributing Guide](./docs/contributing.md)
+## Core Migration Components
+
+Most migrations involve moving or verifying:
+- [Users](https://docs.gitlab.com/ee/api/users.html)
+- [Groups](https://docs.gitlab.com/ee/api/group_import_export.html)  
+- [Projects](https://docs.gitlab.com/ee/api/project_import_export.html)
+
+## Additional Features
+
+Congregate extends GitLab's built-in importers with support for items such as packages and container registries. For a complete feature listing, see the [Feature Matrices](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/blob/master/customer). The following are the more common feature Matrices;
+
+- [GitHub](./customer/github-migration-features-matrix.md)
+- [BitBucket](./customer/bitbucket-migration-features-matrix.md)
+- [GitLab](./customer/gitlab-migration-features-matrix.md)
+- [Azure DevOps](./customer/ado-migration-features-matrix.md)
+- [CodeCommit](./customer/codecommit-migration-features-matrix.md)
+
+## Trying Congregate
+
+Congregate is available for evaluation and users are encouraged to explore its features to ensure it meets their needs.  Before using it for your migration, please:
+
+- Review the available features in the Feature [Feature Matrices](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/blob/master/customer) to ensure Congregate meets your requirements
+- Check the current [Quick-start guide to using congregate](./docs/using-congregate.md#quick-start)
+- **Important:** Migrations to gitlab.com using [file-based export/import](https://docs.gitlab.com/user/project/settings/import_export/) require an Administrator token. These are currently only available to [GitLab Professional Services](https://about.gitlab.com/professional-services) team members.
+
+## Support
+
+- Community support is provided on a best-effort basis through [GitLab issues](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/issues) with asynchronous responses
+- For dedicated support with SLAs and guaranteed response times, please engage our [Professional Services](https://about.gitlab.com/professional-services/) team
+- For support questions please [create an issue](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/issues/new?issuable_template=congregate-support) using our Congregate support [issue template](./.gitlab/issue_templates/congregate-support.md). 
+
+## Links
+
+### Getting Started
+
+- [Frequently asked Migration Questions](./customer/famq.md)
+- [Migration Service Delivery Kit](https://gitlab.com/gitlab-org/professional-services-automation/delivery-kits/migration-template)
 - [Quick-start guide to using congregate](./docs/using-congregate.md#quick-start)
-- [Using Congregate - Full test environment setup](./docs/full_setup.md)
-- Data Elements supported by source system ([GitHub](./customer/github-migration-features-matrix.md), [BitBucket](./customer/bitbucket-migration-features-matrix.md), [GitLab](./customer/gitlab-migration-features-matrix.md), [Azure DevOps](./customer/ado-migration-features-matrix.md), [CodeCommit](./customer/codecommit-migration-features-matrix.md))
+
+### Documentation
+
 - [Congregate Commands Help Page](./congregate/main.py#L5)
 - [Congregate technical documentation](https://gitlab-org.gitlab.io/professional-services-automation/tools/migration/congregate/)
-- [Setup Development Environment](./docs/setup-dev-env.md)
-- [Frequently asked question about automated migrations](./customer/famq.md)
-- [Technical Troubleshooting](./docs/troubleshooting.md)
-- [Migration Service Delivery Kit](https://gitlab.com/gitlab-org/professional-services-automation/delivery-kits/migration-template)
-- [GitLab Partner Program](https://partners.gitlab.com/English/?ReturnUrl=/prm/English/c/Training)
 - [Project Structure](STRUCTURE.md)
 
-For support questions please [create an issue](https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/issues/new?issuable_template=congregate-support) using our Congregate support [issue template](./.gitlab/issue_templates/congregate-support.md). 
+### Congregate Development
 
-**Support Model:**
-- Community support is provided on a best-effort basis through GitLab issues with asynchronous responses
-- For dedicated support with SLAs and guaranteed response times, please engage our [Professional Services](https://about.gitlab.com/professional-services/) team
+- [Contributing Guide](CONTRIBUTING.md)
+- [Using Congregate - Full test environment setup](./docs/full_setup.md)
+- [Setup Development Environment](./docs/setup-dev-env.md)
+- [Technical Troubleshooting](./docs/troubleshooting.md)
+
+### Resources
+
+- Released under the [MIT License](LICENSE)
+- [GitLab Partner Program](https://about.gitlab.com/partners/)
