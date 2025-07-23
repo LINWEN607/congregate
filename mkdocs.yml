@@ -1,59 +1,58 @@
 site_name: Congregate
 
 theme:
-        name: material
-        logo: img/logo.png
+  name: material
+  logo: img/logo.png
 
 markdown_extensions:
-        - pymdownx.emoji:
-                emoji_index: !!python/name:material.extensions.emoji.twemoji
-                emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
 
 nav:
-        - Home: index.md
-        - Usage:
-                  - CLI-based Migrations: using-congregate.md
-                  - UI/API-based Migrations:
-                            - via Direct Transfer:
-                                      - Direct Transfer Setup: setting-up-direct-transfer-migrations.md
-                                      - Direct Transfer Usage: direct-transfer-usage.md
-                                      - Conducting a Migration: direct-transfer-migrations.md
-                            - Air-gapped Migrations: airgapped-migration-usage.md
-                  - Extras:
-                            - LDAP Group Sync: ldap-group-sync.md
-        - Readme: project_readme.md
-        - Installation:
-                  - Full Setup: full_setup.md
-                  - Troubleshooting: troubleshooting.md
-        - Supported Migration Features:
-                  - GitLab: gitlab-migration-features-matrix.md
-                  - Bitbucket: bitbucket-migration-features-matrix.md
-                  - GitHub: github-migration-features-matrix.md
-                  - Migration Workflows: workflow.md
-                  - Migration Methods: migration-methods.md
-        - Development:
-                  - Set up development environment: setup-dev-env.md
-                  - GitHub Development Setup: github-development-setup.md
-                  - Writing tests: writing-tests.md
-                  - Roadmap: roadmap.md
-                  - API Docs: reference/
-        - General Migration Preparation:
-                  - Migration Readiness Checklist: migration-readiness-checklist.md
-                  - Migration Wave Considerations: migration-wave-considerations.md
-                  - Pre and Post Migration: pre-and-post-migration.md
-                  - Frequently Asked Migration Questions: famq.md
-                  - Migration Change Management: customer-migration-change-management.md
-        - Contribute to Congregate: contributing.md
-        - Congregate Wiki: https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/wikis/home
+  - Home: index.md
+  - Usage:
+      - CLI-based Migrations: using-congregate.md
+      - UI/API-based Migrations:
+          - via Direct Transfer:
+              - Direct Transfer Setup: setting-up-direct-transfer-migrations.md
+              - Direct Transfer Usage: direct-transfer-usage.md
+              - Conducting a Migration: direct-transfer-migrations.md
+          - Air-gapped Migrations: airgapped-migration-usage.md
+      - Extras:
+          - LDAP Group Sync: ldap-group-sync.md
+  - Readme: project_readme.md
+  - Installation:
+      - Full Setup: full_setup.md
+      - Troubleshooting: troubleshooting.md
+  - Supported Migration Features:
+      - GitLab: gitlab-migration-features-matrix.md
+      - Bitbucket: bitbucket-migration-features-matrix.md
+      - GitHub: github-migration-features-matrix.md
+      - Migration Workflows: workflow.md
+      - Migration Methods: migration-methods.md
+  - Development:
+      - Set up development environment: setup-dev-env.md
+      - GitHub Development Setup: github-development-setup.md
+      - Writing tests: writing-tests.md
+      - Roadmap: roadmap.md
+      - API Docs: reference/
+  - General Migration Preparation:
+      - Migration Readiness Checklist: migration-readiness-checklist.md
+      - Migration Wave Considerations: migration-wave-considerations.md
+      - Pre and Post Migration: pre-and-post-migration.md
+      - Frequently Asked Migration Questions: famq.md
+      - Migration Change Management: customer-migration-change-management.md
+  - Contribute to Congregate: contributing.md
+  - Congregate Wiki: https://gitlab.com/gitlab-org/professional-services-automation/tools/migration/congregate/-/wikis/home
 
-# This order needs to be retained
 plugins:
-        - search
-        - mermaid2
-        - gen-files:
-                  scripts:
-                          - docs/gen_ref_nav.py
-                          - docs/gen_redirect.py
-        - literate-nav:
-                  nav_file: SUMMARY.md
-        - mkdocstrings
+  - search
+  - mermaid2
+  - gen-files:
+      scripts:
+        - docs/gen_ref_nav.py
+        - docs/gen_redirect.py
+  - literate-nav:
+      nav_file: SUMMARY.md
+  - mkdocstrings
